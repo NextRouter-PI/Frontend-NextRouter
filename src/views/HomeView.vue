@@ -1,3 +1,9 @@
 <template>
-  <h1>Welcome to the Home Page</h1>
+  <div class="home">
+    <AppHeader />
+    <h2>Home</h2>
+  </div>
+
 </template>
+
+

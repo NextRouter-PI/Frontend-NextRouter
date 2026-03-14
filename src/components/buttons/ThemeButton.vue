@@ -10,7 +10,13 @@ function toggleTheme() {
 </script>
 
 <template>
-  <button @click="toggleTheme">
-    Trocar tema
+  <button v-if="theme === 'light'" @click="toggleTheme">
+    <img src="/src-header/theme-icons/temaEscuro.png" alt="Tema Escuro" />
+  </button>
+
+  <button v-else @click="toggleTheme">
+    <img src="/src-header/theme-icons/temaClaro.png" alt="Tema Claro" />
   </button>
 </template>
+
+
