@@ -4,7 +4,7 @@ import ThemeButton from "@/components/buttons/ThemeButton.vue"
 
 <template>
   <header class="header">
-    <h1 class="logo">Next<span>Router</span></h1>
+    <img src="../../../public/src-header/logo.png" alt="Logo" class="logo" />
     <ThemeButton />
   </header>
 </template>
@@ -25,20 +25,8 @@ import ThemeButton from "@/components/buttons/ThemeButton.vue"
 }
 
 .logo {
-  color: #DF801A;
-  font-weight: 700;
-  font-size: 1.4rem;
-  font-family: 'Inter', sans-serif;
+  height: 40px;
 }
-
-.logo span {
-  color: #1E1E1E;
-  background-color: #DF801A;
-  margin-left: 4px;
-  padding: 0.5px 2px;
-  border-radius: 3px;
-}
-
 @media (min-width: 768px) {
 }
 
