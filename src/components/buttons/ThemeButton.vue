@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from "vue"
-
 const theme = ref("light")
 
 function toggleTheme() {
@@ -11,12 +10,23 @@ function toggleTheme() {
 
 <template>
   <button v-if="theme === 'light'" @click="toggleTheme">
-    <img src="/src-header/theme-icons/temaEscuro.png" alt="Tema Escuro" />
+  <span class="mdi mdi-weather-night"></span>
   </button>
-
   <button v-else @click="toggleTheme">
-    <img src="/src-header/theme-icons/temaClaro.png" alt="Tema Claro" />
+  <span class="mdi mdi-weather-sunny"></span>
   </button>
 </template>
 
+<style scoped>
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
 
+}
+
+span {
+  color: #DF801A;
+  font-size: 28px;
+}
+</style>
