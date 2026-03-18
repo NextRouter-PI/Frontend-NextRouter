@@ -1,9 +1,5 @@
 <template>
-  <div class="home">
-    <AppHeader />
-    <h2>Home</h2>
-  </div>
-
+    <h1>Home</h1>
 </template>
 
 

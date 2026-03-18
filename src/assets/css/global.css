@@ -70,7 +70,6 @@ body {
   min-height: 100vh;
 }
 
-/* Espaçamento para conteúdo abaixo do header fixo */
 html, body {
   padding: 72px 16px 16px;
   max-width: 600px;
