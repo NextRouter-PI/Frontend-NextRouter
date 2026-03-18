@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import './assets/css/global.css'
 import './assets/css/theme.css'
-import SvgIcon from "@jamescoyle/vue-icon"
+import '@mdi/font/css/materialdesignicons.css'
 
 import App from './App.vue'
 import router from './router'
