@@ -26,7 +26,12 @@ button {
 }
 
 span {
-  color: #DF801A;
+  color: var(--primary);
   font-size: 28px;
+  transition: all 0.4s ease;
+}
+
+span:hover {
+  color: var(--primary-hover);
 }
 </style>

@@ -6,7 +6,6 @@ import Logo from "/src-header/Logo.png"
 <template>
   <aside class="sidebar">
 
-    <!-- LOGO -->
     <RouterLink to="/" class="logo">
       <div class="logo-content">
         <img :src="Logo" alt="Logo">
@@ -14,7 +13,6 @@ import Logo from "/src-header/Logo.png"
       </div>
     </RouterLink>
 
-    <!-- MENU -->
     <nav class="nav">
 
       <router-link to="/" class="nav-item" title="Home">
@@ -39,7 +37,6 @@ import Logo from "/src-header/Logo.png"
 
     </nav>
 
-    <!-- BOTÃO EMBAIXO -->
     <div class="bottom">
       <ThemeButton />
     </div>
@@ -54,7 +51,7 @@ import Logo from "/src-header/Logo.png"
   left: 0;
   width: 100px;
   height: 100vh;
-  background: #1E1E1E;
+  background: var(--superfice);
 
   display: flex;
   flex-direction: column;
@@ -63,8 +60,8 @@ import Logo from "/src-header/Logo.png"
   padding: 20px 0;
   gap: 30px;
 
-  border-right: 1px solid rgba(255,255,255,0.05);
-  box-shadow: 8px 0 30px rgba(0,0,0,0.4);
+  border-right: 1px solid var(--border-primary);
+  box-shadow: 8px 0 30px var(--shadow);
 
   transition: width 0.4s ease;
   overflow: hidden;
@@ -117,7 +114,7 @@ import Logo from "/src-header/Logo.png"
 .nav-item {
   position: relative;
   text-decoration: none;
-  color: #aaa;
+  color: var(--text-muted);
 
   display: flex;
   align-items: center;
@@ -136,11 +133,7 @@ import Logo from "/src-header/Logo.png"
   inset: 0;
   border-radius: 12px;
 
-  background: linear-gradient(
-    90deg,
-    rgba(223,128,26,0.15),
-    transparent
-  );
+  background: var(--gradient-primary-hover);
 
   opacity: 0;
   transition: 0.25s;
@@ -160,7 +153,7 @@ import Logo from "/src-header/Logo.png"
   width: 4px;
   height: 0%;
 
-  background: linear-gradient(180deg, #DF801A, #ffb347);
+  background: var(--gradient-primary);
   border-radius: 10px;
 
   transition: 0.3s;
@@ -202,7 +195,7 @@ import Logo from "/src-header/Logo.png"
 }
 
 .nav-item:hover span {
-  color: #DF801A;
+  color: var(--primary);
   transform: scale(1.1);
 }
 
@@ -211,12 +204,10 @@ import Logo from "/src-header/Logo.png"
 }
 
 .nav-item.router-link-active span {
-  color: #1E1E1E;
-  background: linear-gradient(135deg, #DF801A, #ffb347);
+  color: var(--superfice);
+  background: var(--gradient-primary);
 
-  box-shadow:
-    0 4px 12px rgba(223,128,26,0.4),
-    0 0 8px rgba(223,128,26,0.3);
+  box-shadow: var(--shadow-primary);
 
   transform: scale(1.1);
 }
