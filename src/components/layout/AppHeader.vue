@@ -20,10 +20,10 @@ import Logo from "/public/src-header/Logo.png"
   left: 0;
   right: 0;
   padding: 10px 20px;
-  background: #1E1E1E;
+  background: var(--superfice);
   display: flex;
   justify-content: space-between;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--shadow);
   z-index: 100;
 }
 
