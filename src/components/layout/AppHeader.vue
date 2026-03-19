@@ -1,10 +1,13 @@
 <script setup>
 import ThemeButton from "@/components/buttons/ThemeButton.vue"
+import Logo from "/public/src-header/Logo.png"
 </script>
 
 <template>
   <header class="header">
-    <h1 class="logo">Next<span>Router</span></h1>
+    <RouterLink to="/" class="logo">
+      <img :src="Logo" alt="Logo">
+    </RouterLink>
     <ThemeButton />
   </header>
 </template>
@@ -24,22 +27,8 @@ import ThemeButton from "@/components/buttons/ThemeButton.vue"
   z-index: 100;
 }
 
-.logo {
-  color: #DF801A;
-  font-weight: 700;
-  font-size: 1.4rem;
-  font-family: 'Inter', sans-serif;
+.logo img {
+  height: 40px;
+  width: auto;
 }
-
-.logo span {
-  color: #1E1E1E;
-  background-color: #DF801A;
-  margin-left: 4px;
-  padding: 0.5px 2px;
-  border-radius: 3px;
-}
-
-@media (min-width: 768px) {
-}
-
 </style>
