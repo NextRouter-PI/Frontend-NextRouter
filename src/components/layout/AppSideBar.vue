@@ -1,5 +1,4 @@
 <script setup>
-import ThemeButton from "../buttons/ThemeButton.vue"
 import Logo from "/src-header/Logo.png"
 </script>
 
@@ -37,9 +36,7 @@ import Logo from "/src-header/Logo.png"
 
     </nav>
 
-    <div class="bottom">
-      <ThemeButton />
-    </div>
+    
 
   </aside>
 </template>
@@ -210,11 +207,6 @@ import Logo from "/src-header/Logo.png"
   box-shadow: var(--shadow-primary);
 
   transform: scale(1.1);
-}
-
-.bottom {
-  margin-top: auto;
-  padding-bottom: 10px;
 }
 
 .nav-item:active {
