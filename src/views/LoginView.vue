@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { useLoginState } from "@/store/useLoginState";
 import { useRouter } from "vue-router";
+import { RouterLink } from "vue-router";
 
 const email = ref("");
 const senha = ref("");
@@ -41,14 +42,14 @@ function toggleSenha() {
     </div>
 
     <div class="input-group">
-      <input 
-        v-model="senha" 
-        :type="mostrarSenha ? 'text' : 'password'" 
-        required 
+      <input
+        v-model="senha"
+        :type="mostrarSenha ? 'text' : 'password'"
+        required
       />
       <label>Senha</label>
 
-      <span 
+      <span
         class="mdi toggle"
         :class="mostrarSenha ? 'mdi-eye-off' : 'mdi-eye'"
         @click="toggleSenha"
@@ -64,7 +65,7 @@ function toggleSenha() {
       <RouterLink to="/">Clique Aqui</RouterLink>
     </p>
 
-    <button class="secondary">Criar nova conta</button>
+    <RouterLink to="/signup" class="secondary">Criar nova conta</RouterLink>
   </div>
 </template>
 
@@ -166,7 +167,11 @@ p {
   color: var(--primary);
 }
 
-button {
+button,
+.secondary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
   padding: 10px;
   border: none;

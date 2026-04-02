@@ -5,7 +5,6 @@ import { useLoginState } from "@/store/useLoginState";
 import Sidebar from "./components/layout/AppSideBar.vue";
 import AppHeader from "./components/layout/AppHeader.vue";
 import AppBottomNavigationBar from "./components/layout/AppBottomNavigationBar.vue";
-import LoginView from "./views/LoginView.vue";
 
 const { isMobile } = useDeviceLayout();
 const { state } = useLoginState();
@@ -13,13 +12,13 @@ const { state } = useLoginState();
 
 <template>
   <div class="app-layout">
-    <AppHeader/>
-    <LoginView v-if="!state.logado" />
+    <AppHeader />
+    <template v-if="!state.logado">
+      <router-view />
+    </template>
 
     <template v-else>
-
       <template v-if="isMobile">
-        <AppHeader />
         <router-view />
         <AppBottomNavigationBar />
       </template>
