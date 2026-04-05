@@ -9,11 +9,14 @@ import { RouterLink } from 'vue-router';
     </div>
 
     <div class="role-select">
-      <RouterLink to="/signup/usuario" class="role-button">
+      <RouterLink to="/signup/usuario/cidade" class="role-button">
         Passageiro
       </RouterLink>
-      <RouterLink to="/signup/motorista" class="role-button">
+      <RouterLink to="/signup/motorista/empresa" class="role-button">
         Motorista
+      </RouterLink>
+      <RouterLink to="/signup/empresa" class="role-button">
+        Empresa
       </RouterLink>
     </div>
   </div>

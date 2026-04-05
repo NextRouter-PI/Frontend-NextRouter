@@ -52,6 +52,30 @@ const router = createRouter({
       name: "signup-motorista",
       component: () => import("../components/singUp/SingUp-Motorista.vue"),
       meta: { requiresAuth: false }
+    },
+    {
+      path: "/signup/empresa",
+      name: "signup-empresa",
+      component: () => import("../components/singUp/SingUp-Empresa.vue"),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: "/signup/usuario/cidade",
+      name: "signup-usuario-cidade",
+      component: () => import("../views/CitySelectionView.vue"),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: "/signup/motorista/empresa",
+      name: "signup-motorista-empresa",
+      component: () => import("../views/CompanySelectionView.vue"),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: "/signup/confirmacao",
+      name: "signup-confirmacao",
+      component: () => import("../views/ConfirmationView.vue"),
+      meta: { requiresAuth: false }
     }
   ],
 });
