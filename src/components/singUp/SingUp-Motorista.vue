@@ -115,7 +115,7 @@ const handleSubmit = () => {
 
 .field-group label {
   display: block;
-  color: var(--primary-orange, #f48a1d);
+  color: white;
   font-weight: bold;
   font-size: 0.95rem;
   margin-bottom: 0.5rem;
@@ -165,9 +165,8 @@ const handleSubmit = () => {
   color: #333;
   font-size: 0.95rem;
   width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .file-upload input[type="file"] {
