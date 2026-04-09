@@ -1,5 +1,8 @@
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const form = ref({
   nomeCompleto: '',
@@ -23,7 +26,12 @@ const handleSubmit = () => {
   };
 
   console.log('Cadastro de motorista:', cadastro);
-  alert('Cadastro enviado! Verifique o console para os dados.');
+
+  // Redirecionar para a página de confirmação com o email
+  router.push({
+    path: '/signup/confirmacao',
+    query: { email: cadastro.email }
+  });
 };
 </script>
 

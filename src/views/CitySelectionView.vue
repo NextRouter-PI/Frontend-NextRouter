@@ -11,7 +11,7 @@ const companies = [
     city: 'São Paulo',
     name: 'TransLog',
     description: 'Serviço rápido e confiável para deslocamentos urbanos.',
-    address: 'Av. Paulista, 1000',
+    address: 'Av. Paulista, 1000 - São Paulo, SP' ,
     price: 'R$ 29,90 por corrida'
   },
   {
@@ -19,7 +19,7 @@ const companies = [
     city: 'São Paulo',
     name: 'CityRide',
     description: 'Tecnologia para facilitar sua viagem na cidade.',
-    address: 'Rua das Flores, 255',
+    address: 'Rua das Flores, 255 - São Paulo, SP',
     price: 'R$ 34,50 por corrida'
   },
   {
@@ -27,7 +27,7 @@ const companies = [
     city: 'Rio de Janeiro',
     name: 'Carioca Transportes',
     description: 'Atendimento 24h na região do Rio de Janeiro.',
-    address: 'Av. Atlântica, 500',
+    address: 'Av. Atlântica, 500 - Rio de Janeiro, RJ',
     price: 'R$ 31,00 por corrida'
   }
 ];
