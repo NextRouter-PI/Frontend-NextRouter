@@ -76,6 +76,12 @@ const router = createRouter({
       name: "signup-confirmacao",
       component: () => import("../views/ConfirmationView.vue"),
       meta: { requiresAuth: false }
+    },
+    {
+      path: "/forgot-password",
+      name: "forgot-password",
+      component: () => import("../views/ForgotPasswordView.vue"),
+      meta: { requiresAuth: false }
     }
   ],
 });

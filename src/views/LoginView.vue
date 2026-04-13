@@ -62,7 +62,7 @@ function toggleSenha() {
 
     <p>
       Esqueceu a senha?
-      <RouterLink to="/">Clique Aqui</RouterLink>
+      <RouterLink to="/forgot-password">Clique Aqui</RouterLink>
     </p>
 
     <RouterLink to="/signup" class="secondary">Criar nova conta</RouterLink>

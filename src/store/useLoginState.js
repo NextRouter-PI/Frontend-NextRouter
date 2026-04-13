@@ -30,10 +30,20 @@ function logout() {
   state.user = null;
 }
 
+function updatePassword(email, novaSenha) {
+  // Verifica se o email está registrado
+  if (email === state._credentials.email) {
+    state._credentials.senha = novaSenha;
+    return true;
+  }
+  return false;
+}
+
 export function useLoginState() {
   return {
     state,
     login,
-    logout
+    logout,
+    updatePassword
   };
 }
