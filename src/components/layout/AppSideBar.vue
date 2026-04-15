@@ -1,11 +1,19 @@
 <script setup>
 import Logo from "/src-header/Logo.png"
+import { useLoginState } from "@/store/useLoginState";
+
+const { state } = useLoginState();
+
+// Definir as rotas baseado no tipo de usuário
+const getBasePath = () => {
+  return state.tipoUsuario === "motorista" ? "/motorista" : "/usuarios";
+};
 </script>
 
 <template>
   <aside class="sidebar">
 
-    <RouterLink to="/" class="logo">
+    <RouterLink :to="`${getBasePath()}/home`" class="logo">
       <div class="logo-content">
         <img :src="Logo" alt="Logo">
         <h1>NextRouter</h1>
@@ -14,29 +22,29 @@ import Logo from "/src-header/Logo.png"
 
     <nav class="nav">
 
-      <router-link to="/" class="nav-item" title="Home">
+      <router-link :to="`${getBasePath()}/home`" class="nav-item" title="Home">
         <span class="mdi mdi-home"></span>
         <small>Home</small>
       </router-link>
 
-      <router-link to="/user" class="nav-item" title="Usuário">
+      <router-link :to="`${getBasePath()}/user`" class="nav-item" title="Usuário">
         <span class="mdi mdi-account"></span>
         <small>Usuário</small>
       </router-link>
 
-      <router-link to="/transport" class="nav-item" title="Transporte">
+      <router-link :to="`${getBasePath()}/transport`" class="nav-item" title="Transporte">
         <span class="mdi mdi-car"></span>
         <small>Transporte</small>
       </router-link>
 
-      <router-link to="/list" class="nav-item" title="Lista">
+      <router-link :to="`${getBasePath()}/list`" class="nav-item" title="Lista">
         <span class="mdi mdi-format-list-bulleted"></span>
         <small>Lista</small>
       </router-link>
 
     </nav>
 
-    
+
 
   </aside>
 </template>
