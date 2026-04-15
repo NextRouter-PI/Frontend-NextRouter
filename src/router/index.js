@@ -14,50 +14,50 @@ const router = createRouter({
     {
       path: "/usuarios/home",
       name: "usuarios-home",
-      component: () => import("../views/User/UsuariosHomeView.vue"),
+      component: () => import("../views/passageiro-view/PassageiroHomeView.vue"),
       meta: { requiresAuth: true, userType: "passageiro" }
     },
     {
       path: "/usuarios/list",
       name: "usuarios-list",
-      component: () => import("../views/User/UsuariosListView.vue"),
+      component: () => import("../views/passageiro-view/PassageiroListView.vue"),
       meta: { requiresAuth: true, userType: "passageiro" }
     },
     {
       path: "/usuarios/user",
       name: "usuarios-user",
-      component: () => import("../views/User/UsuariosUserView.vue"),
+      component: () => import("../views/passageiro-view/PassageiroUserView.vue"),
       meta: { requiresAuth: true, userType: "passageiro" }
     },
     {
       path: "/usuarios/transport",
       name: "usuarios-transport",
-      component: () => import("../views/User/UsuariosTransportView.vue"),
+      component: () => import("../views/passageiro-view/PassageiroTransportView.vue"),
       meta: { requiresAuth: true, userType: "passageiro" }
     },
     // Rotas para Motoristas
     {
       path: "/motorista/home",
       name: "motorista-home",
-      component: () => import("../views/MotoristaHomeView.vue"),
+      component: () => import("../views/motorista-view/MotoristaHomeView.vue"),
       meta: { requiresAuth: true, userType: "motorista" }
     },
     {
       path: "/motorista/list",
       name: "motorista-list",
-      component: () => import("../views/MotoristaListView.vue"),
+      component: () => import("../views/motorista-view/MotoristaListView.vue"),
       meta: { requiresAuth: true, userType: "motorista" }
     },
     {
       path: "/motorista/user",
       name: "motorista-user",
-      component: () => import("../views/MotoristaUserView.vue"),
+      component: () => import("../views/motorista-view/MotoristaUserView.vue"),
       meta: { requiresAuth: true, userType: "motorista" }
     },
     {
       path: "/motorista/transport",
       name: "motorista-transport",
-      component: () => import("../views/MotoristaTransportView.vue"),
+      component: () => import("../views/motorista-view/MotoristaTransportView.vue"),
       meta: { requiresAuth: true, userType: "motorista" }
     },
     // Rotas de Autenticação
