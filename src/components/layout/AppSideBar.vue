@@ -1,5 +1,5 @@
 <script setup>
-import Logo from "/src-header/Logo.png"
+import Logo from "@/assets/logo.png"
 import { useLoginState } from "@/store/useLoginState";
 
 const { state } = useLoginState();
