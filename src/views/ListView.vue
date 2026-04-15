@@ -1,3 +1,3 @@
 <template>
-    <h1>Lista</h1>
+    <h1>Listaz</h1>
 </template>

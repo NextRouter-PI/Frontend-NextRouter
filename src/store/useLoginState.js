@@ -3,10 +3,12 @@ import { reactive } from "vue";
 const state = reactive({
   logado: false,
   user: null,
+  tipoUsuario: null, // "passageiro" ou "motorista"
 
   _credentials: {
     email: "admin@email.com",
-    senha: "123456"
+    senha: "123456",
+    tipoUsuario: "passageiro" // para testes
   }
 });
 
@@ -17,17 +19,20 @@ function login(email, senha) {
   ) {
     state.logado = true;
     state.user = { email };
+    state.tipoUsuario = state._credentials.tipoUsuario;
     return true;
   }
 
   state.logado = false;
   state.user = null;
+  state.tipoUsuario = null;
   return false;
 }
 
 function logout() {
   state.logado = false;
   state.user = null;
+  state.tipoUsuario = null;
 }
 
 function updatePassword(email, novaSenha) {
