@@ -9,16 +9,18 @@ const senha = ref("");
 const erro = ref("");
 const mostrarSenha = ref(false);
 
-const { login } = useLoginState();
+const { login, state } = useLoginState();
 const router = useRouter();
 
-function handleLogin() {
-  const sucesso = login(email.value, senha.value);
+async function handleLogin() {
+  erro.value = "";
+
+  const sucesso = await login(email.value, senha.value);
 
   if (sucesso) {
     router.push("/");
   } else {
-    erro.value = "Email ou senha inválidos";
+    erro.value = state.error || "Email ou senha inválidos";
   }
 }
 
@@ -56,7 +58,9 @@ function toggleSenha() {
       ></span>
     </div>
 
-    <button @click="handleLogin">Entrar</button>
+    <button @click="handleLogin" :disabled="state.loading">
+      {{ state.loading ? "Carregando..." : "Entrar" }}
+    </button>
 
     <p v-if="erro" class="erro">{{ erro }}</p>
 

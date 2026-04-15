@@ -1,42 +1,36 @@
 import { reactive } from "vue";
+import { login as apiLogin } from "@/api/auth";
 
 const state = reactive({
   logado: false,
   user: null,
-
-  _credentials: {
-    email: "admin@email.com",
-    senha: "123456"
-  }
+  loading: false,
+  error: null,
 });
 
-function login(email, senha) {
-  if (
-    email === state._credentials.email &&
-    senha === state._credentials.senha
-  ) {
-    state.logado = true;
-    state.user = { email };
-    return true;
-  }
+async function login(email, password) {
+  state.loading = true;
+  state.error = null;
 
-  state.logado = false;
-  state.user = null;
-  return false;
+  try {
+    const userData = await apiLogin(email, password);
+    state.logado = true;
+    state.user = userData;
+    return true;
+  } catch (error) {
+    state.logado = false;
+    state.user = null;
+    state.error = error.message;
+    return false;
+  } finally {
+    state.loading = false;
+  }
 }
 
 function logout() {
   state.logado = false;
   state.user = null;
-}
-
-function updatePassword(email, novaSenha) {
-  // Verifica se o email está registrado
-  if (email === state._credentials.email) {
-    state._credentials.senha = novaSenha;
-    return true;
-  }
-  return false;
+  state.error = null;
 }
 
 export function useLoginState() {
@@ -44,6 +38,5 @@ export function useLoginState() {
     state,
     login,
     logout,
-    updatePassword
   };
 }
