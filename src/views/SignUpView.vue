@@ -9,16 +9,24 @@ import { RouterLink } from 'vue-router';
     </div>
 
     <div class="role-select">
-      <RouterLink to="/signup/usuario/cidade" class="role-button">
-        Passageiro
+      <RouterLink to="/register" class="role-button">
+        Criar conta
       </RouterLink>
-      <RouterLink to="/signup/motorista/empresa" class="role-button">
-        Motorista
+      <RouterLink to="/signup/usuario/cidade" class="role-button secondary">
+        Cadastro detalhado (Passageiro)
       </RouterLink>
-      <RouterLink to="/signup/empresa" class="role-button">
-        Empresa
+      <RouterLink to="/signup/motorista/empresa" class="role-button secondary">
+        Cadastro detalhado (Motorista)
+      </RouterLink>
+      <RouterLink to="/signup/empresa" class="role-button secondary">
+        Cadastro detalhado (Empresa)
       </RouterLink>
     </div>
+
+    <p class="login-link">
+      Já tem conta?
+      <RouterLink to="/login">Entrar</RouterLink>
+    </p>
   </div>
 </template>
 
@@ -72,5 +80,26 @@ import { RouterLink } from 'vue-router';
   text-align: center;
   color: #000;
   margin-bottom: 1rem;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #666;
+}
+
+.login-link a {
+  color: var(--primary);
+  font-weight: bold;
+}
+
+.role-button.secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.role-button.secondary:hover {
+  background: rgba(249, 115, 22, 0.1);
 }
 </style>

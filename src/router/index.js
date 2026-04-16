@@ -42,6 +42,12 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: "/register",
+      name: "register",
+      component: () => import("../views/RegisterFormView.vue"),
+      meta: { requiresAuth: false }
+    },
+    {
       path: "/signup/usuario",
       name: "signup-usuario",
       component: () => import("../components/singUp/SingUp-Usuarios.vue"),

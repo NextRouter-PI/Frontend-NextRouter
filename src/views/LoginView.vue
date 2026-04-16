@@ -1,75 +1,159 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { useRouter, RouterLink } from "vue-router";
 import { useLoginState } from "@/store/useLoginState";
-import { useRouter } from "vue-router";
-import { RouterLink } from "vue-router";
+
+const router = useRouter();
 
 const email = ref("");
 const senha = ref("");
 const erro = ref("");
 const mostrarSenha = ref(false);
 
-const { login, state } = useLoginState();
-const router = useRouter();
+const { login, checkAuth, state } =
+  useLoginState();
 
+
+/* =========================
+   AUTO LOGIN
+========================= */
+onMounted(async () => {
+  const autenticado =
+    await checkAuth();
+
+  if (autenticado) {
+    router.push("/");
+  }
+});
+
+
+/* =========================
+   LOGIN
+========================= */
 async function handleLogin() {
   erro.value = "";
 
-  const sucesso = await login(email.value, senha.value);
+  if (!email.value || !senha.value) {
+    erro.value =
+      "Preencha email e senha.";
+    return;
+  }
+
+  const sucesso = await login(
+    email.value,
+    senha.value
+  );
 
   if (sucesso) {
     router.push("/");
   } else {
-    erro.value = state.error || "Email ou senha inválidos";
+    erro.value =
+      state.error ||
+      "Email ou senha inválidos.";
   }
 }
 
+
+/* =========================
+   MOSTRAR SENHA
+========================= */
 function toggleSenha() {
-  mostrarSenha.value = !mostrarSenha.value;
+  mostrarSenha.value =
+    !mostrarSenha.value;
 }
 </script>
 
 <template>
   <div class="login-container">
+    <!-- HEADER -->
     <div class="header">
-  <span class="mdi mdi-map-marker-radius"></span>
-  <h2>Bem vindo ao</h2>
-  <h1><span>NEXT</span>ROUTER</h1>
-</div>
-    <p>Entrar em sua conta:</p>
+      <span
+        class="mdi mdi-map-marker-radius"
+      ></span>
 
-    <div class="input-group">
-      <input v-model="email" required />
-      <label>Nome de usuário</label>
+      <h2>Bem vindo ao</h2>
+
+      <h1>
+        <span>NEXT</span>ROUTER
+      </h1>
     </div>
 
+    <p>Entrar em sua conta:</p>
+
+    <!-- EMAIL -->
+    <div class="input-group">
+      <input
+        v-model="email"
+        type="email"
+        required
+        autocomplete="email"
+      />
+      <label>Email</label>
+    </div>
+
+    <!-- SENHA -->
     <div class="input-group">
       <input
         v-model="senha"
-        :type="mostrarSenha ? 'text' : 'password'"
+        :type="
+          mostrarSenha
+            ? 'text'
+            : 'password'
+        "
         required
+        autocomplete="current-password"
+        @keyup.enter="handleLogin"
       />
+
       <label>Senha</label>
 
       <span
         class="mdi toggle"
-        :class="mostrarSenha ? 'mdi-eye-off' : 'mdi-eye'"
+        :class="
+          mostrarSenha
+            ? 'mdi-eye-off'
+            : 'mdi-eye'
+        "
         @click="toggleSenha"
       ></span>
     </div>
 
-    <button @click="handleLogin" :disabled="state.loading">
-      {{ state.loading ? "Carregando..." : "Entrar" }}
+    <!-- BOTÃO -->
+    <button
+      @click="handleLogin"
+      :disabled="state.loading"
+    >
+      {{
+        state.loading
+          ? "Entrando..."
+          : "Entrar"
+      }}
     </button>
 
-    <p v-if="erro" class="erro">{{ erro }}</p>
-
-    <p>
-      Esqueceu a senha?
-      <RouterLink to="/forgot-password">Clique Aqui</RouterLink>
+    <!-- ERRO -->
+    <p
+      v-if="erro"
+      class="erro"
+    >
+      {{ erro }}
     </p>
 
-    <RouterLink to="/signup" class="secondary">Criar nova conta</RouterLink>
+    <!-- LINKS -->
+    <p>
+      Esqueceu a senha?
+      <RouterLink
+        to="/forgot-password"
+      >
+        Clique Aqui
+      </RouterLink>
+    </p>
+
+    <RouterLink
+      to="/signup"
+      class="secondary"
+    >
+      Criar nova conta
+    </RouterLink>
   </div>
 </template>
 
@@ -83,10 +167,13 @@ function toggleSenha() {
 .login-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+
+  min-height: 100vh;
+  padding: 25px;
+
   background: var(--bg);
-  height: 100vh;
 }
 
 .login-container > * {
@@ -97,8 +184,7 @@ function toggleSenha() {
 .mdi-map-marker-radius {
   font-size: 80px;
   color: var(--primary);
-  margin: 0 auto 0px auto;
-  display: block;
+  margin-bottom: 0;
 }
 
 h1 {
@@ -127,26 +213,33 @@ p {
 
 .input-group {
   position: relative;
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 }
 
 .input-group input {
   width: 100%;
   padding: 12px 10px;
+
   border: none;
-  border-bottom: 2px solid var(--primary);
+  border-bottom: 2px solid
+    var(--primary);
+
   outline: none;
   background: transparent;
+
   color: var(--primary);
   font-size: 14px;
 }
 
 .input-group label {
   position: absolute;
+
   left: 10px;
   top: 12px;
+
   color: #999;
   font-size: 14px;
+
   pointer-events: none;
   transition: 0.3s;
 }
@@ -160,9 +253,12 @@ p {
 
 .toggle {
   position: absolute;
+
   right: 10px;
   top: 50%;
+
   transform: translateY(-50%);
+
   cursor: pointer;
   color: #999;
 }
@@ -176,14 +272,19 @@ button,
   display: inline-flex;
   justify-content: center;
   align-items: center;
+
   width: 100%;
   padding: 10px;
+
   border: none;
   border-radius: 8px;
+
   background: var(--primary);
   color: white;
+
   font-weight: bold;
   cursor: pointer;
+
   transition: 0.2s;
   margin-bottom: 10px;
 }
@@ -192,10 +293,16 @@ button:hover {
   background: var(--primary-hover);
 }
 
+button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .secondary {
   background: transparent;
   color: var(--primary);
-  border: 1px solid var(--primary);
+  border: 1px solid
+    var(--primary);
 }
 
 .secondary:hover {
@@ -216,5 +323,6 @@ a:hover {
 .erro {
   color: var(--error);
   font-size: 14px;
+  font-weight: 500;
 }
 </style>

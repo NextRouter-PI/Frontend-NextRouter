@@ -1,36 +1,26 @@
 <script setup>
 import { useDeviceLayout } from "@/composables/useDeviceLayout";
-import { useLoginState } from "@/store/useLoginState";
 
-import Sidebar from "./components/layout/AppSideBar.vue";
 import AppHeader from "./components/layout/AppHeader.vue";
+import Sidebar from "./components/layout/AppSideBar.vue";
 import AppBottomNavigationBar from "./components/layout/AppBottomNavigationBar.vue";
 
 const { isMobile } = useDeviceLayout();
-const { state } = useLoginState();
 </script>
 
 <template>
   <div class="app-layout">
     <AppHeader />
-    <template v-if="!state.logado">
+
+    <!-- DESKTOP -->
+    <Sidebar v-if="!isMobile" />
+
+    <main class="content">
       <router-view />
-    </template>
+    </main>
 
-    <template v-else>
-      <template v-if="isMobile">
-        <router-view />
-        <AppBottomNavigationBar />
-      </template>
-
-      <template v-else>
-        <Sidebar />
-        <main class="content">
-          <router-view />
-        </main>
-      </template>
-
-    </template>
+    <!-- MOBILE -->
+    <AppBottomNavigationBar v-if="isMobile" />
 
   </div>
 </template>

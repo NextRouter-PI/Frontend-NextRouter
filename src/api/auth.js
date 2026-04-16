@@ -1,18 +1,29 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL =
+  "http://127.0.0.1:8000/api";
 
-export async function login(email, password) {
-  const response = await fetch(`${API_BASE_URL}/autenticacao/login/`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password }),
-  });
+export async function login(
+  email,
+  password
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/auth/login/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    }
+  );
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Email ou senha incorretos.');
-  }
+  const text =
+    await response.text();
 
-  return response.json();
+  console.log(text);
+
+  return JSON.parse(text);
 }
