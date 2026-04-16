@@ -2,14 +2,25 @@
   <div class="profile-container">
     <!-- Header do Perfil -->
     <div class="profile-header">
-      <div class="avatar-circle">
-        <img
-          v-if="profileData.fotoPerfil"
-          :src="profileData.fotoPerfil"
-          alt="Foto de perfil"
-          class="avatar-image"
+      <div class="avatar-edit-wrapper">
+        <div class="avatar-circle">
+          <img
+            v-if="profileData.fotoPerfil"
+            :src="profileData.fotoPerfil"
+            alt="Foto de perfil"
+            class="avatar-image"
+          >
+        </div>
+        <input
+          ref="fileInputRef"
+          type="file"
+          accept="image/*"
+          class="file-input-hidden"
+          @change="atualizarFotoPerfil"
         >
-        <span v-else class="avatar-icon">👤</span>
+        <button class="btn-change-photo" type="button" @click="abrirSeletorFoto">
+          Alterar foto
+        </button>
       </div>
     </div>
 
@@ -95,6 +106,7 @@ import { useLoginState } from "@/store/useLoginState";
 const { state } = useLoginState();
 const mostrarSenha = ref(false);
 const mostrarDropdownEnderecos = ref(false);
+const fileInputRef = ref(null);
 
 // Estado dos dados do perfil (preparado para backend)
 const profileData = reactive({
@@ -132,14 +144,31 @@ const selecionarEndereco = (index) => {
   console.log("Endereço selecionado:", profileData.enderecos[index]);
   // Aqui será integrado com backend para atualizar endereço selecionado
 };
+
+// Funções para editar foto de perfil
+const abrirSeletorFoto = () => {
+  fileInputRef.value?.click();
+};
+
+const atualizarFotoPerfil = (event) => {
+  const arquivo = event.target.files?.[0];
+  if (!arquivo) return;
+
+  profileData.fotoPerfil = URL.createObjectURL(arquivo);
+};
 </script>
 
 <style scoped>
 .profile-container {
-  padding: 20px;
+  padding: 100px 20px 20px;
   max-width: 500px;
   margin: 0 auto;
   min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* Header do Perfil */
@@ -148,6 +177,13 @@ const selecionarEndereco = (index) => {
   justify-content: center;
   margin-bottom: 30px;
   margin-top: 20px;
+}
+
+.avatar-edit-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .avatar-circle {
@@ -175,9 +211,30 @@ const selecionarEndereco = (index) => {
   font-size: 80px;
 }
 
+.file-input-hidden {
+  display: none;
+}
+
+.btn-change-photo {
+  background-color: transparent;
+  border: 1px solid #f48a1d;
+  color: #d3730e;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-change-photo:hover {
+  background-color: rgba(244, 138, 29, 0.1);
+}
+
 /* Informações do Perfil */
 .profile-info {
   width: 100%;
+  max-width: 500px;
 }
 
 .form-group {
@@ -409,10 +466,15 @@ const selecionarEndereco = (index) => {
 
 <style scoped>
 .profile-container {
-  padding: 20px;
+  padding: 100px 20px 20px;
   max-width: 500px;
   margin: 0 auto;
   min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* Header do Perfil */
@@ -451,6 +513,7 @@ const selecionarEndereco = (index) => {
 /* Informações do Perfil */
 .profile-info {
   width: 100%;
+  max-width: 500px;
 }
 
 .form-group {
