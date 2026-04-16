@@ -1,3 +1,4 @@
 <template>
-    <h1>Usuario</h1>
+  <div>
+  </div>
 </template>

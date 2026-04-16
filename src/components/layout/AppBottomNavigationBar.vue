@@ -1,21 +1,32 @@
+<script setup>
+import { useLoginState } from "@/store/useLoginState";
+
+const { state } = useLoginState();
+
+// Definir as rotas baseado no tipo de usuário
+const getBasePath = () => {
+  return state.tipoUsuario === "motorista" ? "/motorista" : "/usuarios";
+};
+</script>
+
 <template>
   <footer class="bottom-nav">
-    <router-link to="/" class="nav-item">
+    <router-link :to="`${getBasePath()}/home`" class="nav-item">
       <span class="mdi mdi-home"></span>
       <small>Home</small>
     </router-link>
 
-    <router-link to="/user" class="nav-item">
+    <router-link :to="`${getBasePath()}/user`" class="nav-item">
       <span class="mdi mdi-account"></span>
       <small>Usuário</small>
     </router-link>
 
-    <router-link to="/transport" class="nav-item">
+    <router-link :to="`${getBasePath()}/transport`" class="nav-item">
       <span class="mdi mdi-car"></span>
       <small>Transporte</small>
     </router-link>
 
-    <router-link to="/list" class="nav-item">
+    <router-link :to="`${getBasePath()}/list`" class="nav-item">
       <span class="mdi mdi-format-list-bulleted"></span>
       <small>Lista</small>
     </router-link>
