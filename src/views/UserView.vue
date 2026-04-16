@@ -1,3 +1,17 @@
+<script setup>
+import MotoristaUser from "@/components/motorista/MotoristaUser.vue";
+import PassageiroUserMotoristaUser from "@/components/passageiro/PassageiroUser.vue";
+import { useLoginState } from "@/store/useLoginState";
+const { state } = useLoginState();
+</script>
+
 <template>
-    <h1>Usuario</h1>
+    <div class="UserMotoristaUser-view" v-if="state.tipo === 'passageiro'">
+        <PassageiroUserMotoristaUser />
+    </div>
+    <div v-else>
+        <MotoristaUser />
+    </div>
 </template>
+
+
