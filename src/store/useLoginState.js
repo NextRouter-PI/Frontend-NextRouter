@@ -1,80 +1,59 @@
+// src/store/useLoginState.js
 import { reactive } from "vue";
+import { useRouter } from "vue-router";
+
+const API_URL = "http://127.0.0.1:8000/api";
 
 const state = reactive({
   logado: false,
   user: null,
-  tipoUsuario: null, // "passageiro" ou "motorista"
-
-  _credentials: {
-    passageiro: {
-      email: "admin@email.com",
-      senha: "123456",
-      tipoUsuario: "passageiro"
-    },
-    motorista: {
-      email: "motorista@gmail.com",
-      senha: "123456",
-      tipoUsuario: "motorista"
-    }
-  }
+  loading: false,
+  error: null,
 });
 
-function login(email, senha) {
-  // Verifica se é o passageiro
-  if (
-    email === state._credentials.passageiro.email &&
-    senha === state._credentials.passageiro.senha
-  ) {
-    state.logado = true;
-    state.user = { email };
-    state.tipoUsuario = state._credentials.passageiro.tipoUsuario;
+/* =========================
+   LOGIN BACKEND
     return true;
-  }
+  } catch (error) {
+    state.logado = false;
+    state.user = null;
+    state.error =
+      error.message;
 
-  // Verifica se é o motorista
-  if (
-    email === state._credentials.motorista.email &&
-    senha === state._credentials.motorista.senha
-  ) {
-    state.logado = true;
-    state.user = { email };
-    state.tipoUsuario = state._credentials.motorista.tipoUsuario;
-    return true;
+    return false;
+  } finally {
+    state.loading = false;
   }
-
-  state.logado = false;
-  state.user = null;
-  state.tipoUsuario = null;
-  return false;
 }
 
+/* =========================
+   VERIFICAR LOGIN
+}
+
+/* =========================
+   LOGOUT
+========================= */
 function logout() {
+  localStorage.removeItem(
+    "access_token"
+  );
+
+  localStorage.removeItem(
+    "refresh_token"
+  );
+
   state.logado = false;
   state.user = null;
   state.tipoUsuario = null;
 }
 
-function updatePassword(email, novaSenha) {
-  // Verifica se o email é do passageiro
-  if (email === state._credentials.passageiro.email) {
-    state._credentials.passageiro.senha = novaSenha;
-    return true;
-  }
-
-  // Verifica se o email é do motorista
-  if (email === state._credentials.motorista.email) {
-    state._credentials.motorista.senha = novaSenha;
-    return true;
-  }
-
-  return false;
-}
-
+/* =========================
+   EXPORT
 export function useLoginState() {
   return {
     state,
     login,
     logout,
-    updatePassword
+    checkAuth,
   };
 }
