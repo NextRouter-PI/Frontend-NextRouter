@@ -1,3 +1,17 @@
+<script setup>
+import MotoristaList from "@/components/motorista/MotoristaList.vue";
+import PassageiroList from "@/components/passageiro/PassageiroList.vue";
+import { useLoginState } from "@/store/useLoginState";
+const { state } = useLoginState();
+</script>
+
 <template>
-    <h1>Listaz</h1>
+    <div class="List-view" v-if="state.tipo === 'passageiro'">
+        <PassageiroList />
+    </div>
+    <div v-else>
+        <MotoristaList />
+    </div>
 </template>
+
+

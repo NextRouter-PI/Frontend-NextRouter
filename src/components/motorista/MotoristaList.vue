@@ -1,13 +1,11 @@
 <template>
   <div class="usuarios-list-container">
-    <!-- Formulário do Questionário -->
     <div v-if="!questionarioState.state.submitted && questionarioState.canAnswerToday()" class="questionario-form">
       <div class="questionario-header">
         <h2>Questionário</h2>
         <p class="data-proxima">{{ formatarDataProxima() }}</p>
       </div>
 
-      <!-- Primeira Pergunta -->
       <div class="pergunta-container">
         <div class="pergunta-titulo">
           Vou com o transporte?
@@ -30,10 +28,8 @@
         </div>
       </div>
 
-      <!-- Linha Separadora -->
       <div class="separator-line"></div>
 
-      <!-- Segunda Pergunta -->
       <div class="pergunta-container">
         <div class="pergunta-titulo">Voltarei com o transporte?</div>
 
@@ -53,7 +49,6 @@
         </div>
       </div>
 
-      <!-- Terceira Pergunta (Condicionada) -->
       <div v-if="questionarioState.state.responses.transporteVolta === 'sim'" class="pergunta-container">
         <div class="separator-line"></div>
 
@@ -75,7 +70,6 @@
         </div>
       </div>
 
-      <!-- Botão Enviar -->
       <button
         @click="enviarFormulario"
         :disabled="!podeEnviar"
@@ -85,7 +79,6 @@
       </button>
     </div>
 
-    <!-- Tela de Sucesso -->
     <div v-else-if="questionarioState.state.submitted" class="sucesso-container">
       <div class="icone-certinho">✓</div>
       <p class="mensagem-sucesso">Aguarde até a próxima enquete</p>
@@ -99,7 +92,6 @@ import { useQuestionarioState } from "@/store/useQuestionarioState";
 
 const questionarioState = useQuestionarioState();
 
-// Formatar data do próximo dia (DD/MM/YYYY)
 const formatarDataProxima = () => {
   const amanha = new Date();
   amanha.setDate(amanha.getDate() + 1);
@@ -111,7 +103,6 @@ const formatarDataProxima = () => {
   return `${dia}/${mes}/${ano}`;
 };
 
-// Formatar data de hoje (DD/MM)
 const formatarData = () => {
   const hoje = new Date();
 
@@ -121,7 +112,6 @@ const formatarData = () => {
   return `${dia}/${mes}`;
 };
 
-// Verificar se pode enviar (duas primeiras perguntas respondidas)
 const podeEnviar = computed(() => {
   return (
     questionarioState.state.responses.transporteIda &&
@@ -129,17 +119,13 @@ const podeEnviar = computed(() => {
   );
 });
 
-// Função para setar a resposta
 const setResponse = (field, value) => {
   questionarioState.setResponse(field, value);
 };
 
-// Função para enviar o formulário
 const enviarFormulario = () => {
   if (questionarioState.submitForm()) {
-    // Aqui você pode adicionar a chamada ao backend para salvar as respostas
     console.log("Respostas enviadas:", questionarioState.state.responses);
-    // Você pode fazer uma requisição ao backend aqui
   }
 };
 </script>
@@ -258,7 +244,6 @@ const enviarFormulario = () => {
   opacity: 0.6;
 }
 
-/* Tela de Sucesso */
 .sucesso-container {
   display: flex;
   flex-direction: column;
