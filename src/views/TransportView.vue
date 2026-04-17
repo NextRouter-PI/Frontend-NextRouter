@@ -9,8 +9,11 @@ const { state } = useLoginState();
     <div class="Transport-view" v-if="state.tipo === 'passageiro'">
         <PassageiroTransport />
     </div>
-    <div v-else>
+    <div v-else-if="state.tipo === 'motorista'">
         <MotoristaTransport />
+    </div>
+    <div v-else>
+        <p>Empresa.</p>
     </div>
 </template>
 

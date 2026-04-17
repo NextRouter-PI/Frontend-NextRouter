@@ -13,10 +13,6 @@ const mostrarSenha = ref(false);
 const { login, checkAuth, state } =
   useLoginState();
 
-
-/* =========================
-   AUTO LOGIN
-========================= */
 onMounted(async () => {
   const autenticado =
     await checkAuth();
@@ -26,10 +22,6 @@ onMounted(async () => {
   }
 });
 
-
-/* =========================
-   LOGIN
-========================= */
 async function handleLogin() {
   erro.value = "";
 
@@ -53,10 +45,6 @@ async function handleLogin() {
   }
 }
 
-
-/* =========================
-   MOSTRAR SENHA
-========================= */
 function toggleSenha() {
   mostrarSenha.value =
     !mostrarSenha.value;
@@ -65,7 +53,6 @@ function toggleSenha() {
 
 <template>
   <div class="login-container">
-    <!-- HEADER -->
     <div class="header">
       <span
         class="mdi mdi-map-marker-radius"
@@ -80,7 +67,6 @@ function toggleSenha() {
 
     <p>Entrar em sua conta:</p>
 
-    <!-- EMAIL -->
     <div class="input-group">
       <input
         v-model="email"
@@ -91,7 +77,6 @@ function toggleSenha() {
       <label>Email</label>
     </div>
 
-    <!-- SENHA -->
     <div class="input-group">
       <input
         v-model="senha"
@@ -118,7 +103,6 @@ function toggleSenha() {
       ></span>
     </div>
 
-    <!-- BOTÃO -->
     <button
       @click="handleLogin"
       :disabled="state.loading"
@@ -130,7 +114,6 @@ function toggleSenha() {
       }}
     </button>
 
-    <!-- ERRO -->
     <p
       v-if="erro"
       class="erro"
@@ -138,7 +121,6 @@ function toggleSenha() {
       {{ erro }}
     </p>
 
-    <!-- LINKS -->
     <p>
       Esqueceu a senha?
       <RouterLink
