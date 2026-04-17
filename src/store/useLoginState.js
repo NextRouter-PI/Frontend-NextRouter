@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import api from "@/api/auth";
+import api from "@/api/api";
 
 const state = reactive({
   logado: false,
@@ -66,9 +66,6 @@ async function login(email, password, tipo) {
   }
 }
 
-/* =========================
-   CHECK AUTH
-========================= */
 async function checkAuth() {
   const token =
     localStorage.getItem("access_token");
@@ -103,9 +100,6 @@ async function checkAuth() {
   }
 }
 
-/* =========================
-   LOGOUT
-========================= */
 function logout() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
@@ -114,9 +108,6 @@ function logout() {
   state.user = null;
 }
 
-/* =========================
-   EXPORT
-========================= */
 export function useLoginState() {
   return {
     state,

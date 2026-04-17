@@ -1,6 +1,5 @@
 <template>
   <div class="profile-container">
-    <!-- Header do Perfil -->
     <div class="profile-header">
       <div class="avatar-edit-wrapper">
         <div class="avatar-circle">
@@ -24,9 +23,7 @@
       </div>
     </div>
 
-    <!-- Informações do Perfil -->
     <div class="profile-info">
-      <!-- Campo Nome (Não Alterável) -->
       <div class="form-group">
         <label>Nome</label>
         <input
@@ -37,7 +34,6 @@
         >
       </div>
 
-      <!-- Campo Senha (Não Alterável - Apenas Visualizar) -->
       <div class="form-group">
         <label>Senha</label>
         <div class="password-wrapper">
@@ -55,7 +51,6 @@
         </div>
       </div>
 
-      <!-- Seção Meus Endereços -->
       <div class="endereco-section">
         <div class="address-label">
           <span>Meus Endereços</span>
@@ -64,8 +59,6 @@
             <span class="icon-btn mdi mdi-plus" @click="adicionarEndereco" title="Adicionar novo endereço"></span>
           </div>
         </div>
-
-        <!-- Endereço Selecionado (Clicável) -->
         <div
           class="endereco-item endereco-selecionado"
           @click="abrirDropdownEnderecos"
@@ -76,7 +69,6 @@
           <span class="dropdown-icon mdi mdi-chevron-down" :class="{ 'ativo': mostrarDropdownEnderecos }"></span>
         </div>
 
-        <!-- Dropdown de Endereços -->
         <transition name="slide">
           <div v-if="mostrarDropdownEnderecos" class="endereco-dropdown">
             <div
@@ -108,44 +100,35 @@ const mostrarSenha = ref(false);
 const mostrarDropdownEnderecos = ref(false);
 const fileInputRef = ref(null);
 
-// Estado dos dados do perfil (preparado para backend)
 const profileData = reactive({
-  fotoPerfil: null, // URL da foto do backend
-  nome: state.user?.email || "Usuário", // Nome do usuário do cadastro
-  senha: "••••••••", // Senha do usuário (apenas visualizar)
+  fotoPerfil: null,
+  nome: state.user?.email || "Usuário", 
+  senha: "••••••••", 
   enderecos: [
     "Rua Principal, 123 - São Paulo, SP",
     "Avenida Secundária, 456 - Rio de Janeiro, RJ",
-  ], // Lista de endereços do backend
-  endereco_selecionado: 0, // Índice do endereço selecionado
+  ],
+  endereco_selecionado: 0, 
 });
 
-// Função para abrir/fechar dropdown de endereços
 const abrirDropdownEnderecos = () => {
   mostrarDropdownEnderecos.value = !mostrarDropdownEnderecos.value;
 };
 
-// Função para editar endereço
 const editarEndereco = () => {
   console.log("Editar endereço:", profileData.enderecos[profileData.endereco_selecionado]);
-  // Aqui será integrado com backend para editar
 };
 
-// Função para adicionar novo endereço
 const adicionarEndereco = () => {
   console.log("Adicionar novo endereço");
-  // Aqui será integrado com backend para adicionar
 };
 
-// Função para selecionar um endereço
 const selecionarEndereco = (index) => {
   profileData.endereco_selecionado = index;
   mostrarDropdownEnderecos.value = false;
   console.log("Endereço selecionado:", profileData.enderecos[index]);
-  // Aqui será integrado com backend para atualizar endereço selecionado
 };
 
-// Funções para editar foto de perfil
 const abrirSeletorFoto = () => {
   fileInputRef.value?.click();
 };
@@ -171,7 +154,6 @@ const atualizarFotoPerfil = (event) => {
   align-items: center;
 }
 
-/* Header do Perfil */
 .profile-header {
   display: flex;
   justify-content: center;
@@ -231,7 +213,6 @@ const atualizarFotoPerfil = (event) => {
   background-color: rgba(244, 138, 29, 0.1);
 }
 
-/* Informações do Perfil */
 .profile-info {
   width: 100%;
   max-width: 500px;
@@ -271,7 +252,6 @@ const atualizarFotoPerfil = (event) => {
   cursor: not-allowed;
 }
 
-/* Password Wrapper */
 .password-wrapper {
   position: relative;
   display: flex;
@@ -296,7 +276,6 @@ const atualizarFotoPerfil = (event) => {
   color: #d3730e;
 }
 
-/* Seção de Endereços */
 .endereco-section {
   margin-top: 30px;
   border-top: 2px solid #f48a1d;
@@ -332,7 +311,6 @@ const atualizarFotoPerfil = (event) => {
   color: #d3730e;
 }
 
-/* Endereço Selecionado (Clicável) */
 .endereco-selecionado {
   display: flex;
   align-items: center;
@@ -382,7 +360,6 @@ const atualizarFotoPerfil = (event) => {
   transform: rotate(180deg);
 }
 
-/* Dropdown de Endereços */
 .endereco-dropdown {
   position: absolute;
   top: 100%;
@@ -427,7 +404,6 @@ const atualizarFotoPerfil = (event) => {
   margin-left: 12px;
 }
 
-/* Botão de Configurações */
 .btn-settings {
   background-color: #d3730e;
   color: white;
@@ -453,7 +429,6 @@ const atualizarFotoPerfil = (event) => {
   transform: translateY(0);
 }
 
-/* Transição do Dropdown */
 .slide-enter-active, .slide-leave-active {
   transition: all 0.3s ease;
 }
@@ -477,7 +452,6 @@ const atualizarFotoPerfil = (event) => {
   align-items: center;
 }
 
-/* Header do Perfil */
 .profile-header {
   display: flex;
   justify-content: center;
@@ -510,7 +484,6 @@ const atualizarFotoPerfil = (event) => {
   font-size: 80px;
 }
 
-/* Informações do Perfil */
 .profile-info {
   width: 100%;
   max-width: 500px;
@@ -550,7 +523,6 @@ const atualizarFotoPerfil = (event) => {
   cursor: not-allowed;
 }
 
-/* Password Wrapper */
 .password-wrapper {
   position: relative;
   display: flex;
@@ -575,7 +547,6 @@ const atualizarFotoPerfil = (event) => {
   color: #d3730e;
 }
 
-/* Seção de Endereços */
 .endereco-section {
   margin-top: 30px;
   border-top: 2px solid #f48a1d;
@@ -610,7 +581,6 @@ const atualizarFotoPerfil = (event) => {
   color: #d3730e;
 }
 
-/* Lista de Endereços */
 .endereco-list {
   display: flex;
   flex-direction: column;
@@ -658,7 +628,6 @@ const atualizarFotoPerfil = (event) => {
   margin-left: 12px;
 }
 
-/* Botão de Configurações */
 .btn-settings {
   background-color: #d3730e;
   color: white;

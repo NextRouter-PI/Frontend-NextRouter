@@ -20,7 +20,7 @@ const { state } = useLoginState();
       <router-view />
     </main>
 
-    <AppBottomNavigationBar v-if="isMobile" />
+    <AppBottomNavigationBar v-if="isMobile && state.logado" />
 
   </div>
 </template>
