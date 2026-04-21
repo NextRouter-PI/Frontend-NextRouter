@@ -1,171 +1,177 @@
 <script setup>
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { useRegisterState } from '@/store/useRegisterState';
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useRegisterState } from '@/store/useRegisterState'
 
-const router = useRouter();
-const registerState = useRegisterState();
-
-const form = ref({
-  nomeEmpresa: '',
-  email: '',
-  telefone: '',
-  cidade: '',
-  endereco: '',
-  cnpj: ''
-});
+const router = useRouter()
+const registerState = useRegisterState()
 
 const arquivos = reactive({
   contratoSocial: null,
   licencaOperacao: null,
-  certidoesNegativas: null
-});
+  certidoesNegativas: null,
+})
 
-const arquivosNomes = reactive({
-  contratoSocial: 'Nenhum arquivo selecionado',
-  licencaOperacao: 'Nenhum arquivo selecionado',
-  certidoesNegativas: 'Nenhum arquivo selecionado'
-});
-
-const loading = ref(false);
-const errorMessage = ref('');
+const loading = ref(false)
+const errorMessage = ref('')
 
 const handleFileChange = (event, tipo) => {
-  const file = event.target.files && event.target.files[0];
+  const file = event.target.files && event.target.files[0]
   if (file) {
-    arquivos[tipo] = file;
-    arquivosNomes[tipo] = file.name;
+    arquivos[tipo] = file
   } else {
-    arquivos[tipo] = null;
-    arquivosNomes[tipo] = 'Nenhum arquivo selecionado';
+    arquivos[tipo] = null
   }
-};
+}
 
-const handleSubmit = async () => {
-  errorMessage.value = '';
-  
-  if (!form.value.nomeEmpresa || form.value.nomeEmpresa.trim() === '') {
-    errorMessage.value = 'Nome da empresa é obrigatório';
-    return;
-  }
-  
-  if (!form.value.email || form.value.email.trim() === '') {
-    errorMessage.value = 'Email é obrigatório';
-    return;
-  }
-  
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(form.value.email)) {
-    errorMessage.value = 'Email inválido';
-    return;
-  }
-  
-  if (!form.value.telefone || form.value.telefone.trim() === '') {
-    errorMessage.value = 'Telefone é obrigatório';
-    return;
-  }
-  
-  if (!form.value.cnpj || form.value.cnpj.trim() === '') {
-    errorMessage.value = 'CNPJ é obrigatório';
-    return;
-  }
-  
-  const cnpjLimpo = form.value.cnpj.replace(/[^\d]/g, '');
-  if (cnpjLimpo.length !== 14) {
-    errorMessage.value = 'CNPJ inválido';
-    return;
-  }
-  
-  if (!arquivos.contratoSocial) {
-    errorMessage.value = 'Contrato Social é obrigatório';
-    return;
-  }
-  
-  if (!arquivos.licencaOperacao) {
-    errorMessage.value = 'Licença de Operação é obrigatória';
-    return;
-  }
-  
-  if (!arquivos.certidoesNegativas) {
-    errorMessage.value = 'Certidões Negativas são obrigatórias';
-    return;
-  }
-  
-  loading.value = true;
-  
+const handleSubmit = async (event) => {
+  const formElement = event.target
+  const form = new FormData(formElement)
+  errorMessage.value = ''
+
+  // Pega os dados de dentro do formulário
+  const company = form.get('company')?.trim()
+  const email = form.get('email')?.trim()
+  const phone = form.get('phone')?.replace(/\D/g, '') // Limpa o formato do telefone também
+  const cnpj = form.get('cnpj')?.replace(/\D/g, '') // Limpa o formato do cnpj também
+
+  if (!company) return (errorMessage.value = 'Nome da empresa é obrigatório')
+  if (!email) return (errorMessage.value = 'Email é obrigatório')
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) return (errorMessage.value = 'Email inválido')
+
+  if (!phone || phone.length < 10) return (errorMessage.value = 'Telefone inválido')
+  if (cnpj.length !== 14) return (errorMessage.value = 'CNPJ inválido')
+
+  const file1 = form.get('articles_of_association_document')
+  const file2 = form.get('state_operating_license_document')
+  const file3 = form.get('certificate_of_good_standing_document')
+
+  if (!file1 || file1.size === 0) return (errorMessage.value = 'Contrato Social é obrigatório')
+  if (!file2 || file2.size === 0) return (errorMessage.value = 'Licença de Operação é obrigatória')
+  if (!file3 || file3.size === 0)
+    return (errorMessage.value = 'Certidões Negativas são obrigatórias')
+
+  loading.value = true
+
   try {
-    const userData = {
-      nome: form.value.nomeEmpresa.trim(),
-      email: form.value.email.trim().toLowerCase(),
-      telefone: form.value.telefone.trim(),
-      tipo: 'empresa',
-      endereco: form.value.endereco?.trim() || '',
-      cidade: form.value.cidade?.trim() || '',
-      cnpj: form.value.cnpj.trim(),
-    };
-    sessionStorage.setItem('tempRegisterData', JSON.stringify({
-      ...userData,
-      documentos: {
-        contratoSocial: arquivosNomes.contratoSocial,
-        licencaOperacao: arquivosNomes.licencaOperacao,
-        certidoesNegativas: arquivosNomes.certidoesNegativas
-      }
-    }));
-    
+    const finalForm = new FormData()
+
+    finalForm.append('trade_name', company)
+    finalForm.append('company_email', email)
+    finalForm.append('contact_phone', phone)
+    finalForm.append('company_cnpj', cnpj)
+    finalForm.append('business_address', `${form.get('address')}, ${form.get('city')}`)
+    finalForm.append('articles_of_association_document', file1)
+    finalForm.append('state_operating_license_document', file2)
+    finalForm.append('certificate_of_good_standing_document', file3)
+    finalForm.append('person_responsible_request', 'Responsável') // ADICIONAR CAMPO DE NOME RESPONSÁVEL PELA SOLICITAÇÃO
+
+    const response = await fetch('http://127.0.0.1:19003/api/company-registration-requests/', {
+      method: 'POST',
+      body: finalForm ,
+    }) // ADICIONAR URL VIA VARIÁVEL DE AMBIENTE
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Erro na resposta do servidor')
+    }
+
+    // Redirecionamento
     router.push({
-      path: '/signup/criar-senha',
-      query: { 
-        tipo: 'empresa', 
-        email: form.value.email.trim().toLowerCase(),
-        nome: form.value.nomeEmpresa.trim()
-      }
-    });
-    
+      path: '/',
+    })
   } catch (error) {
-    console.error('Erro no cadastro:', error);
-    errorMessage.value = error.message || 'Erro ao processar cadastro';
+    console.error('Erro no cadastro:', error)
+    errorMessage.value = error.message || 'Erro ao conectar com o servidor'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 const limparErro = () => {
-  errorMessage.value = '';
-};
+  errorMessage.value = ''
+}
+
+/************
+
+  Formatar CNPJ (a cada vez que qualquer tecla é digitada no input)
+
+*************/
 
 const formatarCNPJ = (event) => {
-  let value = event.target.value.replace(/[^\d]/g, '');
-  
-  if (value.length <= 2) {
-    value = value.replace(/^(\d{0,2})/, '$1');
-  } else if (value.length <= 5) {
-    value = value.replace(/^(\d{2})(\d{0,3})/, '$1.$2');
-  } else if (value.length <= 8) {
-    value = value.replace(/^(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
-  } else if (value.length <= 12) {
-    value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
-  } else {
-    value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
+  // Cria uma variável que acessa a tag (e todos os seus atributos) que sofreu o evento input
+  const input = event.target
+
+  // Remove tudo que não é dígito do valor do input.
+  // O valor length dessa string será 0 se o usuário digitar algo que não seja número,
+  // ignorando a cadeia de condições em if e armazenando '' (não aparecendo no input).
+  // O que significa que nada além de números conseguem ser postos no input.
+  let value = input.value.replace(/\D/g, '')
+
+  // Limita a 14 dígitos (tamanho padrão do CNPJ limpo)
+  value = value.substring(0, 14)
+
+  // Aplica a formatação progressivamente conforme o usuário digita
+  if (value.length > 2) {
+    value = value.slice(0, 2) + '.' + value.slice(2)
   }
-  
-  form.value.cnpj = value;
-};
+  if (value.length > 6) {
+    value = value.slice(0, 6) + '.' + value.slice(6)
+  }
+  if (value.length > 10) {
+    value = value.slice(0, 10) + '/' + value.slice(10)
+  }
+  if (value.length > 15) {
+    value = value.slice(0, 15) + '-' + value.slice(15)
+  }
+
+  // Atualiza a visualização do valor
+  input.value = value
+}
+
+/****************************
+
+  Formatar Número de Telefone (a cada vez que qualquer tecla é digitada no input)
+
+*****************************/
 
 const formatarTelefone = (event) => {
-  let value = event.target.value.replace(/[^\d]/g, '');
-  
-  if (value.length <= 2) {
-    value = value.replace(/^(\d{0,2})/, '($1');
-  } else if (value.length <= 6) {
-    value = value.replace(/^(\d{2})(\d{0,4})/, '($1) $2');
-  } else if (value.length <= 10) {
-    value = value.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-  } else {
-    value = value.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  // Cria uma variável que acessa a tag (e todos os seus atributos) que sofreu o evento input
+  const input = event.target
+
+  // Remove tudo que não é dígito do valor do input.
+  // O valor length dessa string será 0 se o usuário digitar algo que não seja número,
+  // ignorando a cadeia de condições em if e armazenando '' (não aparecendo no input).
+  // O que significa que nada além de números conseguem ser postos no input.
+  let value = input.value.replace(/\D/g, '')
+
+  // Limita a 11 dígitos (DDD + 9 números)
+  value = value.substring(0, 11)
+
+  // Cadeia de condições em if que aplica a formatação
+  // Adiciona parêntesis a strings com mais de 1 dígito
+  if (value.length > 0) {
+    value = '(' + value
   }
-  
-  form.value.telefone = value;
-};
+
+  // Corta a string até o 3° dígito,
+  // adiciona o parêntesis e um espaço e concatena com o resto da string a partir do 4° digito
+  if (value.length > 3) {
+    value = value.slice(0, 3) + ') ' + value.slice(3)
+  }
+
+  if (value.length > 9) {
+    // Se tiver 11 dígitos, move o hífen para o formato celular (9 dígitos)
+    // Caso contrário, mantém o formato fixo (8 dígitos)
+    const posicaoHifen = value.length === 15 ? 10 : 9
+    value = value.slice(0, posicaoHifen) + '-' + value.slice(posicaoHifen)
+  }
+
+  // Atualiza a visualização do valor
+  input.value = value
+}
 </script>
 
 <template>
@@ -175,7 +181,7 @@ const formatarTelefone = (event) => {
       <h2>Bem vindo</h2>
       <h1><span>EMPRESA</span></h1>
     </div>
-    
+
     <div v-if="registerState.state.success" class="success-message">
       <span class="mdi mdi-check-circle-circle"></span>
       <p class="success-title">Cadastro enviado com sucesso!</p>
@@ -185,17 +191,16 @@ const formatarTelefone = (event) => {
         <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
       </div>
     </div>
-    
-    <form v-else class="signup-form" @submit.prevent="handleSubmit">
+
+    <form v-else class="signup-form" @submit.prevent="handleSubmit($event)">
       <div class="field-group">
         <label for="nomeEmpresa">Nome da empresa *</label>
         <input
+          name="company"
           id="nomeEmpresa"
           type="text"
-          v-model="form.nomeEmpresa"
           placeholder="Digite o nome da empresa"
           :disabled="loading || registerState.state.loading"
-          required
           @input="limparErro"
         />
       </div>
@@ -203,12 +208,11 @@ const formatarTelefone = (event) => {
       <div class="field-group">
         <label for="email">Email *</label>
         <input
+          name="email"
           id="email"
           type="email"
-          v-model="form.email"
           placeholder="contato@empresa.com"
           :disabled="loading || registerState.state.loading"
-          required
           @input="limparErro"
         />
       </div>
@@ -216,13 +220,12 @@ const formatarTelefone = (event) => {
       <div class="field-group">
         <label for="telefone">Telefone *</label>
         <input
+          name="phone"
           id="telefone"
           type="tel"
-          v-model="form.telefone"
           placeholder="(00) 90000-0000"
           maxlength="16"
           :disabled="loading || registerState.state.loading"
-          required
           @input="formatarTelefone"
         />
       </div>
@@ -230,13 +233,12 @@ const formatarTelefone = (event) => {
       <div class="field-group">
         <label for="cnpj">CNPJ *</label>
         <input
+          name="cnpj"
           id="cnpj"
           type="text"
-          v-model="form.cnpj"
           placeholder="00.000.000/0000-00"
           maxlength="18"
           :disabled="loading || registerState.state.loading"
-          required
           @input="formatarCNPJ"
         />
       </div>
@@ -244,9 +246,9 @@ const formatarTelefone = (event) => {
       <div class="field-group">
         <label for="cidade">Cidade</label>
         <input
+          name="city"
           id="cidade"
           type="text"
-          v-model="form.cidade"
           placeholder="Digite a cidade"
           :disabled="loading || registerState.state.loading"
           @input="limparErro"
@@ -256,9 +258,9 @@ const formatarTelefone = (event) => {
       <div class="field-group">
         <label for="endereco">Endereço</label>
         <input
+          name="address"
           id="endereco"
           type="text"
-          v-model="form.endereco"
           placeholder="Rua, número, bairro"
           :disabled="loading || registerState.state.loading"
           @input="limparErro"
@@ -274,17 +276,18 @@ const formatarTelefone = (event) => {
         <div class="upload-controls">
           <div class="file-display" :class="{ 'has-file': arquivos.contratoSocial }">
             <span class="mdi" :class="arquivos.contratoSocial ? 'mdi-file-pdf' : 'mdi-file'"></span>
-            {{ arquivosNomes.contratoSocial }}
+            {{ arquivos.contratoSocial?.name || 'Nenhum arquivo selecionado' }}
           </div>
-          <button 
-            type="button" 
-            class="btn-upload" 
-            @click="$refs.contratoSocialInput.click()" 
+          <button
+            type="button"
+            class="btn-upload"
+            @click="$refs.contratoSocialInput.click()"
             :disabled="loading || registerState.state.loading"
           >
             <span class="mdi mdi-folder-open"></span> Selecionar
           </button>
           <input
+            name="articles_of_association_document"
             ref="contratoSocialInput"
             type="file"
             accept=".pdf,.jpg,.jpeg,.png"
@@ -300,18 +303,22 @@ const formatarTelefone = (event) => {
         <label class="upload-label">Licença de Operação Estadual *</label>
         <div class="upload-controls">
           <div class="file-display" :class="{ 'has-file': arquivos.licencaOperacao }">
-            <span class="mdi" :class="arquivos.licencaOperacao ? 'mdi-file-pdf' : 'mdi-file'"></span>
-            {{ arquivosNomes.licencaOperacao }}
+            <span
+              class="mdi"
+              :class="arquivos.licencaOperacao ? 'mdi-file-pdf' : 'mdi-file'"
+            ></span>
+            {{ arquivos.licencaOperacao?.name || 'Nenhum arquivo selecionado' }}
           </div>
-          <button 
-            type="button" 
-            class="btn-upload" 
-            @click="$refs.licencaOperacaoInput.click()" 
+          <button
+            type="button"
+            class="btn-upload"
+            @click="$refs.licencaOperacaoInput.click()"
             :disabled="loading || registerState.state.loading"
           >
             <span class="mdi mdi-folder-open"></span> Selecionar
           </button>
           <input
+            name="state_operating_license_document"
             ref="licencaOperacaoInput"
             type="file"
             accept=".pdf,.jpg,.jpeg,.png"
@@ -327,18 +334,22 @@ const formatarTelefone = (event) => {
         <label class="upload-label">Certidões Negativas *</label>
         <div class="upload-controls">
           <div class="file-display" :class="{ 'has-file': arquivos.certidoesNegativas }">
-            <span class="mdi" :class="arquivos.certidoesNegativas ? 'mdi-file-pdf' : 'mdi-file'"></span>
-            {{ arquivosNomes.certidoesNegativas }}
+            <span
+              class="mdi"
+              :class="arquivos.certidoesNegativas ? 'mdi-file-pdf' : 'mdi-file'"
+            ></span>
+            {{ arquivos.certidoesNegativas?.name || 'Nenhum arquivo selecionado' }}
           </div>
-          <button 
-            type="button" 
-            class="btn-upload" 
-            @click="$refs.certidoesNegativasInput.click()" 
+          <button
+            type="button"
+            class="btn-upload"
+            @click="$refs.certidoesNegativasInput.click()"
             :disabled="loading || registerState.state.loading"
           >
             <span class="mdi mdi-folder-open"></span> Selecionar
           </button>
           <input
+            name="certificate_of_good_standing_document"
             ref="certidoesNegativasInput"
             type="file"
             accept=".pdf,.jpg,.jpeg,.png"
@@ -352,7 +363,10 @@ const formatarTelefone = (event) => {
 
       <div class="info-box">
         <span class="mdi mdi-information-outline"></span>
-        <p>Os documentos enviados serão analisados pela nossa equipe. O processo pode levar até 48 horas úteis.</p>
+        <p>
+          Os documentos enviados serão analisados pela nossa equipe. O processo pode levar até 48
+          horas úteis.
+        </p>
       </div>
 
       <p v-if="errorMessage" class="error-message">
@@ -364,7 +378,7 @@ const formatarTelefone = (event) => {
 
       <button type="submit" class="btn-submit" :disabled="loading || registerState.state.loading">
         <span v-if="loading || registerState.state.loading" class="mdi mdi-loading mdi-spin"></span>
-        {{ loading || registerState.state.loading ? "Enviando cadastro..." : "Enviar cadastro" }}
+        {{ loading || registerState.state.loading ? 'Enviando cadastro...' : 'Enviar cadastro' }}
       </button>
     </form>
   </section>
@@ -655,8 +669,12 @@ const formatarTelefone = (event) => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 640px) {
@@ -664,20 +682,20 @@ const formatarTelefone = (event) => {
     margin: 1rem;
     padding: 1.5rem;
   }
-  
+
   .upload-controls {
     flex-direction: column;
   }
-  
+
   .btn-upload {
     width: 100%;
     justify-content: center;
   }
-  
+
   .header h2 {
     font-size: 1.2rem;
   }
-  
+
   .header h1 {
     font-size: 1.5rem;
   }
