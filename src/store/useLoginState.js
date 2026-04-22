@@ -1,111 +1,78 @@
-import { reactive } from "vue";
-import api from "@/api/api";
+import { reactive } from 'vue'
+import api from '@/api/api'
 
 const state = reactive({
   logado: false,
   user: null,
-  tipo: null,
+  access: null,
+  refresh: null,
   loading: false,
   error: null,
-});
+})
 
-async function login(email, password, tipo) {
-  state.loading = true;
-  state.error = null;
+async function login(email, password) {
+  state.loading = true
+  state.error = null
 
   try {
-    const response = await fetch(
-      `${api.defaults.baseURL}/auth/login/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          tipo,
-        }),
-      },
-    );
+    const response = await api.post('token/', {
+      email,
+      password,
+    })
 
-    const data = await response.json();
+    state.access = response.data.access
+    state.refresh = response.data.refresh
+    state.logado = true
 
-    if (!response.ok) {
-      throw new Error(
-        data.detail ||
-        data.error ||
-        "Email ou senha inválidos"
-      );
-    }
+    localStorage.setItem('access', state.access)
+    localStorage.setItem('refresh', state.refresh)
 
-    localStorage.setItem(
-      "access_token",
-      data.access
-    );
+    api.defaults.headers.common['Authorization'] = `Bearer ${state.access}`
 
-    localStorage.setItem(
-      "refresh_token",
-      data.refresh
-    );
+    const me = await api.get('usuarios/me/')
+    state.user = me.data
 
-    state.logado = true;
-    state.user = data.user;
-    state.tipo = data.tipo;
-    console.log("Login bem-sucedido:", state.tipo);
-
-    return true;
+    return true
   } catch (error) {
-    state.logado = false;
-    state.user = null;
-    state.error = error.message;
-
-    return false;
+    state.error = 'Login inválido'
+    logout()
+    return false
   } finally {
-    state.loading = false;
+    state.loading = false
   }
 }
 
 async function checkAuth() {
-  const token =
-    localStorage.getItem("access_token");
+  const token = localStorage.getItem('access')
 
-  if (!token) {
-    state.logado = false;
-    return false;
-  }
+  if (!token) return
 
   try {
-    const response = await fetch(
-      `${api.defaults.baseURL}/user/me/`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    state.access = token
+    state.refresh = localStorage.getItem('refresh')
 
-    if (!response.ok)
-      throw new Error();
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-    const user = await response.json();
+    const me = await api.get('usuarios/me/')
 
-    state.logado = true;
-    state.user = user;
-
-    return true;
+    state.user = me.data
+    state.logado = true
   } catch {
-    logout();
-    return false;
+    logout()
   }
 }
 
 function logout() {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
+  state.logado = false
+  state.user = null
+  state.access = null
+  state.refresh = null
+  state.error = null
 
-  state.logado = false;
-  state.user = null;
+  localStorage.removeItem('access')
+  localStorage.removeItem('refresh')
+
+  delete api.defaults.headers.common.Authorization
 }
 
 export function useLoginState() {
@@ -114,5 +81,5 @@ export function useLoginState() {
     login,
     logout,
     checkAuth,
-  };
+  }
 }

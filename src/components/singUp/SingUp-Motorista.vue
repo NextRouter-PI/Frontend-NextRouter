@@ -1,10 +1,10 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useRegisterState } from '@/store/useRegisterState';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useRegisterState } from '@/store/useRegisterState'
 
-const router = useRouter();
-const registerState = useRegisterState();
+const router = useRouter()
+const registerState = useRegisterState()
 
 const form = ref({
   nomeCompleto: '',
@@ -14,138 +14,123 @@ const form = ref({
   password: '',
   confirmPassword: '',
   cnh: ''
-});
+})
 
-const arquivoCNH = ref(null);
-const arquivoCNHName = ref('Nenhum arquivo selecionado');
-const mostrarSenha = ref(false);
-const errorMessage = ref('');
+const arquivoCNH = ref(null)
+const arquivoCNHName = ref('Nenhum arquivo selecionado')
+const mostrarSenha = ref(false)
+const errorMessage = ref('')
 
-const handleFileChange = (event) => {
-  const file = event.target.files && event.target.files[0];
+const handleFileChange = event => {
+  const file = event.target.files?.[0]
+
   if (file) {
-    arquivoCNH.value = file;
-    arquivoCNHName.value = file.name;
+    arquivoCNH.value = file
+    arquivoCNHName.value = file.name
   } else {
-    arquivoCNH.value = null;
-    arquivoCNHName.value = 'Nenhum arquivo selecionado';
+    arquivoCNH.value = null
+    arquivoCNHName.value = 'Nenhum arquivo selecionado'
   }
-};
+}
 
-const formatarCPF = (event) => {
-  let value = event.target.value.replace(/[^\d]/g, '');
-  if (value.length <= 3) {
-    value = value.replace(/^(\d{0,3})/, '$1');
-  } else if (value.length <= 6) {
-    value = value.replace(/^(\d{3})(\d{0,3})/, '$1.$2');
-  } else if (value.length <= 9) {
-    value = value.replace(/^(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+const formatarCPF = event => {
+  let value = event.target.value.replace(/\D/g, '').slice(0, 11)
+
+  if (value.length > 9) {
+    value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})$/, '$1.$2.$3-$4')
+  } else if (value.length > 6) {
+    value = value.replace(/^(\d{3})(\d{3})(\d{0,3})$/, '$1.$2.$3')
+  } else if (value.length > 3) {
+    value = value.replace(/^(\d{3})(\d{0,3})$/, '$1.$2')
+  }
+
+  form.value.cpf = value
+}
+
+const formatarTelefone = event => {
+  let value = event.target.value.replace(/\D/g, '').slice(0, 11)
+
+  if (value.length > 10) {
+    value = value.replace(/^(\d{2})(\d{5})(\d{0,4})$/, '($1) $2-$3')
+  } else if (value.length > 6) {
+    value = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3')
+  } else if (value.length > 2) {
+    value = value.replace(/^(\d{2})(\d{0,5})$/, '($1) $2')
   } else {
-    value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+    value = value.replace(/^(\d*)$/, '($1')
   }
-  form.value.cpf = value;
-};
 
-const formatarTelefone = (event) => {
-  let value = event.target.value.replace(/[^\d]/g, '');
-  if (value.length <= 2) {
-    value = value.replace(/^(\d{0,2})/, '($1');
-  } else if (value.length <= 6) {
-    value = value.replace(/^(\d{2})(\d{0,4})/, '($1) $2');
-  } else if (value.length <= 10) {
-    value = value.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-  } else {
-    value = value.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
-  }
-  form.value.telefone = value;
-};
-
-const handleSubmit = async () => {
-  errorMessage.value = '';
-  
-  if (!form.value.nomeCompleto || form.value.nomeCompleto.trim() === '') {
-    errorMessage.value = 'Nome completo é obrigatório';
-    return;
-  }
-  
-  if (!form.value.cpf || form.value.cpf.trim() === '') {
-    errorMessage.value = 'CPF é obrigatório';
-    return;
-  }
-  
-  const cpfLimpo = form.value.cpf.replace(/[^\d]/g, '');
-  if (cpfLimpo.length !== 11) {
-    errorMessage.value = 'CPF inválido';
-    return;
-  }
-  
-  if (!form.value.email || form.value.email.trim() === '') {
-    errorMessage.value = 'Email é obrigatório';
-    return;
-  }
-  
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(form.value.email)) {
-    errorMessage.value = 'Email inválido';
-    return;
-  }
-  
-  if (!form.value.telefone || form.value.telefone.trim() === '') {
-    errorMessage.value = 'Telefone é obrigatório';
-    return;
-  }
-  
-  if (!form.value.cnh || form.value.cnh.trim() === '') {
-    errorMessage.value = 'CNH é obrigatória';
-    return;
-  }
-  
-  if (!form.value.password) {
-    errorMessage.value = 'Senha é obrigatória';
-    return;
-  }
-  
-  if (form.value.password.length < 6) {
-    errorMessage.value = 'A senha deve ter pelo menos 6 caracteres';
-    return;
-  }
-  
-  if (form.value.password !== form.value.confirmPassword) {
-    errorMessage.value = 'As senhas não coincidem';
-    return;
-  }
-  
-  if (!arquivoCNH.value) {
-    errorMessage.value = 'Arquivo da CNH é obrigatório';
-    return;
-  }
-  
-  const userData = {
-    nome: form.value.nomeCompleto.trim(),
-    email: form.value.email.trim().toLowerCase(),
-    password: form.value.password,
-    telefone: form.value.telefone.trim(),
-    cpf: form.value.cpf.trim(),
-    cnh: form.value.cnh.trim(),
-  };
-  
-  const success = await registerState.registerDriver(userData);
-  
-  if (success) {
-    setTimeout(() => {
-      router.push('/');
-    }, 2000);
-  }
-};
+  form.value.telefone = value
+}
 
 const limparErro = () => {
-  errorMessage.value = '';
-  registerState.clearError();
-};
+  errorMessage.value = ''
+}
 
 const toggleSenha = () => {
-  mostrarSenha.value = !mostrarSenha.value;
-};
+  mostrarSenha.value = !mostrarSenha.value
+}
+
+const handleSubmit = async () => {
+  errorMessage.value = ''
+
+  if (!form.value.nomeCompleto.trim()) {
+    errorMessage.value = 'Nome completo é obrigatório'
+    return
+  }
+
+  if (form.value.cpf.replace(/\D/g, '').length !== 11) {
+    errorMessage.value = 'CPF inválido'
+    return
+  }
+
+  if (!form.value.email.trim()) {
+    errorMessage.value = 'Email é obrigatório'
+    return
+  }
+
+  if (!form.value.telefone.trim()) {
+    errorMessage.value = 'Telefone é obrigatório'
+    return
+  }
+
+  if (!form.value.cnh.trim()) {
+    errorMessage.value = 'CNH é obrigatória'
+    return
+  }
+
+  if (!form.value.password) {
+    errorMessage.value = 'Senha é obrigatória'
+    return
+  }
+
+  if (form.value.password.length < 6) {
+    errorMessage.value = 'A senha deve ter pelo menos 6 caracteres'
+    return
+  }
+
+  if (form.value.password !== form.value.confirmPassword) {
+    errorMessage.value = 'As senhas não coincidem'
+    return
+  }
+
+  const payload = {
+    nome: form.value.nomeCompleto.trim(),
+    cpf: form.value.cpf,
+    email: form.value.email.trim().toLowerCase(),
+    telefone: form.value.telefone,
+    cnh: form.value.cnh.trim(),
+    password: form.value.password
+  }
+
+  await registerState.registerMotorista(payload)
+
+  if (registerState.state.success) {
+    setTimeout(() => {
+      router.push('/')
+    }, 2000)
+  }
+}
 </script>
 
 <template>
@@ -155,18 +140,17 @@ const toggleSenha = () => {
       <h2>Bem vindo</h2>
       <h1><span>MOTORISTA</span></h1>
     </div>
-    
+
     <div v-if="registerState.state.success" class="success-message">
       <span class="mdi mdi-check-circle-circle"></span>
       <p class="success-title">Cadastro enviado com sucesso!</p>
-      <p v-if="!registerState.isAprovado()" class="pending-message">
-        Sua conta está aguardando aprovação. Você receberá um email quando for aprovado.
-      </p>
+
       <div class="loading-spinner">
-        <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
+        <span class="mdi mdi-loading mdi-spin"></span>
+        Redirecionando...
       </div>
     </div>
-    
+
     <form v-else class="signup-form" @submit.prevent="handleSubmit">
       <div class="field-group">
         <label for="nomeCompleto">Nome completo *</label>
@@ -186,7 +170,7 @@ const toggleSenha = () => {
         <input
           id="cpf"
           type="text"
-          v-model="form.cpf"
+          :value="form.cpf"
           placeholder="000.000.000-00"
           maxlength="14"
           :disabled="registerState.state.loading"
@@ -212,10 +196,10 @@ const toggleSenha = () => {
         <label for="telefone">Telefone *</label>
         <input
           id="telefone"
-          type="tel"
-          v-model="form.telefone"
+          type="text"
+          :value="form.telefone"
           placeholder="(00) 90000-0000"
-          maxlength="16"
+          maxlength="15"
           :disabled="registerState.state.loading"
           required
           @input="formatarTelefone"
@@ -247,9 +231,9 @@ const toggleSenha = () => {
             required
             @input="limparErro"
           />
-          <span 
-            class="mdi toggle-password" 
-            :class="mostrarSenha ? 'mdi-eye-off' : 'mdi-eye'" 
+          <span
+            class="mdi toggle-password"
+            :class="mostrarSenha ? 'mdi-eye-off' : 'mdi-eye'"
             @click="toggleSenha"
           ></span>
         </div>
@@ -272,11 +256,15 @@ const toggleSenha = () => {
 
       <div class="field-group file-group">
         <label>Arquivo CNH *</label>
+
         <div class="file-upload">
           <label class="file-button" for="cnhFile">
-            <span class="mdi mdi-folder-open"></span> Escolher arquivo
+            <span class="mdi mdi-folder-open"></span>
+            Escolher arquivo
           </label>
+
           <span class="file-name">{{ arquivoCNHName }}</span>
+
           <input
             id="cnhFile"
             type="file"
@@ -285,19 +273,37 @@ const toggleSenha = () => {
             :disabled="registerState.state.loading"
           />
         </div>
-        <small class="file-hint">Formatos aceitos: PDF, JPG, JPEG, PNG</small>
+
+        <small class="file-hint">
+          Formatos aceitos: PDF, JPG, JPEG, PNG
+        </small>
       </div>
 
       <p v-if="errorMessage" class="error-message">
-        <span class="mdi mdi-alert-circle"></span> {{ errorMessage }}
-      </p>
-      <p v-if="registerState.state.error" class="error-message">
-        <span class="mdi mdi-alert-circle"></span> {{ registerState.state.error }}
+        <span class="mdi mdi-alert-circle"></span>
+        {{ errorMessage }}
       </p>
 
-      <button type="submit" class="btn-submit" :disabled="registerState.state.loading">
-        <span v-if="registerState.state.loading" class="mdi mdi-loading mdi-spin"></span>
-        {{ registerState.state.loading ? "Enviando cadastro..." : "Criar conta" }}
+      <p v-if="registerState.state.error" class="error-message">
+        <span class="mdi mdi-alert-circle"></span>
+        {{ registerState.state.error }}
+      </p>
+
+      <button
+        type="submit"
+        class="btn-submit"
+        :disabled="registerState.state.loading"
+      >
+        <span
+          v-if="registerState.state.loading"
+          class="mdi mdi-loading mdi-spin"
+        ></span>
+
+        {{
+          registerState.state.loading
+            ? 'Enviando cadastro...'
+            : 'Criar conta'
+        }}
       </button>
     </form>
   </section>

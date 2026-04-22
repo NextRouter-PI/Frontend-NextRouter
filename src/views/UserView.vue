@@ -1,19 +1,20 @@
 <script setup>
+import { onMounted } from "vue";
 import MotoristaUser from "@/components/motorista/MotoristaUser.vue";
-import PassageiroUserMotoristaUser from "@/components/passageiro/PassageiroUser.vue";
+import PassageiroUser from "@/components/passageiro/PassageiroUser.vue";
 import { useLoginState } from "@/store/useLoginState";
-const { state } = useLoginState();
+const { state, checkAuth } = useLoginState()
+
+onMounted(() => {
+  checkAuth()
+})
 </script>
 
 <template>
-    <div class="UserMotoristaUser-view" v-if="state.tipo === 'passageiro'">
-        <PassageiroUserMotoristaUser />
-    </div>
-    <div v-else-if="state.tipo === 'motorista'">
-        <MotoristaUser />
-    </div>
-    <div v-else>
-        <p>Empresa.</p>
+    <div class="User-view" v-if="state.user">
+        <PassageiroUser v-if="state.user.type == 'Passageiro'"/>
+        <MotoristaUser v-else-if="state.user.type == 'Motorista'"/>
+        <p v-else>Empresa.</p>
     </div>
 </template>
 
