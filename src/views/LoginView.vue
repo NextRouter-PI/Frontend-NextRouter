@@ -1,47 +1,26 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, reactive } from "vue";
 import { useRouter, RouterLink } from "vue-router";
 import { useLoginState } from "@/store/useLoginState";
 
 const router = useRouter();
 
-const email = ref("");
-const senha = ref("");
 const erro = ref("");
 const mostrarSenha = ref(false);
 
-const { login, checkAuth, state } =
-  useLoginState();
+const { login, state } = useLoginState();
 
-
-/* =========================
-   AUTO LOGIN
-========================= */
-onMounted(async () => {
-  const autenticado =
-    await checkAuth();
-
-  if (autenticado) {
-    router.push("/");
-  }
+const form = reactive({
+  email: "",
+  senha: "",
 });
 
-
-/* =========================
-   LOGIN
-========================= */
-async function handleLogin() {
+async function enviarLogin() {
   erro.value = "";
 
-  if (!email.value || !senha.value) {
-    erro.value =
-      "Preencha email e senha.";
-    return;
-  }
-
   const sucesso = await login(
-    email.value,
-    senha.value
+    form.email,
+    form.senha
   );
 
   if (sucesso) {
@@ -53,10 +32,6 @@ async function handleLogin() {
   }
 }
 
-
-/* =========================
-   MOSTRAR SENHA
-========================= */
 function toggleSenha() {
   mostrarSenha.value =
     !mostrarSenha.value;
@@ -65,7 +40,6 @@ function toggleSenha() {
 
 <template>
   <div class="login-container">
-    <!-- HEADER -->
     <div class="header">
       <span
         class="mdi mdi-map-marker-radius"
@@ -80,21 +54,20 @@ function toggleSenha() {
 
     <p>Entrar em sua conta:</p>
 
-    <!-- EMAIL -->
     <div class="input-group">
       <input
-        v-model="email"
+        v-model="form.email"
         type="email"
         required
         autocomplete="email"
+        @keyup.enter="enviarLogin"
       />
       <label>Email</label>
     </div>
 
-    <!-- SENHA -->
     <div class="input-group">
       <input
-        v-model="senha"
+        v-model="form.senha"
         :type="
           mostrarSenha
             ? 'text'
@@ -102,7 +75,7 @@ function toggleSenha() {
         "
         required
         autocomplete="current-password"
-        @keyup.enter="handleLogin"
+        @keyup.enter="enviarLogin"
       />
 
       <label>Senha</label>
@@ -118,9 +91,8 @@ function toggleSenha() {
       ></span>
     </div>
 
-    <!-- BOTÃO -->
     <button
-      @click="handleLogin"
+      @click="enviarLogin"
       :disabled="state.loading"
     >
       {{
@@ -130,7 +102,6 @@ function toggleSenha() {
       }}
     </button>
 
-    <!-- ERRO -->
     <p
       v-if="erro"
       class="erro"
@@ -138,7 +109,6 @@ function toggleSenha() {
       {{ erro }}
     </p>
 
-    <!-- LINKS -->
     <p>
       Esqueceu a senha?
       <RouterLink
@@ -184,7 +154,6 @@ function toggleSenha() {
 .mdi-map-marker-radius {
   font-size: 80px;
   color: var(--primary);
-  margin-bottom: 0;
 }
 
 h1 {
@@ -219,27 +188,21 @@ p {
 .input-group input {
   width: 100%;
   padding: 12px 10px;
-
   border: none;
   border-bottom: 2px solid
     var(--primary);
-
   outline: none;
   background: transparent;
-
   color: var(--primary);
   font-size: 14px;
 }
 
 .input-group label {
   position: absolute;
-
   left: 10px;
   top: 12px;
-
   color: #999;
   font-size: 14px;
-
   pointer-events: none;
   transition: 0.3s;
 }
@@ -253,12 +216,9 @@ p {
 
 .toggle {
   position: absolute;
-
   right: 10px;
   top: 50%;
-
   transform: translateY(-50%);
-
   cursor: pointer;
   color: #999;
 }
