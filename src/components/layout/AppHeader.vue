@@ -1,6 +1,6 @@
 <script setup>
 import ThemeButton from "@/components/buttons/ThemeButton.vue"
-import Logo from "@/assets/logo.png"
+import Logo from "../../../public/logo.png"
 </script>
 
 <template>
