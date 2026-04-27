@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted } from "vue";
-import MotoristaList from "@/components/motorista/MotoristaList.vue";
-import PassageiroList from "@/components/passageiro/PassageiroList.vue";
+import MotoristaList from "@/components/pages/motorista/MotoristaList.vue";
+import PassageiroList from "@/components/pages/passageiro/PassageiroList.vue";
 import { useLoginState } from "@/store/useLoginState";
 const { state, checkAuth } = useLoginState()
 
