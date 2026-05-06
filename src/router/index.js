@@ -40,7 +40,7 @@ const router = createRouter({
     {
       path: "/signup/usuario",
       name: "signup-usuario",
-      component: () => import("../components/singUp/SingUp-Usuarios.vue"),
+      component: () => import("../components/singUp/SingUp-Passageiro.vue"),
       meta: { requiresAuth: false }
     },
     {

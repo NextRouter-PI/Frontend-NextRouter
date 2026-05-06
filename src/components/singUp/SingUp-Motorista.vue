@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/store/useRegisterState'
 
@@ -8,11 +8,19 @@ const registerState = useRegisterState()
 
 const form = ref({
   nomeCompleto: '',
+  dia: '',
+  mes: '',
+  ano: '',
   cpf: '',
   email: '',
   telefone: '',
   password: '',
   confirmPassword: '',
+  genero: '',
+  endereco: '',
+  cidade: '',
+  estado: '',
+  cep: '',
   cnh: ''
 })
 
@@ -20,6 +28,44 @@ const arquivoCNH = ref(null)
 const arquivoCNHName = ref('Nenhum arquivo selecionado')
 const mostrarSenha = ref(false)
 const errorMessage = ref('')
+
+const dias = computed(() => Array.from({ length: 31 }, (_, i) => i + 1))
+
+const meses = [
+  { value: '01', label: 'Janeiro' },
+  { value: '02', label: 'Fevereiro' },
+  { value: '03', label: 'Março' },
+  { value: '04', label: 'Abril' },
+  { value: '05', label: 'Maio' },
+  { value: '06', label: 'Junho' },
+  { value: '07', label: 'Julho' },
+  { value: '08', label: 'Agosto' },
+  { value: '09', label: 'Setembro' },
+  { value: '10', label: 'Outubro' },
+  { value: '11', label: 'Novembro' },
+  { value: '12', label: 'Dezembro' }
+]
+
+const currentYear = new Date().getFullYear()
+
+const anos = computed(() =>
+  Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i)
+)
+
+const limparErro = () => {
+  errorMessage.value = ''
+  registerState.state.error = null
+}
+
+const toggleSenha = () => {
+  mostrarSenha.value = !mostrarSenha.value
+}
+
+const formatarDataNascimento = () => {
+  const dia = String(form.value.dia).padStart(2, '0')
+  const mes = meses.find(item => item.label === form.value.mes)?.value || '01'
+  return `${form.value.ano}-${mes}-${dia}`
+}
 
 const handleFileChange = event => {
   const file = event.target.files?.[0]
@@ -34,68 +80,53 @@ const handleFileChange = event => {
 }
 
 const formatarCPF = event => {
-  let value = event.target.value.replace(/\D/g, '').slice(0, 11)
+  let value = event.target.value.replace(/\D/g, '')
 
-  if (value.length > 9) {
-    value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})$/, '$1.$2.$3-$4')
-  } else if (value.length > 6) {
-    value = value.replace(/^(\d{3})(\d{3})(\d{0,3})$/, '$1.$2.$3')
-  } else if (value.length > 3) {
-    value = value.replace(/^(\d{3})(\d{0,3})$/, '$1.$2')
-  }
+  if (value.length > 11) value = value.slice(0, 11)
+
+  value = value.replace(/^(\d{3})(\d)/, '$1.$2')
+  value = value.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+  value = value.replace(/\.(\d{3})(\d)/, '.$1-$2')
 
   form.value.cpf = value
 }
 
 const formatarTelefone = event => {
-  let value = event.target.value.replace(/\D/g, '').slice(0, 11)
+  let value = event.target.value.replace(/\D/g, '')
 
-  if (value.length > 10) {
-    value = value.replace(/^(\d{2})(\d{5})(\d{0,4})$/, '($1) $2-$3')
-  } else if (value.length > 6) {
-    value = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3')
-  } else if (value.length > 2) {
-    value = value.replace(/^(\d{2})(\d{0,5})$/, '($1) $2')
+  if (value.length > 11) value = value.slice(0, 11)
+
+  if (value.length <= 10) {
+    value = value.replace(/^(\d{2})(\d)/, '($1) $2')
+    value = value.replace(/(\d{4})(\d)/, '$1-$2')
   } else {
-    value = value.replace(/^(\d*)$/, '($1')
+    value = value.replace(/^(\d{2})(\d)/, '($1) $2')
+    value = value.replace(/(\d{5})(\d)/, '$1-$2')
   }
 
   form.value.telefone = value
 }
 
-const limparErro = () => {
-  errorMessage.value = ''
-}
+const formatarCEP = event => {
+  let value = event.target.value.replace(/\D/g, '')
 
-const toggleSenha = () => {
-  mostrarSenha.value = !mostrarSenha.value
+  if (value.length > 8) value = value.slice(0, 8)
+
+  value = value.replace(/^(\d{5})(\d)/, '$1-$2')
+
+  form.value.cep = value
 }
 
 const handleSubmit = async () => {
-  errorMessage.value = ''
+  limparErro()
 
-  if (!form.value.nomeCompleto.trim()) {
+  if (!form.value.nomeCompleto) {
     errorMessage.value = 'Nome completo é obrigatório'
     return
   }
 
-  if (form.value.cpf.replace(/\D/g, '').length !== 11) {
-    errorMessage.value = 'CPF inválido'
-    return
-  }
-
-  if (!form.value.email.trim()) {
+  if (!form.value.email) {
     errorMessage.value = 'Email é obrigatório'
-    return
-  }
-
-  if (!form.value.telefone.trim()) {
-    errorMessage.value = 'Telefone é obrigatório'
-    return
-  }
-
-  if (!form.value.cnh.trim()) {
-    errorMessage.value = 'CNH é obrigatória'
     return
   }
 
@@ -105,7 +136,7 @@ const handleSubmit = async () => {
   }
 
   if (form.value.password.length < 6) {
-    errorMessage.value = 'A senha deve ter pelo menos 6 caracteres'
+    errorMessage.value = 'A senha deve ter no mínimo 6 caracteres'
     return
   }
 
@@ -114,16 +145,28 @@ const handleSubmit = async () => {
     return
   }
 
-  const payload = {
-    nome: form.value.nomeCompleto.trim(),
-    cpf: form.value.cpf,
-    email: form.value.email.trim().toLowerCase(),
-    telefone: form.value.telefone,
-    cnh: form.value.cnh.trim(),
-    password: form.value.password
+  if (!arquivoCNH.value) {
+    errorMessage.value = 'Arquivo da CNH é obrigatório'
+    return
   }
 
-  await registerState.registerMotorista(payload)
+  const data = {
+    nome: form.value.nomeCompleto.trim(),
+    email: form.value.email.trim().toLowerCase(),
+    password: form.value.password,
+    telefone: form.value.telefone,
+    cpf: form.value.cpf,
+    cnh: form.value.cnh || null,
+    data_nascimento: formatarDataNascimento(),
+    genero: form.value.genero || null,
+    endereco: form.value.endereco || null,
+    cidade: form.value.cidade || null,
+    estado: form.value.estado || null,
+    cep: form.value.cep || null,
+    arquivo_cnh: arquivoCNH.value
+  }
+
+  await registerState.registerMotorista(data)
 
   if (registerState.state.success) {
     setTimeout(() => {
@@ -153,84 +196,174 @@ const handleSubmit = async () => {
 
     <form v-else class="signup-form" @submit.prevent="handleSubmit">
       <div class="field-group">
-        <label for="nomeCompleto">Nome completo *</label>
+        <label>Nome completo *</label>
         <input
-          id="nomeCompleto"
-          type="text"
           v-model="form.nomeCompleto"
+          type="text"
           placeholder="Digite seu nome completo"
           :disabled="registerState.state.loading"
-          required
           @input="limparErro"
         />
       </div>
 
       <div class="field-group">
-        <label for="cpf">CPF *</label>
+        <label>Data de nascimento *</label>
+
+        <div class="date-row">
+          <input
+            v-model="form.dia"
+            list="dias"
+            placeholder="Dia"
+            :disabled="registerState.state.loading"
+          />
+
+          <input
+            v-model="form.mes"
+            list="meses"
+            placeholder="Mês"
+            :disabled="registerState.state.loading"
+          />
+
+          <input
+            v-model="form.ano"
+            list="anos"
+            placeholder="Ano"
+            :disabled="registerState.state.loading"
+          />
+        </div>
+      </div>
+
+      <datalist id="dias">
+        <option
+          v-for="dia in dias"
+          :key="dia"
+          :value="String(dia).padStart(2, '0')"
+        />
+      </datalist>
+
+      <datalist id="meses">
+        <option
+          v-for="mes in meses"
+          :key="mes.value"
+          :value="mes.label"
+        />
+      </datalist>
+
+      <datalist id="anos">
+        <option
+          v-for="ano in anos"
+          :key="ano"
+          :value="ano"
+        />
+      </datalist>
+
+      <div class="field-group">
+        <label>CPF *</label>
         <input
-          id="cpf"
+          v-model="form.cpf"
           type="text"
-          :value="form.cpf"
           placeholder="000.000.000-00"
           maxlength="14"
           :disabled="registerState.state.loading"
-          required
           @input="formatarCPF"
         />
       </div>
 
       <div class="field-group">
-        <label for="email">Email *</label>
+        <label>Email *</label>
         <input
-          id="email"
-          type="email"
           v-model="form.email"
+          type="email"
           placeholder="seu@email.com"
           :disabled="registerState.state.loading"
-          required
           @input="limparErro"
         />
       </div>
 
       <div class="field-group">
-        <label for="telefone">Telefone *</label>
+        <label>Telefone *</label>
         <input
-          id="telefone"
+          v-model="form.telefone"
           type="text"
-          :value="form.telefone"
           placeholder="(00) 90000-0000"
-          maxlength="15"
+          maxlength="16"
           :disabled="registerState.state.loading"
-          required
           @input="formatarTelefone"
         />
       </div>
 
       <div class="field-group">
-        <label for="cnh">CNH *</label>
+        <label>Gênero</label>
+        <select v-model="form.genero">
+          <option value="">Selecione</option>
+          <option value="Masculino">Masculino</option>
+          <option value="Feminino">Feminino</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label>Endereço</label>
         <input
-          id="cnh"
+          v-model="form.endereco"
           type="text"
+          placeholder="Rua, número, bairro"
+        />
+      </div>
+
+      <div class="row-fields">
+        <div class="field-group half">
+          <label>Cidade</label>
+          <input
+            v-model="form.cidade"
+            type="text"
+            placeholder="Cidade"
+          />
+        </div>
+
+        <div class="field-group half">
+          <label>Estado</label>
+          <input
+            v-model="form.estado"
+            type="text"
+            placeholder="Estado"
+          />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>CEP</label>
+        <input
+          v-model="form.cep"
+          type="text"
+          placeholder="00000-000"
+          maxlength="9"
+          @input="formatarCEP"
+        />
+      </div>
+
+      <div class="field-group">
+        <label>CNH *</label>
+        <input
           v-model="form.cnh"
+          type="text"
           placeholder="Número da CNH"
           :disabled="registerState.state.loading"
-          required
           @input="limparErro"
         />
       </div>
 
       <div class="field-group">
-        <label for="password">Senha *</label>
+        <label>Senha *</label>
+
         <div class="password-input">
           <input
-            id="password"
             :type="mostrarSenha ? 'text' : 'password'"
             v-model="form.password"
             placeholder="Mínimo 6 caracteres"
             :disabled="registerState.state.loading"
-            required
-            @input="limparErro"
           />
+
           <span
             class="mdi toggle-password"
             :class="mostrarSenha ? 'mdi-eye-off' : 'mdi-eye'"
@@ -240,16 +373,14 @@ const handleSubmit = async () => {
       </div>
 
       <div class="field-group">
-        <label for="confirmPassword">Confirmar senha *</label>
+        <label>Confirmar senha *</label>
+
         <div class="password-input">
           <input
-            id="confirmPassword"
             :type="mostrarSenha ? 'text' : 'password'"
             v-model="form.confirmPassword"
             placeholder="Digite a senha novamente"
             :disabled="registerState.state.loading"
-            required
-            @input="limparErro"
           />
         </div>
       </div>
@@ -376,11 +507,38 @@ const handleSubmit = async () => {
   background: #fafafa;
 }
 
-.field-group input:focus {
+.field-group input:focus,
+.field-group select:focus {
   outline: none;
   border-color: #f48a1d;
   background: #ffffff;
   box-shadow: 0 0 0 3px rgba(244, 138, 29, 0.1);
+}
+
+.field-group select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #fafafa;
+}
+
+.date-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.row-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field-group.half {
+  grid-column: auto;
 }
 
 .field-group input:disabled {
@@ -431,18 +589,18 @@ const handleSubmit = async () => {
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: #f48a1d;
-  color: white;
+  background: #ffffff;
+  color: #111111;
+  border: 2px solid #f48a1d;
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
+  white-space: nowrap;
 }
 
-.file-button:hover {
-  background: #e37a0d;
+.file-button .mdi {
+  font-size: 1.2rem;
+  color: #111111;
 }
 
 .file-name {
@@ -559,20 +717,20 @@ const handleSubmit = async () => {
     margin: 1rem;
     padding: 1.5rem;
   }
-  
+
   .file-upload {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .file-button {
     justify-content: center;
   }
-  
+
   .header h2 {
     font-size: 1.2rem;
   }
-  
+
   .header h1 {
     font-size: 1.5rem;
   }
