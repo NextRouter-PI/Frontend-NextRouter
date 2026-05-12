@@ -1,15 +1,13 @@
 <script setup>
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { useRegisterState } from '@/store/useRegisterState';
-import api from '@/api/api';
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useRegisterState } from '@/store/useRegisterState'
 
-const router = useRouter();
-const registerState = useRegisterState();
+const router = useRouter()
+const registerState = useRegisterState()
 
-const currentPage = ref(1);
-const loading = ref(false);
-const errorMessage = ref('');
+const currentPage = ref(1)
+const errorMessage = ref('')
 
 const page1Form = ref({
   razaoSocial: '',
@@ -21,289 +19,234 @@ const page1Form = ref({
   estado: '',
   endereco: '',
   inscricaoEstadual: ''
-});
+})
 
 const page3Form = ref({
   ceoNome: '',
   ceoCpf: '',
   senha: '',
   confirmarSenha: ''
-});
+})
 
 const arquivos = reactive({
   contratoSocial: null,
   licencaOperacao: null,
   certidoesNegativas: null
-});
+})
 
 const arquivosNomes = reactive({
   contratoSocial: 'Nenhum arquivo selecionado',
   licencaOperacao: 'Nenhum arquivo selecionado',
   certidoesNegativas: 'Nenhum arquivo selecionado'
-});
+})
 
 const handleFileChange = (event, tipo) => {
-  const file = event.target.files && event.target.files[0];
-  if (file) {
-    if (file.size > 10 * 1024 * 1024) {
-      errorMessage.value = `Arquivo muito grande. Máximo 10MB. ${tipo}`;
-      return;
-    }
-    arquivos[tipo] = file;
-    arquivosNomes[tipo] = file.name;
-  } else {
-    arquivos[tipo] = null;
-    arquivosNomes[tipo] = 'Nenhum arquivo selecionado';
+  const file = event.target.files?.[0]
+
+  if (!file) return
+
+  if (file.size > 10 * 1024 * 1024) {
+    errorMessage.value = 'Arquivo muito grande. Máximo 10MB.'
+    return
   }
-};
+
+  arquivos[tipo] = file
+  arquivosNomes[tipo] = file.name
+}
 
 const validatePage1 = () => {
   if (!page1Form.value.razaoSocial.trim()) {
-    errorMessage.value = 'Razão Social é obrigatória';
-    return false;
+    errorMessage.value = 'Razão Social é obrigatória'
+    return false
   }
+
   if (!page1Form.value.nomeFantasia.trim()) {
-    errorMessage.value = 'Nome Fantasia é obrigatório';
-    return false;
+    errorMessage.value = 'Nome Fantasia é obrigatório'
+    return false
   }
+
   if (!page1Form.value.cnpj.trim()) {
-    errorMessage.value = 'CNPJ é obrigatório';
-    return false;
+    errorMessage.value = 'CNPJ é obrigatório'
+    return false
   }
 
-  const cnpjLimpo = page1Form.value.cnpj.replace(/[^\d]/g, '');
-  if (cnpjLimpo.length !== 14) {
-    errorMessage.value = 'CNPJ inválido';
-    return false;
-  }
-
-  if (!page1Form.value.telefoneComercial.trim()) {
-    errorMessage.value = 'Telefone Comercial é obrigatório';
-    return false;
-  }
-
-  if (!page1Form.value.emailCorporativo.trim()) {
-    errorMessage.value = 'E-mail Corporativo é obrigatório';
-    return false;
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(page1Form.value.emailCorporativo)) {
-    errorMessage.value = 'E-mail Corporativo inválido';
-    return false;
-  }
-
-  if (!page1Form.value.cidade.trim()) {
-    errorMessage.value = 'Cidade é obrigatória';
-    return false;
-  }
-
-  if (!page1Form.value.estado.trim()) {
-    errorMessage.value = 'Estado é obrigatório';
-    return false;
-  }
-
-  if (!page1Form.value.endereco.trim()) {
-    errorMessage.value = 'Endereço é obrigatório';
-    return false;
-  }
-
-  return true;
-};
+  return true
+}
 
 const validatePage2 = () => {
   if (!arquivos.contratoSocial) {
-    errorMessage.value = 'Contrato Social é obrigatório';
-    return false;
+    errorMessage.value = 'Contrato Social obrigatório'
+    return false
   }
+
   if (!arquivos.licencaOperacao) {
-    errorMessage.value = 'Licença de Operação é obrigatória';
-    return false;
+    errorMessage.value = 'Licença obrigatória'
+    return false
   }
+
   if (!arquivos.certidoesNegativas) {
-    errorMessage.value = 'Certidões Negativas são obrigatórias';
-    return false;
+    errorMessage.value = 'Certidões obrigatórias'
+    return false
   }
-  return true;
-};
+
+  return true
+}
 
 const validatePage3 = () => {
   if (!page3Form.value.ceoNome.trim()) {
-    errorMessage.value = 'Nome completo do CEO/diretor/sócio administrador é obrigatório';
-    return false;
+    errorMessage.value = 'Nome obrigatório'
+    return false
   }
+
   if (!page3Form.value.ceoCpf.trim()) {
-    errorMessage.value = 'CPF é obrigatório';
-    return false;
+    errorMessage.value = 'CPF obrigatório'
+    return false
   }
-  const cpfLimpo = page3Form.value.ceoCpf.replace(/[^\d]/g, '');
-  if (cpfLimpo.length !== 11) {
-    errorMessage.value = 'CPF inválido';
-    return false;
-  }
+
   if (!page3Form.value.senha.trim()) {
-    errorMessage.value = 'Defina uma senha';
-    return false;
+    errorMessage.value = 'Senha obrigatória'
+    return false
   }
-  if (page3Form.value.senha.length < 6) {
-    errorMessage.value = 'A senha deve ter no mínimo 6 caracteres';
-    return false;
+
+  if (
+    page3Form.value.senha !==
+    page3Form.value.confirmarSenha
+  ) {
+    errorMessage.value = 'As senhas não coincidem'
+    return false
   }
-  if (!page3Form.value.confirmarSenha.trim()) {
-    errorMessage.value = 'Confirme sua senha';
-    return false;
-  }
-  if (page3Form.value.senha !== page3Form.value.confirmarSenha) {
-    errorMessage.value = 'As senhas não coincidem';
-    return false;
-  }
-  return true;
-};
+
+  return true
+}
 
 const goToNextPage = () => {
-  errorMessage.value = '';
+  errorMessage.value = ''
 
-  if (currentPage.value === 1) {
-    if (validatePage1()) {
-      currentPage.value = 2;
-    }
-  } else if (currentPage.value === 2) {
-    if (validatePage2()) {
-      currentPage.value = 3;
-    }
-  } else if (currentPage.value === 3) {
-    if (validatePage3()) {
-      currentPage.value = 4;
-    }
+  if (currentPage.value === 1 && validatePage1()) {
+    currentPage.value++
+    return
   }
-};
+
+  if (currentPage.value === 2 && validatePage2()) {
+    currentPage.value++
+    return
+  }
+
+  if (currentPage.value === 3 && validatePage3()) {
+    currentPage.value++
+  }
+}
 
 const goToPreviousPage = () => {
-  errorMessage.value = '';
   if (currentPage.value > 1) {
-    currentPage.value -= 1;
+    currentPage.value--
   }
-};
+}
 
 const handleSubmit = async () => {
-  errorMessage.value = '';
+  errorMessage.value = ''
 
-  if (!validatePage2() || !validatePage3()) {
-    return;
-  }
-
-  loading.value = true;
+  if (!validatePage1()) return
+  if (!validatePage2()) return
+  if (!validatePage3()) return
 
   try {
-    const formData = new FormData();
+    const formData = new FormData()
 
+    formData.append(
+      'razao_social',
+      page1Form.value.razaoSocial
+    )
 
-    formData.append('razao_social', page1Form.value.razaoSocial.trim());
-    formData.append('nome_fantasia', page1Form.value.nomeFantasia.trim());
-    formData.append('cnpj', page1Form.value.cnpj.replace(/[^\d]/g, ''));
-    formData.append('telefone', page1Form.value.telefoneComercial.trim());
-    formData.append('email', page1Form.value.emailCorporativo.trim().toLowerCase());
-    formData.append('cidade', page1Form.value.cidade.trim());
-    formData.append('estado', page1Form.value.estado.trim());
-    formData.append('endereco', page1Form.value.endereco.trim());
-    formData.append('inscricao_estadual', page1Form.value.inscricaoEstadual?.trim() || '');
-    formData.append('tipo', 'empresa');
-    formData.append('nome_ceo', page3Form.value.ceoNome.trim());
-    formData.append('cpf_ceo', page3Form.value.ceoCpf.replace(/[^\d]/g, ''));
-    formData.append('senha', page3Form.value.senha);
+    formData.append(
+      'nome_fantasia',
+      page1Form.value.nomeFantasia
+    )
 
-    if (arquivos.contratoSocial) {
-      formData.append('contrato_social', arquivos.contratoSocial);
+    formData.append(
+      'cnpj',
+      page1Form.value.cnpj.replace(/[^\d]/g, '')
+    )
+
+    formData.append(
+  'telefone_comercial',
+  page1Form.value.telefoneComercial
+)
+
+    formData.append(
+      'email',
+      page1Form.value.emailCorporativo
+    )
+
+    formData.append(
+      'cidade',
+      page1Form.value.cidade
+    )
+
+    formData.append(
+      'estado',
+      page1Form.value.estado
+    )
+
+    formData.append(
+      'endereco',
+      page1Form.value.endereco
+    )
+
+    formData.append(
+      'inscricao_estadual',
+      page1Form.value.inscricaoEstadual
+    )
+
+    formData.append(
+  'responsavel_nome',
+  page3Form.value.ceoNome
+)
+
+formData.append(
+  'responsavel_cpf',
+  page3Form.value.ceoCpf.replace(/[^\d]/g, '')
+)
+
+    formData.append('password', page3Form.value.senha)
+
+    formData.append(
+      'contrato_social',
+      arquivos.contratoSocial
+    )
+
+    formData.append(
+      'licenca_operacao',
+      arquivos.licencaOperacao
+    )
+
+    formData.append(
+      'certidoes_negativas',
+      arquivos.certidoesNegativas
+    )
+
+    await registerState.registerEmpresa(formData)
+
+    if (registerState.state.success) {
+      router.push('/login')
     }
-    if (arquivos.licencaOperacao) {
-      formData.append('licenca_operacao', arquivos.licencaOperacao);
+
+    if (registerState.state.error) {
+      errorMessage.value =
+        typeof registerState.state.error === 'string'
+          ? registerState.state.error
+          : JSON.stringify(registerState.state.error)
     }
-    if (arquivos.certidoesNegativas) {
-      formData.append('certidoes_negativas', arquivos.certidoesNegativas);
-    }
-
-    await api.post('/empresas/cadastro', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    sessionStorage.setItem('tempRegisterData', JSON.stringify({
-      ...page1Form.value,
-      ...page3Form.value,
-      tipo: 'empresa',
-    }));
-
-    router.push({
-      path: '/signup/criar-senha',
-      query: {
-        tipo: 'empresa',
-        email: page1Form.value.emailCorporativo.trim().toLowerCase(),
-        nome: page1Form.value.razaoSocial.trim()
-      }
-    });
 
   } catch (error) {
-    console.error('Erro no cadastro:', error);
-    errorMessage.value = error.response?.data?.message || error.message || 'Erro ao processar cadastro';
-  } finally {
-    loading.value = false;
+    console.error(error)
+
+    errorMessage.value =
+      error.response?.data?.message ||
+      error.message ||
+      'Erro ao cadastrar'
   }
-};
-
-const limparErro = () => {
-  errorMessage.value = '';
-};
-
-const formatarCNPJ = (event) => {
-  let value = event.target.value.replace(/[^\d]/g, '');
-
-  if (value.length <= 2) {
-    value = value.replace(/^(\d{0,2})/, '$1');
-  } else if (value.length <= 5) {
-    value = value.replace(/^(\d{2})(\d{0,3})/, '$1.$2');
-  } else if (value.length <= 8) {
-    value = value.replace(/^(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
-  } else if (value.length <= 12) {
-    value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
-  } else {
-    value = value.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
-  }
-
-  page1Form.value.cnpj = value;
-};
-
-const formatarTelefone = (event) => {
-  let value = event.target.value.replace(/[^\d]/g, '');
-
-  if (value.length <= 2) {
-    value = value.replace(/^(\d{0,2})/, '($1');
-  } else if (value.length <= 6) {
-    value = value.replace(/^(\d{2})(\d{0,4})/, '($1) $2');
-  } else if (value.length <= 10) {
-    value = value.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
-  } else {
-    value = value.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
-  }
-
-  page1Form.value.telefoneComercial = value;
-};
-
-const formatarCPF = (event) => {
-  let value = event.target.value.replace(/[^\d]/g, '');
-
-  if (value.length <= 3) {
-    value = value.replace(/^(\d{0,3})/, '$1');
-  } else if (value.length <= 6) {
-    value = value.replace(/^(\d{3})(\d{0,3})/, '$1.$2');
-  } else if (value.length <= 9) {
-    value = value.replace(/^(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
-  } else {
-    value = value.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
-  }
-
-  page3Form.value.ceoCpf = value;
-};
+}
 </script>
 
 <template>
