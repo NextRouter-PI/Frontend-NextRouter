@@ -1,0 +1,49 @@
+export function useInputFormat() {
+  const apenasDigitos = (value) => value.replace(/\D/g, '')
+
+  const formatarCPF = (event, setter) => {
+    let value = apenasDigitos(event.target.value)
+    if (value.length > 11) value = value.slice(0, 11)
+    value = value.replace(/^(\d{3})(\d)/, '$1.$2')
+    value = value.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    value = value.replace(/\.(\d{3})(\d)/, '.$1-$2')
+    setter(value)
+  }
+
+  const formatarTelefone = (event, setter) => {
+    let value = apenasDigitos(event.target.value)
+    if (value.length > 11) value = value.slice(0, 11)
+    if (value.length <= 10) {
+      value = value.replace(/^(\d{2})(\d)/, '($1) $2')
+      value = value.replace(/(\d{4})(\d)/, '$1-$2')
+    } else {
+      value = value.replace(/^(\d{2})(\d)/, '($1) $2')
+      value = value.replace(/(\d{5})(\d)/, '$1-$2')
+    }
+    setter(value)
+  }
+
+  const formatarCEP = (event, setter) => {
+    let value = apenasDigitos(event.target.value)
+    if (value.length > 8) value = value.slice(0, 8)
+    value = value.replace(/^(\d{5})(\d)/, '$1-$2')
+    setter(value)
+  }
+
+  const formatarCNPJ = (event, setter) => {
+    let value = apenasDigitos(event.target.value)
+    if (value.length > 14) value = value.slice(0, 14)
+    value = value.replace(/^(\d{2})(\d)/, '$1.$2')
+    value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    value = value.replace(/\.(\d{3})(\d)/, '.$1/$2')
+    value = value.replace(/(\d{4})(\d)/, '$1-$2')
+    setter(value)
+  }
+
+  return {
+    formatarCPF,
+    formatarTelefone,
+    formatarCEP,
+    formatarCNPJ
+  }
+}

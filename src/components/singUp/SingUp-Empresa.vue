@@ -2,9 +2,11 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/store/useRegisterState'
+import { useInputFormat } from '@/composables/useInputFormat'
 
 const router = useRouter()
 const registerState = useRegisterState()
+const { formatarCPF, formatarCNPJ, formatarTelefone } = useInputFormat()
 
 const currentPage = ref(1)
 const errorMessage = ref('')
@@ -318,7 +320,7 @@ formData.append(
             placeholder="00.000.000/0000-00"
             maxlength="18"
             :disabled="loading"
-            @input="formatarCNPJ"
+            @input="e => formatarCNPJ(e, v => page1Form.cnpj = v)"
           />
         </div>
 
@@ -331,7 +333,7 @@ formData.append(
             placeholder="(00) 90000-0000"
             maxlength="16"
             :disabled="loading"
-            @input="formatarTelefone"
+            @input="e => formatarTelefone(e, v => page1Form.telefoneComercial = v)"
           />
         </div>
 
@@ -516,7 +518,7 @@ formData.append(
             placeholder="000.000.000-00"
             maxlength="14"
             :disabled="loading"
-            @input="formatarCPF"
+            @input="e => formatarCPF(e, v => page3Form.ceoCpf = v)"
           />
         </div>
 

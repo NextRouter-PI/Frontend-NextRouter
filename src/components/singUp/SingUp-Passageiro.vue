@@ -2,9 +2,11 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/store/useRegisterState'
+import { useInputFormat } from '@/composables/useInputFormat'
 
 const router = useRouter()
 const registerState = useRegisterState()
+const { formatarCPF, formatarTelefone, formatarCEP } = useInputFormat()
 
 const form = ref({
   nomeCompleto: '',
@@ -62,44 +64,6 @@ const formatarDataNascimento = () => {
   const dia = String(form.value.dia).padStart(2, '0')
   const mes = meses.find(item => item.label === form.value.mes)?.value || '01'
   return `${form.value.ano}-${mes}-${dia}`
-}
-
-const formatarCPF = event => {
-  let value = event.target.value.replace(/\D/g, '')
-
-  if (value.length > 11) value = value.slice(0, 11)
-
-  value = value.replace(/^(\d{3})(\d)/, '$1.$2')
-  value = value.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-  value = value.replace(/\.(\d{3})(\d)/, '.$1-$2')
-
-  form.value.cpf = value
-}
-
-const formatarTelefone = event => {
-  let value = event.target.value.replace(/\D/g, '')
-
-  if (value.length > 11) value = value.slice(0, 11)
-
-  if (value.length <= 10) {
-    value = value.replace(/^(\d{2})(\d)/, '($1) $2')
-    value = value.replace(/(\d{4})(\d)/, '$1-$2')
-  } else {
-    value = value.replace(/^(\d{2})(\d)/, '($1) $2')
-    value = value.replace(/(\d{5})(\d)/, '$1-$2')
-  }
-
-  form.value.telefone = value
-}
-
-const formatarCEP = event => {
-  let value = event.target.value.replace(/\D/g, '')
-
-  if (value.length > 8) value = value.slice(0, 8)
-
-  value = value.replace(/^(\d{5})(\d)/, '$1-$2')
-
-  form.value.cep = value
 }
 
 const handleSubmit = async () => {
@@ -248,7 +212,7 @@ const handleSubmit = async () => {
           placeholder="000.000.000-00"
           maxlength="14"
           :disabled="registerState.state.loading"
-          @input="formatarCPF"
+          @input="e => formatarCPF(e, v => form.cpf = v)"
         />
       </div>
 
@@ -271,7 +235,7 @@ const handleSubmit = async () => {
           placeholder="(00) 90000-0000"
           maxlength="16"
           :disabled="registerState.state.loading"
-          @input="formatarTelefone"
+          @input="e => formatarTelefone(e, v => form.telefone = v)"
         />
       </div>
 
@@ -321,7 +285,7 @@ const handleSubmit = async () => {
           type="text"
           placeholder="00000-000"
           maxlength="9"
-          @input="formatarCEP"
+          @input="e => formatarCEP(e, v => form.cep = v)"
         />
       </div>
 
