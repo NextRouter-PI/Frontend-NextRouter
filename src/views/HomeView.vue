@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted } from "vue";
+import RoleBasedView from "@/components/ui/layout/RoleBasedView.vue";
 import MotoristaHome from "@/components/pages/motorista/MotoristaHome.vue";
 import PassageiroHome from "@/components/pages/passageiro/PassageiroHome.vue";
 import { useLoginState } from "@/store/useLoginState";
@@ -16,11 +17,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="home-view" v-if="state.user">
-    <PassageiroHome v-if="state.user.type === 'Passageiro'" />
-    
-    <MotoristaHome v-else-if="state.user.type === 'Motorista'" />
-    
-    <p v-else>Redirecionando...</p>
-  </div>
+  <RoleBasedView
+    v-if="state.user"
+    :passageiro-component="PassageiroHome"
+    :motorista-component="MotoristaHome"
+    empresa-text="Redirecionando..."
+  />
 </template>

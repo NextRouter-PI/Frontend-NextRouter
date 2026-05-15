@@ -1,21 +1,20 @@
 <script setup>
 import { onMounted } from "vue";
+import RoleBasedView from "@/components/ui/layout/RoleBasedView.vue";
 import MotoristaUser from "@/components/pages/motorista/MotoristaUser.vue";
 import PassageiroUser from "@/components/pages/passageiro/PassageiroUser.vue";
 import { useLoginState } from "@/store/useLoginState";
-const { state, checkAuth } = useLoginState()
+
+const { checkAuth } = useLoginState();
 
 onMounted(() => {
-  checkAuth()
-})
+  checkAuth();
+});
 </script>
 
 <template>
-    <div class="User-view" v-if="state.user">
-        <PassageiroUser v-if="state.user.type == 'Passageiro'"/>
-        <MotoristaUser v-else-if="state.user.type == 'Motorista'"/>
-        <p v-else>Empresa.</p>
-    </div>
+  <RoleBasedView
+    :passageiro-component="PassageiroUser"
+    :motorista-component="MotoristaUser"
+  />
 </template>
-
-

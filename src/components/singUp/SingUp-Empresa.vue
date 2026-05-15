@@ -1,254 +1,20 @@
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-import { useRegisterState } from '@/store/useRegisterState'
-import { useInputFormat } from '@/composables/useInputFormat'
+import { useSignUpEmpresaForm } from '@/composables/useSignUpEmpresaForm'
+import FormField from '@/components/ui/input/FormField.vue'
+import FormattedField from '@/components/ui/input/FormattedField.vue'
+import FileUploadField from '@/components/ui/input/FileUploadField.vue'
+import PasswordFieldSignUp from '@/components/ui/input/PasswordFieldSignUp.vue'
+import ErrorMessage from '@/components/ui/display/ErrorMessage.vue'
+import LoadingSpinner from '@/components/ui/display/LoadingSpinner.vue'
+import SuccessDisplay from '@/components/ui/display/SuccessDisplay.vue'
 
-const router = useRouter()
-const registerState = useRegisterState()
-const { formatarCPF, formatarCNPJ, formatarTelefone } = useInputFormat()
-
-const currentPage = ref(1)
-const errorMessage = ref('')
-
-const page1Form = ref({
-  razaoSocial: '',
-  nomeFantasia: '',
-  cnpj: '',
-  telefoneComercial: '',
-  emailCorporativo: '',
-  cidade: '',
-  estado: '',
-  endereco: '',
-  inscricaoEstadual: ''
-})
-
-const page3Form = ref({
-  ceoNome: '',
-  ceoCpf: '',
-  senha: '',
-  confirmarSenha: ''
-})
-
-const arquivos = reactive({
-  contratoSocial: null,
-  licencaOperacao: null,
-  certidoesNegativas: null
-})
-
-const arquivosNomes = reactive({
-  contratoSocial: 'Nenhum arquivo selecionado',
-  licencaOperacao: 'Nenhum arquivo selecionado',
-  certidoesNegativas: 'Nenhum arquivo selecionado'
-})
-
-const handleFileChange = (event, tipo) => {
-  const file = event.target.files?.[0]
-
-  if (!file) return
-
-  if (file.size > 10 * 1024 * 1024) {
-    errorMessage.value = 'Arquivo muito grande. Máximo 10MB.'
-    return
-  }
-
-  arquivos[tipo] = file
-  arquivosNomes[tipo] = file.name
-}
-
-const validatePage1 = () => {
-  if (!page1Form.value.razaoSocial.trim()) {
-    errorMessage.value = 'Razão Social é obrigatória'
-    return false
-  }
-
-  if (!page1Form.value.nomeFantasia.trim()) {
-    errorMessage.value = 'Nome Fantasia é obrigatório'
-    return false
-  }
-
-  if (!page1Form.value.cnpj.trim()) {
-    errorMessage.value = 'CNPJ é obrigatório'
-    return false
-  }
-
-  return true
-}
-
-const validatePage2 = () => {
-  if (!arquivos.contratoSocial) {
-    errorMessage.value = 'Contrato Social obrigatório'
-    return false
-  }
-
-  if (!arquivos.licencaOperacao) {
-    errorMessage.value = 'Licença obrigatória'
-    return false
-  }
-
-  if (!arquivos.certidoesNegativas) {
-    errorMessage.value = 'Certidões obrigatórias'
-    return false
-  }
-
-  return true
-}
-
-const validatePage3 = () => {
-  if (!page3Form.value.ceoNome.trim()) {
-    errorMessage.value = 'Nome obrigatório'
-    return false
-  }
-
-  if (!page3Form.value.ceoCpf.trim()) {
-    errorMessage.value = 'CPF obrigatório'
-    return false
-  }
-
-  if (!page3Form.value.senha.trim()) {
-    errorMessage.value = 'Senha obrigatória'
-    return false
-  }
-
-  if (
-    page3Form.value.senha !==
-    page3Form.value.confirmarSenha
-  ) {
-    errorMessage.value = 'As senhas não coincidem'
-    return false
-  }
-
-  return true
-}
-
-const goToNextPage = () => {
-  errorMessage.value = ''
-
-  if (currentPage.value === 1 && validatePage1()) {
-    currentPage.value++
-    return
-  }
-
-  if (currentPage.value === 2 && validatePage2()) {
-    currentPage.value++
-    return
-  }
-
-  if (currentPage.value === 3 && validatePage3()) {
-    currentPage.value++
-  }
-}
-
-const goToPreviousPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
-}
-
-const handleSubmit = async () => {
-  errorMessage.value = ''
-
-  if (!validatePage1()) return
-  if (!validatePage2()) return
-  if (!validatePage3()) return
-
-  try {
-    const formData = new FormData()
-
-    formData.append(
-      'razao_social',
-      page1Form.value.razaoSocial
-    )
-
-    formData.append(
-      'nome_fantasia',
-      page1Form.value.nomeFantasia
-    )
-
-    formData.append(
-      'cnpj',
-      page1Form.value.cnpj.replace(/[^\d]/g, '')
-    )
-
-    formData.append(
-  'telefone_comercial',
-  page1Form.value.telefoneComercial
-)
-
-    formData.append(
-      'email',
-      page1Form.value.emailCorporativo
-    )
-
-    formData.append(
-      'cidade',
-      page1Form.value.cidade
-    )
-
-    formData.append(
-      'estado',
-      page1Form.value.estado
-    )
-
-    formData.append(
-      'endereco',
-      page1Form.value.endereco
-    )
-
-    formData.append(
-      'inscricao_estadual',
-      page1Form.value.inscricaoEstadual
-    )
-
-    formData.append(
-  'responsavel_nome',
-  page3Form.value.ceoNome
-)
-
-formData.append(
-  'responsavel_cpf',
-  page3Form.value.ceoCpf.replace(/[^\d]/g, '')
-)
-
-    formData.append('password', page3Form.value.senha)
-
-    formData.append(
-      'contrato_social',
-      arquivos.contratoSocial
-    )
-
-    formData.append(
-      'licenca_operacao',
-      arquivos.licencaOperacao
-    )
-
-    formData.append(
-      'certidoes_negativas',
-      arquivos.certidoesNegativas
-    )
-
-    await registerState.registerEmpresa(formData)
-
-    if (registerState.state.success) {
-      router.push('/login')
-    }
-
-    if (registerState.state.error) {
-      errorMessage.value =
-        typeof registerState.state.error === 'string'
-          ? registerState.state.error
-          : JSON.stringify(registerState.state.error)
-    }
-
-  } catch (error) {
-    console.error(error)
-
-    errorMessage.value =
-      error.response?.data?.message ||
-      error.message ||
-      'Erro ao cadastrar'
-  }
-}
+const {
+  currentPage, errorMessage, mostrarSenha,
+  page1Form, page3Form, arquivos, arquivosNomes,
+  formatarCNPJ, formatarCPF, formatarTelefone,
+  limparErro, toggleSenha,
+  goToNextPage, goToPreviousPage, handleSubmit, registerState
+} = useSignUpEmpresaForm()
 </script>
 
 <template>
@@ -273,220 +39,73 @@ formData.append(
       </div>
     </div>
 
-    <div v-if="registerState.state.success" class="success-message">
-      <span class="mdi mdi-check-circle-circle"></span>
-      <p class="success-title">Cadastro enviado com sucesso!</p>
-      <p>Sua empresa será verificada pela nossa equipe.</p>
-      <p>Você receberá um email em breve com o resultado da análise.</p>
-      <div class="loading-spinner">
-        <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
-      </div>
+    <div v-if="registerState.state.success" class="success-section">
+      <SuccessDisplay
+        title="Cadastro enviado com sucesso!"
+        subtitle="Sua empresa será verificada pela nossa equipe. Você receberá um email em breve com o resultado da análise."
+      >
+        <LoadingSpinner text="Redirecionando..." />
+      </SuccessDisplay>
     </div>
 
     <form v-else class="signup-form" @submit.prevent="handleSubmit">
       <div v-if="currentPage === 1" class="page-container">
         <h2 class="page-title">Informações da <span class="highlight-orange">Empresa</span></h2>
 
-        <div class="form-group">
-          <label for="razaoSocial">Razão Social *</label>
-          <input
-            id="razaoSocial"
-            v-model="page1Form.razaoSocial"
-            type="text"
-            placeholder="Digite a razão social da empresa"
-            :disabled="loading"
-            @input="limparErro"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="nomeFantasia">Nome Fantasia *</label>
-          <input
-            id="nomeFantasia"
-            v-model="page1Form.nomeFantasia"
-            type="text"
-            placeholder="Digite o nome fantasia da empresa"
-            :disabled="loading"
-            @input="limparErro"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="cnpj">CNPJ *</label>
-          <input
-            id="cnpj"
-            v-model="page1Form.cnpj"
-            type="text"
-            placeholder="00.000.000/0000-00"
-            maxlength="18"
-            :disabled="loading"
-            @input="e => formatarCNPJ(e, v => page1Form.cnpj = v)"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="telefoneComercial">Telefone Comercial *</label>
-          <input
-            id="telefoneComercial"
-            v-model="page1Form.telefoneComercial"
-            type="tel"
-            placeholder="(00) 90000-0000"
-            maxlength="16"
-            :disabled="loading"
-            @input="e => formatarTelefone(e, v => page1Form.telefoneComercial = v)"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="emailCorporativo">E-mail Corporativo *</label>
-          <input
-            id="emailCorporativo"
-            v-model="page1Form.emailCorporativo"
-            type="email"
-            placeholder="contato@empresa.com"
-            :disabled="loading"
-            @input="limparErro"
-          />
-        </div>
+        <FormField v-model="page1Form.razaoSocial" label="Razão Social" required placeholder="Digite a razão social da empresa" :disabled="registerState.state.loading" @input="limparErro" />
+        <FormField v-model="page1Form.nomeFantasia" label="Nome Fantasia" required placeholder="Digite o nome fantasia da empresa" :disabled="registerState.state.loading" @input="limparErro" />
+        <FormattedField v-model="page1Form.cnpj" label="CNPJ" required placeholder="00.000.000/0000-00" maxlength="18" :disabled="registerState.state.loading" :format="formatarCNPJ" />
+        <FormattedField v-model="page1Form.telefoneComercial" label="Telefone Comercial" required placeholder="(00) 90000-0000" maxlength="16" :disabled="registerState.state.loading" :format="formatarTelefone" />
+        <FormField v-model="page1Form.emailCorporativo" label="E-mail Corporativo" required type="email" placeholder="contato@empresa.com" :disabled="registerState.state.loading" @input="limparErro" />
 
         <div class="row-group">
-          <div class="input-wrapper city-field">
-            <div class="form-group">
-              <label for="cidade">Cidade *</label>
-              <input
-                id="cidade"
-                v-model="page1Form.cidade"
-                type="text"
-                placeholder="Digite a cidade"
-                :disabled="loading"
-                @input="limparErro"
-              />
-            </div>
-          </div>
-          <div class="input-wrapper state-field">
-            <div class="form-group">
-              <label for="estado">Estado *</label>
-              <input
-                id="estado"
-                v-model="page1Form.estado"
-                type="text"
-                placeholder="UF"
-                maxlength="2"
-                :disabled="loading"
-                @input="limparErro"
-              />
-            </div>
-          </div>
+          <FormField v-model="page1Form.cidade" label="Cidade" required placeholder="Digite a cidade" :disabled="registerState.state.loading" @input="limparErro" class="city-field" />
+          <FormField v-model="page1Form.estado" label="Estado" required placeholder="UF" :disabled="registerState.state.loading" @input="limparErro" class="state-field" />
         </div>
 
-        <div class="form-group">
-          <label for="endereco">Endereço (Rua, Número) *</label>
-          <input
-            id="endereco"
-            v-model="page1Form.endereco"
-            type="text"
-            placeholder="Rua, número e complemento"
-            :disabled="loading"
-            @input="limparErro"
-          />
-        </div>
+        <FormField v-model="page1Form.endereco" label="Endereço (Rua, Número)" required placeholder="Rua, número e complemento" :disabled="registerState.state.loading" @input="limparErro" />
       </div>
 
       <div v-if="currentPage === 2" class="page-container">
         <h2 class="page-title">Documentação da <span class="highlight-orange">Empresa</span></h2>
 
-        <div class="form-group">
-          <label for="inscricaoEstadual">Inscrição Estadual</label>
-          <input
-            id="inscricaoEstadual"
-            v-model="page1Form.inscricaoEstadual"
-            type="text"
-            placeholder="Digite a inscrição estadual"
-            :disabled="loading"
-            @input="limparErro"
-          />
-        </div>
+        <FormField v-model="page1Form.inscricaoEstadual" label="Inscrição Estadual" placeholder="Digite a inscrição estadual" :disabled="registerState.state.loading" @input="limparErro" />
 
-        <div class="upload-group">
-          <label class="upload-label">Contrato Social *</label>
-          <div class="upload-controls">
-            <div class="file-display" :class="{ 'has-file': arquivos.contratoSocial }">
-              <span class="mdi" :class="arquivos.contratoSocial ? 'mdi-file-pdf' : 'mdi-file'"></span>
-              {{ arquivosNomes.contratoSocial }}
-            </div>
-            <button
-              type="button"
-              class="btn-upload"
-              @click="$refs.contratoSocialInput.click()"
-              :disabled="loading"
-            >
-              <span class="mdi mdi-folder-open"></span> Selecionar
-            </button>
-            <input
-              ref="contratoSocialInput"
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              @change="handleFileChange($event, 'contratoSocial')"
-              style="display: none"
-              :disabled="loading"
-            />
-          </div>
-          <small class="file-hint">Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)</small>
-        </div>
+        <FileUploadField
+          v-model="arquivos.contratoSocial"
+          :fileName="arquivosNomes.contratoSocial"
+          label="Contrato Social"
+          required
+          accept=".pdf,.jpg,.jpeg,.png"
+          :disabled="registerState.state.loading"
+          hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
+          @update:fileName="arquivosNomes.contratoSocial = $event"
+          @error="errorMessage = $event"
+        />
 
-        <div class="upload-group">
-          <label class="upload-label">Licença de Operação Estadual *</label>
-          <div class="upload-controls">
-            <div class="file-display" :class="{ 'has-file': arquivos.licencaOperacao }">
-              <span class="mdi" :class="arquivos.licencaOperacao ? 'mdi-file-pdf' : 'mdi-file'"></span>
-              {{ arquivosNomes.licencaOperacao }}
-            </div>
-            <button
-              type="button"
-              class="btn-upload"
-              @click="$refs.licencaOperacaoInput.click()"
-              :disabled="loading"
-            >
-              <span class="mdi mdi-folder-open"></span> Selecionar
-            </button>
-            <input
-              ref="licencaOperacaoInput"
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              @change="handleFileChange($event, 'licencaOperacao')"
-              style="display: none"
-              :disabled="loading"
-            />
-          </div>
-          <small class="file-hint">Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)</small>
-        </div>
+        <FileUploadField
+          v-model="arquivos.licencaOperacao"
+          :fileName="arquivosNomes.licencaOperacao"
+          label="Licença de Operação Estadual"
+          required
+          accept=".pdf,.jpg,.jpeg,.png"
+          :disabled="registerState.state.loading"
+          hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
+          @update:fileName="arquivosNomes.licencaOperacao = $event"
+          @error="errorMessage = $event"
+        />
 
-        <div class="upload-group">
-          <label class="upload-label">Certidões Negativas *</label>
-          <div class="upload-controls">
-            <div class="file-display" :class="{ 'has-file': arquivos.certidoesNegativas }">
-              <span class="mdi" :class="arquivos.certidoesNegativas ? 'mdi-file-pdf' : 'mdi-file'"></span>
-              {{ arquivosNomes.certidoesNegativas }}
-            </div>
-            <button
-              type="button"
-              class="btn-upload"
-              @click="$refs.certidoesNegativasInput.click()"
-              :disabled="loading"
-            >
-              <span class="mdi mdi-folder-open"></span> Selecionar
-            </button>
-            <input
-              ref="certidoesNegativasInput"
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              @change="handleFileChange($event, 'certidoesNegativas')"
-              style="display: none"
-              :disabled="loading"
-            />
-          </div>
-          <small class="file-hint">Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)</small>
-        </div>
+        <FileUploadField
+          v-model="arquivos.certidoesNegativas"
+          :fileName="arquivosNomes.certidoesNegativas"
+          label="Certidões Negativas"
+          required
+          accept=".pdf,.jpg,.jpeg,.png"
+          :disabled="registerState.state.loading"
+          hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
+          @update:fileName="arquivosNomes.certidoesNegativas = $event"
+          @error="errorMessage = $event"
+        />
 
         <div class="info-box">
           <span class="mdi mdi-information-outline"></span>
@@ -497,54 +116,10 @@ formData.append(
       <div v-if="currentPage === 3" class="page-container">
         <h2 class="page-title">Responsável pela <span class="highlight-orange">Empresa</span></h2>
 
-        <div class="form-group">
-          <label for="ceoNome">Nome Completo do CEO / diretor / sócio administrador *</label>
-          <input
-            id="ceoNome"
-            v-model="page3Form.ceoNome"
-            type="text"
-            placeholder="Digite o nome completo"
-            :disabled="loading"
-            @input="limparErro"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="ceoCpf">CPF *</label>
-          <input
-            id="ceoCpf"
-            v-model="page3Form.ceoCpf"
-            type="text"
-            placeholder="000.000.000-00"
-            maxlength="14"
-            :disabled="loading"
-            @input="e => formatarCPF(e, v => page3Form.ceoCpf = v)"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="senha">Defina uma senha *</label>
-          <input
-            id="senha"
-            v-model="page3Form.senha"
-            type="password"
-            placeholder="Digite uma senha segura"
-            :disabled="loading"
-            @input="limparErro"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="confirmarSenha">Confirmar uma senha *</label>
-          <input
-            id="confirmarSenha"
-            v-model="page3Form.confirmarSenha"
-            type="password"
-            placeholder="Digite a senha novamente"
-            :disabled="loading"
-            @input="limparErro"
-          />
-        </div>
+        <FormField v-model="page3Form.ceoNome" label="Nome Completo do CEO / diretor / sócio administrador" required placeholder="Digite o nome completo" :disabled="registerState.state.loading" @input="limparErro" />
+        <FormattedField v-model="page3Form.ceoCpf" label="CPF" required placeholder="000.000.000-00" maxlength="14" :disabled="registerState.state.loading" :format="formatarCPF" />
+        <PasswordFieldSignUp v-model="page3Form.senha" label="Defina uma senha" required placeholder="Mínimo 6 caracteres" :disabled="registerState.state.loading" :show-password="mostrarSenha" @update:show-password="toggleSenha" />
+        <PasswordFieldSignUp v-model="page3Form.confirmarSenha" label="Confirmar senha" required placeholder="Digite a senha novamente" :disabled="registerState.state.loading" :show-password="mostrarSenha" />
       </div>
 
       <div v-if="currentPage === 4" class="page-container">
@@ -616,12 +191,8 @@ formData.append(
         </div>
       </div>
 
-      <p v-if="errorMessage" class="error-message">
-        <span class="mdi mdi-alert-circle"></span> {{ errorMessage }}
-      </p>
-      <p v-if="registerState.state.error" class="error-message">
-        <span class="mdi mdi-alert-circle"></span> {{ registerState.state.error }}
-      </p>
+      <ErrorMessage :message="errorMessage" />
+      <ErrorMessage v-if="registerState.state.error" :message="registerState.state.error" />
 
       <div class="button-group">
         <button
@@ -629,7 +200,7 @@ formData.append(
           type="button"
           class="btn-back"
           @click="goToPreviousPage"
-          :disabled="loading"
+          :disabled="registerState.state.loading"
         >
           <span class="mdi mdi-arrow-left"></span> Voltar
         </button>
@@ -640,7 +211,7 @@ formData.append(
           class="btn-next"
           :class="{ 'btn-center': currentPage === 1 }"
           @click="goToNextPage"
-          :disabled="loading"
+          :disabled="registerState.state.loading"
         >
           Próximo <span class="mdi mdi-arrow-right"></span>
         </button>
@@ -649,10 +220,10 @@ formData.append(
           v-if="currentPage === 4"
           type="submit"
           class="btn-submit"
-          :disabled="loading"
+          :disabled="registerState.state.loading"
         >
-          <span v-if="loading" class="mdi mdi-loading mdi-spin"></span>
-          {{ loading ? "Enviando cadastro..." : "Enviar Cadastro" }}
+          <LoadingSpinner v-if="registerState.state.loading" />
+          {{ registerState.state.loading ? "Enviando cadastro..." : "Enviar Cadastro" }}
         </button>
       </div>
     </form>
@@ -660,7 +231,6 @@ formData.append(
 </template>
 
 <style scoped>
-/* Estilos Gerais */
 .form-container {
   max-width: 700px;
   margin: 3rem auto;
@@ -670,7 +240,6 @@ formData.append(
   box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.1);
 }
 
-/* Imagem do Header */
 .form-header-image {
   width: 100%;
   margin: -2rem -2rem 2rem 1rem;
@@ -685,7 +254,6 @@ formData.append(
   display: block;
 }
 
-/* Stepper/Barra de Progresso */
 .stepper-container {
   display: flex;
   align-items: center;
@@ -695,7 +263,6 @@ formData.append(
   padding: 0 20px;
 }
 
-/* A linha cinza/laranja atrás dos números */
 .stepper-container::before {
   content: "";
   position: absolute;
@@ -722,20 +289,17 @@ formData.append(
   transition: all 0.3s ease;
 }
 
-/* Estilo para o passo atual */
 .step-circle.active {
   background-color: #f48a1d;
   border: 3px solid white;
   box-shadow: 0 2px 8px rgba(244, 138, 29, 0.4);
 }
 
-/* Estilo para passos completados */
 .step-circle.completed {
   background-color: #22c55e;
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
 }
 
-/* Título da Página */
 .page-title {
   font-size: 1.4rem;
   font-weight: bold;
@@ -747,7 +311,6 @@ formData.append(
   color: #f48a1d;
 }
 
-/* Formulário */
 .signup-form {
   display: flex;
   flex-direction: column;
@@ -769,156 +332,20 @@ formData.append(
   }
 }
 
-/* Grupos de Formulário */
-.form-group {
-  text-align: left;
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  color: #f48a1d;
-  font-weight: bold;
-  display: block;
-  margin-bottom: 5px;
-  font-size: 0.9rem;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #666;
-  border-radius: 6px;
-  box-sizing: border-box;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  background: #fafafa;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #f48a1d;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(244, 138, 29, 0.1);
-}
-
-.form-group input:disabled {
-  background: #f5f5f5;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.form-group input::placeholder {
-  color: #ccc;
-  font-size: 0.85rem;
-}
-
-/* Layout em Linhas (Cidade ao lado de Estado) */
 .row-group {
   display: flex;
   gap: 15px;
   width: 100%;
 }
 
-.row-group .input-wrapper {
-  flex: 1;
-}
-
-.city-field {
+.row-group :deep(.city-field) {
   flex: 2;
 }
 
-.state-field {
+.row-group :deep(.state-field) {
   flex: 1;
 }
 
-/* Uploads */
-.upload-group {
-  margin-bottom: 0.25rem;
-}
-
-.upload-label {
-  display: block;
-  color: #f48a1d;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.upload-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.file-display {
-  flex: 1;
-  min-height: 48px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  background: #fafafa;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #999;
-  font-size: 0.85rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  transition: all 0.3s ease;
-}
-
-.file-display.has-file {
-  border-color: #f48a1d;
-  background: #fff7f0;
-  color: #333;
-}
-
-.file-display .mdi {
-  font-size: 20px;
-  color: #f48a1d;
-  flex-shrink: 0;
-}
-
-.btn-upload {
-  background-color: #f48a1d;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.btn-upload:hover:not(:disabled) {
-  background-color: #e37a0d;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.3);
-}
-
-.btn-upload:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.file-hint {
-  display: block;
-  font-size: 11px;
-  color: #999;
-  margin-top: 6px;
-}
-
-/* Info Box */
 .info-box {
   display: flex;
   align-items: flex-start;
@@ -943,7 +370,6 @@ formData.append(
   line-height: 1.4;
 }
 
-/* Seção de Revisão */
 .review-section {
   background: #f9f9f9;
   padding: 1.5rem;
@@ -982,58 +408,10 @@ formData.append(
   margin-left: 1rem;
 }
 
-/* Mensagens de Erro */
-.error-message {
-  color: #dc2626;
-  font-size: 0.85rem;
-  text-align: center;
-  margin: 0.5rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px;
-  background: #fee2e2;
-  border-radius: 10px;
-}
-
-/* Sucesso */
-.success-message {
-  text-align: center;
+.success-section {
   padding: 2rem;
 }
 
-.success-message .mdi-check-circle-circle {
-  font-size: 64px;
-  color: #22c55e;
-}
-
-.success-title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #22c55e;
-  margin: 1rem 0 0.5rem;
-}
-
-.success-message p {
-  color: #666;
-  margin: 0.5rem 0;
-}
-
-.loading-spinner {
-  margin-top: 1.5rem;
-  color: #f48a1d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.mdi-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Botões de Navegação */
 .button-group {
   display: flex;
   gap: 12px;
@@ -1103,13 +481,6 @@ formData.append(
   cursor: not-allowed;
 }
 
-/* Animação de Spin */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Responsivo */
 @media (max-width: 768px) {
   .form-container {
     margin: 1rem;
@@ -1137,15 +508,6 @@ formData.append(
 
   .row-group {
     flex-direction: column;
-  }
-
-  .city-field,
-  .state-field {
-    flex: 1;
-  }
-
-  .upload-controls {
-    flex-wrap: wrap;
   }
 
   .button-group {

@@ -1,11 +1,11 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useLoginState } from "@/store/useLoginState";
+import AvatarUpload from "@/components/ui/layout/AvatarUpload.vue";
+import CnhSection from "@/components/sections/CnhSection.vue";
 
 const { state } = useLoginState();
 const mostrarSenha = ref(false);
-const fileInputRef = ref(null);
-const cnhInputRef = ref(null);
 const cnhCarregando = ref(false);
 
 // Estado dos dados do perfil (preparado para backend)
@@ -24,26 +24,7 @@ const profileData = reactive({
   endereco_selecionado: 0, // Índice do endereço selecionado
 });
 
-const abrirSeletorFoto = () => {
-  fileInputRef.value?.click();
-};
-
-const atualizarFotoPerfil = (event) => {
-  const arquivo = event.target.files?.[0];
-  if (!arquivo) return;
-
-  profileData.fotoPerfil = URL.createObjectURL(arquivo);
-};
-
-const abrirSeletorCNH = () => {
-  cnhInputRef.value?.click();
-};
-
 const uploadCNHBackend = async (arquivo) => {
-  // Ponto de integração com Django.
-  // Exemplo esperado de retorno:
-  // { id: 10, nome_arquivo: "cnh.pdf", arquivo_url: "https://api.../media/cnh.pdf" }
-  // Substituir por chamada real (fetch/axios) quando endpoint existir.
   return Promise.resolve({
     id: profileData.cnhId,
     nome_arquivo: arquivo.name,
@@ -51,26 +32,24 @@ const uploadCNHBackend = async (arquivo) => {
   });
 };
 
-const atualizarArquivoCNH = async (event) => {
-  const arquivo = event.target.files?.[0];
-  if (!arquivo) return;
+function onCnhChange(file) {
+  if (!file) return;
 
-  const urlLocal = URL.createObjectURL(arquivo);
+  const urlLocal = URL.createObjectURL(file);
   profileData.cnhArquivoLocal = urlLocal;
-  profileData.cnhNomeArquivo = arquivo.name;
+  profileData.cnhNomeArquivo = file.name;
   cnhCarregando.value = true;
 
-  try {
-    const resposta = await uploadCNHBackend(arquivo);
+  uploadCNHBackend(file).then(resposta => {
     profileData.cnhId = resposta.id ?? profileData.cnhId;
-    profileData.cnhNomeArquivo = resposta.nome_arquivo || arquivo.name;
+    profileData.cnhNomeArquivo = resposta.nome_arquivo || file.name;
     profileData.cnhArquivo = resposta.arquivo_url || null;
-  } catch (error) {
+  }).catch(error => {
     console.error("Erro ao enviar CNH para backend:", error);
-  } finally {
+  }).finally(() => {
     cnhCarregando.value = false;
-  }
-};
+  });
+}
 
 const visualizarCNH = () => {
   const urlDocumento = profileData.cnhArquivo || profileData.cnhArquivoLocal;
@@ -82,26 +61,7 @@ const visualizarCNH = () => {
 <template>
   <div class="profile-container">
       <div class="profile-header">
-      <div class="avatar-edit-wrapper">
-        <div class="avatar-circle">
-          <img
-            v-if="profileData.fotoPerfil"
-            :src="profileData.fotoPerfil"
-            alt="Foto de perfil"
-            class="avatar-image"
-          >
-        </div>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept="image/*"
-          class="file-input-hidden"
-          @change="atualizarFotoPerfil"
-        >
-        <button class="btn-change-photo" type="button" @click="abrirSeletorFoto">
-          Alterar foto
-        </button>
-      </div>
+      <AvatarUpload v-model="profileData.fotoPerfil" />
     </div>
 
     <!-- Informações do Perfil -->
@@ -135,38 +95,14 @@ const visualizarCNH = () => {
         </div>
       </div>
 
-      <div class="cnh-section">
-        <label>Documento CNH</label>
-        <p class="cnh-file-name">{{ profileData.cnhNomeArquivo }}</p>
-
-        <input
-          ref="cnhInputRef"
-          type="file"
-          accept=".pdf,image/*"
-          class="file-input-hidden"
-          @change="atualizarArquivoCNH"
-        >
-
-        <div class="cnh-actions">
-          <button
-            class="btn-cnh btn-cnh-view"
-            type="button"
-            :disabled="!profileData.cnhArquivo && !profileData.cnhArquivoLocal"
-            @click="visualizarCNH"
-          >
-            Ver CNH
-          </button>
-          <button
-            class="btn-cnh btn-cnh-change"
-            type="button"
-            :disabled="cnhCarregando"
-            @click="abrirSeletorCNH"
-          >
-            Alterar arquivo
-          </button>
-        </div>
-        <p v-if="cnhCarregando" class="cnh-status">Enviando CNH...</p>
-      </div>
+      <CnhSection
+        :file-name="profileData.cnhNomeArquivo"
+        :file-url="profileData.cnhArquivo"
+        :local-url="profileData.cnhArquivoLocal"
+        :loading="cnhCarregando"
+        @change="onCnhChange"
+        @view="visualizarCNH"
+      />
     </div>
   </div>
 

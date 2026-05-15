@@ -1,26 +1,7 @@
 <template>
   <div class="profile-container">
     <div class="profile-header">
-      <div class="avatar-edit-wrapper">
-        <div class="avatar-circle">
-          <img
-            v-if="profileData.fotoPerfil"
-            :src="profileData.fotoPerfil"
-            alt="Foto de perfil"
-            class="avatar-image"
-          >
-        </div>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept="image/*"
-          class="file-input-hidden"
-          @change="atualizarFotoPerfil"
-        >
-        <button class="btn-change-photo" type="button" @click="abrirSeletorFoto">
-          Alterar foto
-        </button>
-      </div>
+      <AvatarUpload v-model="profileData.fotoPerfil" />
     </div>
 
     <div class="profile-info">
@@ -51,39 +32,13 @@
         </div>
       </div>
 
-      <div class="endereco-section">
-        <div class="address-label">
-          <span>Meus Endereços</span>
-          <div class="action-buttons">
-            <span class="icon-btn mdi mdi-pencil" @click="editarEndereco" title="Editar endereço"></span>
-            <span class="icon-btn mdi mdi-plus" @click="adicionarEndereco" title="Adicionar novo endereço"></span>
-          </div>
-        </div>
-        <div
-          class="endereco-item endereco-selecionado"
-          @click="abrirDropdownEnderecos"
-        >
-          <div class="endereco-content">
-            <p class="endereco-text">{{ profileData.enderecos[profileData.endereco_selecionado] }}</p>
-          </div>
-          <span class="dropdown-icon mdi mdi-chevron-down" :class="{ 'ativo': mostrarDropdownEnderecos }"></span>
-        </div>
-
-        <transition name="slide">
-          <div v-if="mostrarDropdownEnderecos" class="endereco-dropdown">
-            <div
-              v-for="(endereco, index) in profileData.enderecos"
-              :key="index"
-              class="endereco-opcao"
-              :class="{ 'selecionado': profileData.endereco_selecionado === index }"
-              @click="selecionarEndereco(index)"
-            >
-              <p class="endereco-text">{{ endereco }}</p>
-              <span v-if="profileData.endereco_selecionado === index" class="check-icon mdi mdi-check"></span>
-            </div>
-          </div>
-        </transition>
-      </div>
+      <AddressSection
+        :addresses="profileData.enderecos"
+        :selected-index="profileData.endereco_selecionado"
+        @update:selected-index="profileData.endereco_selecionado = $event"
+        @edit="editarEndereco"
+        @add="adicionarEndereco"
+      />
 
       <!-- Botão de Configurações -->
       <button class="btn-settings">Configurações</button>
@@ -94,11 +49,11 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useLoginState } from "@/store/useLoginState";
+import AvatarUpload from "@/components/ui/layout/AvatarUpload.vue";
+import AddressSection from "@/components/sections/AddressSection.vue";
 
 const { state } = useLoginState();
 const mostrarSenha = ref(false);
-const mostrarDropdownEnderecos = ref(false);
-const fileInputRef = ref(null);
 
 const profileData = reactive({
   fotoPerfil: null,
@@ -111,10 +66,6 @@ const profileData = reactive({
   endereco_selecionado: 0, 
 });
 
-const abrirDropdownEnderecos = () => {
-  mostrarDropdownEnderecos.value = !mostrarDropdownEnderecos.value;
-};
-
 const editarEndereco = () => {
   console.log("Editar endereço:", profileData.enderecos[profileData.endereco_selecionado]);
 };
@@ -123,22 +74,6 @@ const adicionarEndereco = () => {
   console.log("Adicionar novo endereço");
 };
 
-const selecionarEndereco = (index) => {
-  profileData.endereco_selecionado = index;
-  mostrarDropdownEnderecos.value = false;
-  console.log("Endereço selecionado:", profileData.enderecos[index]);
-};
-
-const abrirSeletorFoto = () => {
-  fileInputRef.value?.click();
-};
-
-const atualizarFotoPerfil = (event) => {
-  const arquivo = event.target.files?.[0];
-  if (!arquivo) return;
-
-  profileData.fotoPerfil = URL.createObjectURL(arquivo);
-};
 </script>
 
 <style scoped>

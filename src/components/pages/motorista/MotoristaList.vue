@@ -89,8 +89,10 @@
 <script setup>
 import { computed } from "vue";
 import { useQuestionarioState } from "@/store/useQuestionarioState";
+import { useTransporteQuestionario } from "@/composables/useTransporteQuestionario";
 
 const questionarioState = useQuestionarioState();
+const { formatarData } = useTransporteQuestionario();
 
 const formatarDataProxima = () => {
   const amanha = new Date();
@@ -101,15 +103,6 @@ const formatarDataProxima = () => {
   const ano = amanha.getFullYear();
 
   return `${dia}/${mes}/${ano}`;
-};
-
-const formatarData = () => {
-  const hoje = new Date();
-
-  const dia = String(hoje.getDate()).padStart(2, "0");
-  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
-
-  return `${dia}/${mes}`;
 };
 
 const podeEnviar = computed(() => {
