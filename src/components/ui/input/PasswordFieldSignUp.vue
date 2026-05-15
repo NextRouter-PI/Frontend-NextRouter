@@ -5,14 +5,15 @@ defineProps({
   required: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   placeholder: String,
-  showPassword: { type: Boolean, default: false }
+  showPassword: { type: Boolean, default: false },
+  error: String
 })
 
 const emit = defineEmits(['update:modelValue', 'update:showPassword'])
 </script>
 
 <template>
-  <div class="field-group">
+  <div class="field-group" :class="{ 'has-error': error }">
     <label v-if="label">
       {{ label }} <span v-if="required" class="required">*</span>
     </label>
@@ -30,6 +31,7 @@ const emit = defineEmits(['update:modelValue', 'update:showPassword'])
         @click="emit('update:showPassword', !showPassword)"
       ></span>
     </div>
+    <p v-if="error" class="field-error">{{ error }}</p>
   </div>
 </template>
 
@@ -73,6 +75,16 @@ const emit = defineEmits(['update:modelValue', 'update:showPassword'])
 .password-input input:disabled {
   background: #f5f5f5;
   cursor: not-allowed;
+}
+
+.field-group.has-error input {
+  border-color: #e74c3c;
+}
+
+.field-error {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 .toggle-password {

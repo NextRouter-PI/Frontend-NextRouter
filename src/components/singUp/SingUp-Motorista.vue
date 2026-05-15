@@ -15,9 +15,12 @@ import LoadingSpinner from '@/components/ui/display/LoadingSpinner.vue'
 const router = useRouter()
 const registerState = useRegisterState()
 const {
-  mostrarSenha, errorMessage, dias, meses, anos,
+  mostrarSenha, errorMessage, fieldErrors,
+  dias, meses, anos,
   formatarCPF, formatarTelefone, formatarCEP,
-  limparErro, toggleSenha, formatarDataNascimento, validarFormulario
+  limparErro, clearFieldError, toggleSenha,
+  formatarDataNascimento, validarFormulario, validateField,
+  required, isEmail, minLength, match
 } = useSignUpForm()
 
 const form = ref({
@@ -33,10 +36,7 @@ const handleSubmit = async () => {
   limparErro(registerState)
   if (!validarFormulario(form.value)) return
 
-  if (!arquivoCNH.value) {
-    errorMessage.value = 'Arquivo da CNH é obrigatório'
-    return
-  }
+  if (!validateField(arquivoCNH.value, [v => required(v, 'Arquivo CNH')], 'arquivoCNH')) return
 
   const data = {
     nome: form.value.nomeCompleto.trim(),
@@ -78,11 +78,50 @@ const handleSubmit = async () => {
     </div>
 
     <form v-else class="signup-form" @submit.prevent="handleSubmit">
-      <FormField v-model="form.nomeCompleto" label="Nome completo" required placeholder="Digite seu nome completo" :disabled="registerState.state.loading" @input="limparErro(registerState)" />
+      <FormField
+        v-model="form.nomeCompleto"
+        label="Nome completo"
+        required
+        placeholder="Digite seu nome completo"
+        :disabled="registerState.state.loading"
+        :error="fieldErrors.nomeCompleto"
+        @input="clearFieldError('nomeCompleto')"
+        @blur="validateField(form.nomeCompleto, [v => required(v, 'Nome completo')], 'nomeCompleto')"
+      />
       <DateInput :dias="dias" :meses="meses" :anos="anos" :form="form" :disabled="registerState.state.loading" />
-      <FormattedField v-model="form.cpf" label="CPF" required placeholder="000.000.000-00" maxlength="14" :disabled="registerState.state.loading" :format="formatarCPF" />
-      <FormField v-model="form.email" label="Email" required type="email" placeholder="seu@email.com" :disabled="registerState.state.loading" @input="limparErro(registerState)" />
-      <FormattedField v-model="form.telefone" label="Telefone" required placeholder="(00) 90000-0000" maxlength="16" :disabled="registerState.state.loading" :format="formatarTelefone" />
+      <FormattedField
+        v-model="form.cpf"
+        label="CPF"
+        required
+        placeholder="000.000.000-00"
+        maxlength="14"
+        :disabled="registerState.state.loading"
+        :format="formatarCPF"
+        :error="fieldErrors.cpf"
+        @input="clearFieldError('cpf')"
+        @blur="validateField(form.cpf, [v => required(v, 'CPF')], 'cpf')"
+      />
+      <FormField
+        v-model="form.email"
+        label="Email"
+        required
+        type="email"
+        placeholder="seu@email.com"
+        :disabled="registerState.state.loading"
+        :error="fieldErrors.email"
+        @input="clearFieldError('email')"
+        @blur="validateField(form.email, [v => required(v, 'Email') || isEmail(v)], 'email')"
+      />
+      <FormattedField
+        v-model="form.telefone"
+        label="Telefone"
+        required
+        placeholder="(00) 90000-0000"
+        maxlength="16"
+        :disabled="registerState.state.loading"
+        :format="formatarTelefone"
+        @input="clearFieldError('telefone')"
+      />
       <SelectField v-model="form.genero" label="Gênero" :options="[{value:'Masculino',label:'Masculino'},{value:'Feminino',label:'Feminino'},{value:'Outro',label:'Outro'}]" />
       <FormField v-model="form.endereco" label="Endereço" placeholder="Rua, número, bairro" />
       <div class="row-fields">
@@ -90,9 +129,39 @@ const handleSubmit = async () => {
         <FormField v-model="form.estado" label="Estado" placeholder="Estado" class="half" />
       </div>
       <FormattedField v-model="form.cep" label="CEP" placeholder="00000-000" maxlength="9" :format="formatarCEP" />
-      <FormField v-model="form.cnh" label="CNH" required placeholder="Número da CNH" :disabled="registerState.state.loading" @input="limparErro(registerState)" />
-      <PasswordFieldSignUp v-model="form.password" label="Senha" required placeholder="Mínimo 6 caracteres" :disabled="registerState.state.loading" :show-password="mostrarSenha" @update:show-password="toggleSenha" />
-      <PasswordFieldSignUp v-model="form.confirmPassword" label="Confirmar senha" required placeholder="Digite a senha novamente" :disabled="registerState.state.loading" :show-password="mostrarSenha" />
+      <FormField
+        v-model="form.cnh"
+        label="CNH"
+        required
+        placeholder="Número da CNH"
+        :disabled="registerState.state.loading"
+        :error="fieldErrors.cnh"
+        @input="clearFieldError('cnh')"
+        @blur="validateField(form.cnh, [v => required(v, 'CNH')], 'cnh')"
+      />
+      <PasswordFieldSignUp
+        v-model="form.password"
+        label="Senha"
+        required
+        placeholder="Mínimo 6 caracteres"
+        :disabled="registerState.state.loading"
+        :show-password="mostrarSenha"
+        :error="fieldErrors.password"
+        @update:show-password="toggleSenha"
+        @input="clearFieldError('password')"
+        @blur="validateField(form.password, [v => required(v, 'Senha') || minLength(v, 6, 'Senha')], 'password')"
+      />
+      <PasswordFieldSignUp
+        v-model="form.confirmPassword"
+        label="Confirmar senha"
+        required
+        placeholder="Digite a senha novamente"
+        :disabled="registerState.state.loading"
+        :show-password="mostrarSenha"
+        :error="fieldErrors.confirmPassword"
+        @input="clearFieldError('confirmPassword')"
+        @blur="validateField(form.confirmPassword, [v => required(v, 'Confirmação') || match(v, form.password, 'Senhas')], 'confirmPassword')"
+      />
       <FileUploadField
         v-model="arquivoCNH"
         :fileName="arquivoCNHName"
@@ -101,7 +170,9 @@ const handleSubmit = async () => {
         accept=".pdf,.jpg,.jpeg,.png"
         :disabled="registerState.state.loading"
         hint="Formatos aceitos: PDF, JPG, JPEG, PNG"
+        :error="fieldErrors.arquivoCNH"
         @update:fileName="arquivoCNHName = $event"
+        @error="errorMessage = $event"
       />
       <ErrorMessage :message="errorMessage" />
       <ErrorMessage v-if="registerState.state.error" :message="registerState.state.error" />

@@ -1,15 +1,20 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/store/useRegisterState'
+import { useValidation } from '@/composables/useValidation'
 import { useInputFormat } from '@/composables/useInputFormat'
 
 export function useSignUpEmpresaForm() {
   const router = useRouter()
   const registerState = useRegisterState()
   const { formatarCPF, formatarCNPJ, formatarTelefone } = useInputFormat()
+  const {
+    errorMessage, fieldErrors, clearErrors, clearFieldError,
+    required, isCNPJ, isCPF, validatePassword, validateForm, validateField,
+    minLength, match
+  } = useValidation()
 
   const currentPage = ref(1)
-  const errorMessage = ref('')
   const mostrarSenha = ref(false)
 
   const page1Form = ref({
@@ -44,68 +49,36 @@ export function useSignUpEmpresaForm() {
   })
 
   function limparErro() {
-    errorMessage.value = ''
+    clearErrors()
     if (registerState) registerState.state.error = null
   }
 
   function validatePage1() {
-    if (!page1Form.value.razaoSocial.trim()) {
-      errorMessage.value = 'Razão Social é obrigatória'
-      return false
-    }
-    if (!page1Form.value.nomeFantasia.trim()) {
-      errorMessage.value = 'Nome Fantasia é obrigatório'
-      return false
-    }
-    if (!page1Form.value.cnpj.trim()) {
-      errorMessage.value = 'CNPJ é obrigatório'
-      return false
-    }
-    return true
+    return validateForm([
+      { fn: () => required(page1Form.value.razaoSocial, 'Razão Social'), field: 'razaoSocial' },
+      { fn: () => required(page1Form.value.nomeFantasia, 'Nome Fantasia'), field: 'nomeFantasia' },
+      { fn: () => required(page1Form.value.cnpj, 'CNPJ') || isCNPJ(page1Form.value.cnpj), field: 'cnpj' },
+    ])
   }
 
   function validatePage2() {
-    if (!arquivos.contratoSocial) {
-      errorMessage.value = 'Contrato Social obrigatório'
-      return false
-    }
-    if (!arquivos.licencaOperacao) {
-      errorMessage.value = 'Licença obrigatória'
-      return false
-    }
-    if (!arquivos.certidoesNegativas) {
-      errorMessage.value = 'Certidões obrigatórias'
-      return false
-    }
-    return true
+    return validateForm([
+      { fn: () => required(arquivos.contratoSocial, 'Contrato Social'), field: 'contratoSocial' },
+      { fn: () => required(arquivos.licencaOperacao, 'Licença de Operação'), field: 'licencaOperacao' },
+      { fn: () => required(arquivos.certidoesNegativas, 'Certidões Negativas'), field: 'certidoesNegativas' },
+    ])
   }
 
   function validatePage3() {
-    if (!page3Form.value.ceoNome.trim()) {
-      errorMessage.value = 'Nome obrigatório'
-      return false
-    }
-    if (!page3Form.value.ceoCpf.trim()) {
-      errorMessage.value = 'CPF obrigatório'
-      return false
-    }
-    if (!page3Form.value.senha.trim()) {
-      errorMessage.value = 'Senha obrigatória'
-      return false
-    }
-    if (page3Form.value.senha !== page3Form.value.confirmarSenha) {
-      errorMessage.value = 'As senhas não coincidem'
-      return false
-    }
-    if (page3Form.value.senha.length < 6) {
-      errorMessage.value = 'A senha deve ter no mínimo 6 caracteres'
-      return false
-    }
-    return true
+    return validateForm([
+      { fn: () => required(page3Form.value.ceoNome, 'Nome'), field: 'ceoNome' },
+      { fn: () => required(page3Form.value.ceoCpf, 'CPF') || isCPF(page3Form.value.ceoCpf), field: 'ceoCpf' },
+      { fn: () => validatePassword(page3Form.value.senha, page3Form.value.confirmarSenha), field: 'senha' },
+    ])
   }
 
   function goToNextPage() {
-    errorMessage.value = ''
+    clearErrors()
     if (currentPage.value === 1 && validatePage1()) { currentPage.value++; return }
     if (currentPage.value === 2 && validatePage2()) { currentPage.value++; return }
     if (currentPage.value === 3 && validatePage3()) { currentPage.value++ }
@@ -120,7 +93,7 @@ export function useSignUpEmpresaForm() {
   }
 
   async function handleSubmit() {
-    errorMessage.value = ''
+    clearErrors()
     if (!validatePage1()) return
     if (!validatePage2()) return
     if (!validatePage3()) return
@@ -167,6 +140,7 @@ export function useSignUpEmpresaForm() {
   return {
     currentPage,
     errorMessage,
+    fieldErrors,
     mostrarSenha,
     page1Form,
     page3Form,
@@ -176,10 +150,18 @@ export function useSignUpEmpresaForm() {
     formatarCPF,
     formatarTelefone,
     limparErro,
+    clearFieldError,
     toggleSenha,
+    required,
+    isCNPJ,
+    isCPF,
+    minLength,
+    match,
+    validatePassword,
     goToNextPage,
     goToPreviousPage,
     handleSubmit,
-    registerState
+    registerState,
+    validateField
   }
 }

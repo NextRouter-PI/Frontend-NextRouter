@@ -6,7 +6,8 @@ defineProps({
   disabled: { type: Boolean, default: false },
   placeholder: String,
   maxlength: [String, Number],
-  format: { type: Function, default: null }
+  format: { type: Function, default: null },
+  error: String
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -21,7 +22,7 @@ function handleInput(event) {
 </script>
 
 <template>
-  <div class="field-group">
+  <div class="field-group" :class="{ 'has-error': error }">
     <label v-if="label">
       {{ label }} <span v-if="required" class="required">*</span>
     </label>
@@ -33,6 +34,7 @@ function handleInput(event) {
       :maxlength="maxlength"
       :disabled="disabled"
     />
+    <p v-if="error" class="field-error">{{ error }}</p>
   </div>
 </template>
 
@@ -74,5 +76,15 @@ function handleInput(event) {
 .field-group input:disabled {
   background: #f5f5f5;
   cursor: not-allowed;
+}
+
+.field-group.has-error input {
+  border-color: #e74c3c;
+}
+
+.field-error {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

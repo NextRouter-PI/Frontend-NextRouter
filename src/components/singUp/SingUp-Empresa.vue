@@ -9,11 +9,12 @@ import LoadingSpinner from '@/components/ui/display/LoadingSpinner.vue'
 import SuccessDisplay from '@/components/ui/display/SuccessDisplay.vue'
 
 const {
-  currentPage, errorMessage, mostrarSenha,
+  currentPage, errorMessage, fieldErrors, mostrarSenha,
   page1Form, page3Form, arquivos, arquivosNomes,
   formatarCNPJ, formatarCPF, formatarTelefone,
-  limparErro, toggleSenha,
-  goToNextPage, goToPreviousPage, handleSubmit, registerState
+  limparErro, clearFieldError, toggleSenha,
+  goToNextPage, goToPreviousPage, handleSubmit, registerState,
+  validateField, required, isCNPJ, isCPF, minLength, match, validatePassword
 } = useSignUpEmpresaForm()
 </script>
 
@@ -52,24 +53,84 @@ const {
       <div v-if="currentPage === 1" class="page-container">
         <h2 class="page-title">Informações da <span class="highlight-orange">Empresa</span></h2>
 
-        <FormField v-model="page1Form.razaoSocial" label="Razão Social" required placeholder="Digite a razão social da empresa" :disabled="registerState.state.loading" @input="limparErro" />
-        <FormField v-model="page1Form.nomeFantasia" label="Nome Fantasia" required placeholder="Digite o nome fantasia da empresa" :disabled="registerState.state.loading" @input="limparErro" />
-        <FormattedField v-model="page1Form.cnpj" label="CNPJ" required placeholder="00.000.000/0000-00" maxlength="18" :disabled="registerState.state.loading" :format="formatarCNPJ" />
-        <FormattedField v-model="page1Form.telefoneComercial" label="Telefone Comercial" required placeholder="(00) 90000-0000" maxlength="16" :disabled="registerState.state.loading" :format="formatarTelefone" />
-        <FormField v-model="page1Form.emailCorporativo" label="E-mail Corporativo" required type="email" placeholder="contato@empresa.com" :disabled="registerState.state.loading" @input="limparErro" />
+        <FormField
+          v-model="page1Form.razaoSocial"
+          label="Razão Social"
+          required
+          placeholder="Digite a razão social da empresa"
+          :disabled="registerState.state.loading"
+          :error="fieldErrors.razaoSocial"
+          @input="clearFieldError('razaoSocial')"
+          @blur="validateField(page1Form.razaoSocial, [v => required(v, 'Razão Social')], 'razaoSocial')"
+        />
+        <FormField
+          v-model="page1Form.nomeFantasia"
+          label="Nome Fantasia"
+          required
+          placeholder="Digite o nome fantasia da empresa"
+          :disabled="registerState.state.loading"
+          :error="fieldErrors.nomeFantasia"
+          @input="clearFieldError('nomeFantasia')"
+          @blur="validateField(page1Form.nomeFantasia, [v => required(v, 'Nome Fantasia')], 'nomeFantasia')"
+        />
+        <FormattedField
+          v-model="page1Form.cnpj"
+          label="CNPJ"
+          required
+          placeholder="00.000.000/0000-00"
+          maxlength="18"
+          :disabled="registerState.state.loading"
+          :format="formatarCNPJ"
+          :error="fieldErrors.cnpj"
+          @input="clearFieldError('cnpj')"
+          @blur="validateField(page1Form.cnpj, [v => required(v, 'CNPJ') || isCNPJ(v)], 'cnpj')"
+        />
+        <FormattedField
+          v-model="page1Form.telefoneComercial"
+          label="Telefone Comercial"
+          required
+          placeholder="(00) 90000-0000"
+          maxlength="16"
+          :disabled="registerState.state.loading"
+          :format="formatarTelefone"
+          @input="clearFieldError('telefoneComercial')"
+        />
+        <FormField
+          v-model="page1Form.emailCorporativo"
+          label="E-mail Corporativo"
+          required
+          type="email"
+          placeholder="contato@empresa.com"
+          :disabled="registerState.state.loading"
+          :error="fieldErrors.emailCorporativo"
+          @input="clearFieldError('emailCorporativo')"
+        />
 
         <div class="row-group">
-          <FormField v-model="page1Form.cidade" label="Cidade" required placeholder="Digite a cidade" :disabled="registerState.state.loading" @input="limparErro" class="city-field" />
-          <FormField v-model="page1Form.estado" label="Estado" required placeholder="UF" :disabled="registerState.state.loading" @input="limparErro" class="state-field" />
+          <FormField v-model="page1Form.cidade" label="Cidade" required placeholder="Digite a cidade" :disabled="registerState.state.loading" @input="clearFieldError('cidade')" class="city-field" />
+          <FormField v-model="page1Form.estado" label="Estado" required placeholder="UF" :disabled="registerState.state.loading" @input="clearFieldError('estado')" class="state-field" />
         </div>
 
-        <FormField v-model="page1Form.endereco" label="Endereço (Rua, Número)" required placeholder="Rua, número e complemento" :disabled="registerState.state.loading" @input="limparErro" />
+        <FormField
+          v-model="page1Form.endereco"
+          label="Endereço (Rua, Número)"
+          required
+          placeholder="Rua, número e complemento"
+          :disabled="registerState.state.loading"
+          @input="clearFieldError('endereco')"
+        />
       </div>
 
       <div v-if="currentPage === 2" class="page-container">
         <h2 class="page-title">Documentação da <span class="highlight-orange">Empresa</span></h2>
 
-        <FormField v-model="page1Form.inscricaoEstadual" label="Inscrição Estadual" placeholder="Digite a inscrição estadual" :disabled="registerState.state.loading" @input="limparErro" />
+        <FormField
+          v-model="page1Form.inscricaoEstadual"
+          label="Inscrição Estadual"
+          placeholder="Digite a inscrição estadual"
+          :disabled="registerState.state.loading"
+          @input="clearFieldError('inscricaoEstadual')"
+        />
 
         <FileUploadField
           v-model="arquivos.contratoSocial"
@@ -78,6 +139,7 @@ const {
           required
           accept=".pdf,.jpg,.jpeg,.png"
           :disabled="registerState.state.loading"
+          :error="fieldErrors.contratoSocial"
           hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
           @update:fileName="arquivosNomes.contratoSocial = $event"
           @error="errorMessage = $event"
@@ -90,6 +152,7 @@ const {
           required
           accept=".pdf,.jpg,.jpeg,.png"
           :disabled="registerState.state.loading"
+          :error="fieldErrors.licencaOperacao"
           hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
           @update:fileName="arquivosNomes.licencaOperacao = $event"
           @error="errorMessage = $event"
@@ -102,6 +165,7 @@ const {
           required
           accept=".pdf,.jpg,.jpeg,.png"
           :disabled="registerState.state.loading"
+          :error="fieldErrors.certidoesNegativas"
           hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
           @update:fileName="arquivosNomes.certidoesNegativas = $event"
           @error="errorMessage = $event"
@@ -116,10 +180,51 @@ const {
       <div v-if="currentPage === 3" class="page-container">
         <h2 class="page-title">Responsável pela <span class="highlight-orange">Empresa</span></h2>
 
-        <FormField v-model="page3Form.ceoNome" label="Nome Completo do CEO / diretor / sócio administrador" required placeholder="Digite o nome completo" :disabled="registerState.state.loading" @input="limparErro" />
-        <FormattedField v-model="page3Form.ceoCpf" label="CPF" required placeholder="000.000.000-00" maxlength="14" :disabled="registerState.state.loading" :format="formatarCPF" />
-        <PasswordFieldSignUp v-model="page3Form.senha" label="Defina uma senha" required placeholder="Mínimo 6 caracteres" :disabled="registerState.state.loading" :show-password="mostrarSenha" @update:show-password="toggleSenha" />
-        <PasswordFieldSignUp v-model="page3Form.confirmarSenha" label="Confirmar senha" required placeholder="Digite a senha novamente" :disabled="registerState.state.loading" :show-password="mostrarSenha" />
+        <FormField
+          v-model="page3Form.ceoNome"
+          label="Nome Completo do CEO / diretor / sócio administrador"
+          required
+          placeholder="Digite o nome completo"
+          :disabled="registerState.state.loading"
+          :error="fieldErrors.ceoNome"
+          @input="clearFieldError('ceoNome')"
+          @blur="validateField(page3Form.ceoNome, [v => required(v, 'Nome')], 'ceoNome')"
+        />
+        <FormattedField
+          v-model="page3Form.ceoCpf"
+          label="CPF"
+          required
+          placeholder="000.000.000-00"
+          maxlength="14"
+          :disabled="registerState.state.loading"
+          :format="formatarCPF"
+          :error="fieldErrors.ceoCpf"
+          @input="clearFieldError('ceoCpf')"
+          @blur="validateField(page3Form.ceoCpf, [v => required(v, 'CPF') || isCPF(v)], 'ceoCpf')"
+        />
+        <PasswordFieldSignUp
+          v-model="page3Form.senha"
+          label="Defina uma senha"
+          required
+          placeholder="Mínimo 6 caracteres"
+          :disabled="registerState.state.loading"
+          :show-password="mostrarSenha"
+          :error="fieldErrors.senha"
+          @update:show-password="toggleSenha"
+          @input="clearFieldError('senha')"
+          @blur="validateField(page3Form.senha, [v => required(v, 'Senha') || minLength(v, 6, 'Senha')], 'senha')"
+        />
+        <PasswordFieldSignUp
+          v-model="page3Form.confirmarSenha"
+          label="Confirmar senha"
+          required
+          placeholder="Digite a senha novamente"
+          :disabled="registerState.state.loading"
+          :show-password="mostrarSenha"
+          :error="fieldErrors.confirmarSenha"
+          @input="clearFieldError('confirmarSenha')"
+          @blur="validateField(page3Form.confirmarSenha, [v => required(v, 'Confirmação') || match(v, page3Form.senha, 'Senhas')], 'confirmarSenha')"
+        />
       </div>
 
       <div v-if="currentPage === 4" class="page-container">

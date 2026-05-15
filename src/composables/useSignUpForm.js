@@ -1,11 +1,15 @@
 import { ref, computed } from 'vue'
+import { useValidation } from '@/composables/useValidation'
 import { useInputFormat } from '@/composables/useInputFormat'
 
 export function useSignUpForm() {
   const { formatarCPF, formatarTelefone, formatarCEP } = useInputFormat()
+  const {
+    errorMessage, fieldErrors, clearErrors, clearFieldError,
+    required, minLength, isEmail, match, validateForm, validateField
+  } = useValidation()
 
   const mostrarSenha = ref(false)
-  const errorMessage = ref('')
 
   const dias = computed(() => Array.from({ length: 31 }, (_, i) => i + 1))
 
@@ -31,7 +35,7 @@ export function useSignUpForm() {
   )
 
   function limparErro(registerState) {
-    errorMessage.value = ''
+    clearErrors()
     if (registerState) registerState.state.error = null
   }
 
@@ -46,24 +50,31 @@ export function useSignUpForm() {
   }
 
   function validarFormulario(form) {
-    if (!form.nomeCompleto) { errorMessage.value = 'Nome completo é obrigatório'; return false }
-    if (!form.email) { errorMessage.value = 'Email é obrigatório'; return false }
-    if (!form.password) { errorMessage.value = 'Senha é obrigatória'; return false }
-    if (form.password.length < 6) { errorMessage.value = 'A senha deve ter no mínimo 6 caracteres'; return false }
-    if (form.password !== form.confirmPassword) { errorMessage.value = 'As senhas não coincidem'; return false }
-    return true
+    return validateForm([
+      { fn: () => required(form.nomeCompleto, 'Nome completo'), field: 'nomeCompleto' },
+      { fn: () => required(form.email, 'Email') || isEmail(form.email), field: 'email' },
+      { fn: () => required(form.password, 'Senha') || minLength(form.password, 6, 'Senha'), field: 'password' },
+      { fn: () => match(form.password, form.confirmPassword, 'Senhas'), field: 'confirmPassword' }
+    ])
   }
 
   return {
     mostrarSenha,
     errorMessage,
+    fieldErrors,
     dias, meses, anos,
     formatarCPF,
     formatarTelefone,
     formatarCEP,
     limparErro,
+    clearFieldError,
     toggleSenha,
     formatarDataNascimento,
-    validarFormulario
+    validarFormulario,
+    validateField,
+    required,
+    isEmail,
+    minLength,
+    match
   }
 }

@@ -8,7 +8,8 @@ const props = defineProps({
   disabled: { type: Boolean, default: false },
   accept: { type: String, default: '.pdf,.jpg,.jpeg,.png' },
   fileName: { type: String, default: 'Nenhum arquivo selecionado' },
-  hint: String
+  hint: String,
+  error: String
 })
 
 const emit = defineEmits(['update:modelValue', 'update:fileName', 'error'])
@@ -65,6 +66,7 @@ function handleFile(event) {
     />
 
     <small v-if="hint" class="file-hint">{{ hint }}</small>
+    <p v-if="error" class="field-error">{{ error }}</p>
   </div>
 </template>
 
@@ -152,5 +154,11 @@ function handleFile(event) {
   font-size: 11px;
   color: #999;
   margin-top: 6px;
+}
+
+.field-error {
+  color: #e74c3c;
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>
