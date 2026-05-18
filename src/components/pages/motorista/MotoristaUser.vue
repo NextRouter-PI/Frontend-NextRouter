@@ -1,12 +1,15 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useLoginState } from "@/store/useLoginState";
+import { useUploadImage } from "@/store/useUploadImage";
 import AvatarUpload from "@/components/ui/layout/AvatarUpload.vue";
 import CnhSection from "@/components/sections/CnhSection.vue";
 
 const { state } = useLoginState();
+const { state: uploadState, upload } = useUploadImage();
 const mostrarSenha = ref(false);
 const cnhCarregando = ref(false);
+const fotoCarregando = ref(false);
 
 // Estado dos dados do perfil (preparado para backend)
 const profileData = reactive({
@@ -24,13 +27,18 @@ const profileData = reactive({
   endereco_selecionado: 0, // Índice do endereço selecionado
 });
 
-const uploadCNHBackend = async (arquivo) => {
-  return Promise.resolve({
-    id: profileData.cnhId,
-    nome_arquivo: arquivo.name,
-    arquivo_url: profileData.cnhArquivoLocal,
+function onFotoChange(file) {
+  if (!file) return;
+  fotoCarregando.value = true;
+
+  upload(file, 'Foto de perfil').then(resposta => {
+    profileData.fotoPerfil = resposta.arquivo_url || resposta.url || resposta.imagem_url || null;
+  }).catch(error => {
+    console.error("Erro ao enviar foto de perfil:", error);
+  }).finally(() => {
+    fotoCarregando.value = false;
   });
-};
+}
 
 function onCnhChange(file) {
   if (!file) return;
@@ -40,10 +48,10 @@ function onCnhChange(file) {
   profileData.cnhNomeArquivo = file.name;
   cnhCarregando.value = true;
 
-  uploadCNHBackend(file).then(resposta => {
+  upload(file, 'CNH').then(resposta => {
     profileData.cnhId = resposta.id ?? profileData.cnhId;
     profileData.cnhNomeArquivo = resposta.nome_arquivo || file.name;
-    profileData.cnhArquivo = resposta.arquivo_url || null;
+    profileData.cnhArquivo = resposta.arquivo_url || resposta.url || null;
   }).catch(error => {
     console.error("Erro ao enviar CNH para backend:", error);
   }).finally(() => {
@@ -61,8 +69,11 @@ const visualizarCNH = () => {
 <template>
   <div class="profile-container">
       <div class="profile-header">
-      <AvatarUpload v-model="profileData.fotoPerfil" />
+      <AvatarUpload v-model="profileData.fotoPerfil" @file-select="onFotoChange" />
+      <p v-if="fotoCarregando" class="upload-status">Enviando foto...</p>
     </div>
+
+    <p v-if="uploadState.error" class="upload-error">{{ uploadState.error }}</p>
 
     <!-- Informações do Perfil -->
     <div class="profile-info">
@@ -305,5 +316,22 @@ const visualizarCNH = () => {
   margin: 10px 0 0;
   font-size: 0.85rem;
   color: #8a4f10;
+}
+
+.upload-status {
+  text-align: center;
+  color: #8a4f10;
+  font-size: 0.85rem;
+  margin: 4px 0 0;
+}
+
+.upload-error {
+  text-align: center;
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin: 4px 0 16px;
+  background: #ffebee;
+  padding: 8px 12px;
+  border-radius: 6px;
 }
 </style>

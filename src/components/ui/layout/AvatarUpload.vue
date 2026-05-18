@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 const modelValue = defineModel({ type: [String, null], default: null })
+const emit = defineEmits(['file-select'])
 const fileInput = ref(null)
 
 function openSelector() {
@@ -10,7 +11,10 @@ function openSelector() {
 
 function handleFile(event) {
   const file = event.target.files?.[0]
-  if (file) modelValue.value = URL.createObjectURL(file)
+  if (file) {
+    modelValue.value = URL.createObjectURL(file)
+    emit('file-select', file)
+  }
 }
 </script>
 

@@ -1,7 +1,8 @@
 <template>
   <div class="profile-container">
     <div class="profile-header">
-      <AvatarUpload v-model="profileData.fotoPerfil" />
+      <AvatarUpload v-model="profileData.fotoPerfil" @file-select="onFotoChange" />
+      <p v-if="fotoCarregando" class="upload-status">Enviando foto...</p>
     </div>
 
     <div class="profile-info">
@@ -40,6 +41,8 @@
         @add="adicionarEndereco"
       />
 
+      <p v-if="uploadState.error" class="upload-error">{{ uploadState.error }}</p>
+
       <!-- Botão de Configurações -->
       <button class="btn-settings">Configurações</button>
     </div>
@@ -49,11 +52,14 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { useLoginState } from "@/store/useLoginState";
+import { useUploadImage } from "@/store/useUploadImage";
 import AvatarUpload from "@/components/ui/layout/AvatarUpload.vue";
 import AddressSection from "@/components/sections/AddressSection.vue";
 
 const { state } = useLoginState();
+const { state: uploadState, upload } = useUploadImage();
 const mostrarSenha = ref(false);
+const fotoCarregando = ref(false);
 
 const profileData = reactive({
   fotoPerfil: null,
@@ -65,6 +71,19 @@ const profileData = reactive({
   ],
   endereco_selecionado: 0, 
 });
+
+function onFotoChange(file) {
+  if (!file) return;
+  fotoCarregando.value = true;
+
+  upload(file, 'Foto de perfil').then(resposta => {
+    profileData.fotoPerfil = resposta.arquivo_url || resposta.url || resposta.imagem_url || null;
+  }).catch(error => {
+    console.error("Erro ao enviar foto de perfil:", error);
+  }).finally(() => {
+    fotoCarregando.value = false;
+  });
+}
 
 const editarEndereco = () => {
   console.log("Editar endereço:", profileData.enderecos[profileData.endereco_selecionado]);
@@ -364,13 +383,21 @@ const adicionarEndereco = () => {
   transform: translateY(0);
 }
 
-.slide-enter-active, .slide-leave-active {
-  transition: all 0.3s ease;
+.upload-status {
+  text-align: center;
+  color: #8a4f10;
+  font-size: 0.85rem;
+  margin: 4px 0 0;
 }
 
-.slide-enter-from, .slide-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+.upload-error {
+  text-align: center;
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin: 4px 0 16px;
+  background: #ffebee;
+  padding: 8px 12px;
+  border-radius: 6px;
 }
 </style>
 
