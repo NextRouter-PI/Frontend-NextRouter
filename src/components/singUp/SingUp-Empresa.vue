@@ -36,7 +36,6 @@ const {
         <span v-else>2</span>
       </div>
       <div class="step-circle" :class="{ active: currentPage >= 3 }">
-        3
       </div>
     </div>
 

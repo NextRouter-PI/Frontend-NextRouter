@@ -9,9 +9,9 @@ const state = reactive({
 })
 
 const endpoints = {
-  passageiro: '/registro/passageiro/',
-  motorista: '/registro/motorista/',
-  empresa: '/registro/empresa/'
+  passageiro: '/passengers/',
+  motorista: '/drivers/',
+  empresa: '/companies/'
 }
 
 export function useRegisterState() {

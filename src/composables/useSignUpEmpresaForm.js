@@ -1,4 +1,4 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, toRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/store/useRegisterState'
 import { useValidation } from '@/composables/useValidation'
@@ -101,21 +101,26 @@ export function useSignUpEmpresaForm() {
     try {
       const formData = new FormData()
 
-      formData.append('razao_social', page1Form.value.razaoSocial)
-      formData.append('nome_fantasia', page1Form.value.nomeFantasia)
+      formData.append('user_data.email', page1Form.value.emailCorporativo)
+      formData.append('user_data.password', page3Form.value.senha)
+      formData.append('user_data.name', page1Form.value.nomeFantasia)
+      formData.append('user_data.cep', '99999999')
+      formData.append('user_data.cpf', '909809800')
+
       formData.append('cnpj', page1Form.value.cnpj.replace(/[^\d]/g, ''))
-      formData.append('telefone_comercial', page1Form.value.telefoneComercial)
-      formData.append('email', page1Form.value.emailCorporativo)
-      formData.append('cidade', page1Form.value.cidade)
-      formData.append('estado', page1Form.value.estado)
-      formData.append('endereco', page1Form.value.endereco)
-      formData.append('inscricao_estadual', page1Form.value.inscricaoEstadual)
-      formData.append('responsavel_nome', page3Form.value.ceoNome)
-      formData.append('responsavel_cpf', page3Form.value.ceoCpf.replace(/[^\d]/g, ''))
-      formData.append('password', page3Form.value.senha)
-      formData.append('contrato_social', arquivos.contratoSocial)
-      formData.append('licenca_operacao', arquivos.licencaOperacao)
-      formData.append('certidoes_negativas', arquivos.certidoesNegativas)
+      formData.append('cep', '99999999')
+
+      if (arquivos.contratoSocial) {
+        formData.append('articles_of_association_document.file', arquivos.contratoSocial)
+      }
+
+      if (arquivos.licencaOperacao) {
+        formData.append('state_operating_license_document.file', arquivos.licencaOperacao)
+      }
+
+      if (arquivos.certidoesNegativas) {
+        formData.append('certificate_of_good_stading_document.file', arquivos.certidoesNegativas)
+      }
 
       await registerState.registerEmpresa(formData)
 
