@@ -1,31 +1,32 @@
 <script setup>
-import { ref, reactive } from "vue";
-import { useRouter } from "vue-router";
-import { useLoginState } from "@/store/useLoginState";
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useLoginState } from '@/store/useLoginState'
+import { state } from '@/store/state'
 
-import AuthBranding from "@/components/ui/display/AuthBranding.vue";
-import FloatingInput from "@/components/ui/input/FloatingInput.vue";
-import PasswordField from "@/components/ui/input/PasswordField.vue";
+import AuthBranding from '@/components/ui/display/AuthBranding.vue'
+import FloatingInput from '@/components/ui/input/FloatingInput.vue'
+import PasswordField from '@/components/ui/input/PasswordField.vue'
 
-const router = useRouter();
-const erro = ref("");
+const router = useRouter()
+const erro = ref('')
 
-const { login, state } = useLoginState();
+const { login } = useLoginState()
 
 const form = reactive({
-  email: "",
-  senha: "",
-});
+  email: '',
+  senha: '',
+})
 
 async function enviarLogin() {
-  erro.value = "";
+  erro.value = ''
 
-  const sucesso = await login(form.email, form.senha);
+  const sucesso = await login(form.email, form.senha)
 
   if (sucesso) {
-    router.push("/");
+    router.push('/')
   } else {
-    erro.value = state.error || "Email ou senha inválidos.";
+    erro.value = state.error || 'Email ou senha inválidos.'
   }
 }
 </script>
@@ -52,7 +53,7 @@ async function enviarLogin() {
     />
 
     <button @click="enviarLogin" :disabled="state.loading">
-      {{ state.loading ? "Entrando..." : "Entrar" }}
+      {{ state.loading ? 'Entrando...' : 'Entrar' }}
     </button>
 
     <p v-if="erro" class="erro">{{ erro }}</p>
@@ -62,9 +63,7 @@ async function enviarLogin() {
       <RouterLink to="/forgot-password">Clique Aqui</RouterLink>
     </p>
 
-    <RouterLink to="/signup" class="secondary">
-      Criar nova conta
-    </RouterLink>
+    <RouterLink to="/signup" class="secondary"> Criar nova conta </RouterLink>
   </div>
 </template>
 

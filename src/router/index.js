@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { useLoginState } from "@/store/useLoginState";
+import { state } from "@/store/state.js";
+import { useLoginState } from "@/store/useLoginState.js"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -82,22 +83,34 @@ const router = createRouter({
   ],
 });
 
-const { state } = useLoginState();
 
-router.beforeEach((to, from) => {
+router.beforeEach(async (to, from) => {
+  const { checkAuth } = useLoginState()
+  // SE o usuário não está marcado como logado, tentamos restaurar a sessão do Cookie primeiro
+  if (!state.logged) {
+    await checkAuth();
+  }
+
+  // Agora sim o 'state.logged' e 'state.user' estão atualizados e confiáveis!
+
   if (to.meta.requiresAuth && !state.logged) {
     return { name: "login" };
   }
 
   if (state.logged && to.path === "/") {
-    if (state.tipoUsuario === "passageiro") {
+    // Atenção aqui: Verifique se no seu backend o tipo vem como 'Passageiro' ou 'passageiro'
+    // Com base no componente anterior, você usou state.user.type
+    const type = state.user?.user_type?.toLowerCase();
+
+    if (type === "passenger") {
       return { name: "usuarios-list" };
     }
 
-    if (state.tipoUsuario === "motorista") {
+    if (type === "driver") {
       return { name: "motorista-list" };
     }
   }
+
   return true;
 });
 

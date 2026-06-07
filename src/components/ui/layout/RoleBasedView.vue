@@ -1,19 +1,17 @@
 <script setup>
-import { useLoginState } from "@/store/useLoginState"
+import { state } from '@/store/state';
 
 defineProps({
   passageiroComponent: { type: Object, required: true },
   motoristaComponent: { type: Object, required: true },
   empresaText: { type: String, default: "Empresa." },
 })
-
-const { state } = useLoginState()
 </script>
 
 <template>
   <div v-if="state.user" class="role-view">
-    <component :is="passageiroComponent" v-if="state.user.type === 'Passageiro'" />
-    <component :is="motoristaComponent" v-else-if="state.user.type === 'Motorista'" />
+    <component :is="passageiroComponent" v-if="state.user.user_type === 'passenger'" />
+    <component :is="motoristaComponent" v-else-if="state.user.user_type === 'driver'" />
     <p v-else>{{ empresaText }}</p>
   </div>
 </template>
