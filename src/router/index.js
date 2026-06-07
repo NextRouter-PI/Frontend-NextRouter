@@ -5,7 +5,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: "/" ,
+      path: "/",
       name: "home",
       component: () => import("../views/HomeView.vue"),
       meta: { requiresAuth: true }
@@ -84,26 +84,21 @@ const router = createRouter({
 
 const { state } = useLoginState();
 
-router.beforeEach((to, from, next) => {
-  // Verifica autenticação
-  if (to.meta.requiresAuth && !state.logado) {
-    next({ name: "login" });
-    return;
+router.beforeEach((to, from) => {
+  if (to.meta.requiresAuth && !state.logged) {
+    return { name: "login" };
   }
 
-  // Se o usuário está logado e tenta ir para a página inicial, redireciona para a página do tipo dele
-  if (state.logado && to.path === "/") {
+  if (state.logged && to.path === "/") {
     if (state.tipoUsuario === "passageiro") {
-      next({ name: "usuarios-list" });
-    } else if (state.tipoUsuario === "motorista") {
-      next({ name: "motorista-list" });
-    } else {
-      next();
+      return { name: "usuarios-list" };
     }
-    return;
-  }
 
-  next();
+    if (state.tipoUsuario === "motorista") {
+      return { name: "motorista-list" };
+    }
+  }
+  return true;
 });
 
 export default router;

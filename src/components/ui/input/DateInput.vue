@@ -1,10 +1,21 @@
+<!-- TODO: Refatorar campo, faltando: required dinâmico e formatção no input -->
+
 <script setup>
-defineProps({
-  dias: { type: Array, required: true },
-  meses: { type: Array, required: true },
-  anos: { type: Array, required: true },
-  form: { type: Object, required: true },
-  disabled: { type: Boolean, default: false }
+import { computed } from 'vue'
+
+const props = defineProps({
+  days: { type: Array, required: true },
+  months: { type: Array, required: true },
+  years: { type: Array, required: true },
+  modelValue: { type: Object, required: true },
+  disabled: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['update:modelValue'])
+
+const formModel = computed({
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value),
 })
 </script>
 
@@ -12,19 +23,19 @@ defineProps({
   <div class="field-group">
     <label>Data de nascimento *</label>
     <div class="date-row">
-      <input v-model="form.dia" list="dias-date" placeholder="Dia" :disabled="disabled" />
-      <input v-model="form.mes" list="meses-date" placeholder="Mês" :disabled="disabled" />
-      <input v-model="form.ano" list="anos-date" placeholder="Ano" :disabled="disabled" />
+      <input v-model="formModel.day" list="days-date" placeholder="Dia" :disabled="disabled" />
+      <input v-model="formModel.month" list="months-date" placeholder="Mês" :disabled="disabled" />
+      <input v-model="formModel.year" list="years-date" placeholder="Ano" :disabled="disabled" />
     </div>
 
-    <datalist id="dias-date">
-      <option v-for="dia in dias" :key="dia" :value="String(dia).padStart(2, '0')" />
+    <datalist id="days-date">
+      <option v-for="day in days" :key="day" :value="String(day).padStart(2, '0')" />
     </datalist>
-    <datalist id="meses-date">
-      <option v-for="mes in meses" :key="mes.value" :value="mes.label" />
+    <datalist id="months-date">
+      <option v-for="month in months" :key="month.value" :value="month.label" />
     </datalist>
-    <datalist id="anos-date">
-      <option v-for="ano in anos" :key="ano" :value="ano" />
+    <datalist id="years-date">
+      <option v-for="year in years" :key="year" :value="year" />
     </datalist>
   </div>
 </template>

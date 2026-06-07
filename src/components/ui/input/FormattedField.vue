@@ -7,32 +7,38 @@ defineProps({
   placeholder: String,
   maxlength: [String, Number],
   format: { type: Function, default: null },
-  error: String
+  error: String,
+  onlyNumbers: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'blur'])
 
-function handleInput(event) {
-  const setter = (val) => emit('update:modelValue', val)
-  if (event.target.value) {
-    event.target.value = event.target.value
+const onlyNumbersKeypress = (event) => {
+  const keysAllowed = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+  const keyPressed = event.key
+
+  if (!keysAllowed.includes(keyPressed)) {
+    event.preventDefault()
   }
-  emit('update:modelValue', event.target.value)
 }
 </script>
 
 <template>
   <div class="field-group" :class="{ 'has-error': error }">
-    <label v-if="label">
-      {{ label }} <span v-if="required" class="required">*</span>
-    </label>
+    <label v-if="label"> {{ label }} <span v-if="required" class="required">*</span> </label>
     <input
       :value="modelValue"
-      @input="format ? format($event, v => emit('update:modelValue', v)) : emit('update:modelValue', $event.target.value)"
+      @input="
+        format
+          ? format($event, (v) => emit('update:modelValue', v))
+          : emit('update:modelValue', $event.target.value)
+      "
       type="text"
       :placeholder="placeholder"
+      @blur="$emit('blur', $event)"
       :maxlength="maxlength"
       :disabled="disabled"
+      @keypress="onlyNumbers ? onlyNumbersKeypress($event) : null"
     />
     <p v-if="error" class="field-error">{{ error }}</p>
   </div>
@@ -54,7 +60,9 @@ function handleInput(event) {
   letter-spacing: 0.5px;
 }
 
-.required { color: #e74c3c; }
+.required {
+  color: #e74c3c;
+}
 
 .field-group input {
   width: 100%;

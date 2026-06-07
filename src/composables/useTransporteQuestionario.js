@@ -68,7 +68,7 @@ export function useTransporteQuestionario() {
 
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       if (questionarioState.submitForm()) {
         console.log("Respostas enviadas:", questionarioState.state.responses);
       }

@@ -1,8 +1,9 @@
 import { reactive } from 'vue'
 import api from '@/api/api'
 
+// Objeto que salva no local storage (por enquanto)
 const state = reactive({
-  logado: false,
+  logged: false,
   user: null,
   access: null,
   refresh: null,
@@ -10,6 +11,7 @@ const state = reactive({
   error: null,
 })
 
+// * Função para autenticar usuário
 async function login(email, password) {
   state.loading = true
   state.error = null
@@ -22,14 +24,14 @@ async function login(email, password) {
 
     state.access = response.data.access
     state.refresh = response.data.refresh
-    state.logado = true
+    state.logged = true
 
-    localStorage.setItem('access', state.access)
-    localStorage.setItem('refresh', state.refresh)
+    localStorage.setItem('access', state.access) // TODO; Futuramente salvar como cookies
+    localStorage.setItem('refresh', state.refresh) // TODO; Futuramente salvar como cookies
 
     api.defaults.headers.common['Authorization'] = `Bearer ${state.access}`
 
-    const me = await api.get('usuarios/me/')
+    const me = await api.get('users/me/')
     state.user = me.data
 
     return true
@@ -42,38 +44,43 @@ async function login(email, password) {
   }
 }
 
+
+// * Checagem de autenticação
 async function checkAuth() {
-  const token = localStorage.getItem('access')
+  const token = localStorage.getItem('access') // TODO; Futuramente acessar pelos cookies
 
   if (!token) return
 
   try {
     state.access = token
-    state.refresh = localStorage.getItem('refresh')
+    state.refresh = localStorage.getItem('refresh') // TODO; Futuramente acessar pelos cookies
 
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-    const me = await api.get('usuarios/me/')
+    const me = await api.get('users/me/')
 
     state.user = me.data
-    state.logado = true
+    state.logged = true
   } catch {
     logout()
   }
 }
 
+
+// * Função de desautenticar
 function logout() {
-  state.logado = false
+  state.logged = false
   state.user = null
   state.access = null
   state.refresh = null
   state.error = null
 
-  localStorage.removeItem('access')
-  localStorage.removeItem('refresh')
+  localStorage.removeItem('access') // TODO; Futuramente remover cookies
+  localStorage.removeItem('refresh') // TODO; Futuramente remover cookies
 
   delete api.defaults.headers.common.Authorization
 }
+
 
 export function useLoginState() {
   return {

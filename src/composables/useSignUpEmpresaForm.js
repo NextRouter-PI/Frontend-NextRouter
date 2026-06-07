@@ -1,81 +1,118 @@
-import { ref, reactive, toRaw } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/store/useRegisterState'
-import { useValidation } from '@/composables/useValidation'
+import { useValidator } from '@/composables/useValidation'
 import { useInputFormat } from '@/composables/useInputFormat'
 
-export function useSignUpEmpresaForm() {
-  const router = useRouter()
-  const registerState = useRegisterState()
-  const { formatarCPF, formatarCNPJ, formatarTelefone } = useInputFormat()
-  const {
-    errorMessage, fieldErrors, clearErrors, clearFieldError,
-    required, isCNPJ, isCPF, validatePassword, validateForm, validateField,
-    minLength, match
-  } = useValidation()
+const router = useRouter()
+
+
+const registerState = useRegisterState()
+
+
+const {
+  formatCPF,
+  formatCNPJ,
+  formatPhone,
+  formatCEP
+} = useInputFormat()
+
+
+const {
+  errorMessage,
+  fieldErrors,
+  clearErrors,
+  clearFieldError,
+  isCNPJ,
+  isCPF,
+  validatePassword,
+  validateForm,
+  validateField,
+  minLengthField,
+  passwordMatch,
+  getCEP,
+  requiredField,
+  isCEP,
+  isEmail,
+  isPhone
+} = useValidator()
+
+
+export function useSignUpCompanyForm() {
 
   const currentPage = ref(1)
-  const mostrarSenha = ref(false)
 
-  const page1Form = ref({
-    razaoSocial: '',
-    nomeFantasia: '',
+
+  const isPasswordVisible = ref(false)
+
+
+  const page1Form = reactive({
+    legalName: '',
+    tradeName: '',
     cnpj: '',
-    telefoneComercial: '',
-    emailCorporativo: '',
-    cidade: '',
-    estado: '',
-    endereco: '',
-    inscricaoEstadual: ''
+    contactPhone: '',
+    contactEmail: '',
+    city: '',
+    state: '',
+    cep: '',
+    stateRegistration: '' // * Essa propriedade é tratada como se fosse parte da página 1, mas consta de fato na página 2
   })
 
-  const page3Form = ref({
-    ceoNome: '',
+  // * Os arquivos fazem parte da página 2!
+  // * Para melhor legibilidade do código são tratados a parte
+  const files = reactive({
+    articlesOfAssociation: {
+      file: null,
+      name: 'Nenhum arquivo selecionado',
+    },
+    stateOperatingLicense: {
+      file: null,
+      name: 'Nenhum arquivo selecionado',
+    },
+    certificateOfGoodStading: {
+      file: null,
+      name: 'Nenhum arquivo selecionado',
+    },
+  })
+
+  const page3Form = reactive({
+    ceoName: '',
     ceoCpf: '',
-    senha: '',
-    confirmarSenha: ''
+    loginEmail: '',
+    password: '',
+    passwordConfirm: ''
   })
 
-  const arquivos = reactive({
-    contratoSocial: null,
-    licencaOperacao: null,
-    certidoesNegativas: null
-  })
 
-  const arquivosNomes = reactive({
-    contratoSocial: 'Nenhum arquivo selecionado',
-    licencaOperacao: 'Nenhum arquivo selecionado',
-    certidoesNegativas: 'Nenhum arquivo selecionado'
-  })
-
-  function limparErro() {
-    clearErrors()
-    if (registerState) registerState.state.error = null
-  }
-
+  /*
+    * Validações de página
+  */
   function validatePage1() {
     return validateForm([
-      { fn: () => required(page1Form.value.razaoSocial, 'Razão Social'), field: 'razaoSocial' },
-      { fn: () => required(page1Form.value.nomeFantasia, 'Nome Fantasia'), field: 'nomeFantasia' },
-      { fn: () => required(page1Form.value.cnpj, 'CNPJ') || isCNPJ(page1Form.value.cnpj), field: 'cnpj' },
+      { fn: () => requiredField(page1Form.legalName, 'Razão Social'), field: 'legalName' },
+      { fn: () => requiredField(page1Form.tradeName, 'Nome Fantasia'), field: 'tradeName' },
+      { fn: () => requiredField(page1Form.cnpj, 'CNPJ') || isCNPJ(page1Form.cnpj), field: 'cnpj' },
+      { fn: () => requiredField(page1Form.cep, 'Endereço') || isCEP(page1Form.cep), field: 'cep' },
     ])
   }
 
   function validatePage2() {
     return validateForm([
-      { fn: () => required(arquivos.contratoSocial, 'Contrato Social'), field: 'contratoSocial' },
-      { fn: () => required(arquivos.licencaOperacao, 'Licença de Operação'), field: 'licencaOperacao' },
-      { fn: () => required(arquivos.certidoesNegativas, 'Certidões Negativas'), field: 'certidoesNegativas' },
+      { fn: () => requiredField(files.articlesOfAssociation.file, 'Contrato Social'), field: 'articlesOfAssociation' },
+      { fn: () => requiredField(files.stateOperatingLicense.file, 'Licença de Operação'), field: 'stateOperatingLicense' },
+      { fn: () => requiredField(files.certificateOfGoodStading.file, 'Certidões Negativas'), field: 'certificateOfGoodStading' },
     ])
   }
 
   function validatePage3() {
     return validateForm([
-      { fn: () => required(page3Form.value.ceoNome, 'Nome'), field: 'ceoNome' },
-      { fn: () => required(page3Form.value.ceoCpf, 'CPF') || isCPF(page3Form.value.ceoCpf), field: 'ceoCpf' },
-      { fn: () => validatePassword(page3Form.value.senha, page3Form.value.confirmarSenha), field: 'senha' },
+      { fn: () => requiredField(page3Form.ceoName, 'Nome'), field: 'ceoName' },
+      { fn: () => requiredField(page3Form.ceoCpf, 'CPF') || isCPF(page3Form.ceoCpf), field: 'ceoCpf' },
+      { fn: () => requiredField(page3Form.loginEmail || isEmail(page3Form.loginEmail), 'Email de login'), field: 'loginEmail' },
+      { fn: () => validatePassword(page3Form.password, page3Form.passwordConfirm), field: 'password' },
     ])
   }
+
 
   function goToNextPage() {
     clearErrors()
@@ -84,14 +121,20 @@ export function useSignUpEmpresaForm() {
     if (currentPage.value === 3 && validatePage3()) { currentPage.value++ }
   }
 
-  function toggleSenha() {
-    mostrarSenha.value = !mostrarSenha.value
+
+  function showPassword() {
+    isPasswordVisible.value = !isPasswordVisible.value
   }
+
 
   function goToPreviousPage() {
     if (currentPage.value > 1) currentPage.value--
   }
 
+
+  /*
+    * Função que intecepta o submit do formulário html
+  */
   async function handleSubmit() {
     clearErrors()
     if (!validatePage1()) return
@@ -99,40 +142,39 @@ export function useSignUpEmpresaForm() {
     if (!validatePage3()) return
 
     try {
+
+      // * Criação do objeto a ser enviado para api
       const formData = new FormData()
 
-      formData.append('user_data.email', page1Form.value.emailCorporativo)
-      formData.append('user_data.password', page3Form.value.senha)
-      formData.append('user_data.name', page1Form.value.nomeFantasia)
-      formData.append('user_data.cep', '99999999')
-      formData.append('user_data.cpf', '909809800')
+      formData.append('user_data.email', page3Form.loginEmail)
+      formData.append('user_data.password', page3Form.password)
+      formData.append('user_data.name', page3Form.ceoName)
+      formData.append('user_data.cep', page1Form.cep)
+      formData.append('user_data.cpf', page3Form.ceoCpf)
+      formData.append('cnpj', page1Form.cnpj.replace(/[^\d]/g, ''))
+      formData.append('trade_name', page1Form.tradeName)
+      formData.append('legal_name', page1Form.legalName)
 
-      formData.append('cnpj', page1Form.value.cnpj.replace(/[^\d]/g, ''))
-      formData.append('cep', '99999999')
+      // ! Os valores as propriedades 'page1Form.state' e 'page1Form.city' não são armazenados no banco e são exclusivamente recursos visuais
+      // TODO; Salvar valores das váriaveis 'page1Form.state' e 'page1Form.city' no banco futuramente para facilitar a busca de empresas dentro da aba de busca do site
 
-      if (arquivos.contratoSocial) {
-        formData.append('articles_of_association_document.file', arquivos.contratoSocial)
-      }
+      if (files.articlesOfAssociation) formData.append('articles_of_association_document.file', files.articlesOfAssociation.file)
 
-      if (arquivos.licencaOperacao) {
-        formData.append('state_operating_license_document.file', arquivos.licencaOperacao)
-      }
+      if (files.stateOperatingLicense) formData.append('state_operating_license_document.file', files.stateOperatingLicense.file)
 
-      if (arquivos.certidoesNegativas) {
-        formData.append('certificate_of_good_stading_document.file', arquivos.certidoesNegativas)
-      }
+      if (files.certificateOfGoodStading) formData.append('certificate_of_good_stading_document.file', files.certificateOfGoodStading.file)
 
-      await registerState.registerEmpresa(formData)
+      // Requisição
+      await registerState.registerCompany(formData)
 
-      if (registerState.state.success) {
-        router.push('/login')
-      }
-      if (registerState.state.error) {
-        errorMessage.value =
-          typeof registerState.state.error === 'string'
-            ? registerState.state.error
-            : JSON.stringify(registerState.state.error)
-      }
+      if (registerState.state.success) router.push('/login') // * Se a requisição for um sucesso redireciona o usuário para página de login
+
+      if (registerState.state.error) errorMessage.value =
+        typeof registerState.state.error === 'string'
+          ? registerState.state.error
+          : JSON.stringify(registerState.state.error)
+
+      // * Erro de servidor ou de internet
     } catch (error) {
       console.error(error)
       errorMessage.value =
@@ -142,31 +184,36 @@ export function useSignUpEmpresaForm() {
     }
   }
 
+
   return {
     currentPage,
     errorMessage,
     fieldErrors,
-    mostrarSenha,
+    showPassword,
     page1Form,
     page3Form,
-    arquivos,
-    arquivosNomes,
-    formatarCNPJ,
-    formatarCPF,
-    formatarTelefone,
-    limparErro,
+    files,
+    formatCNPJ,
+    formatCPF,
+    formatPhone,
     clearFieldError,
-    toggleSenha,
-    required,
     isCNPJ,
     isCPF,
-    minLength,
-    match,
+    minLengthField,
+    passwordMatch,
     validatePassword,
     goToNextPage,
     goToPreviousPage,
     handleSubmit,
     registerState,
-    validateField
+    validateField,
+    getCEP,
+    formatCEP,
+    clearErrors,
+    isPasswordVisible,
+    requiredField,
+    isPhone,
+    isEmail,
+    isCEP
   }
 }

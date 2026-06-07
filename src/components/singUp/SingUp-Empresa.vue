@@ -1,5 +1,5 @@
 <script setup>
-import { useSignUpEmpresaForm } from '@/composables/useSignUpEmpresaForm'
+import { useSignUpCompanyForm } from '@/composables/useSignUpEmpresaForm'
 import FormField from '@/components/ui/input/FormField.vue'
 import FormattedField from '@/components/ui/input/FormattedField.vue'
 import FileUploadField from '@/components/ui/input/FileUploadField.vue'
@@ -9,21 +9,57 @@ import LoadingSpinner from '@/components/ui/display/LoadingSpinner.vue'
 import SuccessDisplay from '@/components/ui/display/SuccessDisplay.vue'
 
 const {
-  currentPage, errorMessage, fieldErrors, mostrarSenha,
-  page1Form, page3Form, arquivos, arquivosNomes,
-  formatarCNPJ, formatarCPF, formatarTelefone,
-  limparErro, clearFieldError, toggleSenha,
-  goToNextPage, goToPreviousPage, handleSubmit, registerState,
-  validateField, required, isCNPJ, isCPF, minLength, match, validatePassword
-} = useSignUpEmpresaForm()
+  currentPage,
+  errorMessage,
+  fieldErrors,
+  showPassword,
+  page1Form,
+  page3Form,
+  files,
+  formatCNPJ,
+  formatCPF,
+  formatPhone,
+  clearFieldError,
+  formatCEP,
+  goToNextPage,
+  goToPreviousPage,
+  handleSubmit,
+  registerState,
+  validateField,
+  isCNPJ,
+  isCPF,
+  passwordMatch,
+  getCEP,
+  isPasswordVisible,
+  minLengthField,
+  requiredField,
+  isPhone,
+  isEmail,
+  isCEP,
+} = useSignUpCompanyForm()
 </script>
 
 <template>
   <section class="form-container">
     <div class="form-header-image">
-      <img v-if="currentPage === 1" src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32(1).jpeg" alt="Banner Empresa" class="header-image" />
-      <img v-else-if="currentPage === 2" src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32(2).jpeg" alt="Banner Documentação" class="header-image" />
-      <img v-else src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32.jpeg" alt="Banner Empresa" class="header-image" />
+      <img
+        v-if="currentPage === 1"
+        src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32(1).jpeg"
+        alt="Banner Empresa"
+        class="header-image"
+      />
+      <img
+        v-else-if="currentPage === 2"
+        src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32(2).jpeg"
+        alt="Banner Documentação"
+        class="header-image"
+      />
+      <img
+        v-else
+        src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32.jpeg"
+        alt="Banner Empresa"
+        class="header-image"
+      />
     </div>
 
     <div v-if="currentPage !== 4" class="stepper-container">
@@ -35,8 +71,7 @@ const {
         <span v-if="currentPage > 2" class="mdi mdi-check"></span>
         <span v-else>2</span>
       </div>
-      <div class="step-circle" :class="{ active: currentPage >= 3 }">
-      </div>
+      <div class="step-circle" :class="{ active: currentPage >= 3 }">3</div>
     </div>
 
     <div v-if="registerState.state.success" class="success-section">
@@ -53,126 +88,172 @@ const {
         <h2 class="page-title">Informações da <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
-          v-model="page1Form.razaoSocial"
+          v-model="page1Form.legalName"
           label="Razão Social"
+          maxlength="255"
           required
           placeholder="Digite a razão social da empresa"
           :disabled="registerState.state.loading"
-          :error="fieldErrors.razaoSocial"
-          @input="clearFieldError('razaoSocial')"
-          @blur="validateField(page1Form.razaoSocial, [v => required(v, 'Razão Social')], 'razaoSocial')"
+          :error="fieldErrors.legalName"
+          @input="clearFieldError('legalName')"
+          @blur="
+            validateField(
+              page1Form.legalName,
+              [(v) => requiredField(v, 'Razão Social')],
+              'legalName',
+            )
+          "
         />
         <FormField
-          v-model="page1Form.nomeFantasia"
+          v-model="page1Form.tradeName"
           label="Nome Fantasia"
+          maxlength="255"
           required
           placeholder="Digite o nome fantasia da empresa"
           :disabled="registerState.state.loading"
-          :error="fieldErrors.nomeFantasia"
-          @input="clearFieldError('nomeFantasia')"
-          @blur="validateField(page1Form.nomeFantasia, [v => required(v, 'Nome Fantasia')], 'nomeFantasia')"
+          :error="fieldErrors.tradeName"
+          @input="clearFieldError('tradeName')"
+          @blur="
+            validateField(
+              page1Form.nomeFantasia,
+              [(v) => requiredField(v, 'Nome Fantasia')],
+              'tradeName',
+            )
+          "
         />
         <FormattedField
           v-model="page1Form.cnpj"
           label="CNPJ"
           required
+          :only-numbers="true"
           placeholder="00.000.000/0000-00"
           maxlength="18"
           :disabled="registerState.state.loading"
-          :format="formatarCNPJ"
+          :format="formatCNPJ"
           :error="fieldErrors.cnpj"
           @input="clearFieldError('cnpj')"
-          @blur="validateField(page1Form.cnpj, [v => required(v, 'CNPJ') || isCNPJ(v)], 'cnpj')"
+          @blur="
+            validateField(page1Form.cnpj, [(v) => requiredField(v, 'CNPJ') || isCNPJ(v)], 'cnpj')
+          "
         />
         <FormattedField
-          v-model="page1Form.telefoneComercial"
+          v-model="page1Form.contactPhone"
           label="Telefone Comercial"
-          required
+          :only-numbers="true"
           placeholder="(00) 90000-0000"
           maxlength="16"
           :disabled="registerState.state.loading"
-          :format="formatarTelefone"
-          @input="clearFieldError('telefoneComercial')"
+          :format="formatPhone"
+          :error="fieldErrors.contactPhone"
+          @input="clearFieldError('contactPhone')"
+          @blur="validateField(page1Form.contactPhone, [(v) => isPhone(v)], 'contactPhone')"
         />
         <FormField
-          v-model="page1Form.emailCorporativo"
+          v-model="page1Form.contactEmail"
           label="E-mail Corporativo"
-          required
           type="email"
           placeholder="contato@empresa.com"
           :disabled="registerState.state.loading"
-          :error="fieldErrors.emailCorporativo"
-          @input="clearFieldError('emailCorporativo')"
+          :error="fieldErrors.contactEmail"
+          @input="clearFieldError('contactEmail')"
+          @blur="validateField(page1Form.contactEmail, [(v) => isEmail(v)], 'contactEmail')"
         />
 
-        <div class="row-group">
-          <FormField v-model="page1Form.cidade" label="Cidade" required placeholder="Digite a cidade" :disabled="registerState.state.loading" @input="clearFieldError('cidade')" class="city-field" />
-          <FormField v-model="page1Form.estado" label="Estado" required placeholder="UF" :disabled="registerState.state.loading" @input="clearFieldError('estado')" class="state-field" />
-        </div>
-
-        <FormField
-          v-model="page1Form.endereco"
-          label="Endereço (Rua, Número)"
+        <FormattedField
+          v-model="page1Form.cep"
+          label="CEP"
           required
-          placeholder="Rua, número e complemento"
+          :error="fieldErrors.cep"
+          :only-numbers="true"
+          placeholder="00000-000"
           :disabled="registerState.state.loading"
-          @input="clearFieldError('endereco')"
+          maxlength="9"
+          :format="formatCEP"
+          @input="
+            () => {
+              clearFieldError('cep')
+              if (page1Form.cep.length === 9) {
+                // Passa o objeto inteiro para a função porque apenas objetos no javascript são passados como referência
+                getCEP(page1Form)
+              }
+            }
+          "
+          @blur="validateField(page1Form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
         />
+        <div class="row-group">
+          <FormField
+            v-model="page1Form.city"
+            label="Cidade"
+            placeholder="Cidade do CEP"
+            disabled
+            class="city-field"
+          />
+          <FormField
+            v-model="page1Form.state"
+            label="Estado"
+            placeholder="UF do CEP"
+            disabled
+            class="state-field"
+          />
+        </div>
       </div>
 
       <div v-if="currentPage === 2" class="page-container">
         <h2 class="page-title">Documentação da <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
-          v-model="page1Form.inscricaoEstadual"
+          v-model="page1Form.stateRegistration"
           label="Inscrição Estadual"
           placeholder="Digite a inscrição estadual"
           :disabled="registerState.state.loading"
-          @input="clearFieldError('inscricaoEstadual')"
+          @input="clearFieldError('stateRegistration')"
         />
 
         <FileUploadField
-          v-model="arquivos.contratoSocial"
-          :fileName="arquivosNomes.contratoSocial"
+          v-model="files.articlesOfAssociation.file"
+          :fileName="files.articlesOfAssociation.name"
           label="Contrato Social"
           required
           accept=".pdf,.jpg,.jpeg,.png"
           :disabled="registerState.state.loading"
-          :error="fieldErrors.contratoSocial"
+          :error="fieldErrors.articlesOfAssociation"
           hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
-          @update:fileName="arquivosNomes.contratoSocial = $event"
+          @update:fileName="files.articlesOfAssociation.name = $event"
           @error="errorMessage = $event"
         />
 
         <FileUploadField
-          v-model="arquivos.licencaOperacao"
-          :fileName="arquivosNomes.licencaOperacao"
+          v-model="files.stateOperatingLicense.file"
+          :fileName="files.stateOperatingLicense.name"
           label="Licença de Operação Estadual"
           required
           accept=".pdf,.jpg,.jpeg,.png"
-          :disabled="registerState.state.loading"
-          :error="fieldErrors.licencaOperacao"
+          :disabled="registerState.loading"
+          :error="fieldErrors.stateOperatingLicense"
           hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
-          @update:fileName="arquivosNomes.licencaOperacao = $event"
+          @update:fileName="files.stateOperatingLicense.name = $event"
           @error="errorMessage = $event"
         />
 
         <FileUploadField
-          v-model="arquivos.certidoesNegativas"
-          :fileName="arquivosNomes.certidoesNegativas"
+          v-model="files.certificateOfGoodStading.file"
+          :fileName="files.certificateOfGoodStading.name"
           label="Certidões Negativas"
           required
           accept=".pdf,.jpg,.jpeg,.png"
           :disabled="registerState.state.loading"
-          :error="fieldErrors.certidoesNegativas"
+          :error="fieldErrors.certificateOfGoodStading"
           hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
-          @update:fileName="arquivosNomes.certidoesNegativas = $event"
+          @update:fileName="files.certificateOfGoodStading.name = $event"
           @error="errorMessage = $event"
         />
 
         <div class="info-box">
           <span class="mdi mdi-information-outline"></span>
-          <p>Os documentos enviados serão analisados pela nossa equipe. O processo pode levar até 48 horas úteis.</p>
+          <p>
+            Os documentos enviados serão analisados pela nossa equipe. O processo pode levar até 48
+            horas úteis.
+          </p>
         </div>
       </div>
 
@@ -180,14 +261,14 @@ const {
         <h2 class="page-title">Responsável pela <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
-          v-model="page3Form.ceoNome"
+          v-model="page3Form.ceoName"
           label="Nome Completo do CEO / diretor / sócio administrador"
           required
           placeholder="Digite o nome completo"
           :disabled="registerState.state.loading"
-          :error="fieldErrors.ceoNome"
-          @input="clearFieldError('ceoNome')"
-          @blur="validateField(page3Form.ceoNome, [v => required(v, 'Nome')], 'ceoNome')"
+          :error="fieldErrors.ceoName"
+          @input="clearFieldError('ceoName')"
+          @blur="validateField(page3Form.ceoName, [(v) => required(v, 'Nome')], 'ceoName')"
         />
         <FormattedField
           v-model="page3Form.ceoCpf"
@@ -196,33 +277,63 @@ const {
           placeholder="000.000.000-00"
           maxlength="14"
           :disabled="registerState.state.loading"
-          :format="formatarCPF"
+          :format="formatCPF"
           :error="fieldErrors.ceoCpf"
           @input="clearFieldError('ceoCpf')"
-          @blur="validateField(page3Form.ceoCpf, [v => required(v, 'CPF') || isCPF(v)], 'ceoCpf')"
+          @blur="validateField(page3Form.ceoCpf, [(v) => required(v, 'CPF') || isCPF(v)], 'ceoCpf')"
+        />
+        <FormField
+          v-model="page3Form.loginEmail"
+          label="E-mail de Login"
+          type="email"
+          required
+          placeholder="empresa@login.com"
+          :disabled="registerState.state.loading"
+          :error="fieldErrors.loginEmail"
+          @input="clearFieldError('loginEmail')"
+          @blur="
+            validateField(
+              page3Form.loginEmail,
+              [(v) => required(v, 'Email de login') || isEmail(v)],
+              'loginEmail',
+            )
+          "
         />
         <PasswordFieldSignUp
-          v-model="page3Form.senha"
+          v-model="page3Form.password"
           label="Defina uma senha"
           required
           placeholder="Mínimo 6 caracteres"
           :disabled="registerState.state.loading"
-          :show-password="mostrarSenha"
-          :error="fieldErrors.senha"
-          @update:show-password="toggleSenha"
-          @input="clearFieldError('senha')"
-          @blur="validateField(page3Form.senha, [v => required(v, 'Senha') || minLength(v, 6, 'Senha')], 'senha')"
+          :show-password="isPasswordVisible"
+          :error="fieldErrors.password"
+          @update:show-password="showPassword"
+          @input="clearFieldError('password')"
+          @blur="
+            validateField(
+              page3Form.password,
+              [(v) => required(v, 'Senha') || minLengthField(v, 6, 'Senha')],
+              'password',
+            )
+          "
         />
         <PasswordFieldSignUp
-          v-model="page3Form.confirmarSenha"
+          v-model="page3Form.passwordConfirm"
           label="Confirmar senha"
           required
           placeholder="Digite a senha novamente"
           :disabled="registerState.state.loading"
-          :show-password="mostrarSenha"
-          :error="fieldErrors.confirmarSenha"
-          @input="clearFieldError('confirmarSenha')"
-          @blur="validateField(page3Form.confirmarSenha, [v => required(v, 'Confirmação') || match(v, page3Form.senha, 'Senhas')], 'confirmarSenha')"
+          :show-password="isPasswordVisible"
+          @update:show-password="showPassword"
+          :error="fieldErrors.passwordConfirm"
+          @input="clearFieldError('passwordConfirm')"
+          @blur="
+            validateField(
+              page3Form.passwordConfirm,
+              [(v) => required(v, 'Confirmação') || passwordMatch(v, page3Form.password, 'Senhas')],
+              'passwordConfirm',
+            )
+          "
         />
       </div>
 
@@ -233,11 +344,11 @@ const {
           <h3>Informações da Empresa</h3>
           <div class="review-item">
             <span class="label">Razão Social:</span>
-            <span class="value">{{ page1Form.razaoSocial }}</span>
+            <span class="value">{{ page1Form.legalName }}</span>
           </div>
           <div class="review-item">
             <span class="label">Nome Fantasia:</span>
-            <span class="value">{{ page1Form.nomeFantasia }}</span>
+            <span class="value">{{ page1Form.tradeName }}</span>
           </div>
           <div class="review-item">
             <span class="label">CNPJ:</span>
@@ -245,15 +356,17 @@ const {
           </div>
           <div class="review-item">
             <span class="label">Telefone:</span>
-            <span class="value">{{ page1Form.telefoneComercial }}</span>
+            <span class="value">{{ page1Form.contactPhone || 'Nenhum telefone informado' }}</span>
           </div>
           <div class="review-item">
             <span class="label">E-mail:</span>
-            <span class="value">{{ page1Form.emailCorporativo }}</span>
+            <span class="value">{{ page1Form.contactEmail || 'Nenhum email informado' }}</span>
           </div>
           <div class="review-item">
             <span class="label">Localização:</span>
-            <span class="value">{{ page1Form.cidade }}, {{ page1Form.estado }} - {{ page1Form.endereco }}</span>
+            <span class="value"
+              >{{ page1Form.city }}, {{ page1Form.state }} - {{ page1Form.cep }}</span
+            >
           </div>
         </div>
 
@@ -261,7 +374,7 @@ const {
           <h3>Informações do Responsável</h3>
           <div class="review-item">
             <span class="label">Nome do CEO/Diretor/Sócio:</span>
-            <span class="value">{{ page3Form.ceoNome }}</span>
+            <span class="value">{{ page3Form.ceoName }}</span>
           </div>
           <div class="review-item">
             <span class="label">CPF:</span>
@@ -277,21 +390,24 @@ const {
           <h3>Documentos</h3>
           <div class="review-item">
             <span class="label">Contrato Social:</span>
-            <span class="value">✓ {{ arquivosNomes.contratoSocial }}</span>
+            <span class="value">✓ {{ files.articlesOfAssociation.name }}</span>
           </div>
           <div class="review-item">
             <span class="label">Licença de Operação:</span>
-            <span class="value">✓ {{ arquivosNomes.licencaOperacao }}</span>
+            <span class="value">✓ {{ files.stateOperatingLicense.name }}</span>
           </div>
           <div class="review-item">
             <span class="label">Certidões Negativas:</span>
-            <span class="value">✓ {{ arquivosNomes.certidoesNegativas }}</span>
+            <span class="value">✓ {{ files.certificateOfGoodStading.name }}</span>
           </div>
         </div>
 
         <div class="info-box">
           <span class="mdi mdi-information-outline"></span>
-          <p>Por favor, revise todas as informações antes de enviar. Você não poderá alterá-las após a submissão.</p>
+          <p>
+            Por favor, revise todas as informações antes de enviar. Você não poderá alterá-las após
+            a submissão.
+          </p>
         </div>
       </div>
 
@@ -327,7 +443,7 @@ const {
           :disabled="registerState.state.loading"
         >
           <LoadingSpinner v-if="registerState.state.loading" />
-          {{ registerState.state.loading ? "Enviando cadastro..." : "Enviar Cadastro" }}
+          {{ registerState.state.loading ? 'Enviando cadastro...' : 'Enviar Cadastro' }}
         </button>
       </div>
     </form>
@@ -368,7 +484,7 @@ const {
 }
 
 .stepper-container::before {
-  content: "";
+  content: '';
   position: absolute;
   top: 50%;
   left: 40px;

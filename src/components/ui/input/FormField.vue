@@ -7,25 +7,26 @@ defineProps({
   disabled: { type: Boolean, default: false },
   placeholder: String,
   autocomplete: String,
-  error: String
+  error: String,
+  maxlength: [String, Number],
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'blur'])
 </script>
 
 <template>
   <div class="field-group" :class="{ 'has-error': error }">
-    <label v-if="label">
-      {{ label }} <span v-if="required" class="required">*</span>
-    </label>
+    <label v-if="label"> {{ label }} <span v-if="required" class="required">*</span> </label>
     <input
       :value="modelValue"
       @input="emit('update:modelValue', $event.target.value)"
+      @blur="$emit('blur', $event)"
       :type="type"
       :required="required"
       :disabled="disabled"
       :placeholder="placeholder"
       :autocomplete="autocomplete"
+      :maxlength="maxlength"
     />
     <p v-if="error" class="field-error">{{ error }}</p>
   </div>
@@ -45,7 +46,9 @@ const emit = defineEmits(['update:modelValue'])
   margin-bottom: 6px;
 }
 
-.required { color: #e74c3c; }
+.required {
+  color: #e74c3c;
+}
 
 .field-group input {
   width: 100%;

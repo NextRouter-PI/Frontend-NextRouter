@@ -1,10 +1,14 @@
 import { useRouter } from 'vue-router'
 import { useLoginState } from '@/store/useLoginState'
 
-export function useLogout() {
-  const router = useRouter()
-  const { logout } = useLoginState()
 
+const router = useRouter()
+
+
+const { logout } = useLoginState()
+
+
+export function useLogout() {
   function handleLogout() {
     logout()
     router.push('/login')

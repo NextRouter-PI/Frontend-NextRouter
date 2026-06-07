@@ -2,14 +2,14 @@
 import { ref } from 'vue'
 
 const props = defineProps({
-  modelValue: { type: File, default: null },
+  modelValue: { type: [File, Object, String], default: null }, // Aceita string por causa do valor inicial
   label: String,
   required: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   accept: { type: String, default: '.pdf,.jpg,.jpeg,.png' },
-  fileName: { type: String, default: 'Nenhum arquivo selecionado' },
+  fileName: { type: String, default: '' }, // Será o nome do arquivo selecionado
   hint: String,
-  error: String
+  error: String,
 })
 
 const emit = defineEmits(['update:modelValue', 'update:fileName', 'error'])
@@ -30,7 +30,9 @@ function handleFile(event) {
     return
   }
 
+  // Envia o arquivo binário para o v-model
   emit('update:modelValue', file)
+  // Envia o nome do arquivo para atualizar o objeto pai
   emit('update:fileName', file.name)
 }
 </script>
@@ -41,17 +43,19 @@ function handleFile(event) {
       {{ label }} <span v-if="required" class="required">*</span>
     </label>
 
-    <div class="upload-controls" @click="openSelector">
-      <div class="file-display" :class="{ 'has-file': modelValue }">
-        <span class="mdi" :class="modelValue ? 'mdi-file-pdf' : 'mdi-file'"></span>
-        {{ fileName }}
-      </div>
-      <button
-        type="button"
-        class="btn-upload"
-        :disabled="disabled"
-        @click.stop="openSelector"
+    <div class="upload-controls">
+      <div
+        class="file-display"
+        :class="{ 'has-file': modelValue && typeof modelValue === 'object' }"
       >
+        <span
+          class="mdi"
+          :class="modelValue && typeof modelValue === 'object' ? 'mdi-file-pdf' : 'mdi-file'"
+        ></span>
+        {{ modelValue && typeof modelValue === 'object' ? fileName : 'Nenhum arquivo selecionado' }}
+      </div>
+
+      <button type="button" class="btn-upload" :disabled="disabled" @click="openSelector">
         <span class="mdi mdi-folder-open"></span> Selecionar
       </button>
     </div>
@@ -85,7 +89,9 @@ function handleFile(event) {
   letter-spacing: 0.5px;
 }
 
-.required { color: #e74c3c; }
+.required {
+  color: #e74c3c;
+}
 
 .upload-controls {
   display: flex;
@@ -147,7 +153,10 @@ function handleFile(event) {
   box-shadow: 0 4px 12px rgba(244, 138, 29, 0.3);
 }
 
-.btn-upload:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-upload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 .file-hint {
   display: block;

@@ -1,19 +1,39 @@
 import { ref, computed } from 'vue'
-import { useValidation } from '@/composables/useValidation'
+import { useValidator } from '@/composables/useValidation'
 import { useInputFormat } from '@/composables/useInputFormat'
 
-export function useSignUpForm() {
-  const { formatarCPF, formatarTelefone, formatarCEP } = useInputFormat()
-  const {
-    errorMessage, fieldErrors, clearErrors, clearFieldError,
-    required, minLength, isEmail, match, validateForm, validateField
-  } = useValidation()
 
-  const mostrarSenha = ref(false)
+const {
+  formatCPF,
+  formatCEP,
+  formatPhone
+} = useInputFormat()
 
-  const dias = computed(() => Array.from({ length: 31 }, (_, i) => i + 1))
 
-  const meses = [
+const {
+  errorMessage,
+  fieldErrors,
+  getCEP,
+  clearErrors,
+  clearFieldError,
+  requiredField,
+  minLengthField,
+  isEmail,
+  passwordMatch,
+  validateForm,
+  validateField,
+  isCPF,
+  isCEP,
+  isPhone
+} = useValidator()
+
+
+export function useSignUpPassengerDriverForm() {
+  const isPasswordVisible = ref(false)
+
+  const days = computed(() => Array.from({ length: 31 }, (_, i) => i + 1))
+
+  const months = [
     { value: '01', label: 'Janeiro' },
     { value: '02', label: 'Fevereiro' },
     { value: '03', label: 'Março' },
@@ -25,56 +45,74 @@ export function useSignUpForm() {
     { value: '09', label: 'Setembro' },
     { value: '10', label: 'Outubro' },
     { value: '11', label: 'Novembro' },
-    { value: '12', label: 'Dezembro' }
+    { value: '12', label: 'Dezembro' },
   ]
 
   const currentYear = new Date().getFullYear()
 
-  const anos = computed(() =>
-    Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i)
+  const years = computed(() =>
+    Array.from({ length: currentYear - 1899 }, (_, i) => currentYear - i),
   )
 
-  function limparErro(registerState) {
-    clearErrors()
-    if (registerState) registerState.state.error = null
+  function showPassword() {
+    isPasswordVisible.value = !isPasswordVisible.value
   }
 
-  function toggleSenha() {
-    mostrarSenha.value = !mostrarSenha.value
-  }
+  function formatBirthday(form) {
+    const day = String(form.day).padStart(2, '0')
 
-  function formatarDataNascimento(form) {
-    const dia = String(form.dia).padStart(2, '0')
-    const mes = meses.find(item => item.label === form.mes)?.value || '01'
-    return `${form.ano}-${mes}-${dia}`
+    const month = months.find((item) => item.label === form.month)?.value || '01'
+
+    return `${form.year}-${month}-${day}`
   }
 
   function validarFormulario(form) {
     return validateForm([
-      { fn: () => required(form.nomeCompleto, 'Nome completo'), field: 'nomeCompleto' },
-      { fn: () => required(form.email, 'Email') || isEmail(form.email), field: 'email' },
-      { fn: () => required(form.password, 'Senha') || minLength(form.password, 6, 'Senha'), field: 'password' },
-      { fn: () => match(form.password, form.confirmPassword, 'Senhas'), field: 'confirmPassword' }
+
+      { fn: () => requiredField(form.name, 'Nome completo'), field: 'name' }, { fn: () => requiredField(form.day, 'Dia de nascimento'), field: 'day' },
+      { fn: () => requiredField(form.month, 'Mês de nascimento'), field: 'month' },
+      { fn: () => requiredField(form.year, 'Ano de nascimento'), field: 'year' },
+      { fn: () => requiredField(form.cpf, 'CPF') || isCPF(form.cpf), field: 'cpf', },
+      { fn: () => requiredField(form.email, 'Email') || isEmail(form.email), field: 'email' },
+
+      {
+        fn: () =>
+          requiredField(form.password, 'Senha') || minLengthField(form.password, 6, 'Senha'),
+        field: 'password',
+      },
+      {
+        fn: () => passwordMatch(form.password, form.confirmPassword, 'Senhas'),
+        field: 'confirmPassword',
+      },
     ])
   }
 
+  const currentPage = ref(1)
+
   return {
-    mostrarSenha,
+    currentPage,
+    clearErrors,
+    showPassword,
+    isPasswordVisible,
     errorMessage,
     fieldErrors,
-    dias, meses, anos,
-    formatarCPF,
-    formatarTelefone,
-    formatarCEP,
-    limparErro,
+    days,
+    months,
+    years,
+    formatCEP,
+    formatPhone,
+    formatCPF,
     clearFieldError,
-    toggleSenha,
-    formatarDataNascimento,
+    formatBirthday,
     validarFormulario,
     validateField,
-    required,
+    requiredField,
     isEmail,
-    minLength,
-    match
+    minLengthField,
+    passwordMatch,
+    getCEP,
+    isCEP,
+    isCPF,
+    isPhone
   }
 }

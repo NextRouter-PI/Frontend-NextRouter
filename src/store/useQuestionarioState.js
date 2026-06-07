@@ -1,9 +1,10 @@
+//// /* Arquivo de função de questionario de presença nas rotas
 import { reactive } from "vue";
 
 const state = reactive({
   responses: {
     transporteIda: null,
-    transporteVolta: null, 
+    transporteVolta: null,
     horaVolta: null,
   },
   submitted: false,
@@ -52,3 +53,4 @@ export function useQuestionarioState() {
     canAnswerToday,
   };
 }
+// */
