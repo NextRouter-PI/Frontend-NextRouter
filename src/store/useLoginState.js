@@ -42,6 +42,9 @@ async function checkAuth() {
 
     const me = await api.get('users/me/')
     state.user = me.data
+
+    console.log(state.user);
+
     state.logged = true
   } catch {
     logout()
