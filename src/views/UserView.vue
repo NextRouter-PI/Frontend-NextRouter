@@ -5,10 +5,15 @@ import MotoristaUser from '@/components/pages/motorista/MotoristaUser.vue'
 import { computed } from 'vue'
 import { state } from '@/store/state'
 
-const userLogged = computed(() => state.user)
+const userLogged = computed(() => state)
 </script>
 
 <template>
-    <PassageiroUser v-if="userLogged.type == 'passenger'"/> 
-    <MotoristaUser v-if="userLogged.type == 'driver'"/> 
+  <div v-if="!userLogged.checkingAuth">
+    <PassageiroUser v-if="userLogged.user.type == 'passenger'" />
+    <MotoristaUser v-else-if="userLogged.user.type == 'driver'" />
+  </div>
+  <div v-else>
+    <p>Carregando...</p>
+  </div>
 </template>
