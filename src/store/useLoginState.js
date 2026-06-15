@@ -13,6 +13,7 @@ async function login(email, password) {
       password,
     })
 
+    localStorage.removeItem('manualLogout')
     state.access = response.data.access
     localStorage.setItem('access', state.access)
     state.logged = true
@@ -39,6 +40,12 @@ async function checkAuth() {
   state.checkingAuth = true
 
   try {
+    // Se o usuário clicou em "Sair", não restaurar sessão automaticamente
+    if (localStorage.getItem('manualLogout') === 'true') {
+      state.checkingAuth = false
+      return
+    }
+
     // Tenta usar o access token salvo primeiro (evita refresh desnecessário)
     if (state.access) {
       try {
@@ -74,6 +81,7 @@ async function checkAuth() {
 
 // * Função de desautenticar
 async function logout() {
+  localStorage.setItem('manualLogout', 'true')
   try {
     await api.post('logout/')
   } catch (error) {
