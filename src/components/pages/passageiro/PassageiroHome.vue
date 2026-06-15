@@ -1,16 +1,13 @@
 <script setup>
 import { computed } from 'vue'
-import router from '@/router'
 import { state } from '@/store/state'
 import { useLoginState } from '@/store/useLoginState'
 
 const userLogged = computed(() => state.user)
 const { logout } = useLoginState()
 
-function handleLogout() {
-  logout()
-  router.push('/login')
-  console.log('Logout realizado com sucesso!')
+async function handleLogout() {
+  await logout()
 }
 </script>
 

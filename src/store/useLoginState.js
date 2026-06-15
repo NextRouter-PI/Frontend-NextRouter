@@ -14,12 +14,14 @@ async function login(email, password) {
     })
 
     state.access = response.data.access
+    localStorage.setItem('access', state.access)
     state.logged = true
 
     // * Cookies defindos por Set-Cookies no Backend
 
     const me = await api.get('users/me/')
     state.user = me.data
+    localStorage.setItem('user', JSON.stringify(me.data))
 
     return true
   } catch (error) {
@@ -37,12 +39,28 @@ async function checkAuth() {
   state.checkingAuth = true
 
   try {
+    // Tenta usar o access token salvo primeiro (evita refresh desnecessário)
+    if (state.access) {
+      try {
+        const me = await api.get('users/me/')
+        state.user = me.data
+        localStorage.setItem('user', JSON.stringify(me.data))
+        state.logged = true
+        state.checkingAuth = false
+        return
+      } catch {
+        // Token expirado, tenta refresh
+      }
+    }
+
     const response = await api.post('token/refresh/')
 
     state.access = response.data.access
+    localStorage.setItem('access', state.access)
 
     const me = await api.get('users/me/')
     state.user = me.data
+    localStorage.setItem('user', JSON.stringify(me.data))
 
     state.logged = true
   } catch {
@@ -61,14 +79,13 @@ async function logout() {
   } catch (error) {
     console.error(error)
   } finally {
+    localStorage.removeItem('access')
+    localStorage.removeItem('user')
     state.logged = false
     state.user = null
     state.access = null
     state.error = null
-
-    console.log(state.logged)
-    console.log(state.access)
-    console.log(state.user)
+    router.push({ name: 'login' })
   }
 }
 
