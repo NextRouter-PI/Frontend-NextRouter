@@ -9,7 +9,7 @@ const { isMobile } = useDeviceLayout()
 </script>
 
 <template>
-  <div class="app-layout">
+  <div v-if="!state.checkingAuth" class="app-layout">
     <AppHeader v-if="state.logged" />
     <Sidebar v-if="!isMobile && state.logged" />
 
@@ -17,6 +17,8 @@ const { isMobile } = useDeviceLayout()
       <router-view />
     </main>
 
-    <AppBottomNavigationBar v-if="isMobile && state.logged" />
+    <AppBottomNavigationBar
+      v-if="isMobile && state.logged"
+    />
   </div>
 </template>

@@ -1,5 +1,6 @@
 import api from '@/api/api'
 import { state } from '@/store/state'
+import router from '@/router'
 
 // * Função para autenticar usuário
 async function login(email, password) {
@@ -33,9 +34,9 @@ async function login(email, password) {
 
 // * Checagem de autenticação
 async function checkAuth() {
+  state.checkingAuth = true
+
   try {
-    // Se deu F5, a memória limpou. Chamamos o endpoint de refresh.
-    // O navegador anexará o cookie HttpOnly do refresh token automaticamente nesta chamada.
     const response = await api.post('token/refresh/')
 
     state.access = response.data.access
@@ -43,26 +44,32 @@ async function checkAuth() {
     const me = await api.get('users/me/')
     state.user = me.data
 
-    console.log(state.user);
-
     state.logged = true
   } catch {
     logout()
+  } finally {
+    state.checkingAuth = false
   }
-}
+} 
 
 
 
 // * Função de desautenticar
-function logout() {
-  state.logged = false
-  state.user = null
-  state.access = null
-  state.refresh = null
-  state.error = null
+async function logout() {
+  try {
+    await api.post('logout/')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    state.logged = false
+    state.user = null
+    state.access = null
+    state.error = null
 
-  // ! TODO: Rever lógica
-  // delete api.defaults.headers.common.Authorization
+    console.log(state.logged)
+    console.log(state.access)
+    console.log(state.user)
+  }
 }
 
 

@@ -7,4 +7,5 @@ export const state = reactive({
   access: null,
   loading: false,
   error: null,
+  checkingAuth: false,
 })

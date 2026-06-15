@@ -1,18 +1,19 @@
 <script setup>
-import { computed } from 'vue'
-import RoleBasedView from '@/components/ui/layout/RoleBasedView.vue'
-import MotoristaHome from '@/components/pages/motorista/MotoristaHome.vue'
 import PassageiroHome from '@/components/pages/passageiro/PassageiroHome.vue'
+import MotoristaHome from '@/components/pages/motorista/MotoristaHome.vue'
+
+import { computed } from 'vue'
 import { state } from '@/store/state'
 
-const userLogged = computed(() => state.user)
+const userLogged = computed(() => state)
 </script>
 
 <template>
-  <RoleBasedView
-    v-if="userLogged"
-    :passageiro-component="PassageiroHome"
-    :motorista-component="MotoristaHome"
-    empresa-text="Redirecionando..."
-  />
+  <div v-if="!userLogged.checkingAuth">
+    <PassageiroHome v-if="userLogged.user.type == 'passenger'" />
+    <MotoristaHome v-else-if="userLogged.user.type == 'driver'" />
+  </div>
+  <div v-else>
+    <p>Carregando...</p>
+  </div>
 </template>
