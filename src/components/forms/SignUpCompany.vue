@@ -1,12 +1,12 @@
 <script setup>
-import { useSignUpCompanyForm } from '@/composables/useSignUpEmpresaForm'
-import FormField from '@/components/ui/input/FormField.vue'
-import FormattedField from '@/components/ui/input/FormattedField.vue'
-import FileUploadField from '@/components/ui/input/FileUploadField.vue'
-import PasswordFieldSignUp from '@/components/ui/input/PasswordFieldSignUp.vue'
-import ErrorMessage from '@/components/ui/display/ErrorMessage.vue'
-import LoadingSpinner from '@/components/ui/display/LoadingSpinner.vue'
-import SuccessDisplay from '@/components/ui/display/SuccessDisplay.vue'
+import { useSignUpCompanyForm } from '@/composables/useSignUpCompanyForm'
+import FormField from '@/components/ui/FormField.vue'
+import FormattedField from '@/components/ui/FormattedField.vue'
+import FileUploadField from '@/components/ui/FileUploadField.vue'
+import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
+import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import SuccessDisplay from '@/components/ui/SuccessDisplay.vue'
 
 const {
   currentPage,
@@ -44,19 +44,19 @@ const {
     <div class="form-header-image">
       <img
         v-if="currentPage === 1"
-        src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32(1).jpeg"
+        src="@/assets/images/hero-1.jpeg"
         alt="Banner Empresa"
         class="header-image"
       />
       <img
         v-else-if="currentPage === 2"
-        src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32(2).jpeg"
+        src="@/assets/images/hero-2.jpeg"
         alt="Banner Documentação"
         class="header-image"
       />
       <img
         v-else
-        src="@/assets/WhatsApp Image 2026-04-29 at 23.21.32.jpeg"
+        src="@/assets/images/hero.jpeg"
         alt="Banner Empresa"
         class="header-image"
       />

@@ -1,45 +1,41 @@
 <script setup>
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useRegisterState } from '@/store/useRegisterState'
+import { useRegisterState } from '@/stores/useRegisterState'
 import { useSignUpPassengerDriverForm } from '@/composables/useSignUpForm'
-import FormField from '@/components/ui/input/FormField.vue'
-import FormattedField from '@/components/ui/input/FormattedField.vue'
-import SelectField from '@/components/ui/input/SelectField.vue'
-import PasswordFieldSignUp from '@/components/ui/input/PasswordFieldSignUp.vue'
-import FileUploadField from '@/components/ui/input/FileUploadField.vue'
-import DateInput from '@/components/ui/input/DateInput.vue'
-import ErrorMessage from '@/components/ui/display/ErrorMessage.vue'
-import LoadingSpinner from '@/components/ui/display/LoadingSpinner.vue'
+import FormField from '@/components/ui/FormField.vue'
+import FormattedField from '@/components/ui/FormattedField.vue'
+import SelectField from '@/components/ui/SelectField.vue'
+import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
+import DateInput from '@/components/ui/DateInput.vue'
+import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 const router = useRouter()
-
 const registerState = useRegisterState()
-
 const {
-  isPasswordVisible,
   errorMessage,
-  fieldErrors,
   days,
   months,
   years,
-  formatCPF,
-  formatPhone,
-  formatCEP,
+  fieldErrors,
   clearFieldError,
-  showPassword,
   validarFormulario,
   validateField,
-  requiredField,
-  isEmail,
-  minLengthField,
-  passwordMatch,
-  currentPage,
-  getCEP,
-  formatBirthday,
-  isCEP,
-  isCPF,
+  formatCPF,
   isPhone,
+  formatPhone,
+  formatCEP,
+  formatBirthday,
+  getCEP,
+  isCEP,
+  isEmail,
+  isCPF,
+  currentPage,
+  minLengthField,
+  requiredField,
+  isPasswordVisible,
+  showPassword,
 } = useSignUpPassengerDriverForm()
 
 const form = reactive({
@@ -56,20 +52,11 @@ const form = reactive({
   cep: '',
   city: '',
   state: '',
-  cnh: '',
-})
-
-const cnh = reactive({
-  file: null,
-  name: '',
 })
 
 // TODO: Refatorar função (para usar try, catch e finally)
 const handleSubmit = async () => {
   if (!validarFormulario(form)) return
-
-  // * Aqui valida o campo CNH que é exclusivo desse formulário
-  if (!validateField(cnh.file, [(v) => requiredField(v, 'Arquivo CNH')], 'cnh')) return
 
   let formData = new FormData()
 
@@ -78,14 +65,13 @@ const handleSubmit = async () => {
   formData.append('user_data.name', form.name.trim())
   formData.append('user_data.cep', form.cep)
   formData.append('user_data.password', form.password)
-  formData.append('cnh.file', cnh.file)
 
   const birthday = formatBirthday(form)
 
   formData.append('user_data.birthday', birthday)
   // TODO: Data de nascimento no banco
 
-  await registerState.registerDriver(formData)
+  await registerState.registerPassenger(formData)
   if (registerState.state.success) {
     setTimeout(() => {
       router.push('/')
@@ -97,14 +83,15 @@ const handleSubmit = async () => {
 <template>
   <section class="form-container">
     <div class="header">
-      <span class="mdi mdi-car"></span>
+      <span class="mdi mdi-account"></span>
       <h2>Bem vindo</h2>
-      <h1><span>MOTORISTA</span></h1>
+      <h1><span>PASSAGEIRO</span></h1>
     </div>
 
     <div v-if="registerState.state.success" class="success-message">
       <span class="mdi mdi-check-circle-circle"></span>
-      <p class="success-title">Cadastro enviado com sucesso!</p>
+      <p class="success-title">Conta criada com sucesso!</p>
+      <p>Bem vindo(a) à NextRouter!</p>
       <div class="loading-spinner">
         <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
       </div>
@@ -132,7 +119,6 @@ const handleSubmit = async () => {
         <FormattedField
           v-model="form.cpf"
           label="CPF"
-          :only-numbers="true"
           required
           placeholder="000.000.000-00"
           maxlength="14"
@@ -158,12 +144,10 @@ const handleSubmit = async () => {
         <FormattedField
           v-model="form.phone"
           label="Telefone"
-          :only-numbers="true"
           placeholder="(00) 90000-0000"
           maxlength="16"
           :disabled="registerState.state.loading"
           :format="formatPhone"
-          :error="fieldErrors.phone"
           @input="clearFieldError('phone')"
           @blur="validateField(form.phone, [(v) => isPhone(v)], 'phone')"
         />
@@ -176,16 +160,12 @@ const handleSubmit = async () => {
             { value: 'Outro', label: 'Outro' },
           ]"
         />
-
         <FormattedField
           v-model="form.cep"
           label="CEP"
-          required
           placeholder="00000-000"
           maxlength="9"
           :format="formatCEP"
-          :only-numbers="true"
-          :error="fieldErrors.cep"
           @input="
             () => {
               clearFieldError('cep')
@@ -196,34 +176,25 @@ const handleSubmit = async () => {
             }
           "
           @blur="validateField(form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
+          required
         />
         <div class="row-fields">
           <FormField
             v-model="form.city"
             disabled
             label="Cidade"
-            placeholder="Cidade"
+            placeholder="Cidade do CEP"
             class="half"
           />
           <FormField
             v-model="form.state"
             disabled
             label="Estado"
-            placeholder="Estado"
+            placeholder="Estado do CEP"
             class="half"
           />
         </div>
 
-        <FormField
-          v-model="form.cnh"
-          label="CNH"
-          required
-          placeholder="Número da CNH"
-          :disabled="registerState.state.loading"
-          :error="fieldErrors.cnh"
-          @input="clearFieldError('cnh')"
-          @blur="validateField(form.cnh, [(v) => requiredField(v, 'CNH')], 'cnh')"
-        />
         <PasswordFieldSignUp
           v-model="form.password"
           label="Senha"
@@ -237,7 +208,7 @@ const handleSubmit = async () => {
           @blur="
             validateField(
               form.password,
-              [(v) => requiredField(v, 'Senha') || minLengthField(v, 6, 'Senha')],
+              [(v) => required(v, 'Senha') || minLengthField(v, 6, 'Senha')],
               'password',
             )
           "
@@ -250,44 +221,31 @@ const handleSubmit = async () => {
           :disabled="registerState.state.loading"
           :show-password="isPasswordVisible"
           :error="fieldErrors.confirmPassword"
-          @input="clearFieldError('confirmPassword')"
           @update:show-password="showPassword"
+          @input="clearFieldError('confirmPassword')"
           @blur="
             validateField(
               form.confirmPassword,
-              [(v) => requiredField(v, 'Confirmação') || passwordMatch(v, form.password, 'Senhas')],
+              [(v) => required(v, 'Confirmação') || match(v, form.password, 'Senhas')],
               'confirmPassword',
             )
           "
         />
-        <FileUploadField
-          v-model="cnh.file"
-          :fileName="cnh.name"
-          label="Arquivo CNH"
-          required
-          accept=".pdf,.jpg,.jpeg,.png"
-          :disabled="registerState.state.loading"
-          hint="Formatos aceitos: PDF, JPG, JPEG, PNG"
-          :error="fieldErrors.cnh"
-          @update:fileName="cnh.name = $event"
-          @error="errorMessage = $event"
-        />
-
-        <button
-          type="button"
-          class="btn-submit"
-          @click="
-            () => {
-              if (!validarFormulario(form)) return
-              currentPage = 2
-            }
-          "
-          :disabled="registerState.state.loading"
-        >
-          <LoadingSpinner v-if="registerState.state.loading" />
-          Avançar
-        </button>
       </div>
+      <button
+        type="button"
+        class="btn-submit"
+        @click="
+          () => {
+            if (!validarFormulario(form)) return
+            currentPage = 2
+          }
+        "
+        :disabled="registerState.state.loading"
+      >
+        <LoadingSpinner v-if="registerState.state.loading" />
+        Avançar
+      </button>
       <div v-if="currentPage === 2" class="page-container">
         <h2 class="page-title">Revisão do <span class="highlight-orange">Cadastro</span></h2>
 
@@ -324,7 +282,7 @@ const handleSubmit = async () => {
 
           <div class="review-item">
             <span class="label">Data de Nascimento:</span>
-            <span class="value">{{ `${form.year}-${form.month}-${form.day}` }}</span>
+            <span class="value">{{ `${form.day}-${form.month}-${form.year}` }}</span>
           </div>
         </div>
       </div>
@@ -352,11 +310,12 @@ const handleSubmit = async () => {
   border-radius: 20px;
   box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.1);
 }
+
 .header {
   text-align: center;
   margin-bottom: 2rem;
 }
-.header .mdi-car {
+.header .mdi-account {
   font-size: 48px;
   color: #f48a1d;
 }
@@ -374,6 +333,7 @@ const handleSubmit = async () => {
 .header h1 span {
   color: #f48a1d;
 }
+
 .signup-form {
   display: flex;
   flex-direction: column;
@@ -384,6 +344,7 @@ const handleSubmit = async () => {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+
 .btn-submit {
   width: 100%;
   background: linear-gradient(135deg, #f48a1d 0%, #e37a0d 100%);
@@ -394,34 +355,27 @@ const handleSubmit = async () => {
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  margin-top: 1rem;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
-.btn-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(244, 138, 29, 0.3);
-}
 .btn-submit:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-  transform: none;
 }
+
 .success-message {
   text-align: center;
   padding: 2rem;
 }
 .success-title {
+  color: #22c55e;
   font-size: 1.5rem;
   font-weight: bold;
-  color: #22c55e;
-  margin: 1rem 0 0.5rem;
 }
 .loading-spinner {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   color: #f48a1d;
   display: flex;
   align-items: center;
@@ -439,6 +393,7 @@ const handleSubmit = async () => {
     transform: rotate(360deg);
   }
 }
+
 @media (max-width: 640px) {
   .form-container {
     margin: 1rem;

@@ -1,17 +1,16 @@
 <script setup>
-import PassageiroHome from '@/components/pages/passageiro/PassageiroHome.vue'
-import MotoristaHome from '@/components/pages/motorista/MotoristaHome.vue'
-
+import PassengerHome from '@/components/pages/passenger/PassengerHome.vue'
+import DriverHome from '@/components/pages/driver/DriverHome.vue'
 import { computed } from 'vue'
-import { state } from '@/store/state'
+import { state } from '@/stores/state'
 
 const userLogged = computed(() => state)
 </script>
 
 <template>
   <div v-if="userLogged.logged">
-    <PassageiroHome v-if="userLogged.user.type == 'passenger'" />
-    <MotoristaHome v-else-if="userLogged.user.type == 'driver'" />
+    <PassengerHome v-if="userLogged.user.type == 'passenger'" />
+    <DriverHome v-else-if="userLogged.user.type == 'driver'" />
   </div>
   <div v-else>
     <p>Carregando...</p>

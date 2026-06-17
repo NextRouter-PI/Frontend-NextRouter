@@ -130,7 +130,7 @@
 </template>
 
 <script setup>
-import { useTransporteQuestionario } from "@/composables/useTransporteQuestionario";
+import { useTransportQuestionnaire } from "@/composables/useTransportQuestionnaire";
 
 const {
   step,
@@ -144,7 +144,7 @@ const {
   finalStep,
   setResponse,
   enviarFormulario
-} = useTransporteQuestionario();
+} = useTransportQuestionnaire();
 </script>
 
 <style scoped>

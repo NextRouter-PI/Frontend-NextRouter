@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { state } from '@/store/state'
-import { useLoginState } from '@/store/useLoginState'
+import { state } from '@/stores/state'
+import { useLoginState } from '@/stores/useLoginState'
 
 const userLogged = computed(() => state.user)
 const { logout } = useLoginState()

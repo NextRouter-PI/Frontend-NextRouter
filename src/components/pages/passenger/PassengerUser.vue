@@ -53,10 +53,10 @@
 
 <script setup>
 import { reactive, ref, computed } from "vue";
-import { state } from "@/store/state";
-import api from "@/api/api";
-import AvatarUpload from "@/components/ui/layout/AvatarUpload.vue";
-import AddressSection from "@/components/sections/AddressSection.vue";
+import { state } from "@/stores/state";
+import api from "@/api/client";
+import AvatarUpload from "@/components/layout/AvatarUpload.vue";
+import AddressSection from "@/components/forms/AddressSection.vue";
 
 const fotoCarregando = ref(false);
 const uploadError = ref(null);

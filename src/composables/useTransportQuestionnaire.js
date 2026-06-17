@@ -1,7 +1,7 @@
 import { ref, computed } from "vue";
-import { useQuestionarioState } from "@/store/useQuestionarioState";
+import { useQuestionarioState } from "@/stores/useQuestionnaireState";
 
-export function useTransporteQuestionario() {
+export function useTransportQuestionnaire() {
   const questionarioState = useQuestionarioState();
   const step = ref(1);
   const isSubmitting = ref(false);

@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { state } from "@/store/state.js";
-import { useLoginState } from "@/store/useLoginState.js"
+import { state } from "@/stores/state.js";
+import { useLoginState } from "@/stores/useLoginState.js"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,19 +44,19 @@ const router = createRouter({
     {
       path: "/signup/usuario",
       name: "signup-usuario",
-      component: () => import("../components/singUp/SingUp-Passageiro.vue"),
+      component: () => import("../components/forms/SignUpPassenger.vue"),
       meta: { requiresAuth: false }
     },
     {
       path: "/signup/motorista",
       name: "signup-motorista",
-      component: () => import("../components/singUp/SingUp-Motorista.vue"),
+      component: () => import("../components/forms/SignUpDriver.vue"),
       meta: { requiresAuth: false }
     },
     {
       path: "/signup/empresa",
       name: "signup-empresa",
-      component: () => import("../components/singUp/SingUp-Empresa.vue"),
+      component: () => import("../components/forms/SignUpCompany.vue"),
       meta: { requiresAuth: false }
     },
     {

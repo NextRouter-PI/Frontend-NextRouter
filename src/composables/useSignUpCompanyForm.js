@@ -1,6 +1,6 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useRegisterState } from '@/store/useRegisterState'
+import { useRegisterState } from '@/stores/useRegisterState'
 import { useValidator } from '@/composables/useValidation'
 import { useInputFormat } from '@/composables/useInputFormat'
 

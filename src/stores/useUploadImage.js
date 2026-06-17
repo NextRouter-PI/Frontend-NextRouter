@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import uploadImageApi from '@/api/uploadImage'
+import uploadImageApi from '@/api/upload'
 
 const state = reactive({
   uploading: false,

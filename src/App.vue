@@ -1,6 +1,6 @@
 <script setup>
 import { useDeviceLayout } from '@/composables/useDeviceLayout'
-import { state } from './store/state.js'
+import { state } from './stores/state.js'
 import AppHeader from './components/layout/AppHeader.vue'
 import Sidebar from './components/layout/AppSideBar.vue'
 import AppBottomNavigationBar from './components/layout/AppBottomNavigationBar.vue'

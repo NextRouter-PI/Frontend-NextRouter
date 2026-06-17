@@ -1,17 +1,16 @@
 <script setup>
-import PassageiroUser from '@/components/pages/passageiro/PassageiroUser.vue'
-import MotoristaUser from '@/components/pages/motorista/MotoristaUser.vue'
-
+import PassengerUser from '@/components/pages/passenger/PassengerUser.vue'
+import DriverUser from '@/components/pages/driver/DriverUser.vue'
 import { computed } from 'vue'
-import { state } from '@/store/state'
+import { state } from '@/stores/state'
 
 const userLogged = computed(() => state)
 </script>
 
 <template>
   <div v-if="!userLogged.checkingAuth">
-    <PassageiroUser v-if="userLogged.user.type == 'passenger'" />
-    <MotoristaUser v-else-if="userLogged.user.type == 'driver'" />
+    <PassengerUser v-if="userLogged.user.type == 'passenger'" />
+    <DriverUser v-else-if="userLogged.user.type == 'driver'" />
   </div>
   <div v-else>
     <p>Carregando...</p>

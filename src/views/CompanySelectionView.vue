@@ -1,5 +1,5 @@
 <script setup>
-import CompanySearch from "@/components/selection/CompanySearch.vue";
+import CompanySearch from "@/components/forms/CompanySearch.vue";
 </script>
 
 <template>

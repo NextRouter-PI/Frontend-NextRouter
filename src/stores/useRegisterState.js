@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import api from '@/api/api'
+import api from '@/api/client'
 
 
 // Objeto de estado de registro

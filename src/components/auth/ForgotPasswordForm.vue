@@ -1,12 +1,12 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useLoginState } from '@/store/useLoginState';
+import { useLoginState } from '@/stores/useLoginState';
 
-import AuthBranding from "@/components/ui/display/AuthBranding.vue";
-import FloatingInput from "@/components/ui/input/FloatingInput.vue";
-import PasswordField from "@/components/ui/input/PasswordField.vue";
-import CodeInput from "@/components/ui/input/CodeInput.vue";
+import AuthBranding from "@/components/ui/AuthBranding.vue";
+import FloatingInput from "@/components/ui/FloatingInput.vue";
+import PasswordField from "@/components/ui/PasswordField.vue";
+import CodeInput from "@/components/ui/CodeInput.vue";
 
 const router = useRouter();
 const { state, updatePassword } = useLoginState();

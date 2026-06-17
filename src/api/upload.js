@@ -1,4 +1,4 @@
-import api from './api';
+import api from './client';
 
 const uploadImage = (file, description = '') => {
     const formData = new FormData();

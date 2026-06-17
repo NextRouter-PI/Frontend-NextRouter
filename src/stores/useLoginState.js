@@ -1,5 +1,5 @@
-import api from '@/api/api'
-import { state } from '@/store/state'
+import api from '@/api/client'
+import { state } from '@/stores/state'
 import router from '@/router'
 
 // * Função para autenticar usuário

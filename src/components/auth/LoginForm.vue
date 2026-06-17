@@ -1,12 +1,12 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useLoginState } from '@/store/useLoginState'
-import { state } from '@/store/state'
+import { useLoginState } from '@/stores/useLoginState'
+import { state } from '@/stores/state'
 
-import AuthBranding from '@/components/ui/display/AuthBranding.vue'
-import FloatingInput from '@/components/ui/input/FloatingInput.vue'
-import PasswordField from '@/components/ui/input/PasswordField.vue'
+import AuthBranding from '@/components/ui/AuthBranding.vue'
+import FloatingInput from '@/components/ui/FloatingInput.vue'
+import PasswordField from '@/components/ui/PasswordField.vue'
 
 const router = useRouter()
 const erro = ref('')

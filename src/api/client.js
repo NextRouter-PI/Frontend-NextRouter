@@ -1,6 +1,6 @@
 // api.js
 import axios from 'axios'
-import { state } from '@/store/state' // Importa apenas o estado puro
+import { state } from '@/stores/state' // Importa apenas o estado puro
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,

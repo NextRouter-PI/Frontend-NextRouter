@@ -1,5 +1,5 @@
 <script setup>
-import { state } from '@/store/state';
+import { state } from '@/stores/state';
 
 defineProps({
   passageiroComponent: { type: Object, required: true },

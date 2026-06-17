@@ -1,5 +1,5 @@
 <script setup>
-import CitySearch from "@/components/selection/CitySearch.vue";
+import CitySearch from "@/components/forms/CitySearch.vue";
 </script>
 
 <template>
