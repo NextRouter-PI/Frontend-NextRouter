@@ -1,20 +1,19 @@
 <script setup>
-import { onMounted } from "vue";
-import RoleBasedView from "@/components/ui/layout/RoleBasedView.vue";
-import MotoristaList from "@/components/pages/motorista/MotoristaList.vue";
-import PassageiroList from "@/components/pages/passageiro/PassageiroList.vue";
-import { useLoginState } from "@/store/useLoginState";
+import PassageiroList from '@/components/pages/passageiro/PassageiroList.vue'
+import MotoristaList from '@/components/pages/motorista/MotoristaList.vue'
 
-const { checkAuth } = useLoginState();
+import { computed } from 'vue'
+import { state } from '@/store/state'
 
-onMounted(() => {
-  checkAuth();
-});
+const userLogged = computed(() => state)
 </script>
 
 <template>
-  <RoleBasedView
-    :passageiro-component="PassageiroList"
-    :motorista-component="MotoristaList"
-  />
+  <div v-if="!userLogged.checkingAuth">
+    <PassageiroList v-if="userLogged.user.type == 'passenger'" />
+    <MotoristaList v-else-if="userLogged.user.type == 'driver'" />
+  </div>
+  <div v-else>
+    <p>Carregando...</p>
+  </div>
 </template>

@@ -1,4 +1,3 @@
-<!-- src/views/TransporteQuestionarioView.vue -->
 <template>
   <div class="usuarios-list-container">
     <div v-if="!questionarioState.state.submitted && questionarioState.canAnswerToday()" class="questionario-form">

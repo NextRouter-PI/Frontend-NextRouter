@@ -1,83 +1,11 @@
-<script setup>
-import { reactive, ref } from "vue";
-import { useLoginState } from "@/store/useLoginState";
-import { useUploadImage } from "@/store/useUploadImage";
-import AvatarUpload from "@/components/ui/layout/AvatarUpload.vue";
-import CnhSection from "@/components/sections/CnhSection.vue";
-
-const { state } = useLoginState();
-const { state: uploadState, upload } = useUploadImage();
-const mostrarSenha = ref(false);
-const cnhCarregando = ref(false);
-const fotoCarregando = ref(false);
-
-// Estado dos dados do perfil (preparado para backend)
-const profileData = reactive({
-  fotoPerfil: null, // URL da foto do backend
-  cnhArquivo: null, // URL pública da CNH no backend
-  cnhNomeArquivo: "Nenhum arquivo selecionado",
-  cnhArquivoLocal: null, // Preview local antes/depois de salvar no backend
-  cnhId: null, // id do documento no backend (se existir)
-  nome: state.user?.email || "Usuário", // Nome do usuário do cadastro
-  senha: "••••••••", // Senha do usuário (apenas visualizar)
-  enderecos: [
-    "Rua Principal, 123 - São Paulo, SP",
-    "Avenida Secundária, 456 - Rio de Janeiro, RJ",
-  ], // Lista de endereços do backend
-  endereco_selecionado: 0, // Índice do endereço selecionado
-});
-
-function onFotoChange(file) {
-  if (!file) return;
-  fotoCarregando.value = true;
-
-  upload(file, 'Foto de perfil').then(resposta => {
-    profileData.fotoPerfil = resposta.arquivo_url || resposta.url || resposta.imagem_url || null;
-  }).catch(error => {
-    console.error("Erro ao enviar foto de perfil:", error);
-  }).finally(() => {
-    fotoCarregando.value = false;
-  });
-}
-
-function onCnhChange(file) {
-  if (!file) return;
-
-  const urlLocal = URL.createObjectURL(file);
-  profileData.cnhArquivoLocal = urlLocal;
-  profileData.cnhNomeArquivo = file.name;
-  cnhCarregando.value = true;
-
-  upload(file, 'CNH').then(resposta => {
-    profileData.cnhId = resposta.id ?? profileData.cnhId;
-    profileData.cnhNomeArquivo = resposta.nome_arquivo || file.name;
-    profileData.cnhArquivo = resposta.arquivo_url || resposta.url || null;
-  }).catch(error => {
-    console.error("Erro ao enviar CNH para backend:", error);
-  }).finally(() => {
-    cnhCarregando.value = false;
-  });
-}
-
-const visualizarCNH = () => {
-  const urlDocumento = profileData.cnhArquivo || profileData.cnhArquivoLocal;
-  if (!urlDocumento) return;
-  window.open(urlDocumento, "_blank");
-};
-</script>
-
 <template>
   <div class="profile-container">
-      <div class="profile-header">
+    <div class="profile-header">
       <AvatarUpload v-model="profileData.fotoPerfil" @file-select="onFotoChange" />
       <p v-if="fotoCarregando" class="upload-status">Enviando foto...</p>
     </div>
 
-    <p v-if="uploadState.error" class="upload-error">{{ uploadState.error }}</p>
-
-    <!-- Informações do Perfil -->
     <div class="profile-info">
-      <!-- Campo Nome (Não Alterável) -->
       <div class="form-group">
         <label>Nome</label>
         <input
@@ -88,38 +16,123 @@ const visualizarCNH = () => {
         >
       </div>
 
-      <!-- Campo Senha (Não Alterável - Apenas Visualizar) -->
       <div class="form-group">
-        <label>Senha</label>
-        <div class="password-wrapper">
-          <input
-            :type="mostrarSenha ? 'text' : 'password'"
-            :value="profileData.senha"
-            class="input-field"
-            disabled
-          >
-          <span
-            class="eye-icon mdi"
-            :class="mostrarSenha ? 'mdi-eye-off' : 'mdi-eye'"
-            @click="mostrarSenha = !mostrarSenha"
-          ></span>
-        </div>
+        <label>Email</label>
+        <input
+          type="text"
+          :value="profileData.email"
+          class="input-field"
+          disabled
+        >
       </div>
 
-      <CnhSection
-        :file-name="profileData.cnhNomeArquivo"
-        :file-url="profileData.cnhArquivo"
-        :local-url="profileData.cnhArquivoLocal"
-        :loading="cnhCarregando"
-        @change="onCnhChange"
-        @view="visualizarCNH"
+      <div class="form-group" v-if="profileData.telefone">
+        <label>Telefone</label>
+        <input
+          type="text"
+          :value="profileData.telefone"
+          class="input-field"
+          disabled
+        >
+      </div>
+
+      <div class="form-group" v-if="profileData.cnh">
+        <label>CNH</label>
+        <input
+          type="text"
+          :value="profileData.cnh"
+          class="input-field"
+          disabled
+        >
+      </div>
+
+      <AddressSection
+        :addresses="enderecos"
+        :selected-index="profileData.endereco_selecionado"
+        @update:selected-index="profileData.endereco_selecionado = $event"
+        @edit="editarEndereco"
+        @add="adicionarEndereco"
       />
+
+      <p v-if="uploadError" class="upload-error">{{ uploadError }}</p>
+
+      <button class="btn-settings">Configurações</button>
     </div>
   </div>
-
 </template>
 
+<script setup>
+import { reactive, ref, computed } from "vue";
+import { state } from "@/store/state";
+import api from "@/api/api";
+import AvatarUpload from "@/components/ui/layout/AvatarUpload.vue";
+import AddressSection from "@/components/sections/AddressSection.vue";
 
+const fotoCarregando = ref(false);
+const uploadError = ref(null);
+
+const enderecos = computed(() => {
+  const list = [];
+  const user = state.user;
+  if (user?.cep) {
+    const parts = [`CEP: ${user.cep}`];
+    if (user.city) parts.push(user.city);
+    if (user.state) parts.push(user.state);
+    list.push(parts.join(" - "));
+  }
+  if (list.length === 0) list.push("Nenhum endereço cadastrado");
+  return list;
+});
+
+const profileData = reactive({
+  fotoPerfil: state.user?.foto_perfil || state.user?.profile_picture || null,
+  nome: state.user?.name || state.user?.email || "Usuário",
+  email: state.user?.email || "",
+  telefone: state.user?.phone || "",
+  cnh: state.user?.cnh || "",
+  endereco_selecionado: 0,
+});
+
+async function onFotoChange(file) {
+  if (!file) return;
+  fotoCarregando.value = true;
+  uploadError.value = null;
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('description', 'Foto de perfil');
+
+    const response = await api.post('/uploads/images/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    const url = response.data.arquivo_url || response.data.url || response.data.imagem_url;
+
+    if (url) {
+      const formDataUser = new FormData();
+      formDataUser.append('foto_perfil', url);
+      await api.patch('/users/me/', formDataUser);
+    }
+
+    state.user.foto_perfil = url;
+    profileData.fotoPerfil = url;
+  } catch (error) {
+    uploadError.value = "Erro ao enviar foto de perfil";
+    console.error("Erro ao enviar foto de perfil:", error);
+  } finally {
+    fotoCarregando.value = false;
+  }
+}
+
+const editarEndereco = () => {
+  console.log("Editar endereço:", enderecos.value[profileData.endereco_selecionado]);
+};
+
+const adicionarEndereco = () => {
+  console.log("Adicionar novo endereço");
+};
+</script>
 
 <style scoped>
 .profile-container {
@@ -134,7 +147,6 @@ const visualizarCNH = () => {
   align-items: center;
 }
 
-/* Header do Perfil */
 .profile-header {
   display: flex;
   justify-content: center;
@@ -194,7 +206,6 @@ const visualizarCNH = () => {
   background-color: rgba(244, 138, 29, 0.1);
 }
 
-/* Informações do Perfil */
 .profile-info {
   width: 100%;
   max-width: 500px;
@@ -234,88 +245,157 @@ const visualizarCNH = () => {
   cursor: not-allowed;
 }
 
-/* Password Wrapper */
-.password-wrapper {
+.endereco-section {
+  margin-top: 30px;
+  border-top: 2px solid #f48a1d;
+  padding-top: 20px;
   position: relative;
+}
+
+.address-label {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-}
-
-.password-wrapper .input-field {
-  margin-bottom: 0;
-  padding-right: 40px;
-}
-
-.eye-icon {
-  position: absolute;
-  right: 12px;
   color: #f48a1d;
-  cursor: pointer;
-  font-size: 20px;
-  transition: color 0.2s;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
 }
 
-.eye-icon:hover {
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.icon-btn {
+  color: #f48a1d;
+  font-size: 24px;
+  cursor: pointer;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+  transform: scale(1.2);
   color: #d3730e;
 }
 
-.cnh-section {
-  margin-top: 24px;
-  padding: 16px;
-  border: 1px solid #f1c18c;
-  border-radius: 10px;
-  background-color: #fffaf4;
-}
-
-.cnh-file-name {
-  margin: 0 0 12px;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.cnh-actions {
+.endereco-selecionado {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  border: 2px solid #f48a1d;
+  border-radius: 8px;
+  background-color: #fff8f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 10px;
 }
 
-.btn-cnh {
-  border: none;
+.endereco-selecionado:hover {
+  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.2);
+}
+
+.endereco-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  border: 2px solid #ddd;
   border-radius: 8px;
-  padding: 10px 12px;
+  background-color: white;
+}
+
+.endereco-content {
+  flex: 1;
+}
+
+.endereco-text {
+  margin: 0;
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.dropdown-icon {
+  color: #f48a1d;
+  font-size: 24px;
+  transition: transform 0.3s ease;
+  margin-left: 10px;
+}
+
+.dropdown-icon.ativo {
+  transform: rotate(180deg);
+}
+
+.endereco-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #f48a1d;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  z-index: 10;
+  margin-top: -10px;
+  padding: 10px 0;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.endereco-opcao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-left: 4px solid transparent;
+}
+
+.endereco-opcao:hover {
+  background-color: #fff8f0;
+}
+
+.endereco-opcao.selecionado {
+  background-color: #fff8f0;
+  border-left-color: #f48a1d;
+}
+
+.endereco-opcao .endereco-text {
   font-size: 0.9rem;
+}
+
+.check-icon {
+  color: #4caf50;
+  font-size: 20px;
+  margin-left: 12px;
+}
+
+.btn-settings {
+  background-color: #d3730e;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 30px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.btn-cnh-view {
-  background-color: #f3f3f3;
-  color: #444;
-}
-
-.btn-cnh-view:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn-cnh-change {
-  background-color: #d3730e;
-  color: #fff;
-}
-
-.btn-cnh-change:hover {
+.btn-settings:hover {
   background-color: #b85f0b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
-.btn-cnh-change:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.cnh-status {
-  margin: 10px 0 0;
-  font-size: 0.85rem;
-  color: #8a4f10;
+.btn-settings:active {
+  transform: translateY(0);
 }
 
 .upload-status {

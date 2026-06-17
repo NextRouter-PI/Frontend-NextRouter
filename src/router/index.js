@@ -15,16 +15,19 @@ const router = createRouter({
       path: "/usuario",
       name: "usuario",
       component: () => import("../views/UserView.vue"),
+      meta: { requiresAuth: true }
     },
     {
       path: "/lista",
       name: "lista",
       component: () => import("../views/ListView.vue"),
+      meta: { requiresAuth: true }
     },
     {
       path: "/transporte",
       name: "transporte",
       component: () => import("../views/TransportView.vue"),
+      meta: { requiresAuth: true }
     },
     {
       path: "/login",
@@ -57,18 +60,6 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
-      path: "/signup/usuario/cidade",
-      name: "signup-usuario-cidade",
-      component: () => import("../views/CitySelectionView.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: "/signup/motorista/empresa",
-      name: "signup-motorista-empresa",
-      component: () => import("../views/CompanySelectionView.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
       path: "/signup/confirmacao",
       name: "signup-confirmacao",
       component: () => import("../views/ConfirmationView.vue"),
@@ -86,29 +77,17 @@ const router = createRouter({
 
 router.beforeEach(async (to, from) => {
   const { checkAuth } = useLoginState()
-  // SE o usuário não está marcado como logado, tentamos restaurar a sessão do Cookie primeiro
-  if (!state.logged) {
+
+  if (!state.logged && to.meta.requiresAuth) {
     await checkAuth();
   }
 
-  // Agora sim o 'state.logged' e 'state.user' estão atualizados e confiáveis!
+  if (state.logged && to.meta.requiresAuth === false) {
+    return { name: "home" };
+  }
 
   if (to.meta.requiresAuth && !state.logged) {
     return { name: "login" };
-  }
-
-  if (state.logged && to.path === "/") {
-    // Atenção aqui: Verifique se no seu backend o tipo vem como 'Passageiro' ou 'passageiro'
-    // Com base no componente anterior, você usou state.user.type
-    const type = state.user?.user_type?.toLowerCase();
-
-    if (type === "passenger") {
-      return { name: "usuarios-list" };
-    }
-
-    if (type === "driver") {
-      return { name: "motorista-list" };
-    }
   }
 
   return true;
