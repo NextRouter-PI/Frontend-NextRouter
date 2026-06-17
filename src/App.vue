@@ -13,7 +13,7 @@ const { isMobile } = useDeviceLayout()
     <AppHeader v-if="state.logged" />
     <Sidebar v-if="!isMobile && state.logged" />
 
-    <main class="content">
+    <main :class="state.logged ? 'logado' : ''">
       <router-view />
     </main>
 
@@ -22,3 +22,9 @@ const { isMobile } = useDeviceLayout()
     />
   </div>
 </template>
+
+<style scoped>
+.logado{
+  margin: 80px 0;
+}
+</style>

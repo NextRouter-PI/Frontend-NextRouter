@@ -26,7 +26,7 @@ async function handleLogout() {
 <style scoped>
 .container {
   min-height: 100vh;
-  padding: 20px;
+  padding: 0 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;

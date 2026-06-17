@@ -125,7 +125,7 @@ const adicionarEndereco = () => {
 
 <style scoped>
 .profile-container {
-  padding: 100px 20px 20px;
+  padding: 0px 20px 0px;
   max-width: 500px;
   margin: 0 auto;
   min-height: 100vh;
