@@ -1,98 +1,92 @@
 <template>
   <div class="usuarios-list-container">
-    <div v-if="!questionarioState.state.submitted && questionarioState.canAnswerToday()" class="questionario-form">
-      <div class="questionario-header">
-        <h2>Questionário</h2>
-        <p class="data-proxima">{{ formatarDataProxima() }}</p>
-      </div>
+    <div class="questionario-header-block">
+      <h2>Questionário ({{ formatarDataProxima() }})</h2>
+    </div>
 
-      <div class="pergunta-container">
-        <div class="pergunta-titulo">
-          Vou com o transporte?
-          <span class="data-pergunta">{{ formatarData() }}</span>
-        </div>
-
-        <div class="opcoes">
-          <button
-            @click="setResponse('transporteIda', 'sim')"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteIda === 'sim' }]"
-          >
-            Sim
-          </button>
-          <button
-            @click="setResponse('transporteIda', 'nao')"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteIda === 'nao' }]"
-          >
-            Não
-          </button>
-        </div>
-      </div>
-
-      <div class="separator-line"></div>
-
-      <div class="pergunta-container">
-        <div class="pergunta-titulo">Voltarei com o transporte?</div>
-
-        <div class="opcoes">
-          <button
-            @click="setResponse('transporteVolta', 'sim')"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteVolta === 'sim' }]"
-          >
-            Sim
-          </button>
-          <button
-            @click="setResponse('transporteVolta', 'nao')"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteVolta === 'nao' }]"
-          >
-            Não
-          </button>
-        </div>
-      </div>
-
-      <div v-if="questionarioState.state.responses.transporteVolta === 'sim'" class="pergunta-container">
-        <div class="separator-line"></div>
-
-        <div class="pergunta-titulo">Voltarei que horas?</div>
-
-        <div class="opcoes">
-          <button
-            @click="setResponse('horaVolta', '12:00')"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.horaVolta === '12:00' }]"
-          >
-            12:00
-          </button>
-          <button
-            @click="setResponse('horaVolta', '17:00')"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.horaVolta === '17:00' }]"
-          >
-            17:00
-          </button>
-        </div>
-      </div>
-
-      <button
-        @click="enviarFormulario"
-        :disabled="!podeEnviar"
-        :class="['btn-enviar', { 'desabilitado': !podeEnviar }]"
-      >
-        Enviar
+    <div class="schedule-selector">
+      <button class="arrow-button" @click="previousTime" aria-label="Horário anterior">
+        ‹
+      </button>
+      <div class="time-text">{{ selectedTime }}</div>
+      <button class="arrow-button" @click="nextTime" aria-label="Próximo horário">
+        ›
       </button>
     </div>
 
-    <div v-else-if="questionarioState.state.submitted" class="sucesso-container">
-      <div class="icone-certinho">✓</div>
-      <p class="mensagem-sucesso">Aguarde até a próxima enquete</p>
+    <div class="list-container">
+      <h3 class="list-title">Passageiros Designados</h3>
+
+      <div v-if="filteredPassengers.length > 0">
+        <div
+          v-for="passenger in filteredPassengers"
+          :key="passenger.id"
+          class="passenger-card"
+        >
+          <div class="passenger-name">{{ passenger.name }}</div>
+          <div class="passenger-address">{{ passenger.address }}</div>
+        </div>
+      </div>
+
+      <div v-else class="no-passengers">
+        Nenhum passageiro designado para este horário
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { useQuestionarioState } from "@/store/useQuestionarioState";
-import { useTransporteQuestionario } from "@/composables/useTransporteQuestionario";
+import { ref, computed } from "vue";
 
-const questionarioState = useQuestionarioState();
-const { formatarData } = useTransporteQuestionario();
+const timeOptions = ["08:00", "12:00", "17:00"];
+const currentTimeIndex = ref(0);
+const selectedTime = computed(() => timeOptions[currentTimeIndex.value]);
+
+const allPassengers = ref([
+  {
+    id: 1,
+    name: "João Silva",
+    address: "Rua A, 123 - Centro",
+    time: "08:00",
+  },
+  {
+    id: 2,
+    name: "Maria Santos",
+    address: "Av. B, 456 - Vila Nova",
+    time: "08:00",
+  },
+  {
+    id: 3,
+    name: "Pedro Costa",
+    address: "Rua C, 789 - Jardim",
+    time: "12:00",
+  },
+  {
+    id: 4,
+    name: "Ana Oliveira",
+    address: "Av. D, 321 - Centro",
+    time: "12:00",
+  },
+  {
+    id: 5,
+    name: "Carlos Mendes",
+    address: "Rua E, 654 - Vila",
+    time: "17:00",
+  },
+]);
+
+const filteredPassengers = computed(() => {
+  return allPassengers.value.filter((p) => p.time === selectedTime.value);
+});
+
+const nextTime = () => {
+  currentTimeIndex.value = (currentTimeIndex.value + 1) % timeOptions.length;
+};
+
+const previousTime = () => {
+  currentTimeIndex.value =
+    (currentTimeIndex.value - 1 + timeOptions.length) % timeOptions.length;
+};
 
 const formatarDataProxima = () => {
   const amanha = new Date();
@@ -104,165 +98,247 @@ const formatarDataProxima = () => {
 
   return `${dia}/${mes}/${ano}`;
 };
-
-const podeEnviar = computed(() => {
-  return (
-    questionarioState.state.responses.transporteIda &&
-    questionarioState.state.responses.transporteVolta
-  );
-});
-
-const setResponse = (field, value) => {
-  questionarioState.setResponse(field, value);
-};
-
-const enviarFormulario = () => {
-  if (questionarioState.submitForm()) {
-    console.log("Respostas enviadas:", questionarioState.state.responses);
-  }
-};
 </script>
 
 <style scoped>
 .usuarios-list-container {
-  padding: 20px;
+  padding: 10px;
   background-color: #f5f5f5;
   min-height: 100vh;
 }
 
-.questionario-form {
-  background-color: white;
-  border-radius: 8px;
-  padding: 30px;
-  max-width: 600px;
-  margin: 100px auto 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.questionario-header {
+.questionario-header-block {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 12px;
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 12px;
 }
 
-.questionario-header h2 {
-  font-size: 24px;
-  color: #333;
-  margin: 0 0 10px 0;
-}
-
-.data-proxima {
-  font-size: 14px;
-  color: #666;
+.questionario-header-block h2 {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000000;
   margin: 0;
-  text-transform: capitalize;
 }
 
-.pergunta-container {
-  margin-bottom: 25px;
+.schedule-selector {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
-.pergunta-titulo {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 15px;
+.time-text {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #000000;
+}
+
+.arrow-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.data-pergunta {
-  font-size: 14px;
-  font-weight: 400;
-  color: #666;
-  text-transform: capitalize;
-}
-
-.opcoes {
-  display: flex;
-  gap: 15px;
   justify-content: center;
+  font-size: 1.3rem;
+  color: #ff8c00;
+  transition: transform 0.2s;
+  width: 32px;
+  height: 32px;
 }
 
-.opcao-btn {
-  padding: 12px 30px;
-  font-size: 16px;
-  border: 2px solid #ddd;
-  border-radius: 6px;
-  background-color: white;
-  color: #333;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-weight: 500;
+.arrow-button:hover {
+  color: #e67e00;
 }
 
-.opcao-btn:hover {
-  border-color: #ff8c00;
-  background-color: #fff8f0;
+.arrow-button:active {
+  transform: scale(0.85);
 }
 
-.opcao-btn.selecionado {
-  background-color: #333;
-  color: white;
-  border-color: #333;
-}
-
-.separator-line {
-  height: 3px;
-  background-color: #ff8c00;
-  margin: 25px 0;
-}
-
-.btn-enviar {
-  width: 100%;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 600;
-  background-color: #ff8c00;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 20px;
-  transition: all 0.3s ease;
-}
-
-.btn-enviar:hover:not(.desabilitado) {
-  background-color: #e67e00;
-}
-
-.btn-enviar.desabilitado {
-  background-color: #ccc;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.sucesso-container {
+.list-container {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 15px;
+  padding: 12px 8px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background-color: #f5f5f5;
+  gap: 8px;
 }
 
-.icone-certinho {
-  font-size: 80px;
-  color: #4caf50;
-  margin-bottom: 20px;
+.list-title {
+  font-size: 0.95rem;
   font-weight: bold;
-  width: 100px;
-  height: 100px;
-  border: 3px solid #4caf50;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #000000;
+  margin: 0 0 8px 0;
+  padding: 0;
 }
 
-.mensagem-sucesso {
-  font-size: 18px;
-  color: #666;
+.passenger-card {
+  border: 1px solid #f48a1d;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.passenger-name {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #000000;
+}
+
+.passenger-address {
+  font-size: 0.8rem;
+  color: #555555;
+}
+
+.no-passengers {
   text-align: center;
+  padding: 20px;
+  color: #999999;
+  font-size: 0.9rem;
+}
+
+@media (min-width: 480px) {
+  .usuarios-list-container {
+    padding: 15px;
+  }
+
+  .questionario-header-block {
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+  }
+
+  .questionario-header-block h2 {
+    font-size: 1.1rem;
+  }
+
+  .schedule-selector {
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+  }
+
+  .time-text {
+    font-size: 1.2rem;
+  }
+
+  .arrow-button {
+    font-size: 1.5rem;
+    width: 35px;
+    height: 35px;
+    padding: 3px;
+  }
+
+  .list-container {
+    padding: 15px 10px;
+    gap: 10px;
+    border-radius: 18px;
+  }
+
+  .list-title {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+
+  .passenger-card {
+    padding: 12px 15px;
+    border-radius: 11px;
+  }
+
+  .passenger-name {
+    font-size: 1rem;
+  }
+
+  .passenger-address {
+    font-size: 0.85rem;
+  }
+
+  .no-passengers {
+    padding: 25px;
+    font-size: 0.92rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .usuarios-list-container {
+    padding: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .questionario-header-block {
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+  }
+
+  .questionario-header-block h2 {
+    font-size: 1.3rem;
+  }
+
+  .schedule-selector {
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+  }
+
+  .time-text {
+    font-size: 1.4rem;
+  }
+
+  .arrow-button {
+    font-size: 1.8rem;
+    width: 40px;
+    height: 40px;
+    padding: 5px;
+  }
+
+  .list-container {
+    padding: 25px 15px;
+    gap: 12px;
+    border-radius: 20px;
+  }
+
+  .list-title {
+    font-size: 1.1rem;
+    margin-bottom: 15px;
+  }
+
+  .passenger-card {
+    padding: 15px 20px;
+    border-radius: 12px;
+  }
+
+  .passenger-name {
+    font-size: 1.1rem;
+  }
+
+  .passenger-address {
+    font-size: 0.9rem;
+  }
+
+  .no-passengers {
+    padding: 30px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-width: 1201px) {
+  .usuarios-list-container {
+    max-width: 700px;
+  }
 }
 </style>
