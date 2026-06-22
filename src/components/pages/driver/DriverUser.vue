@@ -1,417 +1,584 @@
+<script setup>
+import { ref, reactive } from 'vue';
+import { state } from '@/stores/state.js';
+import AvatarUploader from '@/components/layout/AvatarUpload.vue';
+
+const isEditingProfile = ref(false);
+const isEditingCnh = ref(false);
+const fileInput = ref(null);
+const selectedFile = ref(null);
+const cnhFileName = ref(state.user.cnhFileName || '');
+const cnhFileSize = ref(state.user.cnhFileSize || 0);
+
+const editForm = reactive({
+  name: state.user.name,
+  email: state.user.email,
+  password: '',
+  birthday: state.user.birthday,
+  cpf: state.user.cpf,
+});
+
+function toggleEditProfile() {
+  isEditingProfile.value = !isEditingProfile.value;
+  if (isEditingProfile.value) {
+    editForm.name = state.user.name;
+    editForm.email = state.user.email;
+    editForm.password = '';
+    editForm.birthday = state.user.birthday;
+    editForm.cpf = state.user.cpf;
+  }
+}
+
+function saveChanges() {
+  state.user.name = editForm.name;
+  state.user.email = editForm.email;
+  if (editForm.password) {
+    state.user.password = editForm.password;
+  }
+  state.user.birthday = editForm.birthday;
+  state.user.cpf = editForm.cpf;
+  isEditingProfile.value = false;
+  editForm.password = '';
+}
+
+function toggleEditCnh() {
+  isEditingCnh.value = !isEditingCnh.value;
+  if (!isEditingCnh.value) {
+    selectedFile.value = null;
+  }
+}
+
+function triggerFileInput() {
+  fileInput.value.click();
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    selectedFile.value = file;
+    cnhFileName.value = file.name;
+    cnhFileSize.value = file.size;
+  }
+}
+
+function saveCnh() {
+  if (selectedFile.value) {
+    state.user.cnhFile = selectedFile.value;
+    state.user.cnhFileName = selectedFile.value.name;
+    state.user.cnhFileSize = selectedFile.value.size;
+    state.user.cnhFileType = selectedFile.value.type;
+  }
+  isEditingCnh.value = false;
+  selectedFile.value = null;
+}
+
+function cancelCnhEdit() {
+  isEditingCnh.value = false;
+  selectedFile.value = null;
+  cnhFileName.value = state.user.cnhFileName || '';
+  cnhFileSize.value = state.user.cnhFileSize || 0;
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+</script>
+
 <template>
-  <div class="profile-container">
-    <div class="profile-header">
-      <AvatarUpload v-model="profileData.fotoPerfil" @file-select="onFotoChange" />
-      <p v-if="fotoCarregando" class="upload-status">Enviando foto...</p>
-    </div>
-
-    <div class="profile-info">
-      <div class="form-group">
-        <label>Nome</label>
-        <input
-          type="text"
-          :value="profileData.nome"
-          class="input-field"
-          disabled
-        >
+  <div class="profile-page">
+    <header class="header-user">
+      <div class="icon-perfil">
+        <AvatarUploader />
       </div>
-
-      <div class="form-group">
-        <label>Email</label>
-        <input
-          type="text"
-          :value="profileData.email"
-          class="input-field"
-          disabled
-        >
+      <div class="header-content">
+        <h1>Olá, {{ state.user.name }}</h1>
+        <button class="edit-profile-btn" @click="toggleEditProfile">
+          Editar Perfil <span class="mdi mdi-pencil-outline"></span>
+        </button>
       </div>
+    </header>
 
-      <div class="form-group" v-if="profileData.telefone">
-        <label>Telefone</label>
-        <input
-          type="text"
-          :value="profileData.telefone"
-          class="input-field"
-          disabled
-        >
+    <section class="profile-info" v-if="!isEditingProfile">
+      <div class="info">
+        <label>Nome:</label>
+        <input :value="state.user.name" disabled />
       </div>
-
-      <div class="form-group" v-if="profileData.cnh">
-        <label>CNH</label>
-        <input
-          type="text"
-          :value="profileData.cnh"
-          class="input-field"
-          disabled
-        >
+      <div class="info">
+        <label>Email:</label>
+        <input :value="state.user.email" disabled />
       </div>
+      <div class="info">
+        <label>Senha:</label>
+        <input value="**********" disabled />
+      </div>
+      <div class="person-infos">
+        <div class="info">
+          <label>Data de Nascimento:</label>
+          <input :value="state.user.birthday" disabled />
+        </div>
+        <div class="info">
+          <label>CPF:</label>
+          <input :value="state.user.cpf" disabled />
+        </div>
+      </div>
+    </section>
 
-      <AddressSection
-        :addresses="enderecos"
-        :selected-index="profileData.endereco_selecionado"
-        @update:selected-index="profileData.endereco_selecionado = $event"
-        @edit="editarEndereco"
-        @add="adicionarEndereco"
-      />
+    <section class="profile-info edit-mode" v-if="isEditingProfile">
+      <div class="info">
+        <label>Nome:</label>
+        <input v-model="editForm.name" />
+      </div>
+      <div class="info">
+        <label>Email:</label>
+        <input v-model="editForm.email" />
+      </div>
+      <div class="info">
+        <label>Senha:</label>
+        <input v-model="editForm.password" placeholder="Nova senha" />
+      </div>
+      <div class="person-infos">
+        <div class="info">
+          <label>Data de Nascimento:</label>
+          <input v-model="editForm.birthday" type="date" />
+        </div>
+        <div class="info">
+          <label>CPF:</label>
+          <input v-model="editForm.cpf" />
+        </div>
+      </div>
+      <button class="save-btn" @click="saveChanges">Salvar alterações</button>
+    </section>
 
-      <p v-if="uploadError" class="upload-error">{{ uploadError }}</p>
-
-      <button class="btn-settings">Configurações</button>
-    </div>
+    <section class="cnh">
+      <h2>Minha CNH:</h2>
+      <div class="cnh-card">
+        <div class="cnh-info">
+          <span class="cnh-filename">{{ cnhFileName || 'Nenhum arquivo selecionado' }}</span>
+          <span v-if="cnhFileSize" class="cnh-filesize">{{ formatFileSize(cnhFileSize) }}</span>
+        </div>
+        <button @click="toggleEditCnh" class="edit-cnh-btn">
+          <span class="mdi mdi-pencil-outline"></span>
+        </button>
+      </div>
+      <div class="cnh-edit" v-if="isEditingCnh">
+        <div class="file-input-wrapper">
+          <input
+            type="file"
+            ref="fileInput"
+            @change="handleFileUpload"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            class="file-input"
+          />
+          <button @click="triggerFileInput" class="file-select-btn">
+            <span class="mdi mdi-file-upload-outline"></span>
+            Selecionar Arquivo
+          </button>
+          <span v-if="selectedFile" class="selected-file-name">{{ selectedFile.name }}</span>
+        </div>
+        <div class="cnh-actions">
+          <button @click="saveCnh" class="save-cnh-btn" :disabled="!selectedFile && !cnhFileName">
+            Salvar
+          </button>
+          <button @click="cancelCnhEdit" class="cancel-btn">Cancelar</button>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
-<script setup>
-import { reactive, ref, computed } from "vue";
-import { state } from "@/stores/state";
-import api from "@/api/client";
-import AvatarUpload from "@/components/layout/AvatarUpload.vue";
-import AddressSection from "@/components/forms/AddressSection.vue";
-
-const fotoCarregando = ref(false);
-const uploadError = ref(null);
-
-const enderecos = computed(() => {
-  const list = [];
-  const user = state.user;
-  if (user?.cep) {
-    const parts = [`CEP: ${user.cep}`];
-    if (user.city) parts.push(user.city);
-    if (user.state) parts.push(user.state);
-    list.push(parts.join(" - "));
-  }
-  if (list.length === 0) list.push("Nenhum endereço cadastrado");
-  return list;
-});
-
-const profileData = reactive({
-  fotoPerfil: state.user?.foto_perfil || state.user?.profile_picture || null,
-  nome: state.user?.name || state.user?.email || "Usuário",
-  email: state.user?.email || "",
-  telefone: state.user?.phone || "",
-  cnh: state.user?.cnh || "",
-  endereco_selecionado: 0,
-});
-
-async function onFotoChange(file) {
-  if (!file) return;
-  fotoCarregando.value = true;
-  uploadError.value = null;
-
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('description', 'Foto de perfil');
-
-    const response = await api.post('/uploads/images/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-
-    const url = response.data.arquivo_url || response.data.url || response.data.imagem_url;
-
-    if (url) {
-      const formDataUser = new FormData();
-      formDataUser.append('foto_perfil', url);
-      await api.patch('/users/me/', formDataUser);
-    }
-
-    state.user.foto_perfil = url;
-    profileData.fotoPerfil = url;
-  } catch (error) {
-    uploadError.value = "Erro ao enviar foto de perfil";
-    console.error("Erro ao enviar foto de perfil:", error);
-  } finally {
-    fotoCarregando.value = false;
-  }
-}
-
-const editarEndereco = () => {
-  console.log("Editar endereço:", enderecos.value[profileData.endereco_selecionado]);
-};
-
-const adicionarEndereco = () => {
-  console.log("Adicionar novo endereço");
-};
-</script>
-
 <style scoped>
-.profile-container {
-  padding: 0px 20px 0px;
-  max-width: 500px;
-  margin: 0 auto;
+.profile-page {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: 0 16px 32px;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
-.profile-header {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
-  margin-top: 20px;
-}
-
-.avatar-edit-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.avatar-circle {
-  width: 150px;
-  height: 150px;
-  background-color: #222;
-  border-radius: 50%;
+.header-user {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
   display: flex;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-  border: 4px solid #f48a1d;
-  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.3);
-}
-
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-icon {
-  color: #f48a1d;
-  font-size: 80px;
-}
-
-.file-input-hidden {
-  display: none;
-}
-
-.btn-change-photo {
-  background-color: transparent;
-  border: 1px solid #f48a1d;
-  color: #d3730e;
-  border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-change-photo:hover {
-  background-color: rgba(244, 138, 29, 0.1);
-}
-
-.profile-info {
-  width: 100%;
-  max-width: 500px;
-}
-
-.form-group {
+  gap: 14px;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--border-primary);
   margin-bottom: 20px;
 }
 
-.form-group label {
-  display: block;
+.icon-perfil {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--superfice);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+
+.header-content {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+
+.header-content h1 {
+  font-size: 1.15rem;
   font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  margin: 0;
+  white-space: nowrap;
 }
 
-.input-field {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-}
-
-.input-field:focus {
-  outline: none;
-  border-color: #f48a1d;
-  box-shadow: 0 0 4px rgba(244, 138, 29, 0.2);
-}
-
-.input-field:disabled {
-  background-color: #f5f5f5;
-  color: #666;
-  cursor: not-allowed;
-}
-
-.endereco-section {
-  margin-top: 30px;
-  border-top: 2px solid #f48a1d;
-  padding-top: 20px;
-  position: relative;
-}
-
-.address-label {
-  display: flex;
-  justify-content: space-between;
+.edit-profile-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-weight: 500;
+  font-size: 0.85rem;
+  display: inline-flex;
   align-items: center;
-  color: #f48a1d;
-  font-weight: bold;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--border-radius);
+  transition: 0.2s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.edit-profile-btn:hover {
+  background: var(--gradient-primary-hover);
+  color: var(--primary-hover);
+}
+
+.edit-profile-btn .mdi {
   font-size: 1.1rem;
-  margin-bottom: 15px;
 }
 
-.action-buttons {
+.profile-info {
+  background: var(--bg-white);
+  border-radius: var(--border-radius);
+  padding: 20px 16px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.info {
   display: flex;
-  justify-content: flex-end;
-  gap: 15px;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
 }
 
-.icon-btn {
-  color: #f48a1d;
-  font-size: 24px;
+.info:last-child {
+  margin-bottom: 0;
+}
+
+.info label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+.info input {
+  border: none;
+  border-bottom: 1px solid var(--border-primary);
+  padding: 6px 0;
+  font-size: 0.95rem;
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.info input:focus {
+  border-bottom-color: var(--primary);
+}
+
+.info input:disabled {
+  color: var(--text);
+  opacity: 0.9;
+  background: transparent;
+}
+
+.person-infos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-top: 4px;
+}
+
+.person-infos .info {
+  margin-bottom: 0;
+}
+
+.edit-mode .info input {
+  border-bottom: 2px solid var(--primary);
+  background: var(--bg-white);
+  padding: 6px 10px;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.edit-mode .info input:focus {
+  border-bottom-color: var(--primary-hover);
+  box-shadow: 0 2px 8px rgba(223, 128, 26, 0.15);
+}
+
+.save-btn {
+  background: var(--gradient-primary);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 12px 16px;
+  border-radius: var(--border-radius);
+  width: 100%;
+  margin-top: 18px;
   cursor: pointer;
-  transition: transform 0.2s, color 0.2s;
+  transition: 0.2s;
+  box-shadow: var(--shadow-primary);
 }
 
-.icon-btn:hover {
-  transform: scale(1.2);
-  color: #d3730e;
+.save-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(0.98);
+  box-shadow: 0 4px 16px rgba(223, 128, 26, 0.5);
 }
 
-.endereco-selecionado {
+.cnh {
+  background: var(--bg-white);
+  border-radius: var(--border-radius);
+  padding: 18px 16px 16px;
+  box-shadow: var(--shadow);
+}
+
+.cnh h2 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.cnh-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px;
-  border: 2px solid #f48a1d;
-  border-radius: 8px;
-  background-color: #fff8f0;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 10px;
+  background: var(--bg);
+  padding: 12px 14px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-primary);
 }
 
-.endereco-selecionado:hover {
-  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.2);
-}
-
-.endereco-item {
+.cnh-info {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  background-color: white;
-}
-
-.endereco-content {
+  flex-direction: column;
+  gap: 2px;
   flex: 1;
 }
 
-.endereco-text {
-  margin: 0;
-  color: #333;
+.cnh-filename {
   font-size: 0.95rem;
-  line-height: 1.4;
+  color: var(--text);
+  font-weight: 500;
 }
 
-.dropdown-icon {
-  color: #f48a1d;
-  font-size: 24px;
-  transition: transform 0.3s ease;
-  margin-left: 10px;
+.cnh-filesize {
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
-.dropdown-icon.ativo {
-  transform: rotate(180deg);
-}
-
-.endereco-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 2px solid #f48a1d;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  z-index: 10;
-  margin-top: -10px;
-  padding: 10px 0;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.endereco-opcao {
+.edit-cnh-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-size: 1.2rem;
+  padding: 0 4px;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 15px;
+  transition: color 0.2s;
+}
+
+.edit-cnh-btn:hover {
+  color: var(--primary-hover);
+}
+
+.cnh-edit {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.file-input-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-select-btn {
+  background: var(--bg);
+  border: 2px solid var(--border-primary);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: background-color 0.2s;
-  border-left: 4px solid transparent;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
-.endereco-opcao:hover {
-  background-color: #fff8f0;
+.file-select-btn:hover {
+  background: var(--gradient-primary-hover);
+  border-color: var(--primary);
 }
 
-.endereco-opcao.selecionado {
-  background-color: #fff8f0;
-  border-left-color: #f48a1d;
+.file-select-btn .mdi {
+  font-size: 1.1rem;
 }
 
-.endereco-opcao .endereco-text {
+.selected-file-name {
   font-size: 0.9rem;
+  color: var(--text);
+  word-break: break-all;
 }
 
-.check-icon {
-  color: #4caf50;
-  font-size: 20px;
-  margin-left: 12px;
+.cnh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.btn-settings {
-  background-color: #d3730e;
-  color: white;
+.save-cnh-btn {
+  background: var(--gradient-primary);
+  color: #ffffff;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 10px 20px;
+  border-radius: var(--border-radius);
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
-  width: 100%;
-  margin-top: 30px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: 0.2s;
+  box-shadow: var(--shadow-primary);
+  flex: 1;
 }
 
-.btn-settings:hover {
-  background-color: #b85f0b;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.save-cnh-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: scale(0.96);
 }
 
-.btn-settings:active {
-  transform: translateY(0);
+.save-cnh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.upload-status {
-  text-align: center;
-  color: #8a4f10;
+.cancel-btn {
+  background: transparent;
+  border: 2px solid var(--border-primary);
+  color: var(--text-muted);
+  padding: 10px 18px;
+  border-radius: var(--border-radius);
+  font-weight: 500;
   font-size: 0.85rem;
-  margin: 4px 0 0;
+  cursor: pointer;
+  transition: 0.2s;
+  flex: 1;
 }
 
-.upload-error {
-  text-align: center;
-  color: #d32f2f;
-  font-size: 0.85rem;
-  margin: 4px 0 16px;
-  background: #ffebee;
-  padding: 8px 12px;
-  border-radius: 6px;
+.cancel-btn:hover {
+  background: var(--gradient-primary-hover);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.mdi {
+  font-family: 'Material Design Icons';
+  display: inline-block;
+}
+
+@media (max-width: 400px) {
+  .person-infos {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .header-content h1 {
+    font-size: 1rem;
+  }
+
+  .edit-profile-btn {
+    font-size: 0.75rem;
+  }
+
+  .file-input-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .file-select-btn {
+    justify-content: center;
+  }
+
+  .cnh-actions {
+    flex-direction: column;
+  }
+
+  .save-cnh-btn,
+  .cancel-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+.dark .profile-info,
+.dark .cnh {
+  background: var(--superfice);
+}
+
+.dark .edit-mode .info input {
+  background: var(--bg);
+}
+
+.dark .cnh-card {
+  background: var(--bg);
+}
+
+.dark .file-select-btn {
+  background: var(--bg);
+}
+
+.dark .info input:disabled {
+  opacity: 0.8;
 }
 </style>

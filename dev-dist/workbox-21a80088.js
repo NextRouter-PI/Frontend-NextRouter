@@ -1405,7 +1405,7 @@ define(['exports'], (function (exports) { 'use strict';
       if (func === IDBDatabase.prototype.transaction && !('objectStoreNames' in IDBTransaction.prototype)) {
         return function (storeNames, ...args) {
           const tx = func.call(unwrap(this), storeNames, ...args);
-          transactionStoreNamesMap.set(tx, storeNames.sort ? storeNames.toSorted() : [storeNames]);
+          transactionStoreNamesMap.set(tx, storeNames.sort ? storeNames.sort() : [storeNames]);
           return wrap(tx);
         };
       }
@@ -1504,7 +1504,7 @@ define(['exports'], (function (exports) { 'use strict';
       }
       return wrap(request).then(() => undefined);
     }
-    const readMethods = new Set(['get', 'getKey', 'getAll', 'getAllKeys', 'count']);
+    const readMethods = ['get', 'getKey', 'getAll', 'getAllKeys', 'count'];
     const writeMethods = ['put', 'add', 'delete', 'clear'];
     const cachedMethods = new Map();
     function getMethod(target, prop) {
@@ -1517,7 +1517,7 @@ define(['exports'], (function (exports) { 'use strict';
       const isWrite = writeMethods.includes(targetFuncName);
       if (
       // Bail if the target doesn't exist on the target. Eg, getAll isn't in Edge.
-      !(targetFuncName in (useIndex ? IDBIndex : IDBObjectStore).prototype) || !(isWrite || readMethods.has(targetFuncName))) {
+      !(targetFuncName in (useIndex ? IDBIndex : IDBObjectStore).prototype) || !(isWrite || readMethods.includes(targetFuncName))) {
         return;
       }
       const method = async function (storeName, ...args) {
