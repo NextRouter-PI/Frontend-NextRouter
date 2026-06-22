@@ -43,8 +43,6 @@ function handleFile(event) {
 
 <style scoped>
 .avatar-edit-wrapper {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 12px;
 }
@@ -54,7 +52,6 @@ function handleFile(event) {
   height: 150px;
   background-color: #222;
   border-radius: 50%;
-  display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;

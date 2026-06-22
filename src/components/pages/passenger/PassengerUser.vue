@@ -1,430 +1,480 @@
+<script setup>
+import { ref, reactive } from 'vue';
+import { state } from '@/stores/state.js';
+import AvatarUploader from '@/components/layout/AvatarUpload.vue';
+
+const isEditingProfile = ref(false);
+const isEditingAddress = ref(false);
+const editAddress = ref(state.user.address);
+
+const editForm = reactive({
+  name: state.user.name,
+  email: state.user.email,
+  password: '',
+  birthday: state.user.birthday,
+  cpf: state.user.cpf,
+});
+
+function toggleEditProfile() {
+  isEditingProfile.value = !isEditingProfile.value;
+  if (isEditingProfile.value) {
+    editForm.name = state.user.name;
+    editForm.email = state.user.email;
+    editForm.password = '';
+    editForm.birthday = state.user.birthday;
+    editForm.cpf = state.user.cpf;
+  }
+}
+
+function saveChanges() {
+  state.user.name = editForm.name;
+  state.user.email = editForm.email;
+  if (editForm.password) {
+    state.user.password = editForm.password;
+  }
+  state.user.birthday = editForm.birthday;
+  state.user.cpf = editForm.cpf;
+  isEditingProfile.value = false;
+  editForm.password = '';
+}
+
+function toggleEditAddress() {
+  isEditingAddress.value = !isEditingAddress.value;
+  if (isEditingAddress.value) {
+    editAddress.value = state.user.address;
+  }
+}
+
+function saveAddress() {
+  state.user.address = editAddress.value;
+  isEditingAddress.value = false;
+}
+
+function cancelAddressEdit() {
+  isEditingAddress.value = false;
+  editAddress.value = state.user.address;
+}
+</script>
+
 <template>
-  <div class="profile-container">
-    <div class="profile-header">
-      <AvatarUpload v-model="profileData.fotoPerfil" @file-select="onFotoChange" />
-      <p v-if="fotoCarregando" class="upload-status">Enviando foto...</p>
-    </div>
-
-    <div class="profile-info">
-      <div class="form-group">
-        <label>Nome</label>
-        <input
-          type="text"
-          :value="profileData.nome"
-          class="input-field"
-          disabled
-        >
+  <div class="profile-page">
+    <header class="header-user">
+      <div class="icon-perfil">
+        <AvatarUploader />
       </div>
-
-      <div class="form-group">
-        <label>Email</label>
-        <input
-          type="text"
-          :value="profileData.email"
-          class="input-field"
-          disabled
-        >
+      <div class="header-content">
+        <h1>Olá, {{ state.user.name }}</h1>
+        <button class="edit-profile-btn" @click="toggleEditProfile">
+          Editar Perfil <span class="mdi mdi-pencil-outline"></span>
+        </button>
       </div>
+    </header>
 
-      <div class="form-group" v-if="profileData.telefone">
-        <label>Telefone</label>
-        <input
-          type="text"
-          :value="profileData.telefone"
-          class="input-field"
-          disabled
-        >
+    <section class="profile-info" v-if="!isEditingProfile">
+      <div class="info">
+        <label>Nome:</label>
+        <input :value="state.user.name" disabled />
       </div>
+      <div class="info">
+        <label>Email:</label>
+        <input :value="state.user.email" disabled />
+      </div>
+      <div class="info">
+        <label>Senha:</label>
+        <input value="**********" disabled />
+      </div>
+      <div class="person-infos">
+        <div class="info">
+          <label>Data de Nascimento:</label>
+          <input :value="state.user.birthday" disabled />
+        </div>
+        <div class="info">
+          <label>CPF:</label>
+          <input :value="state.user.cpf" disabled />
+        </div>
+      </div>
+    </section>
 
-      <AddressSection
-        :addresses="enderecos"
-        :selected-index="profileData.endereco_selecionado"
-        @update:selected-index="profileData.endereco_selecionado = $event"
-        @edit="editarEndereco"
-        @add="adicionarEndereco"
-      />
+    <section class="profile-info edit-mode" v-if="isEditingProfile">
+      <div class="info">
+        <label>Nome:</label>
+        <input v-model="editForm.name" />
+      </div>
+      <div class="info">
+        <label>Email:</label>
+        <input v-model="editForm.email" />
+      </div>
+      <div class="info">
+        <label>Senha:</label>
+        <input v-model="editForm.password" placeholder="Nova senha" />
+      </div>
+      <div class="person-infos">
+        <div class="info">
+          <label>Data de Nascimento:</label>
+          <input v-model="editForm.birthday" type="date" />
+        </div>
+        <div class="info">
+          <label>CPF:</label>
+          <input v-model="editForm.cpf" />
+        </div>
+      </div>
+      <button class="save-btn" @click="saveChanges">Salvar alterações</button>
+    </section>
 
-      <p v-if="uploadError" class="upload-error">{{ uploadError }}</p>
-
-      <button class="btn-settings">Configurações</button>
-    </div>
+    <section class="address">
+      <h2>Meu Endereço:</h2>
+      <div class="address-card">
+        <span>{{ state.user.address }}</span>
+        <button @click="toggleEditAddress" class="edit-address-btn">
+          <span class="mdi mdi-pencil-outline"></span>
+        </button>
+      </div>
+      <div class="address-edit" v-if="isEditingAddress">
+        <input v-model="editAddress" placeholder="Novo endereço" />
+        <button @click="saveAddress" class="save-address-btn">Salvar</button>
+        <button @click="cancelAddressEdit" class="cancel-btn">Cancelar</button>
+      </div>
+    </section>
   </div>
 </template>
 
-<script setup>
-import { reactive, ref, computed } from "vue";
-import { state } from "@/stores/state";
-import api from "@/api/client";
-import AvatarUpload from "@/components/layout/AvatarUpload.vue";
-import AddressSection from "@/components/forms/AddressSection.vue";
-
-const fotoCarregando = ref(false);
-const uploadError = ref(null);
-
-const enderecos = computed(() => {
-  const list = [];
-  const user = state.user;
-  if (user?.cep) {
-    const parts = [`CEP: ${user.cep}`];
-    if (user.city) parts.push(user.city);
-    if (user.state) parts.push(user.state);
-    list.push(parts.join(" - "));
-  }
-  if (list.length === 0) list.push("Nenhum endereço cadastrado");
-  return list;
-});
-
-const profileData = reactive({
-  fotoPerfil: state.user?.foto_perfil || state.user?.profile_picture || null,
-  nome: state.user?.name || state.user?.email || "Usuário",
-  email: state.user?.email || "",
-  telefone: state.user?.phone || "",
-  endereco_selecionado: 0,
-});
-
-async function onFotoChange(file) {
-  if (!file) return;
-  fotoCarregando.value = true;
-  uploadError.value = null;
-
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('description', 'Foto de perfil');
-
-    const response = await api.post('/uploads/images/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-
-    const url = response.data.arquivo_url || response.data.url || response.data.imagem_url;
-
-    if (url) {
-      const formDataUser = new FormData();
-      formDataUser.append('foto_perfil', url);
-      await api.patch('/users/me/', formDataUser);
-    }
-
-    state.user.foto_perfil = url;
-    profileData.fotoPerfil = url;
-  } catch (error) {
-    uploadError.value = "Erro ao enviar foto de perfil";
-    console.error("Erro ao enviar foto de perfil:", error);
-  } finally {
-    fotoCarregando.value = false;
-  }
-}
-
-const editarEndereco = () => {
-  console.log("Editar endereço:", enderecos.value[profileData.endereco_selecionado]);
-};
-
-const adicionarEndereco = () => {
-  console.log("Adicionar novo endereço");
-};
-</script>
-
 <style scoped>
-.profile-container {
-  padding: 0px 20px 0px;
-  max-width: 500px;
-  margin: 0 auto;
+.profile-page {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  padding: 0 16px 32px;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
-.profile-header {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
-  margin-top: 20px;
-}
-
-.avatar-edit-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.avatar-circle {
-  width: 150px;
-  height: 150px;
-  background-color: #222;
-  border-radius: 50%;
+.header-user {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
   display: flex;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-  border: 4px solid #f48a1d;
-  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.3);
-}
-
-.avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.avatar-icon {
-  color: #f48a1d;
-  font-size: 80px;
-}
-
-.file-input-hidden {
-  display: none;
-}
-
-.btn-change-photo {
-  background-color: transparent;
-  border: 1px solid #f48a1d;
-  color: #d3730e;
-  border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-change-photo:hover {
-  background-color: rgba(244, 138, 29, 0.1);
-}
-
-.profile-info {
-  width: 100%;
-  max-width: 500px;
-}
-
-.form-group {
+  gap: 14px;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--border-primary);
   margin-bottom: 20px;
 }
 
-.form-group label {
-  display: block;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
-}
-
-.input-field {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-}
-
-.input-field:focus {
-  outline: none;
-  border-color: #f48a1d;
-  box-shadow: 0 0 4px rgba(244, 138, 29, 0.2);
-}
-
-.input-field:disabled {
-  background-color: #f5f5f5;
-  color: #666;
-  cursor: not-allowed;
-}
-
-.password-wrapper {
-  position: relative;
+.icon-perfil {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--superfice);
   display: flex;
   align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
 }
 
-.password-wrapper .input-field {
-  margin-bottom: 0;
-  padding-right: 40px;
+.header-content {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 10px;
 }
 
-.eye-icon {
-  position: absolute;
-  right: 12px;
-  color: #f48a1d;
+.header-content h1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.edit-profile-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-weight: 500;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--border-radius);
+  transition: 0.2s;
   cursor: pointer;
-  font-size: 20px;
+  white-space: nowrap;
+}
+
+.edit-profile-btn:hover {
+  background: var(--gradient-primary-hover);
+  color: var(--primary-hover);
+}
+
+.edit-profile-btn .mdi {
+  font-size: 1.1rem;
+}
+
+.profile-info {
+  background: var(--altbg);
+  border-radius: var(--border-radius);
+  padding: 20px 16px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 16px;
+}
+
+.info:last-child {
+  margin-bottom: 0;
+}
+
+.info label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+.info input {
+  border: none;
+  border-bottom: 1px solid var(--border-primary);
+  padding: 6px 0;
+  font-size: 0.95rem;
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.info input:focus {
+  border-bottom-color: var(--primary);
+}
+
+.info input:disabled {
+  color: var(--text);
+  opacity: 0.9;
+  background: transparent;
+}
+
+.person-infos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-top: 4px;
+}
+
+.person-infos .info {
+  margin-bottom: 0;
+}
+
+.edit-mode .info input {
+  border-bottom: 2px solid var(--primary);
+  background: var(--bg-white);
+  padding: 6px 10px;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.edit-mode .info input:focus {
+  border-bottom-color: var(--primary-hover);
+  box-shadow: 0 2px 8px rgba(223, 128, 26, 0.15);
+}
+
+.save-btn {
+  background: var(--gradient-primary);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 12px 16px;
+  border-radius: var(--border-radius);
+  width: 100%;
+  margin-top: 18px;
+  cursor: pointer;
+  transition: 0.2s;
+  box-shadow: var(--shadow-primary);
+}
+
+.save-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(0.98);
+  box-shadow: 0 4px 16px rgba(223, 128, 26, 0.5);
+}
+
+.address {
+  background: var(--altbg);
+  border-radius: var(--border-radius);
+  padding: 18px 16px 16px;
+  box-shadow: var(--shadow);
+}
+
+.address h2 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.address-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--altbg);
+  padding: 12px 14px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-primary);
+}
+
+.address-card span {
+  font-size: 0.95rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.edit-address-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-size: 1.2rem;
+  padding: 0 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
   transition: color 0.2s;
 }
 
-.eye-icon:hover {
-  color: #d3730e;
+.edit-address-btn:hover {
+  color: var(--primary-hover);
 }
 
-.endereco-section {
-  margin-top: 30px;
-  border-top: 2px solid #f48a1d;
-  padding-top: 20px;
-  position: relative;
-}
-
-.address-label {
+.address-edit {
+  margin-top: 14px;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
-  color: #f48a1d;
-  font-weight: bold;
-  font-size: 1.1rem;
-  margin-bottom: 15px;
+  gap: 10px;
 }
 
-.action-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-}
-
-.icon-btn {
-  color: #f48a1d;
-  font-size: 24px;
-  cursor: pointer;
-  transition: transform 0.2s, color 0.2s;
-}
-
-.icon-btn:hover {
-  transform: scale(1.2);
-  color: #d3730e;
-}
-
-.endereco-selecionado {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px;
-  border: 2px solid #f48a1d;
-  border-radius: 8px;
-  background-color: #fff8f0;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 10px;
-}
-
-.endereco-selecionado:hover {
-  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.2);
-}
-
-.endereco-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  background-color: white;
-}
-
-.endereco-content {
+.address-edit input {
   flex: 1;
-}
-
-.endereco-text {
-  margin: 0;
-  color: #333;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-
-.dropdown-icon {
-  color: #f48a1d;
-  font-size: 24px;
-  transition: transform 0.3s ease;
-  margin-left: 10px;
-}
-
-.dropdown-icon.ativo {
-  transform: rotate(180deg);
-}
-
-.endereco-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 2px solid #f48a1d;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  z-index: 10;
-  margin-top: -10px;
-  padding: 10px 0;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-.endereco-opcao {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 15px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  border-left: 4px solid transparent;
-}
-
-.endereco-opcao:hover {
-  background-color: #fff8f0;
-}
-
-.endereco-opcao.selecionado {
-  background-color: #fff8f0;
-  border-left-color: #f48a1d;
-}
-
-.endereco-opcao .endereco-text {
+  min-width: 160px;
+  padding: 10px 12px;
+  border: 2px solid var(--border-primary);
+  border-radius: var(--border-radius);
   font-size: 0.9rem;
+  background: var(--bg-white);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.3s;
 }
 
-.check-icon {
-  color: #4caf50;
-  font-size: 20px;
-  margin-left: 12px;
+.address-edit input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.15);
 }
 
-.btn-settings {
-  background-color: #d3730e;
-  color: white;
+.save-address-btn {
+  background: var(--gradient-primary);
+  color: #ffffff;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: 10px 20px;
+  border-radius: var(--border-radius);
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
-  width: 100%;
-  margin-top: 30px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: 0.2s;
+  box-shadow: var(--shadow-primary);
 }
 
-.btn-settings:hover {
-  background-color: #b85f0b;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+.save-address-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(0.96);
 }
 
-.btn-settings:active {
-  transform: translateY(0);
-}
-
-.upload-status {
-  text-align: center;
-  color: #8a4f10;
+.cancel-btn {
+  background: transparent;
+  border: 2px solid var(--border-primary);
+  color: var(--text-muted);
+  padding: 10px 18px;
+  border-radius: var(--border-radius);
+  font-weight: 500;
   font-size: 0.85rem;
-  margin: 4px 0 0;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.upload-error {
-  text-align: center;
-  color: #d32f2f;
-  font-size: 0.85rem;
-  margin: 4px 0 16px;
-  background: #ffebee;
-  padding: 8px 12px;
-  border-radius: 6px;
+.cancel-btn:hover {
+  background: var(--gradient-primary-hover);
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.mdi {
+  font-family: 'Material Design Icons';
+  display: inline-block;
+}
+
+@media (max-width: 400px) {
+  .person-infos {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .header-content h1 {
+    font-size: 1rem;
+  }
+
+  .edit-profile-btn {
+    font-size: 0.75rem;
+  }
+
+  .address-edit {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .address-edit input {
+    min-width: unset;
+  }
+
+  .save-address-btn,
+  .cancel-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}
+
+.dark .profile-info,
+.dark .address {
+  background: var(--superfice);
+}
+
+.dark .edit-mode .info input {
+  background: var(--bg);
+}
+
+.dark .address-card {
+  background: var(--bg);
+}
+
+.dark .address-edit input {
+  background: var(--bg);
+}
+
+.dark .info input:disabled {
+  opacity: 0.8;
 }
 </style>
