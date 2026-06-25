@@ -28,7 +28,7 @@ import Logo from "@/assets/images/logo.png"
 }
 
 .logo img {
-  height: 40px;
+  height: 50px;
   width: auto;
 }
 </style>
