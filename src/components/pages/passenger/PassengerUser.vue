@@ -35,7 +35,13 @@ function saveChanges() {
   state.user.birthday = editForm.birthday;
   state.user.cpf = editForm.cpf;
   isEditingProfile.value = false;
+
+  let formData = new FormData()
+  formData.append('user_data.cep', )
+
+  
   editForm.password = '';
+
 }
 
 function toggleEditAddress() {
