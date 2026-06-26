@@ -1,6 +1,12 @@
 :root {
   --bg: #ffffff;
   --text: #1a1a1a;
+  --primary-orange: #f48a1d;
+  --text-black: #000000;
+  --bg-white: #ffffff;
+  --border-radius: 8px;
+  --input-border: #f48a1d;
+  --altbg: #F0EEEC;
 
   --superfice: #1e1e1e;
 

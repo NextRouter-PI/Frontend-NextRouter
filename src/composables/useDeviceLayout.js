@@ -1,14 +1,21 @@
 import { ref, onMounted, onUnmounted } from "vue";
 
 export function useDeviceLayout() {
-  const isMobile = ref(window.innerWidth <= 900);
+  const MOBILE_BREAKPOINT = 900;
+
+  const isMobile = ref(window.innerWidth <= MOBILE_BREAKPOINT);
+  const isDesktop = ref(window.innerWidth > MOBILE_BREAKPOINT);
 
   function handleResize() {
-    isMobile.value = window.innerWidth <= 900;
+    const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
+
+    isMobile.value = mobile;
+    isDesktop.value = !mobile;
   }
 
   onMounted(() => {
     window.addEventListener("resize", handleResize);
+    handleResize();
   });
 
   onUnmounted(() => {
@@ -17,5 +24,6 @@ export function useDeviceLayout() {
 
   return {
     isMobile,
+    isDesktop,
   };
 }

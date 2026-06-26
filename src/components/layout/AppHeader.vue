@@ -1,6 +1,6 @@
 <script setup>
 import ThemeButton from "@/components/buttons/ThemeButton.vue"
-import Logo from "/public/src-header/Logo.png"
+import Logo from "@/assets/images/logo.png"
 </script>
 
 <template>
@@ -28,7 +28,7 @@ import Logo from "/public/src-header/Logo.png"
 }
 
 .logo img {
-  height: 40px;
+  height: 50px;
   width: auto;
 }
 </style>

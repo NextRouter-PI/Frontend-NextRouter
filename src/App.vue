@@ -1,28 +1,30 @@
 <script setup>
-import { useDeviceLayout } from "@/composables/useDeviceLayout";
-import Sidebar from "./components/layout/AppSideBar.vue";
-import AppHeader from "./components/layout/AppHeader.vue";
-import AppBottomNavigationBar from "./components/layout/AppBottomNavigationBar.vue";
+import { useDeviceLayout } from '@/composables/useDeviceLayout'
+import { state } from './stores/state.js'
+import AppHeader from './components/layout/AppHeader.vue'
+import Sidebar from './components/layout/AppSideBar.vue'
+import AppBottomNavigationBar from './components/layout/AppBottomNavigationBar.vue'
 
-
-const { isMobile } = useDeviceLayout();
+const { isMobile } = useDeviceLayout()
 </script>
 
 <template>
-  <div class="app-layout">
+  <div v-if="!state.checkingAuth" class="app-layout">
+    <AppHeader v-if="state.logged" />
+    <Sidebar v-if="!isMobile && state.logged" />
 
-    <template v-if="isMobile">
-      <AppHeader />
+    <main :class="state.logged ? 'logado' : ''">
       <router-view />
-      <AppBottomNavigationBar />
-    </template>
+    </main>
 
-    <template v-else>
-      <Sidebar />
-      <main class="content">
-        <router-view />
-      </main>
-    </template>
-
+    <AppBottomNavigationBar
+      v-if="isMobile && state.logged"
+    />
   </div>
 </template>
+
+<style scoped>
+.logado{
+  margin: 80px 0;
+}
+</style>

@@ -2,9 +2,12 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["eslint", "unicorn", "oxc", "vue"],
   "env": {
-    "browser": true
+    "browser": true,
+    "es2022": true
   },
   "categories": {
-    "correctness": "error"
+    "correctness": "error",
+    "perf": "warn",
+    "suspicious": "warn"
   }
 }

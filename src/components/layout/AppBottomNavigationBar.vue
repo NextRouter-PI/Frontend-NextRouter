@@ -1,21 +1,24 @@
+<script setup>
+</script>
+
 <template>
   <footer class="bottom-nav">
-    <router-link to="/" class="nav-item">
+    <router-link :to="`/`" class="nav-item">
       <span class="mdi mdi-home"></span>
       <small>Home</small>
     </router-link>
 
-    <router-link to="/user" class="nav-item">
+    <router-link :to="`/usuario`" class="nav-item">
       <span class="mdi mdi-account"></span>
       <small>Usuário</small>
     </router-link>
 
-    <router-link to="/transport" class="nav-item">
+    <router-link :to="`/transporte`" class="nav-item">
       <span class="mdi mdi-car"></span>
       <small>Transporte</small>
     </router-link>
 
-    <router-link to="/list" class="nav-item">
+    <router-link :to="`/lista`" class="nav-item">
       <span class="mdi mdi-format-list-bulleted"></span>
       <small>Lista</small>
     </router-link>
