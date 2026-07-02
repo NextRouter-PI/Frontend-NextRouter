@@ -18,13 +18,20 @@ const form = reactive({
   senha: '',
 })
 
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL
+
 async function enviarLogin() {
   erro.value = ''
 
   const sucesso = await login(form.email, form.senha)
 
   if (sucesso) {
-    router.push('/')
+    if (state.user?.type === 'company') {
+      const name = encodeURIComponent(state.user.name)
+      window.location.href = `${ADMIN_URL}/?company=${name}`
+    } else {
+      router.push('/')
+    }
   } else {
     erro.value = state.error || 'Email ou senha inválidos.'
   }

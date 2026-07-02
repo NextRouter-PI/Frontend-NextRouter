@@ -204,9 +204,12 @@ const {
         <FormField
           v-model="page1Form.stateRegistration"
           label="Inscrição Estadual"
+          required
           placeholder="Digite a inscrição estadual"
           :disabled="registerState.state.loading"
+          :error="fieldErrors.stateRegistration"
           @input="clearFieldError('stateRegistration')"
+          @blur="validateField(page1Form.stateRegistration, [(v) => requiredField(v, 'Inscrição Estadual')], 'stateRegistration')"
         />
 
         <FileUploadField

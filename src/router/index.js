@@ -75,6 +75,8 @@ const router = createRouter({
 });
 
 
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL
+
 router.beforeEach(async (to, from) => {
   const { checkAuth } = useLoginState()
 
@@ -88,6 +90,12 @@ router.beforeEach(async (to, from) => {
 
   if (to.meta.requiresAuth && !state.logged) {
     return { name: "login" };
+  }
+
+  if (state.user?.type === 'company') {
+    const name = encodeURIComponent(state.user.name)
+    window.location.href = `${ADMIN_URL}/?company=${name}`
+    return false
   }
 
   return true;

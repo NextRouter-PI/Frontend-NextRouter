@@ -98,6 +98,7 @@ export function useSignUpCompanyForm() {
 
   function validatePage2() {
     return validateForm([
+      { fn: () => requiredField(page1Form.stateRegistration, 'Inscrição Estadual'), field: 'stateRegistration' },
       { fn: () => requiredField(files.articlesOfAssociation.file, 'Contrato Social'), field: 'articlesOfAssociation' },
       { fn: () => requiredField(files.stateOperatingLicense.file, 'Licença de Operação'), field: 'stateOperatingLicense' },
       { fn: () => requiredField(files.certificateOfGoodStading.file, 'Certidões Negativas'), field: 'certificateOfGoodStading' },
@@ -154,6 +155,7 @@ export function useSignUpCompanyForm() {
       formData.append('cnpj', page1Form.cnpj.replace(/[^\d]/g, ''))
       formData.append('trade_name', page1Form.tradeName)
       formData.append('legal_name', page1Form.legalName)
+      formData.append('state_registration', page1Form.stateRegistration)
 
       // ! Os valores as propriedades 'page1Form.state' e 'page1Form.city' não são armazenados no banco e são exclusivamente recursos visuais
       // TODO; Salvar valores das váriaveis 'page1Form.state' e 'page1Form.city' no banco futuramente para facilitar a busca de empresas dentro da aba de busca do site
