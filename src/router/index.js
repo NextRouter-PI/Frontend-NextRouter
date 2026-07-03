@@ -70,6 +70,12 @@ const router = createRouter({
       name: "forgot-password",
       component: () => import("../views/ForgotPasswordView.vue"),
       meta: { requiresAuth: false }
+    },
+    {
+      path: "/logout",
+      name: "logout",
+      component: () => import("../views/LogoutView.vue"),
+      meta: { requiresAuth: false }
     }
   ],
 });
@@ -84,7 +90,7 @@ router.beforeEach(async (to, from) => {
     await checkAuth();
   }
 
-  if (state.logged && to.meta.requiresAuth === false) {
+  if (state.logged && to.meta.requiresAuth === false && to.name !== 'logout' && to.name !== 'login') {
     return { name: "home" };
   }
 
@@ -92,7 +98,7 @@ router.beforeEach(async (to, from) => {
     return { name: "login" };
   }
 
-  if (state.user?.type === 'company') {
+  if (state.user?.type === 'company' && to.name !== 'logout' && to.name !== 'login') {
     const name = encodeURIComponent(state.user.name)
     window.location.href = `${ADMIN_URL}/?company=${name}`
     return false
