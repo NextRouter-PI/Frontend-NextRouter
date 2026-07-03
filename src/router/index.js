@@ -100,7 +100,8 @@ router.beforeEach(async (to, from) => {
 
   if (state.user?.type === 'company' && to.name !== 'logout' && to.name !== 'login') {
     const name = encodeURIComponent(state.user.name)
-    window.location.href = `${ADMIN_URL}/?company=${name}`
+    const token = state.access
+    window.location.href = `${ADMIN_URL}/?company=${name}&token=${token}`
     return false
   }
 

@@ -28,7 +28,8 @@ async function enviarLogin() {
   if (sucesso) {
     if (state.user?.type === 'company') {
       const name = encodeURIComponent(state.user.name)
-      window.location.href = `${ADMIN_URL}/?company=${name}`
+      const token = state.access
+      window.location.href = `${ADMIN_URL}/?company=${name}&token=${token}`
     } else {
       router.push('/')
     }
