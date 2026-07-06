@@ -70,6 +70,18 @@ const router = createRouter({
       name: "forgot-password",
       component: () => import("../views/ForgotPasswordView.vue"),
       meta: { requiresAuth: false }
+    },
+    {
+      path: "/driver-home",
+      name: "DriverHome",
+      component: () => import("../components/pages/driver/DriverHome.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/passenger-home",
+      name: "PassengerHome",
+      component: () => import("../components/pages/passenger/PassengerHome.vue"),
+      meta: { requiresAuth: true }
     }
   ],
 });
