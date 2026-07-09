@@ -1,584 +1,553 @@
 <script setup>
-import { ref, reactive } from 'vue';
-import { state } from '@/stores/state.js';
-import AvatarUploader from '@/components/layout/AvatarUpload.vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { state } from '@/stores/state.js'
+import api from '@/api/client'
+import { useUploadImage } from '@/stores/useUploadImage'
+import { useInputFormat } from '@/composables/useInputFormat'
+import { useValidator } from '@/composables/useValidation'
+import AvatarUploader from '@/components/layout/AvatarUpload.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormField from '@/components/ui/FormField.vue'
+import FormattedField from '@/components/ui/FormattedField.vue'
 
-const isEditingProfile = ref(false);
-const isEditingCnh = ref(false);
-const fileInput = ref(null);
-const selectedFile = ref(null);
-const cnhFileName = ref(state.user.cnhFileName || '');
-const cnhFileSize = ref(state.user.cnhFileSize || 0);
+const { formatCPF, formatPhone } = useInputFormat()
+const { getCEP } = useValidator()
+const { state: uploadState, upload: uploadImage } = useUploadImage()
 
-const editForm = reactive({
-  name: state.user.name,
-  email: state.user.email,
-  password: '',
-  birthday: state.user.birthday,
-  cpf: state.user.cpf,
-});
+const loading = ref(true)
+const saving = ref(false)
+const error = ref('')
+const toast = ref(null)
+const profileData = ref(null)
+const isEditingProfile = ref(false)
+const isEditingAddress = ref(false)
+const isEditingCnh = ref(false)
 
-function toggleEditProfile() {
-  isEditingProfile.value = !isEditingProfile.value;
-  if (isEditingProfile.value) {
-    editForm.name = state.user.name;
-    editForm.email = state.user.email;
-    editForm.password = '';
-    editForm.birthday = state.user.birthday;
-    editForm.cpf = state.user.cpf;
+const refreshing = ref(false)
+const pullDistance = ref(0)
+const touchStartY = ref(0)
+const pulling = ref(false)
+const cnhFileInput = ref(null)
+const cnhFile = ref(null)
+
+const memberSince = computed(() => {
+  if (!profileData.value?.created_at) return ''
+  return new Date(profileData.value.created_at).toLocaleString('pt-BR', { month: 'long', year: 'numeric' })
+})
+
+const completionPercent = computed(() => {
+  if (!profileData.value) return 0
+  const fields = ['name', 'email', 'birthday', 'cpf', 'phone', 'bio', 'address']
+  return Math.round((fields.filter(f => profileData.value[f]).length / fields.length) * 100)
+})
+
+const editForm = reactive({ name: '', email: '', password: '', birthday: '', cpf: '', phone: '', bio: '' })
+const addressForm = reactive({ cep: '', street: '', number: '', neighborhood: '', city: '', state: '' })
+
+function parseAddress(addr) {
+  if (!addr) return {}
+  if (typeof addr === 'object') return addr
+  try { return JSON.parse(addr) } catch { return { raw: addr } }
+}
+
+function formatAddress(addr) {
+  const p = parseAddress(addr)
+  if (p.raw) return p.raw
+  return [p.street, p.number && `nº ${p.number}`, p.neighborhood, p.city && p.state && `${p.city} - ${p.state}`].filter(Boolean).join(', ') || 'Nenhum endereço cadastrado'
+}
+
+function showToast(message, type = 'success') {
+  toast.value = { message, type }
+  setTimeout(() => { toast.value = null }, 3000)
+}
+
+async function fetchProfile() {
+  loading.value = true
+  error.value = ''
+  try {
+    const { data } = await api.get('/users/me/')
+    profileData.value = data
+    Object.assign(state.user, data)
+    localStorage.setItem('user', JSON.stringify(data))
+  } catch {
+    error.value = 'Erro ao carregar perfil'
+    profileData.value = state.user
+  } finally {
+    loading.value = false
   }
 }
 
-function saveChanges() {
-  state.user.name = editForm.name;
-  state.user.email = editForm.email;
-  if (editForm.password) {
-    state.user.password = editForm.password;
+async function handleRefresh() {
+  refreshing.value = true
+  await fetchProfile()
+  refreshing.value = false
+}
+
+function onTouchStart(e) {
+  if (window.scrollY > 0) return
+  touchStartY.value = e.touches[0].clientY
+  pulling.value = true
+}
+
+function onTouchMove(e) {
+  if (!pulling.value) return
+  const dy = e.touches[0].clientY - touchStartY.value
+  if (dy > 0) pullDistance.value = Math.min(dy * 0.5, 100)
+}
+
+function onTouchEnd() {
+  if (!pulling.value) return
+  pulling.value = false
+  if (pullDistance.value >= 60) handleRefresh()
+  pullDistance.value = 0
+}
+
+onMounted(() => {
+  fetchProfile()
+  window.addEventListener('touchstart', onTouchStart, { passive: true })
+  window.addEventListener('touchmove', onTouchMove, { passive: true })
+  window.addEventListener('touchend', onTouchEnd, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('touchstart', onTouchStart)
+  window.removeEventListener('touchmove', onTouchMove)
+  window.removeEventListener('touchend', onTouchEnd)
+})
+
+async function handlePhoto(file) {
+  try {
+    const data = await uploadImage(file, 'avatar')
+    if (data?.url) {
+      profileData.value.avatar = data.url
+      state.user.avatar = data.url
+    }
+    showToast('Foto atualizada!')
+  } catch {
+    showToast('Erro ao enviar foto', 'error')
   }
-  state.user.birthday = editForm.birthday;
-  state.user.cpf = editForm.cpf;
-  isEditingProfile.value = false;
-  editForm.password = '';
+}
+
+function toggleEditProfile() {
+  isEditingProfile.value = !isEditingProfile.value
+  if (!isEditingProfile.value) return
+  Object.assign(editForm, { name: state.user.name, email: state.user.email, password: '', birthday: state.user.birthday, cpf: state.user.cpf, phone: state.user.phone, bio: state.user.bio })
+}
+
+async function saveChanges() {
+  saving.value = true
+  const payload = { name: editForm.name, email: editForm.email, birthday: editForm.birthday, cpf: editForm.cpf.replace(/\D/g, ''), phone: editForm.phone.replace(/\D/g, ''), bio: editForm.bio }
+  if (editForm.password) payload.password = editForm.password
+  try {
+    const { data } = await api.patch('/users/me/', payload)
+    Object.assign(state.user, data)
+    localStorage.setItem('user', JSON.stringify(data))
+    profileData.value = data
+    isEditingProfile.value = false
+    editForm.password = ''
+    showToast('Perfil atualizado!')
+  } catch {
+    showToast('Erro ao salvar', 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
+function toggleEditAddress() {
+  isEditingAddress.value = !isEditingAddress.value
+  if (!isEditingAddress.value) return
+  const p = parseAddress(state.user.address)
+  Object.assign(addressForm, { cep: p.cep || '', street: p.street || '', number: p.number || '', neighborhood: p.neighborhood || '', city: p.city || '', state: p.state || '' })
+}
+
+async function lookupCep() {
+  if (addressForm.cep.replace(/\D/g, '').length !== 8) return
+  await getCEP(addressForm)
+}
+
+async function saveAddress() {
+  saving.value = true
+  try {
+    const addr = JSON.stringify({ cep: addressForm.cep.replace(/\D/g, ''), street: addressForm.street, number: addressForm.number, neighborhood: addressForm.neighborhood, city: addressForm.city, state: addressForm.state })
+    const { data } = await api.patch('/users/me/', { address: addr })
+    state.user.address = data.address
+    profileData.value.address = data.address
+    isEditingAddress.value = false
+    showToast('Endereço atualizado!')
+  } catch {
+    showToast('Erro ao salvar endereço', 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
+function cancelAddressEdit() {
+  isEditingAddress.value = false
 }
 
 function toggleEditCnh() {
-  isEditingCnh.value = !isEditingCnh.value;
-  if (!isEditingCnh.value) {
-    selectedFile.value = null;
-  }
+  isEditingCnh.value = !isEditingCnh.value
+  if (!isEditingCnh.value) cnhFile.value = null
 }
 
-function triggerFileInput() {
-  fileInput.value.click();
-}
-
-function handleFileUpload(event) {
-  const file = event.target.files[0];
-  if (file) {
-    selectedFile.value = file;
-    cnhFileName.value = file.name;
-    cnhFileSize.value = file.size;
-  }
+function handleCnhFile(event) {
+  const file = event.target.files?.[0]
+  if (file) cnhFile.value = file
 }
 
 function saveCnh() {
-  if (selectedFile.value) {
-    state.user.cnhFile = selectedFile.value;
-    state.user.cnhFileName = selectedFile.value.name;
-    state.user.cnhFileSize = selectedFile.value.size;
-    state.user.cnhFileType = selectedFile.value.type;
+  if (cnhFile.value) {
+    state.user.cnhFile = cnhFile.value
+    state.user.cnhFileName = cnhFile.value.name
+    state.user.cnhFileSize = cnhFile.value.size
+    state.user.cnhFileType = cnhFile.value.type
   }
-  isEditingCnh.value = false;
-  selectedFile.value = null;
+  isEditingCnh.value = false
+  cnhFile.value = null
+  showToast('CNH atualizada!')
 }
 
 function cancelCnhEdit() {
-  isEditingCnh.value = false;
-  selectedFile.value = null;
-  cnhFileName.value = state.user.cnhFileName || '';
-  cnhFileSize.value = state.user.cnhFileSize || 0;
-}
-
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  isEditingCnh.value = false
+  cnhFile.value = null
 }
 </script>
 
 <template>
-  <div class="profile-page">
-    <header class="header-user">
-      <div class="icon-perfil">
-        <AvatarUploader />
+  <div class="profile-page" :class="{ refreshing }">
+    <transition name="toast">
+      <div v-if="toast" :class="['toast', toast.type]">
+        <span class="mdi" :class="toast.type === 'error' ? 'mdi-alert-circle-outline' : 'mdi-check-circle-outline'"></span>
+        {{ toast.message }}
       </div>
-      <div class="header-content">
-        <h1>Olá, {{ state.user.name }}</h1>
-        <button class="edit-profile-btn" @click="toggleEditProfile">
-          Editar Perfil <span class="mdi mdi-pencil-outline"></span>
-        </button>
-      </div>
-    </header>
+    </transition>
 
-    <section class="profile-info" v-if="!isEditingProfile">
-      <div class="info">
-        <label>Nome:</label>
-        <input :value="state.user.name" disabled />
-      </div>
-      <div class="info">
-        <label>Email:</label>
-        <input :value="state.user.email" disabled />
-      </div>
-      <div class="info">
-        <label>Senha:</label>
-        <input value="**********" disabled />
-      </div>
-      <div class="person-infos">
-        <div class="info">
-          <label>Data de Nascimento:</label>
-          <input :value="state.user.birthday" disabled />
-        </div>
-        <div class="info">
-          <label>CPF:</label>
-          <input :value="state.user.cpf" disabled />
-        </div>
-      </div>
-    </section>
+    <div class="pull-indicator" :style="{ height: pullDistance + 'px', opacity: pullDistance / 80 }">
+      <span class="mdi" :class="pullDistance >= 60 ? 'mdi-loading mdi-spin' : 'mdi-arrow-down'"></span>
+    </div>
 
-    <section class="profile-info edit-mode" v-if="isEditingProfile">
-      <div class="info">
-        <label>Nome:</label>
-        <input v-model="editForm.name" />
-      </div>
-      <div class="info">
-        <label>Email:</label>
-        <input v-model="editForm.email" />
-      </div>
-      <div class="info">
-        <label>Senha:</label>
-        <input v-model="editForm.password" placeholder="Nova senha" />
-      </div>
-      <div class="person-infos">
-        <div class="info">
-          <label>Data de Nascimento:</label>
-          <input v-model="editForm.birthday" type="date" />
-        </div>
-        <div class="info">
-          <label>CPF:</label>
-          <input v-model="editForm.cpf" />
+    <div class="cover">
+      <div class="cover-avatar">
+        <AvatarUploader v-if="profileData" :model-value="profileData.avatar" @file-select="handlePhoto" />
+        <div v-if="uploadState.uploading" class="upload-overlay">
+          <span class="mdi mdi-loading mdi-spin"></span>
         </div>
       </div>
-      <button class="save-btn" @click="saveChanges">Salvar alterações</button>
-    </section>
+    </div>
 
-    <section class="cnh">
-      <h2>Minha CNH:</h2>
-      <div class="cnh-card">
-        <div class="cnh-info">
-          <span class="cnh-filename">{{ cnhFileName || 'Nenhum arquivo selecionado' }}</span>
-          <span v-if="cnhFileSize" class="cnh-filesize">{{ formatFileSize(cnhFileSize) }}</span>
+    <div class="profile-body">
+      <template v-if="loading">
+        <div class="skeleton-ring"></div>
+        <div class="skeleton-head"></div>
+        <div class="skeleton-bar"></div>
+        <div class="skeleton-stats">
+          <div class="skeleton stat"></div>
+          <div class="skeleton stat"></div>
+          <div class="skeleton stat"></div>
         </div>
-        <button @click="toggleEditCnh" class="edit-cnh-btn">
-          <span class="mdi mdi-pencil-outline"></span>
-        </button>
-      </div>
-      <div class="cnh-edit" v-if="isEditingCnh">
-        <div class="file-input-wrapper">
-          <input
-            type="file"
-            ref="fileInput"
-            @change="handleFileUpload"
-            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-            class="file-input"
-          />
-          <button @click="triggerFileInput" class="file-select-btn">
-            <span class="mdi mdi-file-upload-outline"></span>
-            Selecionar Arquivo
-          </button>
-          <span v-if="selectedFile" class="selected-file-name">{{ selectedFile.name }}</span>
+        <div class="skeleton section"></div>
+        <div class="skeleton section short"></div>
+      </template>
+
+      <template v-else-if="error && !profileData">
+        <div class="error-state">
+          <span class="mdi mdi-cloud-alert"></span>
+          <p>{{ error }}</p>
+          <BaseButton variant="primary" @click="fetchProfile">Tentar novamente</BaseButton>
         </div>
-        <div class="cnh-actions">
-          <button @click="saveCnh" class="save-cnh-btn" :disabled="!selectedFile && !cnhFileName">
-            Salvar
-          </button>
-          <button @click="cancelCnhEdit" class="cancel-btn">Cancelar</button>
+      </template>
+
+      <template v-else>
+        <div class="profile-head">
+          <h1 class="profile-name">{{ state.user.name }}</h1>
+          <p class="profile-tag">{{ state.user.email }}</p>
+          <p v-if="state.user.bio" class="profile-bio">{{ state.user.bio }}</p>
+          <div class="profile-badge">
+            <span class="mdi mdi-steering"></span>
+            Motorista
+          </div>
         </div>
-      </div>
-    </section>
+
+        <div class="completion-bar">
+          <div class="completion-track">
+            <div class="completion-fill" :style="{ width: completionPercent + '%' }"></div>
+          </div>
+          <span class="completion-pct">{{ completionPercent }}%</span>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat">
+            <span class="stat-value">{{ memberSince || '—' }}</span>
+            <span class="stat-label">Membro desde</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">0</span>
+            <span class="stat-label">Viagens</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">—</span>
+            <span class="stat-label">Avaliação</span>
+          </div>
+        </div>
+
+        <div class="action-bar">
+          <BaseButton :variant="isEditingProfile ? 'outline' : 'primary'" :icon="isEditingProfile ? 'mdi-close' : 'mdi-account-edit-outline'" @click="toggleEditProfile">
+            {{ isEditingProfile ? 'Cancelar' : 'Editar Perfil' }}
+          </BaseButton>
+        </div>
+
+        <transition name="slide" mode="out-in">
+          <div v-if="!isEditingProfile" class="section">
+            <div class="section-header">
+              <span class="mdi mdi-information-outline"></span>
+              <h2>Informações Pessoais</h2>
+            </div>
+            <div class="info-grid">
+              <div v-for="item in [
+                { label: 'Nome', value: state.user.name },
+                { label: 'Email', value: state.user.email },
+                { label: 'Telefone', value: state.user.phone || '—' },
+                { label: 'Senha', value: '••••••••••', cls: 'password-mask' },
+                { label: 'Data de Nascimento', value: state.user.birthday || '—' },
+                { label: 'CPF', value: state.user.cpf || '—' },
+              ]" :key="item.label" class="info-item">
+                <span class="info-label">{{ item.label }}</span>
+                <span class="info-value" :class="item.cls">{{ item.value }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="section">
+            <div class="section-header">
+              <span class="mdi mdi-pencil-circle-outline"></span>
+              <h2>Editar Informações</h2>
+            </div>
+            <form class="edit-form" @submit.prevent="saveChanges">
+              <FormField v-model="editForm.name" label="Nome" required />
+              <FormField v-model="editForm.email" label="Email" type="email" required />
+              <FormattedField v-model="editForm.phone" label="Telefone" placeholder="(99) 99999-9999" :format="formatPhone" />
+              <FormField v-model="editForm.password" label="Nova Senha" type="password" placeholder="Deixe em branco para manter" />
+              <FormField v-model="editForm.bio" label="Bio" placeholder="Fale um pouco sobre você" />
+              <div class="field-row">
+                <FormField v-model="editForm.birthday" label="Data de Nascimento" type="date" />
+                <FormattedField v-model="editForm.cpf" label="CPF" placeholder="000.000.000-00" :format="formatCPF" />
+              </div>
+              <BaseButton variant="primary" block :loading="saving" @click="saveChanges">Salvar Alterações</BaseButton>
+            </form>
+          </div>
+        </transition>
+
+        <div class="section">
+          <div class="section-header">
+            <span class="mdi mdi-map-marker-outline"></span>
+            <h2>Endereço</h2>
+          </div>
+          <div class="address-card">
+            <div v-if="!isEditingAddress" class="address-display">
+              <div class="address-icon-wrap">
+                <span class="mdi mdi-home-outline"></span>
+              </div>
+              <div class="address-text">
+                <p>{{ formatAddress(state.user.address) }}</p>
+                <span v-if="state.user.address" class="address-hint">Clique no lápis para editar</span>
+              </div>
+              <button class="btn-icon" @click="toggleEditAddress">
+                <span class="mdi mdi-pencil-outline"></span>
+              </button>
+            </div>
+            <div v-else class="address-edit">
+              <div class="cep-row">
+                <FormField v-model="addressForm.cep" label="CEP" placeholder="00000-000" maxlength="9" />
+                <BaseButton variant="outline" size="sm" icon="mdi-magnify" @click="lookupCep" />
+              </div>
+              <div class="field-row">
+                <FormField v-model="addressForm.street" label="Rua" placeholder="Nome da rua" />
+                <FormField v-model="addressForm.number" label="Número" placeholder="nº" />
+              </div>
+              <div class="field-row">
+                <FormField v-model="addressForm.neighborhood" label="Bairro" placeholder="Bairro" />
+                <FormField v-model="addressForm.city" label="Cidade" placeholder="Cidade" />
+              </div>
+              <FormField v-model="addressForm.state" label="Estado" placeholder="UF" maxlength="2" />
+              <div class="address-actions">
+                <BaseButton variant="primary" size="sm" :loading="saving" @click="saveAddress">Salvar</BaseButton>
+                <BaseButton variant="outline" size="sm" @click="cancelAddressEdit">Cancelar</BaseButton>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <span class="mdi mdi-card-account-details-outline"></span>
+            <h2>CNH</h2>
+          </div>
+          <div class="cnh-card">
+            <div v-if="!isEditingCnh" class="cnh-display">
+              <div class="cnh-icon-wrap">
+                <span class="mdi mdi-id-card"></span>
+              </div>
+              <div class="cnh-text">
+                <p>{{ state.user.cnhFileName || 'Nenhum arquivo cadastrado' }}</p>
+                <span v-if="state.user.cnhFileSize" class="cnh-hint">{{ (state.user.cnhFileSize / 1024).toFixed(1) }} KB</span>
+              </div>
+              <button class="btn-icon" @click="toggleEditCnh">
+                <span class="mdi mdi-pencil-outline"></span>
+              </button>
+            </div>
+            <div v-else class="cnh-edit">
+              <input ref="cnhFileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" hidden @change="handleCnhFile" />
+              <BaseButton variant="outline" icon="mdi-file-upload-outline" @click="cnhFileInput?.click()">
+                {{ cnhFile ? cnhFile.name : 'Selecionar arquivo' }}
+              </BaseButton>
+              <div class="address-actions">
+                <BaseButton variant="primary" size="sm" :disabled="!cnhFile" @click="saveCnh">Salvar</BaseButton>
+                <BaseButton variant="outline" size="sm" @click="cancelCnhEdit">Cancelar</BaseButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .profile-page {
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text);
   min-height: 100vh;
-  padding: 0 16px 32px;
-  max-width: 480px;
-  margin: 0 auto;
-}
-
-.header-user {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   background: var(--bg);
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px 0 14px;
-  border-bottom: 1px solid var(--border-primary);
-  margin-bottom: 20px;
+  padding-bottom: 40px;
+  position: relative;
+  transition: filter 0.3s;
+}
+.profile-page.refreshing { filter: blur(0.5px); }
+
+.pull-indicator {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg); color: var(--primary); font-size: 1.2rem;
+  overflow: hidden; pointer-events: none;
 }
 
-.icon-perfil {
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--superfice);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow);
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 999; display: flex; align-items: center; gap: 10px;
+  padding: 12px 24px; border-radius: 12px;
+  font-size: 0.88rem; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  pointer-events: none; backdrop-filter: blur(12px);
+}
+.toast.success { background: rgba(5, 150, 105, 0.95); color: #fff; }
+.toast.error { background: rgba(220, 38, 38, 0.95); color: #fff; }
+.toast .mdi { font-size: 1.2rem; }
+.toast-enter-active { transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.toast-leave-active { transition: all 0.2s ease; }
+.toast-enter-from { opacity: 0; transform: translateX(-50%) translateY(-24px) scale(0.9); }
+.toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+
+.cover {
+  position: relative; width: 100%; height: 160px;
+  background: #df801a; margin-bottom: 66px;
+}
+.cover-avatar {
+  position: absolute; bottom: -48px; left: 50%;
+  transform: translateX(-50%); z-index: 2;
+}
+.cover-avatar :deep(.avatar-circle) { width: 106px; height: 106px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+.upload-overlay {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 106px; height: 106px; border-radius: 50%;
+  background: rgba(0,0,0,0.45); color: #fff;
+  font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
 }
 
-.header-content {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px 10px;
+.skeleton {
+  background: linear-gradient(90deg, var(--superfice) 25%, rgba(223,128,26,0.06) 50%, var(--superfice) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s ease-in-out infinite; border-radius: 12px;
 }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.skeleton-ring { width: 100px; height: 100px; border-radius: 50%; margin: -10px auto 16px; background: var(--superfice); }
+.skeleton-head { width: 160px; height: 22px; margin: 0 auto 12px; border-radius: 6px; background: var(--superfice); }
+.skeleton-bar { width: 200px; height: 6px; margin: 0 auto 16px; border-radius: 99px; background: var(--superfice); }
+.skeleton-stats { display: flex; justify-content: center; gap: 24px; margin-bottom: 24px; }
+.skeleton.stat { width: 80px; height: 44px; }
+.skeleton.section { height: 200px; margin-bottom: 16px; }
+.skeleton.short { height: 80px; }
 
-.header-content h1 {
-  font-size: 1.15rem;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.3px;
-  margin: 0;
-  white-space: nowrap;
+.error-state { display: flex; flex-direction: column; align-items: center; padding: 60px 20px; text-align: center; }
+.error-state .mdi { font-size: 3rem; color: var(--text-muted); margin-bottom: 16px; }
+.error-state p { color: var(--text-muted); margin-bottom: 20px; }
+
+.profile-body { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+.profile-head { text-align: center; margin-bottom: 16px; }
+.profile-name { font-size: 1.45rem; font-weight: 800; color: var(--text); margin: 0 0 3px; line-height: 1.2; }
+.profile-tag { font-size: 0.82rem; color: var(--text-muted); margin: 0 0 6px; }
+.profile-bio { font-size: 0.88rem; color: var(--text-muted); margin: 0 auto 8px; max-width: 400px; line-height: 1.5; font-style: italic; }
+.profile-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 14px; background: rgba(223,128,26,0.1); color: var(--primary); border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+
+.completion-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 0 4px; }
+.completion-track { flex: 1; height: 6px; background: rgba(223,128,26,0.12); border-radius: 99px; overflow: hidden; }
+.completion-fill { height: 100%; border-radius: 99px; background: var(--gradient-primary); transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.completion-pct { font-size: 0.78rem; font-weight: 700; color: var(--primary); flex-shrink: 0; }
+
+.stats-row { display: flex; justify-content: center; gap: 32px; padding: 14px 0; margin-bottom: 20px; border-top: 1px solid rgba(223,128,26,0.1); border-bottom: 1px solid rgba(223,128,26,0.1); }
+.stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.stat-value { font-size: 0.95rem; font-weight: 700; color: var(--text); text-align: center; line-height: 1.3; }
+.stat-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; }
+
+.action-bar { display: flex; justify-content: center; margin-bottom: 20px; }
+
+.section { background: var(--superfice); border: 1px solid rgba(223, 128, 26, 0.12); border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+.dark .section { box-shadow: 0 2px 12px rgba(0,0,0,0.12); }
+.section-header { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid rgba(223, 128, 26, 0.1); }
+.section-header .mdi { font-size: 1.2rem; color: var(--primary); }
+.section-header h2 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin: 0; }
+
+.info-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.info-item { display: flex; flex-direction: column; gap: 3px; }
+.info-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
+.info-value { font-size: 0.92rem; color: var(--text); font-weight: 500; }
+.password-mask { letter-spacing: 3px; }
+
+.edit-form { display: flex; flex-direction: column; gap: 14px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.cep-row { display: flex; gap: 8px; align-items: flex-end; }
+.cep-row > :first-child { flex: 1; }
+.cep-row :deep(.form-field) { margin-bottom: 0; }
+
+.address-card, .cnh-card { border-radius: 12px; background: var(--bg); border: 1px solid rgba(223, 128, 26, 0.08); overflow: hidden; }
+.address-display, .cnh-display { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+.address-icon-wrap, .cnh-icon-wrap { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: rgba(223,128,26,0.08); flex-shrink: 0; }
+.address-icon-wrap .mdi, .cnh-icon-wrap .mdi { font-size: 1.3rem; color: var(--primary); }
+.address-text, .cnh-text { flex: 1; min-width: 0; }
+.address-text p, .cnh-text p { margin: 0; font-size: 0.88rem; color: var(--text); line-height: 1.4; }
+.address-hint, .cnh-hint { font-size: 0.65rem; color: var(--text-muted); margin-top: 3px; display: block; }
+.address-edit, .cnh-edit { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.address-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+.btn-icon { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: none; border-radius: 50%; background: transparent; color: var(--primary); font-size: 1.15rem; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+.btn-icon:hover { background: rgba(223, 128, 26, 0.1); }
+
+.slide-enter-active, .slide-leave-active { transition: opacity 0.22s ease, transform 0.22s ease; }
+.slide-enter-from { opacity: 0; transform: translateY(10px); }
+.slide-leave-to { opacity: 0; transform: translateY(-10px); }
+
+@media (min-width: 640px) {
+  .cover { height: 200px; margin-bottom: 76px; }
+  .cover-avatar :deep(.avatar-circle) { width: 120px; height: 120px; }
+  .cover-avatar { bottom: -55px; }
+  .upload-overlay { width: 120px; height: 120px; }
+  .profile-name { font-size: 1.65rem; }
+  .profile-body { padding: 0 24px; }
+  .info-grid { grid-template-columns: 1fr 1fr; }
+  .section { padding: 24px; }
+  .stats-row { gap: 48px; }
+  .stat-value { font-size: 1rem; }
 }
-
-.edit-profile-btn {
-  background: transparent;
-  border: none;
-  color: var(--primary);
-  font-weight: 500;
-  font-size: 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: var(--border-radius);
-  transition: 0.2s;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.edit-profile-btn:hover {
-  background: var(--gradient-primary-hover);
-  color: var(--primary-hover);
-}
-
-.edit-profile-btn .mdi {
-  font-size: 1.1rem;
-}
-
-.profile-info {
-  background: var(--bg-white);
-  border-radius: var(--border-radius);
-  padding: 20px 16px;
-  margin-bottom: 20px;
-  box-shadow: var(--shadow);
-}
-
-.info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 16px;
-}
-
-.info:last-child {
-  margin-bottom: 0;
-}
-
-.info label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--text-muted);
-}
-
-.info input {
-  border: none;
-  border-bottom: 1px solid var(--border-primary);
-  padding: 6px 0;
-  font-size: 0.95rem;
-  background: transparent;
-  color: var(--text);
-  outline: none;
-  transition: border-color 0.2s;
-  width: 100%;
-}
-
-.info input:focus {
-  border-bottom-color: var(--primary);
-}
-
-.info input:disabled {
-  color: var(--text);
-  opacity: 0.9;
-  background: transparent;
-}
-
-.person-infos {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 16px;
-  margin-top: 4px;
-}
-
-.person-infos .info {
-  margin-bottom: 0;
-}
-
-.edit-mode .info input {
-  border-bottom: 2px solid var(--primary);
-  background: var(--bg-white);
-  padding: 6px 10px;
-  border-radius: var(--border-radius) var(--border-radius) 0 0;
-}
-
-.edit-mode .info input:focus {
-  border-bottom-color: var(--primary-hover);
-  box-shadow: 0 2px 8px rgba(223, 128, 26, 0.15);
-}
-
-.save-btn {
-  background: var(--gradient-primary);
-  color: #ffffff;
-  border: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 12px 16px;
-  border-radius: var(--border-radius);
-  width: 100%;
-  margin-top: 18px;
-  cursor: pointer;
-  transition: 0.2s;
-  box-shadow: var(--shadow-primary);
-}
-
-.save-btn:hover {
-  background: var(--primary-hover);
-  transform: scale(0.98);
-  box-shadow: 0 4px 16px rgba(223, 128, 26, 0.5);
-}
-
-.cnh {
-  background: var(--bg-white);
-  border-radius: var(--border-radius);
-  padding: 18px 16px 16px;
-  box-shadow: var(--shadow);
-}
-
-.cnh h2 {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-}
-
-.cnh-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--bg);
-  padding: 12px 14px;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-primary);
-}
-
-.cnh-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-}
-
-.cnh-filename {
-  font-size: 0.95rem;
-  color: var(--text);
-  font-weight: 500;
-}
-
-.cnh-filesize {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.edit-cnh-btn {
-  background: transparent;
-  border: none;
-  color: var(--primary);
-  font-size: 1.2rem;
-  padding: 0 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: color 0.2s;
-}
-
-.edit-cnh-btn:hover {
-  color: var(--primary-hover);
-}
-
-.cnh-edit {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.file-input-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.file-input {
-  display: none;
-}
-
-.file-select-btn {
-  background: var(--bg);
-  border: 2px solid var(--border-primary);
-  color: var(--text);
-  padding: 10px 16px;
-  border-radius: var(--border-radius);
-  font-weight: 500;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.file-select-btn:hover {
-  background: var(--gradient-primary-hover);
-  border-color: var(--primary);
-}
-
-.file-select-btn .mdi {
-  font-size: 1.1rem;
-}
-
-.selected-file-name {
-  font-size: 0.9rem;
-  color: var(--text);
-  word-break: break-all;
-}
-
-.cnh-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.save-cnh-btn {
-  background: var(--gradient-primary);
-  color: #ffffff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: var(--border-radius);
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: 0.2s;
-  box-shadow: var(--shadow-primary);
-  flex: 1;
-}
-
-.save-cnh-btn:hover:not(:disabled) {
-  background: var(--primary-hover);
-  transform: scale(0.96);
-}
-
-.save-cnh-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.cancel-btn {
-  background: transparent;
-  border: 2px solid var(--border-primary);
-  color: var(--text-muted);
-  padding: 10px 18px;
-  border-radius: var(--border-radius);
-  font-weight: 500;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: 0.2s;
-  flex: 1;
-}
-
-.cancel-btn:hover {
-  background: var(--gradient-primary-hover);
-  color: var(--text);
-  border-color: var(--primary);
-}
-
-.mdi {
-  font-family: 'Material Design Icons';
-  display: inline-block;
-}
-
-@media (max-width: 400px) {
-  .person-infos {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .header-content h1 {
-    font-size: 1rem;
-  }
-
-  .edit-profile-btn {
-    font-size: 0.75rem;
-  }
-
-  .file-input-wrapper {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .file-select-btn {
-    justify-content: center;
-  }
-
-  .cnh-actions {
-    flex-direction: column;
-  }
-
-  .save-cnh-btn,
-  .cancel-btn {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-  }
-}
-
-.dark .profile-info,
-.dark .cnh {
-  background: var(--superfice);
-}
-
-.dark .edit-mode .info input {
-  background: var(--bg);
-}
-
-.dark .cnh-card {
-  background: var(--bg);
-}
-
-.dark .file-select-btn {
-  background: var(--bg);
-}
-
-.dark .info input:disabled {
-  opacity: 0.8;
+@media (min-width: 1024px) {
+  .profile-body { max-width: 680px; padding: 0 32px; }
+  .cover { height: 240px; }
 }
 </style>

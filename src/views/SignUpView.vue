@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router';
 import RoleSelector from "@/components/auth/RoleSelector.vue";
+
 </script>
 
 <template>
@@ -29,39 +30,41 @@ import RoleSelector from "@/components/auth/RoleSelector.vue";
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  position: relative;
 }
 
 .signup-container {
   width: 100%;
-  border-radius: 32px;
+  max-width: 500px;
 }
 
 .signup-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2.5rem;
 }
 
 .signup-header h1 {
-  font-size: 2.5rem;
-  color: var(--primary);
+  font-size: 2rem;
+  color: var(--text);
   margin-bottom: 0.75rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .subtitle {
-  font-size: 1.1rem;
-  color: #666;
+  font-size: 1rem;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
 .signup-footer {
   text-align: center;
   padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border-primary);
 }
 
 .login-link {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.95rem;
 }
 
@@ -74,21 +77,7 @@ import RoleSelector from "@/components/auth/RoleSelector.vue";
 }
 
 .login-button:hover {
-  color: #fb923c;
+  color: var(--primary-light);
   text-decoration: underline;
-}
-
-@media (max-width: 640px) {
-  .signup-container {
-    padding: 1.5rem;
-  }
-
-  .signup-header h1 {
-    font-size: 1.75rem;
-  }
-
-  .subtitle {
-    font-size: 1rem;
-  }
 }
 </style>

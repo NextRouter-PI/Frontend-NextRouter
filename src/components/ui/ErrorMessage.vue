@@ -17,10 +17,10 @@ defineProps({
   align-items: center;
   gap: 8px;
   padding: 12px;
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 12px;
+  color: var(--danger);
   font-size: 13px;
   font-weight: 500;
   margin-bottom: 12px;

@@ -43,7 +43,7 @@ const emit = defineEmits(['update:modelValue', 'update:showPassword'])
 }
 
 .field-group label {
-  color: #f48a1d;
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
@@ -51,38 +51,40 @@ const emit = defineEmits(['update:modelValue', 'update:showPassword'])
   letter-spacing: 0.5px;
 }
 
-.required { color: #e74c3c; }
+.required { color: var(--danger); }
 
 .password-input { position: relative; }
 
 .password-input input {
   width: 100%;
   padding: 12px 45px 12px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
   font-size: 1rem;
   transition: all 0.3s ease;
-  background: #fafafa;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .password-input input:focus {
   outline: none;
-  border-color: #f48a1d;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(244, 138, 29, 0.1);
+  border-color: var(--primary);
+  background: var(--bg);
+  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.1);
 }
 
 .password-input input:disabled {
-  background: #f5f5f5;
+  background: var(--superfice);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .field-group.has-error input {
-  border-color: #e74c3c;
+  border-color: var(--danger);
 }
 
 .field-error {
-  color: #e74c3c;
+  color: var(--danger);
   font-size: 12px;
   margin-top: 4px;
 }
@@ -93,9 +95,9 @@ const emit = defineEmits(['update:modelValue', 'update:showPassword'])
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  color: #999;
+  color: var(--text-muted);
   font-size: 20px;
 }
 
-.toggle-password:hover { color: #f48a1d; }
+.toggle-password:hover { color: var(--primary); }
 </style>

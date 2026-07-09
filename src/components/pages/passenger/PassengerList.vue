@@ -1,11 +1,12 @@
 <template>
-  <div class="usuarios-list-container">
-    <div v-if="!questionarioState.state.submitted && questionarioState.canAnswerToday()" class="questionario-form">
-      <div class="questionario-header">
-        <h2>Transporte do Amanhã</h2>
-        <p class="data-proxima">{{ formatarDataProxima() }}</p>
-      </div>
+  <div class="lista-page">
+    <div class="page-header">
+      <div class="header-accent"></div>
+      <h2>Transporte do Amanhã</h2>
+      <p class="header-date">{{ formatarDataProxima() }}</p>
+    </div>
 
+    <div v-if="!questionarioState.state.submitted && questionarioState.canAnswerToday()" class="questionario-card">
       <div class="progress-indicator">
         <div class="progress-steps">
           <div class="step" :class="{ active: step >= 1, completed: step > 1 }">1</div>
@@ -19,8 +20,8 @@
       <div class="pergunta-container" :class="{ 'fade-in': step === 1 }" v-show="step === 1">
         <div class="pergunta-titulo">
           <span class="pergunta-numero">1</span>
-          Vou com o transporte?
-          <span class="data-pergunta">{{ formatarData() }}</span>
+          <span>Vou com o transporte?</span>
+          <span class="tag-data">{{ formatarData() }}</span>
         </div>
 
         <div class="opcoes">
@@ -28,12 +29,14 @@
             @click="setResponse('transporteIda', 'sim'); nextStep()"
             :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteIda === 'sim' }]"
           >
+            <span class="mdi mdi-check-circle-outline"></span>
             Sim
           </button>
           <button
             @click="setResponse('transporteIda', 'nao'); nextStep()"
             :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteIda === 'nao' }]"
           >
+            <span class="mdi mdi-close-circle-outline"></span>
             Não
           </button>
         </div>
@@ -42,7 +45,7 @@
       <div class="pergunta-container" :class="{ 'fade-in': step === 2 }" v-show="step === 2">
         <div class="pergunta-titulo">
           <span class="pergunta-numero">2</span>
-          Voltarei com o transporte?
+          <span>Voltarei com o transporte?</span>
         </div>
 
         <div class="opcoes">
@@ -50,12 +53,14 @@
             @click="setResponse('transporteVolta', 'sim'); nextStep()"
             :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteVolta === 'sim' }]"
           >
+            <span class="mdi mdi-check-circle-outline"></span>
             Sim
           </button>
           <button
             @click="setResponse('transporteVolta', 'nao'); finalStep()"
             :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteVolta === 'nao' }]"
           >
+            <span class="mdi mdi-close-circle-outline"></span>
             Não
           </button>
         </div>
@@ -64,7 +69,7 @@
       <div class="pergunta-container" :class="{ 'fade-in': step === 3 }" v-show="step === 3">
         <div class="pergunta-titulo">
           <span class="pergunta-numero">3</span>
-          Voltarei que horas?
+          <span>Voltarei que horas?</span>
         </div>
 
         <div class="opcoes-horario">
@@ -72,22 +77,29 @@
             @click="setResponse('horaVolta', '12:00'); finalStep()"
             :class="['opcao-horario', { 'selecionado': questionarioState.state.responses.horaVolta === '12:00' }]"
           >
-            <span class="hora">12:00</span>
-            <span class="periodo">Meio-dia</span>
+            <span class="mdi mdi-weather-sunset"></span>
+            <div class="horario-info">
+              <span class="hora">12:00</span>
+              <span class="periodo">Meio-dia</span>
+            </div>
           </button>
           <button
             @click="setResponse('horaVolta', '17:00'); finalStep()"
             :class="['opcao-horario', { 'selecionado': questionarioState.state.responses.horaVolta === '17:00' }]"
           >
-            <span class="hora">17:00</span>
-            <span class="periodo">Tarde</span>
+            <span class="mdi mdi-weather-night"></span>
+            <div class="horario-info">
+              <span class="hora">17:00</span>
+              <span class="periodo">Tarde</span>
+            </div>
           </button>
         </div>
       </div>
 
       <div class="navigation-buttons" v-if="step > 1 && step < 3">
         <button @click="prevStep" class="btn-voltar">
-          ← Voltar
+          <span class="mdi mdi-arrow-left"></span>
+          Voltar
         </button>
       </div>
 
@@ -96,33 +108,36 @@
         @click="enviarFormulario"
         class="btn-enviar"
       >
-        Confirmar Respostas ✓
+        <span class="mdi mdi-check"></span>
+        Confirmar Respostas
       </button>
     </div>
 
-    <div v-else-if="isSubmitting" class="loading-container">
+    <div v-else-if="isSubmitting" class="status-card">
       <div class="spinner"></div>
-      <p>Enviando respostas...</p>
+      <p class="status-msg">Enviando respostas...</p>
     </div>
 
-    <div v-else-if="questionarioState.state.submitted" class="sucesso-container">
-      <div class="icone-certinho">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
+    <div v-else-if="questionarioState.state.submitted" class="status-card success">
+      <div class="status-icon">
+        <span class="mdi mdi-check-circle"></span>
       </div>
-      <p class="mensagem-sucesso">Resposta registrada com sucesso!</p>
-      <p class="mensagem-aguarde">Aguarde até amanhã para a próxima enquete</p>
-      <div class="data-proxima-resposta">
+      <h3 class="status-title">Resposta registrada!</h3>
+      <p class="status-msg">Aguarde até amanhã para a próxima enquete</p>
+      <div class="next-date-tag">
+        <span class="mdi mdi-calendar"></span>
         Próxima enquete: {{ formatarDataProxima() }}
       </div>
     </div>
 
-    <div v-else-if="questionarioState.state.hasAnsweredToday" class="agradecimento-container">
-      <div class="icone-obrigado">🙏</div>
-      <p class="mensagem-agradecimento">Obrigado por responder!</p>
-      <p class="mensagem-aguarde">Você já respondeu a enquete de hoje</p>
-      <div class="data-proxima-resposta">
+    <div v-else-if="questionarioState.state.hasAnsweredToday" class="status-card">
+      <div class="status-icon thanks">
+        <span class="mdi mdi-hand-wave"></span>
+      </div>
+      <h3 class="status-title">Obrigado por responder!</h3>
+      <p class="status-msg">Você já respondeu a enquete de hoje</p>
+      <div class="next-date-tag">
+        <span class="mdi mdi-calendar"></span>
         Próxima enquete: {{ formatarDataProxima() }}
       </div>
     </div>
@@ -152,25 +167,56 @@ const {
   box-sizing: border-box;
 }
 
-.usuarios-list-container {
-  padding: 16px;
+.lista-page {
+  padding: 24px 16px;
   min-height: 100vh;
 }
 
-.questionario-form {
-  background-color: white;
-  border-radius: 20px;
-  padding: 24px 20px;
+.page-header {
+  text-align: center;
+  margin-bottom: 32px;
   max-width: 500px;
-  margin: 60px auto 0;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  animation: slideUp 0.5s ease;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.header-accent {
+  width: 48px;
+  height: 4px;
+  background: var(--gradient-primary);
+  border-radius: 4px;
+  margin: 0 auto 16px;
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.header-date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+  font-weight: 500;
+}
+
+.questionario-card {
+  background: var(--superfice);
+  border: 1px solid rgba(223, 128, 26, 0.12);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 500px;
+  margin: 0 auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  animation: slideUp 0.4s ease;
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -178,49 +224,29 @@ const {
   }
 }
 
-.questionario-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.questionario-header h2 {
-  font-size: 28px;
-  font-weight: 700;
-  background: var(--primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0 0 8px 0;
-}
-
-.data-proxima {
-  font-size: 14px;
-  color: #666;
-  margin: 0;
-  font-weight: 500;
-}
-
+/* Progress */
 .progress-indicator {
-  margin-bottom: 30px;
+  margin-bottom: 32px;
 }
 
 .progress-steps {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 8px;
 }
 
 .step {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  background-color: #f0f0f0;
+  background: var(--bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  color: #999;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-muted);
   transition: all 0.3s ease;
   position: relative;
   z-index: 2;
@@ -229,19 +255,19 @@ const {
 .step.active {
   background: var(--primary);
   color: white;
-  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+  box-shadow: var(--shadow-primary);
 }
 
 .step.completed {
-  background-color: var(--primary);
+  background: var(--primary);
   color: white;
 }
 
 .step-line {
   flex: 1;
   height: 3px;
-  background-color: #f0f0f0;
-  margin: 0 10px;
+  background: var(--bg);
+  margin: 0 6px;
   transition: all 0.3s ease;
 }
 
@@ -249,15 +275,16 @@ const {
   background: var(--primary);
 }
 
+/* Questions */
 .pergunta-container {
-  margin-bottom: 30px;
-  animation: fadeIn 0.5s ease;
+  margin-bottom: 24px;
+  animation: fadeIn 0.35s ease;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateX(20px);
+    transform: translateX(16px);
   }
   to {
     opacity: 1;
@@ -266,9 +293,9 @@ const {
 }
 
 .pergunta-titulo {
-  font-size: 18px;
+  font-size: 1.05rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text);
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -280,24 +307,27 @@ const {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   background: var(--primary);
   color: white;
   border-radius: 50%;
-  font-size: 14px;
-  font-weight: bold;
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.data-pergunta {
-  font-size: 13px;
-  font-weight: 400;
-  color: #999;
-  background-color: #f5f5f5;
+.tag-data {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg);
   padding: 4px 12px;
   border-radius: 20px;
+  margin-left: auto;
 }
 
+/* Options */
 .opcoes {
   display: flex;
   gap: 12px;
@@ -308,14 +338,14 @@ const {
 .opcao-btn {
   flex: 1;
   min-width: 120px;
-  padding: 14px 20px;
-  font-size: 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  background-color: white;
-  color: #666;
+  padding: 16px 20px;
+  font-size: 0.95rem;
+  border: 2px solid rgba(223, 128, 26, 0.2);
+  border-radius: 14px;
+  background: var(--bg);
+  color: var(--text);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -323,9 +353,13 @@ const {
   gap: 8px;
 }
 
+.opcao-btn .mdi {
+  font-size: 1.2rem;
+}
+
 .opcao-btn:hover {
   border-color: var(--primary);
-  background-color: #f8f9ff;
+  background: rgba(223, 128, 26, 0.06);
   transform: translateY(-2px);
 }
 
@@ -337,38 +371,50 @@ const {
 
 .opcoes-horario {
   display: flex;
-  gap: 15px;
+  gap: 12px;
   justify-content: center;
   flex-direction: column;
 }
 
 .opcao-horario {
-  padding: 20px;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  background-color: white;
+  padding: 18px 20px;
+  border: 2px solid rgba(223, 128, 26, 0.2);
+  border-radius: 14px;
+  background: var(--bg);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
+}
+
+.opcao-horario .mdi {
+  font-size: 1.6rem;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.horario-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .opcao-horario .hora {
-  font-size: 20px;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
 }
 
 .opcao-horario .periodo {
-  font-size: 14px;
-  color: #999;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .opcao-horario:hover {
   border-color: var(--primary);
-  background-color: #f8f9ff;
-  transform: translateX(5px);
+  background: rgba(223, 128, 26, 0.06);
+  transform: translateX(4px);
 }
 
 .opcao-horario.selecionado {
@@ -376,6 +422,7 @@ const {
   border-color: transparent;
 }
 
+.opcao-horario.selecionado .mdi,
 .opcao-horario.selecionado .hora,
 .opcao-horario.selecionado .periodo {
   color: white;
@@ -386,59 +433,137 @@ const {
 }
 
 .btn-voltar {
-  padding: 12px 24px;
-  font-size: 14px;
-  font-weight: 600;
-  background-color: #f5f5f5;
-  color: #666;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
   width: 100%;
+  padding: 14px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--text-muted);
+  border: 1px solid rgba(223, 128, 26, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-voltar:hover {
-  transform: translateX(-2px);
+  background: rgba(223, 128, 26, 0.06);
+  color: var(--primary);
+  transform: translateX(-3px);
 }
 
 .btn-enviar {
   width: 100%;
   padding: 16px;
-  font-size: 16px;
+  font-size: 0.95rem;
   font-weight: 700;
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   cursor: pointer;
   margin-top: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .btn-enviar:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 24px rgba(223, 128, 26, 0.4);
 }
 
 .btn-enviar:active {
   transform: translateY(0);
 }
 
-.loading-container {
+/* Status cards */
+.status-card {
   text-align: center;
-  padding: 40px;
-  background-color: white;
+  background: var(--superfice);
+  border: 1px solid rgba(223, 128, 26, 0.12);
   border-radius: 20px;
   max-width: 400px;
-  margin: 100px auto;
+  margin: 60px auto;
+  padding: 48px 28px;
+  animation: scaleUp 0.4s ease;
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.status-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  background: linear-gradient(135deg, var(--success) 0%, #1e8449 100%);
+}
+
+.status-icon .mdi {
+  font-size: 2.4rem;
+  color: white;
+}
+
+.status-icon.thanks {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+}
+
+.status-icon.thanks .mdi {
+  font-size: 2.2rem;
+}
+
+.status-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.status-msg {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+}
+
+.next-date-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.next-date-tag .mdi {
+  font-size: 1rem;
+  color: var(--primary);
 }
 
 .spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #f0f0f0;
+  width: 44px;
+  height: 44px;
+  border: 4px solid var(--bg);
   border-top-color: var(--primary);
   border-radius: 50%;
   margin: 0 auto 20px;
@@ -451,112 +576,13 @@ const {
   }
 }
 
-.sucesso-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background-color: white;
-  border-radius: 20px;
-  max-width: 400px;
-  margin: 100px auto;
-  padding: 40px 20px;
-  animation: scaleUp 0.5s ease;
-}
-
-@keyframes scaleUp {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.icone-certinho {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24px;
-  animation: bounce 0.5s ease;
-}
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.icone-certinho svg {
-  width: 50px;
-  height: 50px;
-  color: white;
-  stroke-width: 3;
-}
-
-.mensagem-sucesso {
-  font-size: 20px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
-  text-align: center;
-}
-
-.mensagem-aguarde {
-  font-size: 14px;
-  color: #666;
-  margin: 0 0 16px 0;
-  text-align: center;
-}
-
-.agradecimento-container {
-  text-align: center;
-  background-color: white;
-  border-radius: 20px;
-  max-width: 400px;
-  margin: 100px auto;
-  padding: 40px 20px;
-}
-
-.icone-obrigado {
-  font-size: 60px;
-  margin-bottom: 20px;
-}
-
-.mensagem-agradecimento {
-  font-size: 20px;
-  font-weight: 700;
-  color: #333;
-  margin: 0 0 8px 0;
-}
-
-.data-proxima-resposta {
-  font-size: 13px;
-  color: #999;
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #f5f5f5;
-  border-radius: 20px;
-  display: inline-block;
-}
-
 @media (min-width: 768px) {
-  .usuarios-list-container {
-    padding: 24px;
+  .lista-page {
+    padding: 32px 24px;
   }
 
-  .questionario-form {
-    padding: 40px;
+  .questionario-card {
+    padding: 36px 32px;
   }
 
   .opcoes-horario {
@@ -566,11 +592,10 @@ const {
   .opcao-horario {
     flex: 1;
     justify-content: center;
-    gap: 12px;
   }
 
   .opcao-btn {
-    padding: 14px 30px;
+    padding: 16px 28px;
   }
 }
 </style>

@@ -43,7 +43,7 @@ async function enviarLogin() {
   <div class="login-container">
     <AuthBranding />
 
-    <p>Entrar em sua conta:</p>
+    <p class="login-hint">Entrar em sua conta:</p>
 
     <FloatingInput
       v-model="form.email"
@@ -60,13 +60,13 @@ async function enviarLogin() {
       @keyup.enter="enviarLogin"
     />
 
-    <button @click="enviarLogin" :disabled="state.loading">
+    <button @click="enviarLogin" :disabled="state.loading" class="btn-login">
       {{ state.loading ? 'Entrando...' : 'Entrar' }}
     </button>
 
     <p v-if="erro" class="erro">{{ erro }}</p>
 
-    <p>
+    <p class="forgot-link">
       Esqueceu a senha?
       <RouterLink to="/forgot-password">Clique Aqui</RouterLink>
     </p>
@@ -91,34 +91,39 @@ async function enviarLogin() {
   max-width: 350px;
 }
 
-p {
-  margin-bottom: 15px;
+.login-hint {
+  margin-bottom: 20px;
   text-align: center;
-  color: #666;
+  color: var(--text-muted);
+  font-size: 0.95rem;
 }
 
-button,
+.btn-login,
 .secondary {
   display: inline-flex;
   justify-content: center;
   align-items: center;
   width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  background: var(--primary);
-  color: white;
-  font-weight: bold;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.2s;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  font-size: 0.95rem;
 }
 
-button:hover {
+.btn-login {
+  background: var(--primary);
+  color: white;
+  border: none;
+}
+
+.btn-login:hover {
   background: var(--primary-hover);
 }
 
-button:disabled {
+.btn-login:disabled {
   opacity: 0.7;
   cursor: wait;
 }
@@ -126,7 +131,7 @@ button:disabled {
 .secondary {
   background: transparent;
   color: var(--primary);
-  border: 1px solid var(--primary);
+  border: 2px solid var(--primary);
 }
 
 .secondary:hover {
@@ -137,7 +142,7 @@ button:disabled {
 a {
   color: var(--primary);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 a:hover {
@@ -145,9 +150,17 @@ a:hover {
 }
 
 .erro {
-  color: var(--error);
+  color: var(--danger);
   font-size: 14px;
   font-weight: 500;
-  color: #d32f2f;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.forgot-link {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 16px;
 }
 </style>

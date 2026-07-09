@@ -2,12 +2,12 @@
 import { ref } from 'vue'
 
 const props = defineProps({
-  modelValue: { type: [File, Object, String], default: null }, // Aceita string por causa do valor inicial
+  modelValue: { type: [File, Object, String], default: null },
   label: String,
   required: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   accept: { type: String, default: '.pdf,.jpg,.jpeg,.png' },
-  fileName: { type: String, default: '' }, // Será o nome do arquivo selecionado
+  fileName: { type: String, default: '' },
   hint: String,
   error: String,
 })
@@ -30,9 +30,7 @@ function handleFile(event) {
     return
   }
 
-  // Envia o arquivo binário para o v-model
   emit('update:modelValue', file)
-  // Envia o nome do arquivo para atualizar o objeto pai
   emit('update:fileName', file.name)
 }
 </script>
@@ -81,7 +79,7 @@ function handleFile(event) {
 
 .upload-label {
   display: block;
-  color: #f48a1d;
+  color: var(--primary);
   font-size: 0.85rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
@@ -90,7 +88,7 @@ function handleFile(event) {
 }
 
 .required {
-  color: #e74c3c;
+  color: var(--danger);
 }
 
 .upload-controls {
@@ -103,14 +101,14 @@ function handleFile(event) {
 .file-display {
   flex: 1;
   min-height: 48px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
-  background: #fafafa;
+  background: var(--bg);
   padding: 0 16px;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #999;
+  color: var(--text-muted);
   font-size: 0.85rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -119,19 +117,19 @@ function handleFile(event) {
 }
 
 .file-display.has-file {
-  border-color: #f48a1d;
-  background: #fff7f0;
-  color: #333;
+  border-color: var(--primary);
+  background: rgba(223, 128, 26, 0.06);
+  color: var(--text);
 }
 
 .file-display .mdi {
   font-size: 20px;
-  color: #f48a1d;
+  color: var(--primary);
   flex-shrink: 0;
 }
 
 .btn-upload {
-  background-color: #f48a1d;
+  background: var(--primary);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -148,9 +146,9 @@ function handleFile(event) {
 }
 
 .btn-upload:hover:not(:disabled) {
-  background-color: #e37a0d;
+  background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.3);
+  box-shadow: 0 4px 12px rgba(223, 128, 26, 0.3);
 }
 
 .btn-upload:disabled {
@@ -161,12 +159,12 @@ function handleFile(event) {
 .file-hint {
   display: block;
   font-size: 11px;
-  color: #999;
+  color: var(--text-muted);
   margin-top: 6px;
 }
 
 .field-error {
-  color: #e74c3c;
+  color: var(--danger);
   font-size: 12px;
   margin-top: 4px;
 }

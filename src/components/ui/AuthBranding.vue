@@ -14,7 +14,7 @@
 }
 
 .mdi-map-marker-radius {
-  font-size: 80px;
+  font-size: 100px;
   color: var(--primary);
   margin: 0 auto 0px auto;
   display: block;

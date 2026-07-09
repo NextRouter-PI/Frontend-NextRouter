@@ -1,6 +1,13 @@
 <script setup>
 import Logo from "@/assets/images/logo.png"
 import { RouterLink } from "vue-router";
+import { useLoginState } from '@/stores/useLoginState'
+
+const { logout } = useLoginState()
+
+async function handleLogout() {
+  await logout()
+}
 </script>
 
 <template>
@@ -36,6 +43,11 @@ import { RouterLink } from "vue-router";
       </router-link>
 
     </nav>
+
+    <button class="nav-item logout-btn" title="Sair" @click="handleLogout">
+      <span class="mdi mdi-logout"></span>
+      <small>Sair</small>
+    </button>
   </aside>
 </template>
 
@@ -47,6 +59,7 @@ import { RouterLink } from "vue-router";
   width: 100px;
   height: 100vh;
   background: var(--superfice);
+  z-index: 99;
 
   display: flex;
   flex-direction: column;
@@ -56,7 +69,6 @@ import { RouterLink } from "vue-router";
   gap: 30px;
 
   border-right: 1px solid var(--border-primary);
-  box-shadow: 8px 0 30px var(--shadow);
 
   transition: width 0.4s ease;
   overflow: hidden;
@@ -195,7 +207,7 @@ import { RouterLink } from "vue-router";
 }
 
 .nav-item.router-link-active {
-  color: #fff;
+  color: var(--text);
 }
 
 .nav-item.router-link-active span {
@@ -209,5 +221,22 @@ import { RouterLink } from "vue-router";
 
 .nav-item:active {
   transform: scale(0.95);
+}
+
+.logout-btn {
+  margin-top: auto;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.logout-btn:hover span {
+  color: var(--danger);
+}
+
+.logout-btn:hover small {
+  color: var(--danger);
 }
 </style>

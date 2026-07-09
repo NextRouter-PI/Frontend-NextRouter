@@ -43,7 +43,7 @@ defineEmits(['update:modelValue'])
   position: absolute;
   left: 10px;
   top: 12px;
-  color: #999;
+  color: var(--text-muted);
   font-size: 14px;
   pointer-events: none;
   transition: 0.3s;
