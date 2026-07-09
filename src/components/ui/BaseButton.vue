@@ -30,7 +30,7 @@ const emit = defineEmits(['click'])
   align-items: center;
   gap: 8px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -60,7 +60,7 @@ const emit = defineEmits(['click'])
 .variant-secondary {
   background: transparent;
   color: var(--primary);
-  border: 1px solid var(--primary);
+  border: 2px solid var(--primary);
 }
 .variant-secondary:hover:not(:disabled) {
   background: var(--primary);
@@ -69,25 +69,25 @@ const emit = defineEmits(['click'])
 
 .variant-outline {
   background: transparent;
-  color: #333;
-  border: 2px solid #ddd;
+  color: var(--text);
+  border: 2px solid var(--border-primary);
 }
 .variant-outline:hover:not(:disabled) {
   border-color: var(--primary);
-  background: #fff8f0;
+  background: rgba(223, 128, 26, 0.06);
 }
 .variant-outline.selected {
-  background: #333;
-  color: white;
-  border-color: #333;
+  background: var(--superfice);
+  color: var(--text);
+  border-color: var(--primary);
 }
 
 .variant-ghost {
   background: transparent;
-  color: #666;
+  color: var(--text-muted);
 }
 .variant-ghost:hover:not(:disabled) {
-  background: #f5f5f5;
+  background: var(--superfice);
 }
 
 .spinner {

@@ -1,10 +1,17 @@
 <script setup>
-import { ref } from "vue"
-const theme = ref("light")
+import { ref, onMounted } from "vue"
+
+const saved = localStorage.getItem("theme")
+const theme = ref(saved === "dark" ? "dark" : "light")
+
+onMounted(() => {
+  document.documentElement.className = theme.value
+})
 
 function toggleTheme() {
   theme.value = theme.value === "light" ? "dark" : "light"
   document.documentElement.className = theme.value
+  localStorage.setItem("theme", theme.value)
 }
 </script>
 

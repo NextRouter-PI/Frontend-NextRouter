@@ -86,6 +86,13 @@ const ADMIN_URL = import.meta.env.VITE_ADMIN_URL
 router.beforeEach(async (to, from) => {
   const { checkAuth } = useLoginState()
 
+  if (to.meta.requiresAuth === false) {
+    document.documentElement.className = ""
+  } else {
+    const saved = localStorage.getItem("theme")
+    document.documentElement.className = saved === "dark" ? "dark" : ""
+  }
+
   if (!state.logged && to.meta.requiresAuth) {
     await checkAuth();
   }

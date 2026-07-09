@@ -47,15 +47,15 @@ export function useSignUpCompanyForm() {
 
 
   const page1Form = reactive({
-    legalName: '',
-    tradeName: '',
-    cnpj: '',
-    contactPhone: '',
-    contactEmail: '',
-    city: '',
-    state: '',
-    cep: '',
-    stateRegistration: '' // * Essa propriedade é tratada como se fosse parte da página 1, mas consta de fato na página 2
+    legalName: 'Viagem Limpa LTDA',
+    tradeName: 'Viagem Limpa',
+    cnpj: '43.254.354/3634-66',
+    contactPhone: '(00) 00000-0000',
+    contactEmail: 'marco.mendes@ifc.edu.br',
+    city: 'Joinville',
+    state: 'SC',
+    cep: '89232380',
+    stateRegistration: '123456' // * Essa propriedade é tratada como se fosse parte da página 1, mas consta de fato na página 2
   })
 
   // * Os arquivos fazem parte da página 2!
@@ -76,11 +76,11 @@ export function useSignUpCompanyForm() {
   })
 
   const page3Form = reactive({
-    ceoName: '',
-    ceoCpf: '',
-    loginEmail: '',
-    password: '',
-    passwordConfirm: ''
+    ceoName: 'Marco André Mendes',
+    ceoCpf: '124.678.369-08',
+    loginEmail: 'marco.mendes@ifc.edu.br',
+    password: 'teste.123',
+    passwordConfirm: 'teste.123'
   })
 
 

@@ -24,7 +24,7 @@ defineProps({
 .spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid #f0f0f0;
+  border: 4px solid var(--superfice);
   border-top-color: var(--primary);
   border-radius: 50%;
   margin-bottom: 20px;
@@ -34,7 +34,7 @@ defineProps({
 @keyframes spin { to { transform: rotate(360deg); } }
 
 p {
-  color: #666;
+  color: var(--text-muted);
   font-size: 14px;
 }
 </style>

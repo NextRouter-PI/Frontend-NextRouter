@@ -47,12 +47,12 @@ const formModel = computed({
 
 .field-group label {
   display: block;
-  color: #f48a1d;
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.85rem;
   text-transform: uppercase;
-  margin-bottom: 6px;
   letter-spacing: 0.5px;
+  margin-bottom: 6px;
 }
 
 .date-row {
@@ -64,17 +64,18 @@ const formModel = computed({
 .date-row input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
   font-size: 1rem;
   transition: all 0.3s ease;
-  background: #fafafa;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .date-row input:focus {
   outline: none;
-  border-color: #f48a1d;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(244, 138, 29, 0.1);
+  border-color: var(--primary);
+  background: var(--bg);
+  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.1);
 }
 </style>

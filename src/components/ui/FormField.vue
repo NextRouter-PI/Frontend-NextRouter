@@ -39,46 +39,48 @@ const emit = defineEmits(['update:modelValue', 'blur'])
 
 .field-group label {
   display: block;
-  color: #f48a1d;
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.85rem;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 6px;
 }
 
 .required {
-  color: #e74c3c;
+  color: var(--danger);
 }
 
 .field-group input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid var(--border-primary);
   border-radius: 12px;
-  background: #fafafa;
+  background: var(--bg);
   font-size: 14px;
-  color: #333;
+  color: var(--text);
   transition: all 0.3s ease;
 }
 
 .field-group input:focus {
   outline: none;
-  border-color: #f48a1d;
-  box-shadow: 0 0 0 3px rgba(244, 138, 29, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.1);
 }
 
 .field-group input:disabled {
-  background: #f5f5f5;
-  color: #666;
+  background: var(--superfice);
+  color: var(--text-muted);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .field-group.has-error input {
-  border-color: #e74c3c;
+  border-color: var(--danger);
 }
 
 .field-error {
-  color: #e74c3c;
+  color: var(--danger);
   font-size: 12px;
   margin-top: 4px;
 }

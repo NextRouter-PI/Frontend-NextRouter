@@ -1,27 +1,39 @@
 <script setup>
+import { useLoginState } from '@/stores/useLoginState'
+
+const { logout } = useLoginState()
+
+async function handleLogout() {
+  await logout()
+}
 </script>
 
 <template>
   <footer class="bottom-nav">
-    <router-link :to="`/`" class="nav-item">
+    <router-link :to="`/`" class="nav-item" title="Home">
       <span class="mdi mdi-home"></span>
       <small>Home</small>
     </router-link>
 
-    <router-link :to="`/usuario`" class="nav-item">
+    <router-link :to="`/usuario`" class="nav-item" title="Usuário">
       <span class="mdi mdi-account"></span>
       <small>Usuário</small>
     </router-link>
 
-    <router-link :to="`/transporte`" class="nav-item">
+    <router-link :to="`/transporte`" class="nav-item" title="Transporte">
       <span class="mdi mdi-car"></span>
       <small>Transporte</small>
     </router-link>
 
-    <router-link :to="`/lista`" class="nav-item">
+    <router-link :to="`/lista`" class="nav-item" title="Lista">
       <span class="mdi mdi-format-list-bulleted"></span>
       <small>Lista</small>
     </router-link>
+
+    <button class="nav-item logout-btn" title="Sair" @click="handleLogout">
+      <span class="mdi mdi-logout"></span>
+      <small>Sair</small>
+    </button>
   </footer>
 </template>
 
@@ -36,9 +48,8 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  border-top: 2px solid var(--border-primary);
-  box-shadow: 0 -2px 10px var(--shadow);
   z-index: 1000;
+  border-top: 1px solid rgba(223, 128, 26, 0.1);
 }
 
 .nav-item {
@@ -82,5 +93,24 @@
 .nav-item.router-link-active small {
   color: var(--primary);
   transform: translateY(-4px);
+}
+
+.logout-btn {
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  padding: 0;
+  color: var(--text-muted);
+}
+
+.logout-btn:hover span {
+  color: var(--danger);
+  transform: scale(1.1);
+}
+
+.logout-btn:hover small {
+  color: var(--danger);
 }
 </style>
