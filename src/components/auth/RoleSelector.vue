@@ -54,8 +54,8 @@ const roles = [
   align-items: center;
   gap: 1.25rem;
   padding: 1.5rem;
-  background: white;
-  border: 2px solid #e5e7eb;
+  background: var(--superfice);
+  border: 1px solid rgba(223, 128, 26, 0.12);
   border-radius: 16px;
   text-decoration: none;
   transition: all 0.3s ease;
@@ -65,7 +65,7 @@ const roles = [
 .role-card:hover {
   border-color: var(--primary);
   transform: translateX(8px);
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+  box-shadow: 0 4px 12px rgba(223, 128, 26, 0.15);
 }
 
 .mdi {
@@ -82,13 +82,13 @@ const roles = [
 .card-content h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text);
   margin-bottom: 0.5rem;
 }
 
 .card-content p {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-muted);
   line-height: 1.4;
   margin: 0;
 }

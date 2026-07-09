@@ -106,8 +106,8 @@ const formatarDataProxima = () => {
 }
 
 .questionario-header-block {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--superfice);
+  border: 1px solid rgba(223, 128, 26, 0.12);
   border-radius: 10px;
   padding: 12px;
   text-align: center;
@@ -117,13 +117,13 @@ const formatarDataProxima = () => {
 .questionario-header-block h2 {
   font-size: 1rem;
   font-weight: bold;
-  color: #000000;
+  color: var(--text);
   margin: 0;
 }
 
 .schedule-selector {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--superfice);
+  border: 1px solid rgba(223, 128, 26, 0.12);
   border-radius: 10px;
   padding: 10px 12px;
   display: flex;
@@ -135,7 +135,7 @@ const formatarDataProxima = () => {
 .time-text {
   font-size: 1.1rem;
   font-weight: bold;
-  color: #000000;
+  color: var(--text);
 }
 
 .arrow-button {
@@ -147,14 +147,14 @@ const formatarDataProxima = () => {
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
-  color: #ff8c00;
+  color: var(--primary);
   transition: transform 0.2s;
   width: 32px;
   height: 32px;
 }
 
 .arrow-button:hover {
-  color: #e67e00;
+  color: var(--primary-hover);
 }
 
 .arrow-button:active {
@@ -162,8 +162,8 @@ const formatarDataProxima = () => {
 }
 
 .list-container {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--superfice);
+  border: 1px solid rgba(223, 128, 26, 0.12);
   border-radius: 15px;
   padding: 12px 8px;
   display: flex;
@@ -174,17 +174,17 @@ const formatarDataProxima = () => {
 .list-title {
   font-size: 0.95rem;
   font-weight: bold;
-  color: #000000;
+  color: var(--text);
   margin: 0 0 8px 0;
   padding: 0;
 }
 
 .passenger-card {
-  border: 1px solid #f48a1d;
+  border: 1px solid var(--border-primary);
   border-radius: 10px;
   padding: 10px 12px;
   text-align: left;
-  background-color: white;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -193,18 +193,18 @@ const formatarDataProxima = () => {
 .passenger-name {
   font-size: 0.95rem;
   font-weight: bold;
-  color: #000000;
+  color: var(--text);
 }
 
 .passenger-address {
   font-size: 0.8rem;
-  color: #555555;
+  color: var(--text-muted);
 }
 
 .no-passengers {
   text-align: center;
   padding: 20px;
-  color: #999999;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 

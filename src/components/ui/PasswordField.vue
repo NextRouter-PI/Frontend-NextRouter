@@ -51,7 +51,7 @@ const mostrar = ref(false)
   position: absolute;
   left: 10px;
   top: 12px;
-  color: #999;
+  color: var(--text-muted);
   font-size: 14px;
   pointer-events: none;
   transition: 0.3s;
@@ -70,7 +70,7 @@ const mostrar = ref(false)
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  color: #999;
+  color: var(--text-muted);
 }
 
 .toggle:hover {

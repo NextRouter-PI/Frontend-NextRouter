@@ -19,7 +19,7 @@ function handleFile(event) {
 </script>
 
 <template>
-  <div class="avatar-edit-wrapper">
+  <div class="avatar-edit-wrapper" @click="openSelector">
     <div class="avatar-circle">
       <img
         v-if="modelValue"
@@ -27,6 +27,9 @@ function handleFile(event) {
         alt="Foto de perfil"
         class="avatar-image"
       />
+      <div v-else class="avatar-placeholder">
+        <span class="mdi mdi-camera-plus-outline"></span>
+      </div>
     </div>
     <input
       ref="fileInput"
@@ -35,29 +38,35 @@ function handleFile(event) {
       class="file-input-hidden"
       @change="handleFile"
     />
-    <button class="btn-change-photo" type="button" @click="openSelector">
-      Alterar foto
-    </button>
   </div>
 </template>
 
 <style scoped>
 .avatar-edit-wrapper {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  cursor: pointer;
 }
 
 .avatar-circle {
   width: 150px;
   height: 150px;
-  background-color: #222;
   border-radius: 50%;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
   position: relative;
-  border: 4px solid #f48a1d;
-  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.3);
+  background: #c4c4c4;
+  border: 4px solid #df801a;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.avatar-circle:hover {
+  filter: brightness(0.85);
+  transform: scale(1.03);
+}
+
+.avatar-circle:active {
+  transform: scale(0.97);
 }
 
 .avatar-image {
@@ -66,23 +75,17 @@ function handleFile(event) {
   object-fit: cover;
 }
 
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.7);
+  font-size: 2rem;
+}
+
 .file-input-hidden {
   display: none;
-}
-
-.btn-change-photo {
-  background-color: transparent;
-  border: 1px solid #f48a1d;
-  color: #d3730e;
-  border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-change-photo:hover {
-  background-color: rgba(244, 138, 29, 0.1);
 }
 </style>

@@ -72,34 +72,44 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
-      path: "/driver-home",
-      name: "DriverHome",
-      component: () => import("../components/pages/driver/DriverHome.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/passenger-home",
-      name: "PassengerHome",
-      component: () => import("../components/pages/passenger/PassengerHome.vue"),
-      meta: { requiresAuth: true }
+      path: "/logout",
+      name: "logout",
+      component: () => import("../views/LogoutView.vue"),
+      meta: { requiresAuth: false }
     }
   ],
 });
 
 
+const ADMIN_URL = import.meta.env.VITE_ADMIN_URL
+
 router.beforeEach(async (to, from) => {
   const { checkAuth } = useLoginState()
+
+  if (to.meta.requiresAuth === false) {
+    document.documentElement.className = ""
+  } else {
+    const saved = localStorage.getItem("theme")
+    document.documentElement.className = saved === "dark" ? "dark" : ""
+  }
 
   if (!state.logged && to.meta.requiresAuth) {
     await checkAuth();
   }
 
-  if (state.logged && to.meta.requiresAuth === false) {
+  if (state.logged && to.meta.requiresAuth === false && to.name !== 'logout' && to.name !== 'login') {
     return { name: "home" };
   }
 
   if (to.meta.requiresAuth && !state.logged) {
     return { name: "login" };
+  }
+
+  if (state.user?.type === 'company' && to.name !== 'logout' && to.name !== 'login') {
+    const name = encodeURIComponent(state.user.name)
+    const token = state.access
+    window.location.href = `${ADMIN_URL}/?company=${name}&token=${token}`
+    return false
   }
 
   return true;

@@ -8,9 +8,7 @@ defineProps({
 <template>
   <div class="success-container">
     <div class="icon-check">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
+      <span class="mdi mdi-check-circle"></span>
     </div>
     <p v-if="title" class="title">{{ title }}</p>
     <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
@@ -29,9 +27,9 @@ defineProps({
 }
 
 .icon-check {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, var(--success) 0%, #1e8449 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -45,23 +43,21 @@ defineProps({
   50% { transform: translateY(-10px); }
 }
 
-.icon-check svg {
-  width: 50px;
-  height: 50px;
+.icon-check .mdi {
+  font-size: 2.4rem;
   color: white;
-  stroke-width: 3;
 }
 
 .title {
   font-size: 20px;
   font-weight: 700;
-  color: #333;
+  color: var(--text);
   margin: 0 0 8px;
 }
 
 .subtitle {
   font-size: 14px;
-  color: #666;
+  color: var(--text-muted);
   margin: 0;
 }
 </style>

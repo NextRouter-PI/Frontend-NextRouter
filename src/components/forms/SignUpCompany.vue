@@ -1,12 +1,12 @@
 <script setup>
 import { useSignUpCompanyForm } from '@/composables/useSignUpCompanyForm'
+import { useRouter } from 'vue-router'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 import FileUploadField from '@/components/ui/FileUploadField.vue'
 import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import SuccessDisplay from '@/components/ui/SuccessDisplay.vue'
 
 const {
   currentPage,
@@ -37,54 +37,36 @@ const {
   isEmail,
   isCEP,
 } = useSignUpCompanyForm()
+
+const router = useRouter()
+
+const goBack = () => {
+  router.push('/signup');
+}
 </script>
 
 <template>
   <section class="form-container">
-    <div class="form-header-image">
-      <img
-        v-if="currentPage === 1"
-        src="@/assets/images/hero-1.jpeg"
-        alt="Banner Empresa"
-        class="header-image"
-      />
-      <img
-        v-else-if="currentPage === 2"
-        src="@/assets/images/hero-2.jpeg"
-        alt="Banner Documentação"
-        class="header-image"
-      />
-      <img
-        v-else
-        src="@/assets/images/hero.jpeg"
-        alt="Banner Empresa"
-        class="header-image"
-      />
+    <button class="btn-back-top" @click="goBack" aria-label="Voltar">
+      <span class="mdi mdi-arrow-left"></span>
+    </button>
+    <div class="header">
+      <span class="mdi mdi-domain"></span>
+      <h2>Bem vindo</h2>
+      <h1><span>EMPRESA</span></h1>
     </div>
 
-    <div v-if="currentPage !== 4" class="stepper-container">
-      <div class="step-circle" :class="{ active: currentPage >= 1, completed: currentPage > 1 }">
-        <span v-if="currentPage > 1" class="mdi mdi-check"></span>
-        <span v-else>1</span>
+    <div v-if="registerState.state.success" class="success-message">
+      <span class="mdi mdi-check-circle"></span>
+      <p class="success-title">Cadastro enviado com sucesso!</p>
+      <p>Sua empresa será verificada pela nossa equipe. Você receberá um email em breve com o resultado da análise.</p>
+      <div class="loading-spinner">
+        <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
       </div>
-      <div class="step-circle" :class="{ active: currentPage >= 2, completed: currentPage > 2 }">
-        <span v-if="currentPage > 2" class="mdi mdi-check"></span>
-        <span v-else>2</span>
-      </div>
-      <div class="step-circle" :class="{ active: currentPage >= 3 }">3</div>
-    </div>
-
-    <div v-if="registerState.state.success" class="success-section">
-      <SuccessDisplay
-        title="Cadastro enviado com sucesso!"
-        subtitle="Sua empresa será verificada pela nossa equipe. Você receberá um email em breve com o resultado da análise."
-      >
-        <LoadingSpinner text="Redirecionando..." />
-      </SuccessDisplay>
     </div>
 
     <form v-else class="signup-form" @submit.prevent="handleSubmit">
-      <div v-if="currentPage === 1" class="page-container">
+      <div v-if="currentPage === 1">
         <h2 class="page-title">Informações da <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
@@ -173,40 +155,42 @@ const {
             () => {
               clearFieldError('cep')
               if (page1Form.cep.length === 9) {
-                // Passa o objeto inteiro para a função porque apenas objetos no javascript são passados como referência
                 getCEP(page1Form)
               }
             }
           "
           @blur="validateField(page1Form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
         />
-        <div class="row-group">
+        <div class="row-fields">
           <FormField
             v-model="page1Form.city"
             label="Cidade"
             placeholder="Cidade do CEP"
             disabled
-            class="city-field"
+            class="half"
           />
           <FormField
             v-model="page1Form.state"
             label="Estado"
             placeholder="UF do CEP"
             disabled
-            class="state-field"
+            class="half"
           />
         </div>
       </div>
 
-      <div v-if="currentPage === 2" class="page-container">
+      <div v-if="currentPage === 2">
         <h2 class="page-title">Documentação da <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
           v-model="page1Form.stateRegistration"
           label="Inscrição Estadual"
+          required
           placeholder="Digite a inscrição estadual"
           :disabled="registerState.state.loading"
+          :error="fieldErrors.stateRegistration"
           @input="clearFieldError('stateRegistration')"
+          @blur="validateField(page1Form.stateRegistration, [(v) => requiredField(v, 'Inscrição Estadual')], 'stateRegistration')"
         />
 
         <FileUploadField
@@ -257,7 +241,7 @@ const {
         </div>
       </div>
 
-      <div v-if="currentPage === 3" class="page-container">
+      <div v-if="currentPage === 3">
         <h2 class="page-title">Responsável pela <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
@@ -337,7 +321,7 @@ const {
         />
       </div>
 
-      <div v-if="currentPage === 4" class="page-container">
+      <div v-if="currentPage === 4">
         <h2 class="page-title">Revisão do <span class="highlight-orange">Cadastro</span></h2>
 
         <div class="review-section">
@@ -401,14 +385,6 @@ const {
             <span class="value">✓ {{ files.certificateOfGoodStading.name }}</span>
           </div>
         </div>
-
-        <div class="info-box">
-          <span class="mdi mdi-information-outline"></span>
-          <p>
-            Por favor, revise todas as informações antes de enviar. Você não poderá alterá-las após
-            a submissão.
-          </p>
-        </div>
       </div>
 
       <ErrorMessage :message="errorMessage" />
@@ -416,7 +392,7 @@ const {
 
       <div class="button-group">
         <button
-          v-if="currentPage > 1"
+          v-if="currentPage > 1 && currentPage < 4"
           type="button"
           class="btn-back"
           @click="goToPreviousPage"
@@ -428,8 +404,7 @@ const {
         <button
           v-if="currentPage < 4"
           type="button"
-          class="btn-next"
-          :class="{ 'btn-center': currentPage === 1 }"
+          class="btn-submit"
           @click="goToNextPage"
           :disabled="registerState.state.loading"
         >
@@ -452,118 +427,189 @@ const {
 
 <style scoped>
 .form-container {
-  max-width: 700px;
-  margin: 3rem auto;
+  max-width: 560px;
+  margin: 2rem auto;
   padding: 2rem;
-  background: #ffffff;
+  background: var(--superfice);
+  border: 1px solid rgba(223, 128, 26, 0.12);
   border-radius: 20px;
-  box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.1);
-}
-
-.form-header-image {
-  width: 100%;
-  margin: -2rem -2rem 2rem 1rem;
-  border-radius: 20px 20px 0 0;
-  overflow: hidden;
-}
-
-.header-image {
-  width: 100%;
-  height: 250px;
-  object-fit: cover;
-  display: block;
-}
-
-.stepper-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   position: relative;
-  margin: 30px 0;
-  padding: 0 20px;
 }
 
-.stepper-container::before {
-  content: '';
+.btn-back-top {
   position: absolute;
-  top: 50%;
-  left: 40px;
-  right: 40px;
-  height: 2px;
-  background-color: #ccc;
-  z-index: 1;
-}
-
-.step-circle {
-  width: 40px;
-  height: 40px;
-  background-color: #ccc;
-  border-radius: 50%;
+  top: 12px;
+  left: 12px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  z-index: 2;
-  color: white;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  border-radius: 50%;
+  transition: 0.2s;
+  z-index: 10;
 }
 
-.step-circle.active {
-  background-color: #f48a1d;
-  border: 3px solid white;
-  box-shadow: 0 2px 8px rgba(244, 138, 29, 0.4);
+.btn-back-top:hover {
+  color: var(--primary);
+  left: 10px;
 }
 
-.step-circle.completed {
-  background-color: #22c55e;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
 }
-
-.page-title {
-  font-size: 1.4rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
-  color: #333;
+.header .mdi-domain {
+  font-size: 48px;
+  color: var(--primary);
 }
-
-.highlight-orange {
-  color: #f48a1d;
+.header h2 {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  margin: 0.5rem 0 0;
+  font-weight: 400;
+}
+.header h1 {
+  font-size: 2rem;
+  margin: 0;
+  font-weight: 800;
+}
+.header h1 span {
+  color: var(--primary);
 }
 
 .signup-form {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.5rem;
+}
+.row-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.page-container {
-  animation: fadeIn 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.row-group {
-  display: flex;
-  gap: 15px;
+.btn-submit {
   width: 100%;
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+}
+.btn-submit:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
-.row-group :deep(.city-field) {
-  flex: 2;
+.btn-back {
+  width: 100%;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--text-muted);
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.btn-back:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
 }
 
-.row-group :deep(.state-field) {
+.success-message {
+  text-align: center;
+  padding: 2rem;
+}
+.success-message .mdi-check-circle {
+  font-size: 3rem;
+  color: var(--success);
+}
+.success-title {
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 1rem 0 0.5rem;
+}
+.loading-spinner {
+  margin-top: 1rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.mdi-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.page-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  color: var(--text);
+}
+.highlight-orange {
+  color: var(--primary);
+}
+
+.review-section {
+  background: var(--bg);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--primary);
+}
+.review-section h3 {
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.review-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(223, 128, 26, 0.1);
+}
+.review-item:last-child {
+  border-bottom: none;
+}
+.review-item .label {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.review-item .value {
+  color: var(--text);
+  text-align: right;
   flex: 1;
+  margin-left: 1rem;
 }
 
 .info-box {
@@ -571,225 +617,34 @@ const {
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background: #fff7f0;
+  background: rgba(223, 128, 26, 0.08);
   border-radius: 12px;
-  border-left: 4px solid #f48a1d;
+  border-left: 4px solid var(--primary);
   margin-top: 0.5rem;
 }
-
 .info-box .mdi {
   font-size: 20px;
-  color: #f48a1d;
+  color: var(--primary);
   flex-shrink: 0;
 }
-
 .info-box p {
   margin: 0;
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-muted);
   line-height: 1.4;
-}
-
-.review-section {
-  background: #f9f9f9;
-  padding: 1.5rem;
-  border-radius: 12px;
-  margin-bottom: 1.5rem;
-  border-left: 4px solid #f48a1d;
-}
-
-.review-section h3 {
-  color: #f48a1d;
-  margin-top: 0;
-  margin-bottom: 1rem;
-  font-size: 1rem;
-}
-
-.review-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #eee;
-}
-
-.review-item:last-child {
-  border-bottom: none;
-}
-
-.review-item .label {
-  font-weight: 600;
-  color: #666;
-}
-
-.review-item .value {
-  color: #333;
-  text-align: right;
-  flex: 1;
-  margin-left: 1rem;
-}
-
-.success-section {
-  padding: 2rem;
 }
 
 .button-group {
   display: flex;
-  gap: 12px;
-  margin-top: 2rem;
-  justify-content: center;
-}
-
-.btn-back,
-.btn-next,
-.btn-submit {
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  font-size: 1rem;
+  margin-top: 1rem;
 }
 
-.btn-back {
-  background-color: #e0e0e0;
-  color: #333;
-  flex: 1;
-}
-
-.btn-back:hover:not(:disabled) {
-  background-color: #d0d0d0;
-  transform: translateY(-2px);
-}
-
-.btn-next {
-  background-color: #f48a1d;
-  color: white;
-  flex: 1;
-}
-
-.btn-next:hover:not(:disabled) {
-  background-color: #e37a0d;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(244, 138, 29, 0.3);
-}
-
-.btn-next.btn-center {
-  width: auto;
-  margin: 0 auto;
-}
-
-.btn-submit {
-  background: linear-gradient(135deg, #f48a1d 0%, #e37a0d 100%);
-  color: white;
-  width: 100%;
-  justify-content: center;
-}
-
-.btn-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(244, 138, 29, 0.3);
-}
-
-.btn-back:disabled,
-.btn-next:disabled,
-.btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .form-container {
     margin: 1rem;
     padding: 1.5rem;
-  }
-
-  .header-image {
-    height: 180px;
-  }
-
-  .stepper-container {
-    padding: 0 10px;
-  }
-
-  .stepper-container::before {
-    left: 20px;
-    right: 20px;
-  }
-
-  .step-circle {
-    width: 35px;
-    height: 35px;
-    font-size: 0.9rem;
-  }
-
-  .row-group {
-    flex-direction: column;
-  }
-
-  .button-group {
-    flex-direction: column;
-  }
-
-  .btn-back,
-  .btn-next {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .form-container {
-    margin: 0.5rem;
-    padding: 1rem;
-  }
-
-  .form-header-image {
-    margin: -1rem -1rem 1rem -1rem;
-  }
-
-  .header-image {
-    height: 150px;
-  }
-
-  .stepper-container {
-    padding: 0 5px;
-    margin: 20px 0;
-  }
-
-  .step-circle {
-    width: 30px;
-    height: 30px;
-    font-size: 0.8rem;
-  }
-
-  .page-title {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-  }
-
-  .button-group {
-    gap: 10px;
-  }
-
-  .btn-back,
-  .btn-next,
-  .btn-submit {
-    padding: 10px 16px;
-    font-size: 0.9rem;
-  }
-
-  .review-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .review-item .value {
-    text-align: left;
-    margin-left: 0;
-    margin-top: 0.25rem;
   }
 }
 </style>

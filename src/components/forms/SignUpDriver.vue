@@ -16,6 +16,10 @@ const router = useRouter()
 
 const registerState = useRegisterState()
 
+const goBack = () => {
+  router.push('/signup');
+}
+
 const {
   isPasswordVisible,
   errorMessage,
@@ -43,20 +47,20 @@ const {
 } = useSignUpPassengerDriverForm()
 
 const form = reactive({
-  name: '',
-  day: '',
-  month: '',
-  year: '',
-  cpf: '',
-  email: '',
-  phone: '',
-  password: '',
-  confirmPassword: '',
-  genre: '',
-  cep: '',
-  city: '',
-  state: '',
-  cnh: '',
+  name: 'Eduardo da Silva',
+  day: '28',
+  month: '04',
+  year: '1980',
+  cpf: '124.678.369-08',
+  email: 'eduardo.silva@ifc.edu.br',
+  phone: '(00) 00000-0000',
+  password: 'teste.123',
+  confirmPassword: 'teste.123',
+  genre: 'Masculino',
+  cep: '89232380',
+  city: 'Joinville',
+  state: 'SC',
+  cnh: '123456789',
 })
 
 const cnh = reactive({
@@ -83,7 +87,6 @@ const handleSubmit = async () => {
   const birthday = formatBirthday(form)
 
   formData.append('user_data.birthday', birthday)
-  // TODO: Data de nascimento no banco
 
   await registerState.registerDriver(formData)
   if (registerState.state.success) {
@@ -96,6 +99,9 @@ const handleSubmit = async () => {
 
 <template>
   <section class="form-container">
+    <button class="btn-back-top" @click="goBack" aria-label="Voltar">
+      <span class="mdi mdi-arrow-left"></span>
+    </button>
     <div class="header">
       <span class="mdi mdi-car"></span>
       <h2>Bem vindo</h2>
@@ -103,7 +109,7 @@ const handleSubmit = async () => {
     </div>
 
     <div v-if="registerState.state.success" class="success-message">
-      <span class="mdi mdi-check-circle-circle"></span>
+      <span class="mdi mdi-check-circle"></span>
       <p class="success-title">Cadastro enviado com sucesso!</p>
       <div class="loading-spinner">
         <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
@@ -190,7 +196,6 @@ const handleSubmit = async () => {
             () => {
               clearFieldError('cep')
               if (form.cep.length === 9) {
-                // Passa o objeto inteiro para a função porque apenas objetos no javascript são passados como referência
                 getCEP(form)
               }
             }
@@ -250,8 +255,8 @@ const handleSubmit = async () => {
           :disabled="registerState.state.loading"
           :show-password="isPasswordVisible"
           :error="fieldErrors.confirmPassword"
-          @input="clearFieldError('confirmPassword')"
           @update:show-password="showPassword"
+          @input="clearFieldError('confirmPassword')"
           @blur="
             validateField(
               form.confirmPassword,
@@ -346,11 +351,35 @@ const handleSubmit = async () => {
 <style scoped>
 .form-container {
   max-width: 560px;
-  margin: 3rem auto;
+  margin: 2rem auto;
   padding: 2rem;
-  background: #ffffff;
+  background: var(--superfice);
+  border: 1px solid rgba(223, 128, 26, 0.12);
   border-radius: 20px;
-  box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.btn-back-top {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: 0.2s;
+  z-index: 10;
+}
+
+.btn-back-top:hover {
+  color: var(--primary);
+  left: 10px;
 }
 .header {
   text-align: center;
@@ -358,26 +387,26 @@ const handleSubmit = async () => {
 }
 .header .mdi-car {
   font-size: 48px;
-  color: #f48a1d;
+  color: var(--primary);
 }
 .header h2 {
   font-size: 1.5rem;
-  color: #666;
+  color: var(--text-muted);
   margin: 0.5rem 0 0;
-  font-weight: normal;
+  font-weight: 400;
 }
 .header h1 {
   font-size: 2rem;
   margin: 0;
-  font-weight: bold;
+  font-weight: 800;
 }
 .header h1 span {
-  color: #f48a1d;
+  color: var(--primary);
 }
 .signup-form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 .row-fields {
   display: grid;
@@ -386,24 +415,24 @@ const handleSubmit = async () => {
 }
 .btn-submit {
   width: 100%;
-  background: linear-gradient(135deg, #f48a1d 0%, #e37a0d 100%);
+  background: var(--primary);
   color: white;
   border: none;
   padding: 14px;
   border-radius: 12px;
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
-  margin-top: 1rem;
-  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 .btn-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(244, 138, 29, 0.3);
+  background: var(--primary-hover);
+  box-shadow: 0 4px 12px rgba(223, 128, 26, 0.3);
 }
 .btn-submit:disabled {
   opacity: 0.7;
@@ -414,15 +443,19 @@ const handleSubmit = async () => {
   text-align: center;
   padding: 2rem;
 }
+.success-message .mdi-check-circle {
+  font-size: 3rem;
+  color: var(--success);
+}
 .success-title {
   font-size: 1.5rem;
   font-weight: bold;
-  color: #22c55e;
+  color: var(--text);
   margin: 1rem 0 0.5rem;
 }
 .loading-spinner {
   margin-top: 1.5rem;
-  color: #f48a1d;
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -432,40 +465,41 @@ const handleSubmit = async () => {
   animation: spin 1s linear infinite;
 }
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
-@media (max-width: 640px) {
-  .form-container {
-    margin: 1rem;
-    padding: 1.5rem;
-  }
+
+.page-title {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  color: var(--text);
+}
+.highlight-orange {
+  color: var(--primary);
 }
 
 .review-section {
-  background: #f9f9f9;
+  background: var(--bg);
   padding: 1.5rem;
   border-radius: 12px;
   margin-bottom: 1.5rem;
-  border-left: 4px solid #f48a1d;
+  border-left: 4px solid var(--primary);
 }
 
 .review-section h3 {
-  color: #f48a1d;
+  color: var(--primary);
   margin-top: 0;
   margin-bottom: 1rem;
   font-size: 1rem;
+  font-weight: 600;
 }
 
 .review-item {
   display: flex;
   justify-content: space-between;
   padding: 0.75rem 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(223, 128, 26, 0.1);
 }
 
 .review-item:last-child {
@@ -474,24 +508,20 @@ const handleSubmit = async () => {
 
 .review-item .label {
   font-weight: 600;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .review-item .value {
-  color: #333;
+  color: var(--text);
   text-align: right;
   flex: 1;
   margin-left: 1rem;
 }
 
-.success-section {
-  padding: 2rem;
-}
-
-.button-group {
-  display: flex;
-  gap: 12px;
-  margin-top: 2rem;
-  justify-content: center;
+@media (max-width: 640px) {
+  .form-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
 }
 </style>
