@@ -1,8 +1,45 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/api/client.js'
+
+const router = useRouter()
+const transport = ref(null)
+const loading = ref(true)
+const error = ref(null)
+
+const progressPercentage = computed(() => {
+  if (!transport.value?.veiculo?.capacidade) return 0
+  return (transport.value.passageirosAtuais / transport.value.veiculo.capacidade) * 100
+})
+
+const goToPassengerHome = () => {
+  router.push({ name: 'PassengerHome' })
+}
+
+const fetchTransportData = async () => {
+  try {
+    loading.value = true
+    const response = await api.get('/passenger/transport')
+    transport.value = response.data
+  } catch (err) {
+    console.error('Erro ao carregar transporte:', err)
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchTransportData()
+})
+</script>
+
 <template>
   <div class="transport-container">
     <h2 class="page-title">Meu Transporte</h2>
 
-    <div class="card vehicle-card" v-if="transport">
+    <div v-if="transport" class="card vehicle-card">
       <div class="vehicle-header">
         <span class="vehicle-model">{{ transport.veiculo?.modelo || 'Carregando...' }}</span>
         <span class="vehicle-plate">{{ transport.veiculo?.placa || '---' }}</span>
@@ -10,104 +47,58 @@
 
       <div class="vehicle-stats">
         <div class="stat-item">
-          <span class="icon">👥</span> {{ transport.veiculo?.capacidade || 0 }} Lugares
+          <span class="stat-icon">👥</span>
+          <span>{{ transport.veiculo?.capacidade || 0 }} Lugares</span>
         </div>
         <div class="stat-item">
-          <span class="icon">👤</span> {{ transport.motorista?.nome || 'Motorista' }}
+          <span class="stat-icon">👤</span>
+          <span>{{ transport.motorista?.nome || 'Motorista' }}</span>
         </div>
       </div>
 
       <div class="progress-section">
-        <div class="progress-text">{{ transport.passageirosAtuais || 0 }}|{{ transport.veiculo?.capacidade || 0 }}</div>
+        <div class="progress-text">{{ transport.passageirosAtuais || 0 }} | {{ transport.veiculo?.capacidade || 0 }}</div>
         <div class="progress-track">
           <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
         </div>
       </div>
 
-      <button class="btn-track-route" @click="goToPassengerHome">
-        ACOMPANHAR ROTA <span class="arrow-icon">›</span>
+      <button class="btn-primary" @click="goToPassengerHome">
+        Acompanhar Rota <span class="arrow-icon">›</span>
       </button>
     </div>
 
-    <div v-else class="card vehicle-card">
-      <p style="text-align: center; color: #999;">Carregando dados do transporte...</p>
+    <div v-else class="card vehicle-card loading-card">
+      <p>Carregando dados do transporte...</p>
     </div>
 
-    <div class="card driver-card" v-if="transport">
+    <div v-if="transport" class="card info-card">
       <h2 class="card-title">Informações do Motorista</h2>
 
-      <ul class="driver-info-list">
+      <ul class="info-list">
         <li class="info-item">
-          <span class="icon-orange">👤</span>
-          <span class="info-text font-bold">{{ transport.motorista?.nome || 'Motorista' }}</span>
+          <span class="info-icon">👤</span>
+          <div>
+            <span class="info-value font-bold">{{ transport.motorista?.nome || 'Motorista' }}</span>
+          </div>
         </li>
         <li class="info-item">
-          <span class="icon-orange">✉️</span>
-          <span class="info-text">{{ transport.motorista?.email || 'email@exemplo.com' }}</span>
+          <span class="info-icon">✉️</span>
+          <div>
+            <span class="info-value">{{ transport.motorista?.email || 'email@exemplo.com' }}</span>
+          </div>
         </li>
       </ul>
     </div>
 
-    <button class="fab-button">
-      +
-    </button>
+    <button class="fab-button">+</button>
   </div>
 </template>
-
-<script>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import api from '@/api/client.js';
-
-export default {
-  name: 'PassengerTransport',
-  setup() {
-    const router = useRouter();
-    const transport = ref(null);
-    const loading = ref(true);
-    const error = ref(null);
-
-    const progressPercentage = computed(() => {
-      if (!transport.value?.veiculo?.capacidade) return 0;
-      return (transport.value.passageirosAtuais / transport.value.veiculo.capacidade) * 100;
-    });
-
-    const goToPassengerHome = () => {
-      router.push({ name: 'PassengerHome' });
-    };
-
-    const fetchTransportData = async () => {
-      try {
-        loading.value = true;
-        const response = await api.get('/passenger/transport');
-        transport.value = response.data;
-      } catch (err) {
-        console.error('Erro ao carregar transporte:', err);
-        error.value = err.message;
-      } finally {
-        loading.value = false;
-      }
-    };
-
-    onMounted(() => {
-      fetchTransportData();
-    });
-
-    return {
-      transport,
-      loading,
-      error,
-      progressPercentage,
-      goToPassengerHome,
-    };
-  },
-};
-</script>
 
 <style scoped>
 .transport-container {
   padding: 20px;
-  background-color: #ffffff;
+  background: var(--bg);
   min-height: 100vh;
   position: relative;
 }
@@ -115,18 +106,22 @@ export default {
 .page-title {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #000;
+  color: var(--text);
   margin-bottom: 20px;
-  text-align: left;
 }
 
 .card {
-  background: #eae8e3;
-  border: 1px solid #dcdcdc;
+  background: var(--superfice);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
-  margin-bottom: 25px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.loading-card p {
+  text-align: center;
+  color: var(--text-muted);
 }
 
 .vehicle-header {
@@ -138,28 +133,31 @@ export default {
 
 .vehicle-model {
   font-size: 0.95rem;
-  color: #333;
+  color: var(--text-muted);
 }
 
 .vehicle-plate {
   font-size: 1.2rem;
   font-weight: 900;
-  color: #000;
+  color: var(--text);
 }
 
 .vehicle-stats {
   display: flex;
-  justify-content: flex-start;
   gap: 20px;
   margin-bottom: 25px;
 }
 
 .stat-item {
-  font-size: 0.75rem;
-  color: #333;
+  font-size: 0.85rem;
+  color: var(--text);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+}
+
+.stat-icon {
+  font-size: 1.1rem;
 }
 
 .progress-section {
@@ -168,110 +166,119 @@ export default {
 
 .progress-text {
   text-align: right;
-  font-size: 0.75rem;
-  font-weight: bold;
-  color: #000;
-  margin-bottom: 5px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
 }
 
 .progress-track {
   width: 100%;
-  height: 6px;
-  border: 1px solid #f48a1d;
+  height: 8px;
+  border: 1px solid var(--primary);
   border-radius: 10px;
-  background-color: transparent;
+  background: transparent;
+  overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background-color: #f48a1d;
+  background: var(--primary);
   border-radius: 10px;
+  transition: width 0.3s ease;
 }
 
-.btn-track-route {
+.btn-primary {
   width: 100%;
-  background-color: #f48a1d;
+  background: var(--gradient-primary);
   color: white;
   border: none;
   border-radius: 8px;
   padding: 12px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  text-transform: uppercase;
+  font-size: 0.95rem;
+  font-weight: 700;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
   transition: opacity 0.2s;
+  box-shadow: var(--shadow-primary);
 }
 
-.btn-track-route:active {
-  opacity: 0.8;
+.btn-primary:active {
+  opacity: 0.85;
 }
 
-.driver-card {
+.arrow-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.info-card {
   position: relative;
 }
 
 .card-title {
   font-size: 1.1rem;
-  font-weight: bold;
-  color: #000;
-  margin-bottom: 10px;
-  border-bottom: 1px solid #f48a1d;
-  padding-bottom: 5px;
-  text-align: left;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary);
 }
 
-.driver-info-list {
+.info-list {
   list-style: none;
   padding: 0;
-  margin-top: 15px;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
 .info-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  font-size: 1rem;
-  color: #000;
+  gap: 12px;
 }
 
-.icon-orange {
-  color: #f48a1d;
-  font-size: 1.5rem;
+.info-icon {
+  font-size: 1.4rem;
+}
+
+.info-value {
+  font-size: 0.95rem;
+  color: var(--text);
 }
 
 .font-bold {
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .fab-button {
   position: fixed;
   bottom: 20px;
   left: 20px;
-  width: 60px;
-  height: 60px;
-  background-color: #f48a1d;
+  width: 56px;
+  height: 56px;
+  background: var(--gradient-primary);
   border: none;
   border-radius: 50%;
-  box-shadow: 0 4px 10px rgba(244, 138, 29, 0.4);
+  box-shadow: var(--shadow-primary);
   cursor: pointer;
   color: white;
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 1.8rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
+  transition: transform 0.2s, opacity 0.2s;
 }
 
 .fab-button:active {
-  opacity: 0.8;
+  transform: scale(0.92);
+  opacity: 0.85;
 }
 
 @media (min-width: 768px) {
