@@ -187,7 +187,8 @@ const formatarDataProxima = () => {
   background: var(--bg);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .passenger-name {

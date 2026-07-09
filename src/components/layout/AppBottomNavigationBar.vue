@@ -105,12 +105,4 @@ async function handleLogout() {
   color: var(--text-muted);
 }
 
-.logout-btn:hover span {
-  color: var(--danger);
-  transform: scale(1.1);
-}
-
-.logout-btn:hover small {
-  color: var(--danger);
-}
 </style>
