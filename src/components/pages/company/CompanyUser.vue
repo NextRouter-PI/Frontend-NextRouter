@@ -11,7 +11,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 
-const { formatPhone, formatCNPJ } = useInputFormat()
+const { formatPhone } = useInputFormat()
 const { getCEP } = useValidator()
 const { state: uploadState, upload: uploadImage } = useUploadImage()
 const transporteStore = useTransporteStore()
@@ -39,7 +39,7 @@ const memberSince = computed(() => {
 
 const completionPercent = computed(() => {
   if (!profileData.value) return 0
-  const fields = ['name', 'email', 'phone', 'bio', 'cnpj', 'corporate_name', 'address']
+  const fields = ['name', 'email', 'phone', 'bio', 'cnpj', 'company_name', 'address']
   return Math.round((fields.filter((f) => profileData.value[f]).length / fields.length) * 100)
 })
 
@@ -50,7 +50,7 @@ const editForm = reactive({
   phone: '',
   bio: '',
   cnpj: '',
-  corporate_name: '',
+  company_name: '',
 })
 
 const addressForm = reactive({
@@ -61,6 +61,8 @@ const addressForm = reactive({
   city: '',
   state: '',
 })
+
+const companyData = ref(null)
 
 const veiculosTotal = computed(() => transporteStore.veiculos.length)
 const veiculosAtivos = computed(
@@ -118,10 +120,24 @@ async function fetchProfile() {
   loading.value = true
   error.value = ''
   try {
-    const { data } = await api.get('/users/me/')
-    profileData.value = data
-    Object.assign(state.user, data)
-    localStorage.setItem('user', JSON.stringify(data))
+    const [userRes, companyRes] = await Promise.all([
+      api.get('/users/me/'),
+      api.get('/companies/me/').catch(() => null),
+    ])
+    const userData = userRes.data
+    userData.avatar = userData.profile_picture?.url || null
+    profileData.value = userData
+    companyData.value = companyRes?.data || null
+    Object.assign(state.user, userData)
+    if (companyRes?.data) {
+      state.user.cnpj = companyRes.data.cnpj
+      state.user.company_name = companyRes.data.legal_name
+      state.user.trade_name = companyRes.data.trade_name
+      state.user.is_approved = companyRes.data.is_approved
+      profileData.value.cnpj = companyRes.data.cnpj
+      profileData.value.company_name = companyRes.data.legal_name
+    }
+    localStorage.setItem('user', JSON.stringify(state.user))
   } catch {
     error.value = 'Erro ao carregar perfil'
     profileData.value = state.user
@@ -191,7 +207,7 @@ function toggleEditProfile() {
     phone: state.user.phone,
     bio: state.user.bio,
     cnpj: state.user.cnpj,
-    corporate_name: state.user.corporate_name,
+    company_name: state.user.company_name,
   })
 }
 
@@ -203,7 +219,7 @@ async function saveChanges() {
     phone: editForm.phone.replace(/\D/g, ''),
     bio: editForm.bio,
     cnpj: editForm.cnpj.replace(/\D/g, ''),
-    corporate_name: editForm.corporate_name,
+    company_name: editForm.company_name,
   }
   if (editForm.password) payload.password = editForm.password
   try {
@@ -377,12 +393,12 @@ function cancelAddressEdit() {
             <div class="info-grid">
               <div
                 v-for="item in [
-                  { label: 'Nome', value: state.user.name },
+                  { label: 'Nome Fantasia', value: state.user.trade_name || state.user.name },
+                  { label: 'Razão Social', value: state.user.company_name || '—' },
                   { label: 'Email', value: state.user.email },
                   { label: 'Telefone', value: state.user.phone || '—' },
                   { label: 'Senha', value: '••••••••••', cls: 'password-mask' },
                   { label: 'CNPJ', value: formatCNPJDisplay(state.user.cnpj) },
-                  { label: 'Razão Social', value: state.user.corporate_name || '—' },
                 ]"
                 :key="item.label"
                 class="info-item"
@@ -419,17 +435,14 @@ function cancelAddressEdit() {
                 placeholder="Fale um pouco sobre a empresa"
               />
               <div class="field-row">
-                <FormattedField
-                  v-model="editForm.cnpj"
-                  label="CNPJ"
-                  placeholder="00.000.000/0000-00"
-                  :format="formatCNPJ"
-                />
-                <FormField
-                  v-model="editForm.corporate_name"
-                  label="Razão Social"
-                  placeholder="Razão social"
-                />
+                <div class="field-group readonly">
+                  <label>CNPJ</label>
+                  <input :value="formatCNPJDisplay(state.user.cnpj)" disabled />
+                </div>
+                <div class="field-group readonly">
+                  <label>Razão Social</label>
+                  <input :value="state.user.company_name || state.user.trade_name || '—'" disabled />
+                </div>
               </div>
               <BaseButton variant="primary" block :loading="saving" @click="saveChanges"
                 >Salvar Alterações</BaseButton

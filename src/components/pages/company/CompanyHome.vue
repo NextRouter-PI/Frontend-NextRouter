@@ -80,7 +80,7 @@ const total = computed(() => store.veiculos.length)
   <div class="content">
 
     <div class="titulo">
-      <h2>Gerenciamento: {{ state.user.name }}</h2>
+      <h2>Gerenciamento: {{ state.user.company_name }}</h2>
       <span>{{ data }}</span>
     </div>
 
@@ -148,8 +148,7 @@ const total = computed(() => store.veiculos.length)
 }
 
 .info-card {
-  flex: 1 1 160px;
-  min-width: 140px;
+  min-width: 100%;
   display: flex;
   align-items: center;
   gap: 18px;
@@ -198,7 +197,7 @@ const total = computed(() => store.veiculos.length)
 }
 
 .btn-detalhes {
-  margin-top: 25px;
+  margin-top: 40px;
   float: right;
   background: var(--gradient-primary);
   color: white;
@@ -212,5 +211,12 @@ const total = computed(() => store.veiculos.length)
 
 .btn-detalhes:hover {
   opacity: 0.9;
+}
+
+@media (min-width: 900px) {
+  .info-card {
+    flex: 1 1 160px;
+    min-width: 140px;
+  }
 }
 </style>
