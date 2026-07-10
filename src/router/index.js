@@ -33,6 +33,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: "/cadastro-veiculo",
+      name: "cadastro-veiculo",
+      component: () => import("../components/pages/company/CadastrarVeiculo.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/veiculos/editar/:id",
+      name: "editar-veiculo",
+      component: () => import("../components/pages/company/EditarVeiculo.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
       path: "/login",
       name: "login",
       component: () => import("../views/LoginView.vue"),
@@ -83,9 +95,6 @@ const router = createRouter({
   ],
 });
 
-
-const ADMIN_URL = import.meta.env.VITE_ADMIN_URL
-
 router.beforeEach(async (to, from) => {
   const { checkAuth } = useLoginState()
 
@@ -106,13 +115,6 @@ router.beforeEach(async (to, from) => {
 
   if (to.meta.requiresAuth && !state.logged) {
     return { name: "login" };
-  }
-
-  if (state.user?.type === 'company' && to.name !== 'logout' && to.name !== 'login') {
-    const name = encodeURIComponent(state.user.name)
-    const token = state.access
-    window.location.href = `${ADMIN_URL}/?company=${name}&token=${token}`
-    return false
   }
 
   return true;

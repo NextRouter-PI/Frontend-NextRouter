@@ -2,8 +2,11 @@
 import Logo from "@/assets/images/logo.png"
 import { RouterLink } from "vue-router";
 import { useLoginState } from '@/stores/useLoginState'
+import { computed } from 'vue'
+import { state } from '@/stores/state'
 
 const { logout } = useLoginState()
+const isCompany = computed(() => state.user?.type === 'company')
 
 async function handleLogout() {
   await logout()
@@ -16,7 +19,7 @@ async function handleLogout() {
     <RouterLink :to="`/`" class="logo">
       <div class="logo-content">
         <img :src="Logo" alt="Logo">
-        <h1>NextRouter</h1>
+        <h1>NextRouter <small v-if="isCompany" class="admin-tag">ADMIN</small></h1>
       </div>
     </RouterLink>
 
@@ -32,14 +35,14 @@ async function handleLogout() {
         <small>Usuário</small>
       </router-link>
 
-      <router-link :to="`/transporte`" class="nav-item" title="Transporte">
-        <span class="mdi mdi-car"></span>
-        <small>Transporte</small>
+      <router-link :to="`/transporte`" class="nav-item" :title="isCompany ? 'Veículos' : 'Transporte'">
+        <span :class="isCompany ? 'mdi mdi-bus' : 'mdi mdi-car'"></span>
+        <small>{{ isCompany ? 'Veículos' : 'Transporte' }}</small>
       </router-link>
 
-      <router-link :to="`/lista`" class="nav-item" title="Lista">
-        <span class="mdi mdi-format-list-bulleted"></span>
-        <small>Lista</small>
+      <router-link :to="`/lista`" class="nav-item" :title="isCompany ? 'Rotas' : 'Lista'">
+        <span :class="isCompany ? 'mdi mdi-map-outline' : 'mdi mdi-format-list-bulleted'"></span>
+        <small>{{ isCompany ? 'Rotas' : 'Lista' }}</small>
       </router-link>
 
     </nav>
@@ -108,6 +111,13 @@ async function handleLogout() {
 .sidebar:hover .logo-content h1 {
   opacity: 1;
   transform: translateX(0);
+}
+
+.admin-tag {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--primary);
+  margin-left: 2px;
 }
 
 .nav {

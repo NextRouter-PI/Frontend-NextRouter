@@ -1,7 +1,10 @@
 <script setup>
 import { useLoginState } from '@/stores/useLoginState'
+import { computed } from 'vue'
+import { state } from '@/stores/state'
 
 const { logout } = useLoginState()
+const isCompany = computed(() => state.user?.type === 'company')
 
 async function handleLogout() {
   await logout()
@@ -20,14 +23,14 @@ async function handleLogout() {
       <small>Usuário</small>
     </router-link>
 
-    <router-link :to="`/transporte`" class="nav-item" title="Transporte">
-      <span class="mdi mdi-car"></span>
-      <small>Transporte</small>
+    <router-link :to="`/transporte`" class="nav-item" :title="isCompany ? 'Veículos' : 'Transporte'">
+      <span :class="isCompany ? 'mdi mdi-bus' : 'mdi mdi-car'"></span>
+      <small>{{ isCompany ? 'Veículos' : 'Transporte' }}</small>
     </router-link>
 
-    <router-link :to="`/lista`" class="nav-item" title="Lista">
-      <span class="mdi mdi-format-list-bulleted"></span>
-      <small>Lista</small>
+    <router-link :to="`/lista`" class="nav-item" :title="isCompany ? 'Rotas' : 'Lista'">
+      <span :class="isCompany ? 'mdi mdi-map-outline' : 'mdi mdi-format-list-bulleted'"></span>
+      <small>{{ isCompany ? 'Rotas' : 'Lista' }}</small>
     </router-link>
 
     <button class="nav-item logout-btn" title="Sair" @click="handleLogout">
@@ -104,5 +107,4 @@ async function handleLogout() {
   padding: 0;
   color: var(--text-muted);
 }
-
 </style>

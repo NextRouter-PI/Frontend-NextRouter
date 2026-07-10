@@ -10,6 +10,7 @@ import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
 import DateInput from '@/components/ui/DateInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import { state } from '@/stores/state'
 
 const router = useRouter()
 const registerState = useRegisterState()
@@ -78,6 +79,7 @@ const handleSubmit = async () => {
   if (registerState.state.success) {
     setTimeout(() => {
       router.push('/')
+      registerState.state.success = false
     }, 2000)
   }
 }
@@ -236,8 +238,7 @@ const handleSubmit = async () => {
             )
           "
         />
-      </div>
-      <button
+        <button
         type="button"
         class="btn-submit"
         @click="
@@ -251,6 +252,8 @@ const handleSubmit = async () => {
         <LoadingSpinner v-if="registerState.state.loading" />
         Avançar
       </button>
+      </div>
+      
       <div v-if="currentPage === 2" class="page-container">
         <h2 class="page-title">Revisão do <span class="highlight-orange">Cadastro</span></h2>
 
