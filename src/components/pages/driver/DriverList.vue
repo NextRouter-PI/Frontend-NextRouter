@@ -102,6 +102,7 @@ const formatarDataProxima = () => {
 
 <style scoped>
 .usuarios-list-container {
+  padding: 0 20px;
   min-height: 100vh;
 }
 

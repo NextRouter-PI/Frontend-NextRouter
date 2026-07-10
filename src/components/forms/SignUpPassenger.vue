@@ -10,7 +10,6 @@ import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
 import DateInput from '@/components/ui/DateInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import { state } from '@/stores/state'
 
 const router = useRouter()
 const registerState = useRegisterState()

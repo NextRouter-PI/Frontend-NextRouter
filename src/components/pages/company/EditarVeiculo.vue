@@ -70,6 +70,8 @@ const salvar = () => {
 <style scoped>
 .content {
     padding: 18px 18px 120px;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .top-bar {

@@ -144,7 +144,6 @@ onMounted(() => {
       <p>Nenhum dado de transporte disponível.</p>
     </div>
 
-    <button class="fab-button">+</button>
   </div>
 </template>
 
