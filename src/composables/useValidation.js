@@ -64,19 +64,17 @@ export function useValidator() {
     if (digits.length !== 11) return 'CPF inválido'
     if (/^(\d)\1{10}$/.test(digits)) return 'CPF inválido'
 
-    // TODO; Revisar validação e descomentar linhas em produção
-    /*
-        let sum = 0
-        for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i)
-        let remainder = (sum * 10) % 11
-        if (remainder === 10) remainder = 0
-        if (remainder !== parseInt(digits[9])) return 'CPF inválido'
-        sum = 0
-        for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i)
-        remainder = (sum * 10) % 11
-        if (remainder === 10) remainder = 0
-        if (remainder !== parseInt(digits[10])) return 'CPF inválido'
-      */
+    let sum = 0
+    for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i)
+    let remainder = (sum * 10) % 11
+    if (remainder === 10) remainder = 0
+    if (remainder !== parseInt(digits[9])) return 'CPF inválido'
+    sum = 0
+    for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i)
+    remainder = (sum * 10) % 11
+    if (remainder === 10) remainder = 0
+    if (remainder !== parseInt(digits[10])) return 'CPF inválido'
+
     return ''
   }
 
@@ -85,8 +83,6 @@ export function useValidator() {
     const digits = value.replace(/\D/g, '')
     if (digits.length !== 14) return 'CNPJ inválido'
 
-    // TODO; Revisar validação e descomentar linhas em produção
-    /*
     if (/^(\d)\1{13}$/.test(digits)) return 'CNPJ inválido'
     const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
     let sum = 0
@@ -103,7 +99,7 @@ export function useValidator() {
     if (remainder < 2) remainder = 0
     else remainder = 11 - remainder
     if (remainder !== parseInt(digits[13])) return 'CNPJ inválido'
-    */
+
     return ''
   }
 
@@ -195,6 +191,8 @@ export function useValidator() {
 
         data.state = body.state
         data.city = body.city
+        if (body.street) data.street = body.street
+        if (body.neighborhood) data.neighborhood = body.neighborhood
 
         // ? As mensagens de erro da api do brasilapi devem aparecer para o usuário? Descomentar se sim!
         /*

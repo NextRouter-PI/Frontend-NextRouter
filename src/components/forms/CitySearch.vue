@@ -1,40 +1,45 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
+import api from '@/api/client';
 
 const city = ref('');
 const selectedCompanyId = ref(null);
+const companies = ref([]);
+const loading = ref(false);
 
-const companies = [
-  {
-    id: 1,
-    city: 'São Paulo',
-    name: 'TransLog',
-    description: 'Serviço rápido e confiável para deslocamentos urbanos.',
-    address: 'Av. Paulista, 1000 - São Paulo, SP',
-    price: 'R$ 29,90 por corrida'
-  },
-  {
-    id: 2,
-    city: 'São Paulo',
-    name: 'CityRide',
-    description: 'Tecnologia para facilitar sua viagem na cidade.',
-    address: 'Rua das Flores, 255 - São Paulo, SP',
-    price: 'R$ 34,50 por corrida'
-  },
-  {
-    id: 3,
-    city: 'Rio de Janeiro',
-    name: 'Carioca Transportes',
-    description: 'Atendimento 24h na região do Rio de Janeiro.',
-    address: 'Av. Atlântica, 500 - Rio de Janeiro, RJ',
-    price: 'R$ 31,00 por corrida'
+function toList(data) {
+  return Array.isArray(data) ? data : data?.results || [];
+}
+
+function formatAddress(company) {
+  return [company.street, company.number, company.city, company.state]
+    .filter(Boolean)
+    .join(', ') || 'Endereço não informado';
+}
+
+async function fetchCompanies() {
+  loading.value = true;
+  try {
+    const { data } = await api.get('/companies/');
+    companies.value = toList(data).map((company) => ({
+      id: company.id,
+      city: company.city || '',
+      name: company.trade_name,
+      description: formatAddress(company),
+      address: formatAddress(company),
+      price: 'Consulte a empresa',
+    }));
+  } catch {
+    companies.value = [];
+  } finally {
+    loading.value = false;
   }
-];
+}
 
 const cityNormalized = computed(() => city.value.trim().toLowerCase());
 const availableCompanies = computed(() =>
-  companies.filter((company) =>
+  companies.value.filter((company) =>
     company.city.toLowerCase().includes(cityNormalized.value)
   )
 );
@@ -42,6 +47,10 @@ const availableCompanies = computed(() =>
 const toggleCompany = (id) => {
   selectedCompanyId.value = selectedCompanyId.value === id ? null : id;
 };
+
+onMounted(() => {
+  fetchCompanies();
+});
 </script>
 
 <template>

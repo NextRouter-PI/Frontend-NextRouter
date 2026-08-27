@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTransportState } from '@/stores/useTransportState'
+import LiveLocationMap from '@/components/ui/LiveLocationMap.vue'
 
 const router = useRouter()
 const { state, loadPassengerData } = useTransportState()
@@ -10,7 +11,7 @@ const transport = computed(() => state.passenger)
 
 const progressPercentage = computed(() => {
   if (!transport.value?.veiculo?.capacidade) return 0
-  return (transport.value.passageirosAtuais / transport.value.veiculo.capacidade) * 100
+  return (transport.value.passageirosNaRota / transport.value.veiculo.capacidade) * 100
 })
 
 const fullStars = computed(() => {
@@ -33,6 +34,10 @@ onMounted(() => {
 
     <div v-if="state.loading" class="card loading-card">
       <p>Carregando dados do transporte...</p>
+    </div>
+
+    <div v-else-if="transport && !transport.attached" class="card loading-card">
+      <p>Passageiro não anexado a Rota</p>
     </div>
 
     <template v-else-if="transport">
@@ -62,7 +67,7 @@ onMounted(() => {
 
         <div class="progress-section">
           <div class="progress-text">
-            {{ transport.passageirosAtuais }} / {{ transport.veiculo.capacidade }} ocupados
+            {{ transport.passageirosNaRota }} / {{ transport.veiculo.capacidade }} pessoas nesta rota
           </div>
           <div class="progress-track">
             <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
@@ -72,6 +77,15 @@ onMounted(() => {
         <button class="btn-primary" @click="goToPassengerHome">
           Acompanhar Rota <span class="mdi mdi-arrow-right"></span>
         </button>
+      </div>
+
+      <div v-if="transport.travelStatus === 'in_progress'" class="card info-card">
+        <h2 class="card-title">Localização do motorista ao vivo</h2>
+        <LiveLocationMap
+          :travel-id="transport.travelId"
+          auto-start-viewer
+          marker-label="Motorista"
+        />
       </div>
 
       <div class="card info-card">
@@ -109,12 +123,12 @@ onMounted(() => {
             </div>
           </div>
         </div>
-        <div class="driver-contact">
-          <div class="contact-item">
+        <div v-if="transport.motorista.email || transport.motorista.telefone" class="driver-contact">
+          <div v-if="transport.motorista.email" class="contact-item">
             <span class="mdi mdi-email-outline"></span>
             <span>{{ transport.motorista.email }}</span>
           </div>
-          <div class="contact-item">
+          <div v-if="transport.motorista.telefone" class="contact-item">
             <span class="mdi mdi-phone-outline"></span>
             <span>{{ transport.motorista.telefone }}</span>
           </div>

@@ -9,4 +9,13 @@ const uploadImage = (file, description = '') => {
     });
   };
 
+export const uploadDocument = (file, description = '') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (description) formData.append('description', description);
+    return api.post('/uploads/documents/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  };
+
 export default uploadImage;

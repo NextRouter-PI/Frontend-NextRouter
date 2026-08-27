@@ -5,6 +5,7 @@ import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 import FileUploadField from '@/components/ui/FileUploadField.vue'
 import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
+import CodeInput from '@/components/ui/CodeInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
@@ -23,6 +24,7 @@ const {
   formatCEP,
   goToNextPage,
   goToPreviousPage,
+  avancarParaVerificacao,
   handleSubmit,
   registerState,
   validateField,
@@ -36,12 +38,27 @@ const {
   isPhone,
   isEmail,
   isCEP,
+  codigo,
+  enviandoCodigo,
+  erroCodigo,
+  enviarCodigo,
+  cooldown,
+  enviandoDocumentos,
 } = useSignUpCompanyForm()
 
 const router = useRouter()
 
 const goBack = () => {
   router.push('/signup');
+}
+
+const onSubmit = async () => {
+  await handleSubmit()
+  if (registerState.state.success) {
+    setTimeout(() => {
+      router.push('/')
+    }, 2000)
+  }
 }
 </script>
 
@@ -65,7 +82,7 @@ const goBack = () => {
       </div>
     </div>
 
-    <form v-else class="signup-form" @submit.prevent="handleSubmit">
+    <form v-else class="signup-form" @submit.prevent="onSubmit">
       <div v-if="currentPage === 1">
         <h2 class="page-title">Informações da <span class="highlight-orange">Empresa</span></h2>
 
@@ -97,7 +114,7 @@ const goBack = () => {
           @input="clearFieldError('tradeName')"
           @blur="
             validateField(
-              page1Form.nomeFantasia,
+              page1Form.tradeName,
               [(v) => requiredField(v, 'Nome Fantasia')],
               'tradeName',
             )
@@ -163,6 +180,34 @@ const goBack = () => {
         />
         <div class="row-fields">
           <FormField
+            v-model="page1Form.street"
+            label="Rua"
+            placeholder="Nome da rua"
+            class="half"
+          />
+          <FormField
+            v-model="page1Form.number"
+            label="Número"
+            placeholder="Nº"
+            class="half"
+          />
+        </div>
+        <div class="row-fields">
+          <FormField
+            v-model="page1Form.neighborhood"
+            label="Bairro"
+            placeholder="Bairro"
+            class="half"
+          />
+          <FormField
+            v-model="page1Form.complement"
+            label="Complemento"
+            placeholder="Sala, andar... (opcional)"
+            class="half"
+          />
+        </div>
+        <div class="row-fields">
+          <FormField
             v-model="page1Form.city"
             label="Cidade"
             placeholder="Cidade do CEP"
@@ -198,10 +243,10 @@ const goBack = () => {
           :fileName="files.articlesOfAssociation.name"
           label="Contrato Social"
           required
-          accept=".pdf,.jpg,.jpeg,.png"
+          accept=".pdf"
           :disabled="registerState.state.loading"
           :error="fieldErrors.articlesOfAssociation"
-          hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
+          hint="Formato aceito: PDF"
           @update:fileName="files.articlesOfAssociation.name = $event"
           @error="errorMessage = $event"
         />
@@ -211,10 +256,10 @@ const goBack = () => {
           :fileName="files.stateOperatingLicense.name"
           label="Licença de Operação Estadual"
           required
-          accept=".pdf,.jpg,.jpeg,.png"
+          accept=".pdf"
           :disabled="registerState.loading"
           :error="fieldErrors.stateOperatingLicense"
-          hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
+          hint="Formato aceito: PDF"
           @update:fileName="files.stateOperatingLicense.name = $event"
           @error="errorMessage = $event"
         />
@@ -224,10 +269,10 @@ const goBack = () => {
           :fileName="files.certificateOfGoodStading.name"
           label="Certidões Negativas"
           required
-          accept=".pdf,.jpg,.jpeg,.png"
+          accept=".pdf"
           :disabled="registerState.state.loading"
           :error="fieldErrors.certificateOfGoodStading"
-          hint="Formatos aceitos: PDF, JPG, JPEG, PNG (máx. 10MB)"
+          hint="Formato aceito: PDF"
           @update:fileName="files.certificateOfGoodStading.name = $event"
           @error="errorMessage = $event"
         />
@@ -252,7 +297,7 @@ const goBack = () => {
           :disabled="registerState.state.loading"
           :error="fieldErrors.ceoName"
           @input="clearFieldError('ceoName')"
-          @blur="validateField(page3Form.ceoName, [(v) => required(v, 'Nome')], 'ceoName')"
+          @blur="validateField(page3Form.ceoName, [(v) => requiredField(v, 'Nome')], 'ceoName')"
         />
         <FormattedField
           v-model="page3Form.ceoCpf"
@@ -264,7 +309,7 @@ const goBack = () => {
           :format="formatCPF"
           :error="fieldErrors.ceoCpf"
           @input="clearFieldError('ceoCpf')"
-          @blur="validateField(page3Form.ceoCpf, [(v) => required(v, 'CPF') || isCPF(v)], 'ceoCpf')"
+          @blur="validateField(page3Form.ceoCpf, [(v) => requiredField(v, 'CPF') || isCPF(v)], 'ceoCpf')"
         />
         <FormField
           v-model="page3Form.loginEmail"
@@ -278,7 +323,7 @@ const goBack = () => {
           @blur="
             validateField(
               page3Form.loginEmail,
-              [(v) => required(v, 'Email de login') || isEmail(v)],
+              [(v) => requiredField(v, 'Email de login') || isEmail(v)],
               'loginEmail',
             )
           "
@@ -296,7 +341,7 @@ const goBack = () => {
           @blur="
             validateField(
               page3Form.password,
-              [(v) => required(v, 'Senha') || minLengthField(v, 6, 'Senha')],
+              [(v) => requiredField(v, 'Senha') || minLengthField(v, 6, 'Senha')],
               'password',
             )
           "
@@ -314,7 +359,7 @@ const goBack = () => {
           @blur="
             validateField(
               page3Form.passwordConfirm,
-              [(v) => required(v, 'Confirmação') || passwordMatch(v, page3Form.password, 'Senhas')],
+              [(v) => requiredField(v, 'Confirmação') || passwordMatch(v, page3Form.password)],
               'passwordConfirm',
             )
           "
@@ -387,6 +432,25 @@ const goBack = () => {
         </div>
       </div>
 
+      <div v-if="currentPage === 5">
+        <h2 class="page-title">Verificação de <span class="highlight-orange">E-mail</span></h2>
+        <p class="texto-principal">
+          Digite o código de verificação enviado para <strong>{{ page3Form.loginEmail }}</strong>
+        </p>
+
+        <CodeInput v-model="codigo" />
+
+        <p class="reenviar-texto">
+          <template v-if="cooldown > 0">Reenviar código em {{ cooldown }}s</template>
+          <template v-else>
+            Não recebeu?
+            <a href="#" @click.prevent="enviarCodigo(page3Form.loginEmail.trim().toLowerCase())">Enviar novo código</a>
+          </template>
+        </p>
+
+        <ErrorMessage v-if="erroCodigo" :message="erroCodigo" />
+      </div>
+
       <ErrorMessage :message="errorMessage" />
       <ErrorMessage v-if="registerState.state.error" :message="registerState.state.error" />
 
@@ -413,12 +477,23 @@ const goBack = () => {
 
         <button
           v-if="currentPage === 4"
+          type="button"
+          class="btn-submit"
+          :disabled="enviandoDocumentos || enviandoCodigo"
+          @click="avancarParaVerificacao"
+        >
+          <LoadingSpinner v-if="enviandoDocumentos || enviandoCodigo" />
+          {{ enviandoDocumentos ? 'Enviando documentos...' : enviandoCodigo ? 'Enviando código...' : 'Continuar' }}
+        </button>
+
+        <button
+          v-if="currentPage === 5"
           type="submit"
           class="btn-submit"
           :disabled="registerState.state.loading"
         >
           <LoadingSpinner v-if="registerState.state.loading" />
-          {{ registerState.state.loading ? 'Enviando cadastro...' : 'Enviar Cadastro' }}
+          {{ registerState.state.loading ? 'Enviando cadastro...' : 'Confirmar e Enviar Cadastro' }}
         </button>
       </div>
     </form>
@@ -639,6 +714,27 @@ const goBack = () => {
   flex-direction: column;
   gap: 8px;
   margin-top: 1rem;
+}
+
+.texto-principal {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.reenviar-texto {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 15px;
+}
+
+.reenviar-texto a {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 @media (max-width: 640px) {

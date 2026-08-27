@@ -33,6 +33,11 @@ async function handleLogout() {
       <small>{{ isCompany ? 'Rotas' : 'Lista' }}</small>
     </router-link>
 
+    <router-link v-if="isCompany" :to="`/usuarios`" class="nav-item" title="Usuários">
+      <span class="mdi mdi-account-group"></span>
+      <small>Usuários</small>
+    </router-link>
+
     <button class="nav-item logout-btn" title="Sair" @click="handleLogout">
       <span class="mdi mdi-logout"></span>
       <small>Sair</small>

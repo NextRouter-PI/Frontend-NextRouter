@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useLoginState } from '@/stores/useLoginState';
+import api from '@/api/client';
 
 import AuthBranding from "@/components/ui/AuthBranding.vue";
 import FloatingInput from "@/components/ui/FloatingInput.vue";
@@ -9,7 +9,6 @@ import PasswordField from "@/components/ui/PasswordField.vue";
 import CodeInput from "@/components/ui/CodeInput.vue";
 
 const router = useRouter();
-const { state, updatePassword } = useLoginState();
 const etapa = ref(1);
 const email = ref('');
 const codigo = ref(['', '', '', '', '', '']);
@@ -18,7 +17,7 @@ const novaSenha = ref('');
 const confirmarSenha = ref('');
 const erro = ref('');
 
-function enviarCodigo() {
+async function enviarCodigo() {
   erro.value = '';
 
   if (!email.value) {
@@ -26,19 +25,28 @@ function enviarCodigo() {
     return;
   }
 
-  if (email.value !== state._credentials.email) {
-    erro.value = 'Este e-mail não está registrado';
-    return;
+  try {
+    await api.post('/email-tokens/send-email/', {
+      email: email.value,
+      token_type: 'new-password',
+    });
+    senhaEmail.value = email.value;
+    etapa.value = 2;
+  } catch (error) {
+    erro.value = 'Não foi possível enviar o código. Verifique o e-mail informado.';
   }
-
-  console.log('Enviando código para:', email.value);
-  senhaEmail.value = email.value;
-  etapa.value = 2;
 }
 
-function enviarNovoCodigo() {
-  console.log('Reenviando código para:', senhaEmail.value);
+async function enviarNovoCodigo() {
   erro.value = '';
+  try {
+    await api.post('/email-tokens/send-email/', {
+      email: senhaEmail.value,
+      token_type: 'new-password',
+    });
+  } catch (error) {
+    erro.value = 'Não foi possível reenviar o código.';
+  }
 }
 
 function confirmarCodigo() {
@@ -50,18 +58,10 @@ function confirmarCodigo() {
     return;
   }
 
-  const codigoValidado = codigoCompleto === '000000' || /^\d{6}$/.test(codigoCompleto);
-
-  if (!codigoValidado) {
-    erro.value = 'Código inválido';
-    return;
-  }
-
-  console.log('Confirmando código:', codigoCompleto);
   etapa.value = 3;
 }
 
-function resetarSenha() {
+async function resetarSenha() {
   erro.value = '';
 
   if (!novaSenha.value) {
@@ -79,15 +79,19 @@ function resetarSenha() {
     return;
   }
 
-  const sucesso = updatePassword(senhaEmail.value, novaSenha.value);
+  try {
+    await api.post('/email-tokens/reset-password/', {
+      email: senhaEmail.value,
+      code: codigo.value.join(''),
+      password: novaSenha.value,
+    });
 
-  if (sucesso) {
-    console.log('Senha redefinida com sucesso para:', senhaEmail.value);
     setTimeout(() => {
       router.push('/login');
     }, 1000);
-  } else {
-    erro.value = 'Erro ao redefinir senha. Tente novamente.';
+  } catch (error) {
+    erro.value = 'Código inválido ou expirado. Tente novamente.';
+    etapa.value = 2;
   }
 }
 

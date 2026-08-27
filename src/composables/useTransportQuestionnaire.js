@@ -1,5 +1,7 @@
 import { ref, computed } from "vue";
 import { useQuestionarioState } from "@/stores/useQuestionnaireState";
+import api from "@/api/client";
+import { state as authState } from "@/stores/state";
 
 export function useTransportQuestionnaire() {
   const questionarioState = useQuestionarioState();
@@ -67,11 +69,26 @@ export function useTransportQuestionnaire() {
     isSubmitting.value = true;
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data: confirmationsData } = await api.get('/confirmations/', {
+        params: { user: authState.user?.id },
+      });
+      const confirmations = Array.isArray(confirmationsData)
+        ? confirmationsData
+        : confirmationsData?.results || [];
+      const currentConfirmation = confirmations[0];
 
-      if (questionarioState.submitForm()) {
-        console.log("Respostas enviadas:", questionarioState.state.responses);
+      if (!currentConfirmation) {
+        throw new Error('Nenhuma viagem disponível para confirmar presença.');
       }
+
+      const confirm = questionarioState.state.responses.transporteIda === 'sim';
+
+      await api.post('/confirmations/', {
+        travel: currentConfirmation.travel,
+        confirm,
+      });
+
+      questionarioState.submitForm();
     } catch (error) {
       console.error("Erro ao enviar respostas:", error);
     } finally {
