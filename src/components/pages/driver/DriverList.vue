@@ -4,89 +4,89 @@
       <h2>Questionário ({{ formatarDataProxima() }})</h2>
     </div>
 
-    <div class="schedule-selector">
-      <button class="arrow-button" @click="previousTime" aria-label="Horário anterior">
-        ‹
-      </button>
-      <div class="time-text">{{ selectedTime }}</div>
-      <button class="arrow-button" @click="nextTime" aria-label="Próximo horário">
-        ›
-      </button>
-    </div>
-
     <div class="list-container">
       <h3 class="list-title">Passageiros Designados</h3>
 
-      <div v-if="filteredPassengers.length > 0">
+      <div v-if="loading" class="no-passengers">Carregando passageiros...</div>
+
+      <div v-else-if="allPassengers.length > 0">
         <div
-          v-for="passenger in filteredPassengers"
+          v-for="passenger in allPassengers"
           :key="passenger.id"
           class="passenger-card"
         >
           <div class="passenger-name">{{ passenger.name }}</div>
           <div class="passenger-address">{{ passenger.address }}</div>
+          <div class="passenger-status" :class="passenger.confirmed ? 'confirmed' : 'pending'">
+            {{ passenger.confirmed ? 'Presença confirmada' : 'Aguardando confirmação' }}
+          </div>
         </div>
       </div>
 
       <div v-else class="no-passengers">
-        Nenhum passageiro designado para este horário
+        Nenhum passageiro designado para a viagem atual
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, onMounted } from "vue";
+import api from "@/api/client";
+import { state as authState } from "@/stores/state";
 
-const timeOptions = ["08:00", "12:00", "17:00"];
-const currentTimeIndex = ref(0);
-const selectedTime = computed(() => timeOptions[currentTimeIndex.value]);
+const allPassengers = ref([]);
+const loading = ref(false);
 
-const allPassengers = ref([
-  {
-    id: 1,
-    name: "João Silva",
-    address: "Rua A, 123 - Centro",
-    time: "08:00",
-  },
-  {
-    id: 2,
-    name: "Maria Santos",
-    address: "Av. B, 456 - Vila Nova",
-    time: "08:00",
-  },
-  {
-    id: 3,
-    name: "Pedro Costa",
-    address: "Rua C, 789 - Jardim",
-    time: "12:00",
-  },
-  {
-    id: 4,
-    name: "Ana Oliveira",
-    address: "Av. D, 321 - Centro",
-    time: "12:00",
-  },
-  {
-    id: 5,
-    name: "Carlos Mendes",
-    address: "Rua E, 654 - Vila",
-    time: "17:00",
-  },
-]);
+function toList(data) {
+  return Array.isArray(data) ? data : data?.results || [];
+}
 
-const filteredPassengers = computed(() => {
-  return allPassengers.value.filter((p) => p.time === selectedTime.value);
-});
+async function fetchOwnDriver() {
+  const { data } = await api.get("/drivers/");
+  const list = toList(data);
+  return list.find((d) => d.user_data?.id === authState.user?.id) || null;
+}
 
-const nextTime = () => {
-  currentTimeIndex.value = (currentTimeIndex.value + 1) % timeOptions.length;
-};
+async function loadPassengers() {
+  loading.value = true;
+  try {
+    const driver = await fetchOwnDriver();
+    if (!driver) {
+      allPassengers.value = [];
+      return;
+    }
 
-const previousTime = () => {
-  currentTimeIndex.value =
-    (currentTimeIndex.value - 1 + timeOptions.length) % timeOptions.length;
-};
+    const { data: travelsData } = await api.get("/travels/", { params: { driver: driver.id } });
+    const travels = toList(travelsData);
+    const travel =
+      travels.find((t) => t.status === "in_progress") ||
+      travels.find((t) => t.status === "scheduled") ||
+      travels[0] ||
+      null;
+
+    if (!travel) {
+      allPassengers.value = [];
+      return;
+    }
+
+    const { data: confirmationsData } = await api.get("/confirmations/", {
+      params: { travel: travel.id },
+    });
+    const confirmations = toList(confirmationsData);
+
+    allPassengers.value = confirmations.map((confirmation) => ({
+      id: confirmation.id,
+      name: confirmation.user_name || "Passageiro",
+      address: confirmation.user_address || "Endereço não informado",
+      confirmed: confirmation.confirm,
+    }));
+  } catch {
+    allPassengers.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
 
 const formatarDataProxima = () => {
   const amanha = new Date();
@@ -98,6 +98,10 @@ const formatarDataProxima = () => {
 
   return `${dia}/${mes}/${ano}`;
 };
+
+onMounted(() => {
+  loadPassengers();
+});
 </script>
 
 <style scoped>
@@ -200,6 +204,19 @@ const formatarDataProxima = () => {
 
 .passenger-address {
   font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.passenger-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.passenger-status.confirmed {
+  color: var(--success, #22c55e);
+}
+
+.passenger-status.pending {
   color: var(--text-muted);
 }
 

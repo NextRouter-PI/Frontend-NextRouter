@@ -1,14 +1,31 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useTransporteStore } from '@/stores/useTransporteStore';
 import { useRouter } from 'vue-router';
+import api from '@/api/client';
 
 const store = useTransporteStore();
 const busca = ref('');
 const filtroAtivo = ref('Todas');
+const routeGroups = ref([]);
 
-const alterarStatus = (id) => {
-  store.alterarStatus(id);
+function rotaNome(routeGroupId) {
+  return routeGroups.value.find((g) => g.id === routeGroupId)?.name || null;
+}
+
+onMounted(async () => {
+  store.fetchVeiculos();
+  try {
+    const { data: company } = await api.get('/companies/me/');
+    const { data } = await api.get('/company-route-groups/', { params: { company: company.id } });
+    routeGroups.value = Array.isArray(data) ? data : data.results || [];
+  } catch {
+    routeGroups.value = [];
+  }
+});
+
+const alterarStatus = async (id) => {
+  await store.alterarStatus(id);
   menuAberto.value = null;
 };
 
@@ -51,6 +68,10 @@ const toggleMenu = (id) => {
       </button>
     </div>
 
+    <p v-if="store.loading" class="status-message">Carregando veículos...</p>
+    <p v-else-if="store.error" class="status-message error">{{ store.error?.detail || 'Erro ao carregar veículos.' }}</p>
+    <p v-else-if="!veiculosFiltrados.length" class="status-message">Nenhum veículo encontrado.</p>
+
     <div class="list-container">
       <div v-for="veiculo in veiculosFiltrados" :key="veiculo.id" class="transport-card">
         <div class="card-header">
@@ -84,6 +105,28 @@ const toggleMenu = (id) => {
             <span class="mdi mdi-account-outline"></span>
             <span>{{ veiculo.motorista }}</span>
           </div>
+          <div class="detail-item" v-if="veiculo.ano">
+            <span class="mdi mdi-calendar-outline"></span>
+            <span>{{ veiculo.ano }}</span>
+          </div>
+          <div class="detail-item" v-if="veiculo.cor">
+            <span class="mdi mdi-palette-outline"></span>
+            <span>{{ veiculo.cor }}</span>
+          </div>
+          <div class="detail-item" v-if="veiculo.garageCep">
+            <span class="mdi mdi-garage-outline"></span>
+            <span>{{ veiculo.garageCep }}</span>
+          </div>
+          <div class="detail-item" v-if="rotaNome(veiculo.routeGroup)">
+            <span class="mdi mdi-map-marker-path"></span>
+            <span>{{ rotaNome(veiculo.routeGroup) }}</span>
+          </div>
+        </div>
+
+        <div v-if="veiculo.caracteristicas?.length" class="feature-chips">
+          <span v-for="feature in veiculo.caracteristicas" :key="feature" class="feature-chip">
+            {{ feature }}
+          </span>
         </div>
 
         <span :class="['status-tag', veiculo.status.toLowerCase()]">
@@ -235,6 +278,23 @@ const toggleMenu = (id) => {
   background: rgba(255, 255, 255, .1);
 }
 
+.feature-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.feature-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(223, 128, 26, 0.08);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
 .status-tag {
   display: inline-block;
   padding: 4px 12px;
@@ -283,5 +343,15 @@ const toggleMenu = (id) => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+}
+
+.status-message {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px 0;
+}
+
+.status-message.error {
+  color: var(--danger);
 }
 </style>

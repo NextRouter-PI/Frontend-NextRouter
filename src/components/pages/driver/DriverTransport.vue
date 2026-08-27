@@ -2,15 +2,23 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTransportState } from '@/stores/useTransportState'
+import { useTravelTracking } from '@/composables/useTravelTracking'
+import LiveLocationMap from '@/components/ui/LiveLocationMap.vue'
+import api from '@/api/client'
 
 const router = useRouter()
 const { state, loadDriverData } = useTransportState()
+const { state: tracking, startDriverTracking, stopTracking } = useTravelTracking()
+
+const startingRoute = ref(false)
+const locationError = ref('')
 
 const transport = computed(() => state.driver)
+const isInProgress = computed(() => transport.value?.travelStatus === 'in_progress')
 
 const progressPercentage = computed(() => {
   if (!transport.value?.veiculo?.capacidade) return 0
-  return (transport.value.passageirosAtuais / transport.value.veiculo.capacidade) * 100
+  return (transport.value.passageirosNaRota / transport.value.veiculo.capacidade) * 100
 })
 
 const visibleCount = ref(3)
@@ -27,7 +35,33 @@ const hiddenCount = computed(() => {
   return transport.value.passageiros.length - visibleCount.value
 })
 
-const goToDriverHome = () => {
+const toggleRota = async () => {
+  const travelId = transport.value?.travelId
+  if (!travelId) {
+    router.push({ name: 'home' })
+    return
+  }
+
+  startingRoute.value = true
+  locationError.value = ''
+
+  try {
+    if (isInProgress.value) {
+      await api.patch(`/travels/${travelId}/finish/`)
+      stopTracking()
+    } else {
+      await api.patch(`/travels/${travelId}/start/`)
+      startDriverTracking(travelId)
+    }
+  } catch {
+    locationError.value = isInProgress.value
+      ? 'Não foi possível terminar a rota.'
+      : 'Não foi possível iniciar a rota.'
+    startingRoute.value = false
+    return
+  }
+
+  startingRoute.value = false
   router.push({ name: 'home' })
 }
 
@@ -70,16 +104,30 @@ onMounted(() => {
 
         <div class="progress-section">
           <div class="progress-text">
-            {{ transport.passageirosAtuais }} / {{ transport.veiculo.capacidade }} ocupados
+            {{ transport.passageirosNaRota }} / {{ transport.veiculo.capacidade }} passageiros nesta rota
           </div>
           <div class="progress-track">
             <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
           </div>
         </div>
 
-        <button class="btn-primary" @click="goToDriverHome">
-          Iniciar Rota <span class="mdi mdi-arrow-right"></span>
+        <p v-if="locationError" class="location-warning">{{ locationError }}</p>
+
+        <button
+          class="btn-primary"
+          :class="{ 'btn-danger': isInProgress }"
+          :disabled="startingRoute"
+          @click="toggleRota"
+        >
+          <span v-if="startingRoute" class="mdi mdi-loading mdi-spin"></span>
+          <template v-else-if="isInProgress">Terminar Rota <span class="mdi mdi-flag-checkered"></span></template>
+          <template v-else>Iniciar Rota <span class="mdi mdi-arrow-right"></span></template>
         </button>
+      </div>
+
+      <div v-if="isInProgress && tracking.role === 'driver'" class="card info-card">
+        <h2 class="card-title">Sua localização ao vivo</h2>
+        <LiveLocationMap marker-label="Você" />
       </div>
 
       <div class="card info-card">
@@ -116,6 +164,12 @@ onMounted(() => {
                 {{ passageiro.embarque }} <span class="mdi mdi-arrow-right"></span> {{ passageiro.desembarque }}
               </span>
             </div>
+            <span
+              class="passenger-status"
+              :class="passageiro.confirmado ? 'confirmed' : passageiro.confirmado === false ? 'pending' : 'unknown'"
+            >
+              {{ passageiro.confirmado ? 'Confirmado' : passageiro.confirmado === false ? 'Pendente' : 'Sem resposta' }}
+            </span>
           </li>
         </ul>
         <button
@@ -296,6 +350,13 @@ onMounted(() => {
   transition: width 0.3s ease;
 }
 
+.location-warning {
+  font-size: 0.78rem;
+  color: var(--danger, #dc2626);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
 .btn-primary {
   width: 100%;
   background: var(--gradient-primary);
@@ -316,6 +377,16 @@ onMounted(() => {
 
 .btn-primary:active {
   opacity: 0.85;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary.btn-danger {
+  background: var(--danger, #dc2626);
+  box-shadow: none;
 }
 
 .info-card {
@@ -408,6 +479,27 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.passenger-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.passenger-status.confirmed {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--success);
+}
+.passenger-status.pending {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+}
+.passenger-status.unknown {
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-muted);
 }
 
 .passenger-avatar {

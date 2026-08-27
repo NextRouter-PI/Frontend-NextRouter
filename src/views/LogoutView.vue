@@ -6,7 +6,7 @@ import { state } from '@/stores/state'
 onMounted(async () => {
   localStorage.setItem('manualLogout', 'true')
   try {
-    await api.post('logout/')
+    await api.post('token/logout/')
   } catch (error) {
     console.error(error)
   }

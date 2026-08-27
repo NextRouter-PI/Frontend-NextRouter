@@ -83,7 +83,7 @@ async function checkAuth() {
 async function logout() {
   localStorage.setItem('manualLogout', 'true')
   try {
-    await api.post('logout/')
+    await api.post('token/logout/')
   } catch (error) {
     console.error(error)
   } finally {
