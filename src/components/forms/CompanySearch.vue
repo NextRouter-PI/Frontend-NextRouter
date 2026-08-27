@@ -1,44 +1,44 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
+import api from '@/api/client';
 
 const companySearch = ref('');
 const selectedCompanyId = ref(null);
+const companies = ref([]);
+const loading = ref(false);
 
-const companies = [
-  {
-    id: 1,
-    name: 'TransLog',
-    description: 'Empresa de transporte urbano com foco em eficiência e segurança.',
-    address: 'Av. Paulista, 1000 - São Paulo, SP',
-    contact: 'contato@translog.com.br'
-  },
-  {
-    id: 2,
-    name: 'CityRide',
-    description: 'Plataforma de mobilidade urbana com tecnologia avançada.',
-    address: 'Rua das Flores, 255 - São Paulo, SP',
-    contact: 'rh@cityride.com.br'
-  },
-  {
-    id: 3,
-    name: 'Carioca Transportes',
-    description: 'Transporte coletivo e particular na região metropolitana do Rio.',
-    address: 'Av. Atlântica, 500 - Rio de Janeiro, RJ',
-    contact: 'recrutamento@cariocatransportes.com.br'
-  },
-  {
-    id: 4,
-    name: 'MetroRide',
-    description: 'Serviços de transporte executivo e compartilhado.',
-    address: 'Rua XV de Novembro, 300 - Curitiba, PR',
-    contact: 'trabalhe@metroride.com.br'
+function toList(data) {
+  return Array.isArray(data) ? data : data?.results || [];
+}
+
+function formatAddress(company) {
+  return [company.street, company.number, company.city, company.state]
+    .filter(Boolean)
+    .join(', ') || 'Endereço não informado';
+}
+
+async function fetchCompanies() {
+  loading.value = true;
+  try {
+    const { data } = await api.get('/companies/');
+    companies.value = toList(data).map((company) => ({
+      id: company.id,
+      name: company.trade_name,
+      description: formatAddress(company),
+      address: formatAddress(company),
+      contact: company.contact_email || company.contact_phone || 'Não informado',
+    }));
+  } catch {
+    companies.value = [];
+  } finally {
+    loading.value = false;
   }
-];
+}
 
 const companySearchNormalized = computed(() => companySearch.value.trim().toLowerCase());
 const availableCompanies = computed(() =>
-  companies.filter((company) =>
+  companies.value.filter((company) =>
     company.name.toLowerCase().includes(companySearchNormalized.value) ||
     company.description.toLowerCase().includes(companySearchNormalized.value)
   )
@@ -47,6 +47,10 @@ const availableCompanies = computed(() =>
 const toggleCompany = (id) => {
   selectedCompanyId.value = selectedCompanyId.value === id ? null : id;
 };
+
+onMounted(() => {
+  fetchCompanies();
+});
 </script>
 
 <template>

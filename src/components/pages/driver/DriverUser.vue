@@ -2,6 +2,7 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { state } from '@/stores/state.js'
 import api from '@/api/client'
+import { uploadDocument } from '@/api/upload'
 import { useUploadImage } from '@/stores/useUploadImage'
 import { useInputFormat } from '@/composables/useInputFormat'
 import { useValidator } from '@/composables/useValidation'
@@ -10,7 +11,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 
-const { formatCPF, formatPhone } = useInputFormat()
+const { formatPhone } = useInputFormat()
 const { getCEP } = useValidator()
 const { state: uploadState, upload: uploadImage } = useUploadImage()
 
@@ -29,6 +30,9 @@ const touchStartY = ref(0)
 const pulling = ref(false)
 const cnhFileInput = ref(null)
 const cnhFile = ref(null)
+const driverId = ref(null)
+const cnhData = ref(null)
+const cnhUploading = ref(false)
 
 const memberSince = computed(() => {
   if (!profileData.value?.created_at) return ''
@@ -37,23 +41,28 @@ const memberSince = computed(() => {
 
 const completionPercent = computed(() => {
   if (!profileData.value) return 0
-  const fields = ['name', 'email', 'birthday', 'cpf', 'phone', 'bio', 'address']
+  const fields = ['name', 'email', 'birthday', 'cpf', 'phone', 'street', 'city', 'state']
   return Math.round((fields.filter(f => profileData.value[f]).length / fields.length) * 100)
 })
 
-const editForm = reactive({ name: '', email: '', password: '', birthday: '', cpf: '', phone: '', bio: '' })
-const addressForm = reactive({ cep: '', street: '', number: '', neighborhood: '', city: '', state: '' })
+const NOT_IN_DB = 'Não tem no banco'
 
-function parseAddress(addr) {
-  if (!addr) return {}
-  if (typeof addr === 'object') return addr
-  try { return JSON.parse(addr) } catch { return { raw: addr } }
+function orNotInDb(value) {
+  return value === null || value === undefined || value === '' ? NOT_IN_DB : value
 }
 
-function formatAddress(addr) {
-  const p = parseAddress(addr)
-  if (p.raw) return p.raw
-  return [p.street, p.number && `nº ${p.number}`, p.neighborhood, p.city && p.state && `${p.city} - ${p.state}`].filter(Boolean).join(', ') || 'Nenhum endereço cadastrado'
+const editForm = reactive({ name: '', birthday: '', phone: '' })
+const addressForm = reactive({ cep: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '' })
+
+function formatAddress(data) {
+  if (!data) return NOT_IN_DB
+  return [
+    data.street,
+    data.number && `nº ${data.number}`,
+    data.complement,
+    data.neighborhood,
+    data.city && data.state && `${data.city} - ${data.state}`,
+  ].filter(Boolean).join(', ') || NOT_IN_DB
 }
 
 function showToast(message, type = 'success') {
@@ -74,6 +83,20 @@ async function fetchProfile() {
     profileData.value = state.user
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchDriverRecord() {
+  try {
+    const { data } = await api.get('/drivers/')
+    const list = Array.isArray(data) ? data : data?.results || []
+    const driver = list.find((d) => d.user_data?.id === state.user?.id)
+    if (driver) {
+      driverId.value = driver.id
+      cnhData.value = driver.cnh_data || null
+    }
+  } catch {
+    driverId.value = null
   }
 }
 
@@ -104,6 +127,7 @@ function onTouchEnd() {
 
 onMounted(() => {
   fetchProfile()
+  fetchDriverRecord()
   window.addEventListener('touchstart', onTouchStart, { passive: true })
   window.addEventListener('touchmove', onTouchMove, { passive: true })
   window.addEventListener('touchend', onTouchEnd, { passive: true })
@@ -117,10 +141,12 @@ onUnmounted(() => {
 
 async function handlePhoto(file) {
   try {
-    const data = await uploadImage(file, 'avatar')
-    if (data?.url) {
-      profileData.value.avatar = data.url
-      state.user.avatar = data.url
+    const data = await uploadImage(file, `Foto de perfil de ${state.user.name}`)
+    if (data?.attachment_key) {
+      const { data: updated } = await api.patch('/users/me/', { profile_picture: data.attachment_key })
+      profileData.value = updated
+      Object.assign(state.user, updated)
+      localStorage.setItem('user', JSON.stringify(updated))
     }
     showToast('Foto atualizada!')
   } catch {
@@ -131,20 +157,22 @@ async function handlePhoto(file) {
 function toggleEditProfile() {
   isEditingProfile.value = !isEditingProfile.value
   if (!isEditingProfile.value) return
-  Object.assign(editForm, { name: state.user.name, email: state.user.email, password: '', birthday: state.user.birthday, cpf: state.user.cpf, phone: state.user.phone, bio: state.user.bio })
+  Object.assign(editForm, {
+    name: profileData.value?.name || '',
+    birthday: profileData.value?.birthday || '',
+    phone: profileData.value?.phone || '',
+  })
 }
 
 async function saveChanges() {
   saving.value = true
-  const payload = { name: editForm.name, email: editForm.email, birthday: editForm.birthday, cpf: editForm.cpf.replace(/\D/g, ''), phone: editForm.phone.replace(/\D/g, ''), bio: editForm.bio }
-  if (editForm.password) payload.password = editForm.password
+  const payload = { name: editForm.name, birthday: editForm.birthday, phone: editForm.phone.replace(/\D/g, '') }
   try {
     const { data } = await api.patch('/users/me/', payload)
     Object.assign(state.user, data)
     localStorage.setItem('user', JSON.stringify(data))
     profileData.value = data
     isEditingProfile.value = false
-    editForm.password = ''
     showToast('Perfil atualizado!')
   } catch {
     showToast('Erro ao salvar', 'error')
@@ -156,8 +184,15 @@ async function saveChanges() {
 function toggleEditAddress() {
   isEditingAddress.value = !isEditingAddress.value
   if (!isEditingAddress.value) return
-  const p = parseAddress(state.user.address)
-  Object.assign(addressForm, { cep: p.cep || '', street: p.street || '', number: p.number || '', neighborhood: p.neighborhood || '', city: p.city || '', state: p.state || '' })
+  Object.assign(addressForm, {
+    cep: profileData.value?.cep || '',
+    street: profileData.value?.street || '',
+    number: profileData.value?.number || '',
+    complement: profileData.value?.complement || '',
+    neighborhood: profileData.value?.neighborhood || '',
+    city: profileData.value?.city || '',
+    state: profileData.value?.state || '',
+  })
 }
 
 async function lookupCep() {
@@ -168,10 +203,19 @@ async function lookupCep() {
 async function saveAddress() {
   saving.value = true
   try {
-    const addr = JSON.stringify({ cep: addressForm.cep.replace(/\D/g, ''), street: addressForm.street, number: addressForm.number, neighborhood: addressForm.neighborhood, city: addressForm.city, state: addressForm.state })
-    const { data } = await api.patch('/users/me/', { address: addr })
-    state.user.address = data.address
-    profileData.value.address = data.address
+    const payload = {
+      cep: addressForm.cep.replace(/\D/g, ''),
+      street: addressForm.street,
+      number: addressForm.number,
+      complement: addressForm.complement,
+      neighborhood: addressForm.neighborhood,
+      city: addressForm.city,
+      state: addressForm.state,
+    }
+    const { data } = await api.patch('/users/me/', payload)
+    Object.assign(state.user, data)
+    localStorage.setItem('user', JSON.stringify(data))
+    profileData.value = data
     isEditingAddress.value = false
     showToast('Endereço atualizado!')
   } catch {
@@ -195,16 +239,33 @@ function handleCnhFile(event) {
   if (file) cnhFile.value = file
 }
 
-function saveCnh() {
-  if (cnhFile.value) {
-    state.user.cnhFile = cnhFile.value
-    state.user.cnhFileName = cnhFile.value.name
-    state.user.cnhFileSize = cnhFile.value.size
-    state.user.cnhFileType = cnhFile.value.type
+async function saveCnh() {
+  if (!cnhFile.value) return
+
+  cnhUploading.value = true
+  try {
+    const { data: document } = await uploadDocument(cnhFile.value, `CNH de ${state.user.name}`)
+
+    if (!driverId.value) {
+      await fetchDriverRecord()
+    }
+    if (!driverId.value) {
+      throw new Error('Motorista não encontrado')
+    }
+
+    const { data: updatedDriver } = await api.patch(`/drivers/${driverId.value}/`, {
+      cnh: document.attachment_key,
+    })
+    cnhData.value = updatedDriver.cnh_data || document
+
+    isEditingCnh.value = false
+    cnhFile.value = null
+    showToast('CNH atualizada!')
+  } catch {
+    showToast('Erro ao enviar CNH', 'error')
+  } finally {
+    cnhUploading.value = false
   }
-  isEditingCnh.value = false
-  cnhFile.value = null
-  showToast('CNH atualizada!')
 }
 
 function cancelCnhEdit() {
@@ -228,7 +289,7 @@ function cancelCnhEdit() {
 
     <div class="cover">
       <div class="cover-avatar">
-        <AvatarUploader v-if="profileData" :model-value="profileData.avatar" @file-select="handlePhoto" />
+        <AvatarUploader v-if="profileData" :model-value="profileData.profile_picture_data?.url" @file-select="handlePhoto" />
         <div v-if="uploadState.uploading" class="upload-overlay">
           <span class="mdi mdi-loading mdi-spin"></span>
         </div>
@@ -261,7 +322,6 @@ function cancelCnhEdit() {
         <div class="profile-head">
           <h1 class="profile-name">{{ state.user.name }}</h1>
           <p class="profile-tag">{{ state.user.email }}</p>
-          <p v-if="state.user.bio" class="profile-bio">{{ state.user.bio }}</p>
           <div class="profile-badge">
             <span class="mdi mdi-steering"></span>
             Motorista
@@ -304,12 +364,11 @@ function cancelCnhEdit() {
             </div>
             <div class="info-grid">
               <div v-for="item in [
-                { label: 'Nome', value: state.user.name },
-                { label: 'Email', value: state.user.email },
-                { label: 'Telefone', value: state.user.phone || '—' },
-                { label: 'Senha', value: '••••••••••', cls: 'password-mask' },
-                { label: 'Data de Nascimento', value: state.user.birthday || '—' },
-                { label: 'CPF', value: state.user.cpf || '—' },
+                { label: 'Nome', value: orNotInDb(state.user.name) },
+                { label: 'Email', value: orNotInDb(state.user.email) },
+                { label: 'Telefone', value: orNotInDb(state.user.phone) },
+                { label: 'Data de Nascimento', value: orNotInDb(state.user.birthday) },
+                { label: 'CPF', value: orNotInDb(state.user.cpf) },
               ]" :key="item.label" class="info-item">
                 <span class="info-label">{{ item.label }}</span>
                 <span class="info-value" :class="item.cls">{{ item.value }}</span>
@@ -324,14 +383,8 @@ function cancelCnhEdit() {
             </div>
             <form class="edit-form" @submit.prevent="saveChanges">
               <FormField v-model="editForm.name" label="Nome" required />
-              <FormField v-model="editForm.email" label="Email" type="email" required />
               <FormattedField v-model="editForm.phone" label="Telefone" placeholder="(99) 99999-9999" :format="formatPhone" />
-              <FormField v-model="editForm.password" label="Nova Senha" type="password" placeholder="Deixe em branco para manter" />
-              <FormField v-model="editForm.bio" label="Bio" placeholder="Fale um pouco sobre você" />
-              <div class="field-row">
-                <FormField v-model="editForm.birthday" label="Data de Nascimento" type="date" />
-                <FormattedField v-model="editForm.cpf" label="CPF" placeholder="000.000.000-00" :format="formatCPF" />
-              </div>
+              <FormField v-model="editForm.birthday" label="Data de Nascimento" type="date" />
               <BaseButton variant="primary" block :loading="saving" @click="saveChanges">Salvar Alterações</BaseButton>
             </form>
           </div>
@@ -348,8 +401,8 @@ function cancelCnhEdit() {
                 <span class="mdi mdi-home-outline"></span>
               </div>
               <div class="address-text">
-                <p>{{ formatAddress(state.user.address) }}</p>
-                <span v-if="state.user.address" class="address-hint">Clique no lápis para editar</span>
+                <p>{{ formatAddress(profileData) }}</p>
+                <span v-if="profileData?.street" class="address-hint">Clique no lápis para editar</span>
               </div>
               <button class="btn-icon" @click="toggleEditAddress">
                 <span class="mdi mdi-pencil-outline"></span>
@@ -364,6 +417,7 @@ function cancelCnhEdit() {
                 <FormField v-model="addressForm.street" label="Rua" placeholder="Nome da rua" />
                 <FormField v-model="addressForm.number" label="Número" placeholder="nº" />
               </div>
+              <FormField v-model="addressForm.complement" label="Complemento" placeholder="Apto, bloco, referência..." />
               <div class="field-row">
                 <FormField v-model="addressForm.neighborhood" label="Bairro" placeholder="Bairro" />
                 <FormField v-model="addressForm.city" label="Cidade" placeholder="Cidade" />
@@ -388,8 +442,10 @@ function cancelCnhEdit() {
                 <span class="mdi mdi-id-card"></span>
               </div>
               <div class="cnh-text">
-                <p>{{ state.user.cnhFileName || 'Nenhum arquivo cadastrado' }}</p>
-                <span v-if="state.user.cnhFileSize" class="cnh-hint">{{ (state.user.cnhFileSize / 1024).toFixed(1) }} KB</span>
+                <p>{{ cnhData ? (cnhData.description || 'CNH enviada') : NOT_IN_DB }}</p>
+                <span v-if="cnhData?.uploaded_on" class="cnh-hint">
+                  Enviado em {{ new Date(cnhData.uploaded_on).toLocaleDateString('pt-BR') }}
+                </span>
               </div>
               <button class="btn-icon" @click="toggleEditCnh">
                 <span class="mdi mdi-pencil-outline"></span>
@@ -401,7 +457,7 @@ function cancelCnhEdit() {
                 {{ cnhFile ? cnhFile.name : 'Selecionar arquivo' }}
               </BaseButton>
               <div class="address-actions">
-                <BaseButton variant="primary" size="sm" :disabled="!cnhFile" @click="saveCnh">Salvar</BaseButton>
+                <BaseButton variant="primary" size="sm" :disabled="!cnhFile" :loading="cnhUploading" @click="saveCnh">Salvar</BaseButton>
                 <BaseButton variant="outline" size="sm" @click="cancelCnhEdit">Cancelar</BaseButton>
               </div>
             </div>

@@ -10,7 +10,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 
-const { formatCPF, formatPhone } = useInputFormat()
+const { formatPhone } = useInputFormat()
 const { getCEP } = useValidator()
 const { state: uploadState, upload: uploadImage } = useUploadImage()
 
@@ -37,47 +37,43 @@ const memberSince = computed(() => {
 
 const completionPercent = computed(() => {
   if (!profileData.value) return 0
-  const fields = ['name', 'email', 'birthday', 'cpf', 'phone', 'bio', 'address']
+  const fields = ['name', 'email', 'birthday', 'cpf', 'phone', 'street', 'city', 'state']
   return Math.round((fields.filter((f) => profileData.value[f]).length / fields.length) * 100)
+})
+
+const hasLocation = computed(
+  () => profileData.value?.latitude != null && profileData.value?.longitude != null,
+)
+
+const mapsUrl = computed(() => {
+  if (!hasLocation.value) return null
+  return `https://www.google.com/maps?q=${profileData.value.latitude},${profileData.value.longitude}`
 })
 
 const editForm = reactive({
   name: '',
-  email: '',
-  password: '',
   birthday: '',
-  cpf: '',
   phone: '',
-  bio: '',
 })
 const addressForm = reactive({
   cep: '',
   street: '',
   number: '',
+  complement: '',
   neighborhood: '',
   city: '',
   state: '',
 })
 
-function parseAddress(addr) {
-  if (!addr) return {}
-  if (typeof addr === 'object') return addr
-  try {
-    return JSON.parse(addr)
-  } catch {
-    return { raw: addr }
-  }
-}
-
-function formatAddress(addr) {
-  const p = parseAddress(addr)
-  if (p.raw) return p.raw
+function formatAddress(data) {
+  if (!data) return 'Nenhum endereço cadastrado'
   return (
     [
-      p.street,
-      p.number && `nº ${p.number}`,
-      p.neighborhood,
-      p.city && p.state && `${p.city} - ${p.state}`,
+      data.street,
+      data.number && `nº ${data.number}`,
+      data.complement,
+      data.neighborhood,
+      data.city && data.state && `${data.city} - ${data.state}`,
     ]
       .filter(Boolean)
       .join(', ') || 'Nenhum endereço cadastrado'
@@ -147,10 +143,12 @@ onUnmounted(() => {
 
 async function handlePhoto(file) {
   try {
-    const data = await uploadImage(file, 'avatar')
-    if (data?.url) {
-      profileData.value.avatar = data.url
-      state.user.avatar = data.url
+    const data = await uploadImage(file, `Foto de perfil de ${state.user.name}`)
+    if (data?.attachment_key) {
+      const { data: updated } = await api.patch('/users/me/', { profile_picture: data.attachment_key })
+      profileData.value = updated
+      Object.assign(state.user, updated)
+      localStorage.setItem('user', JSON.stringify(updated))
     }
     showToast('Foto atualizada!')
   } catch {
@@ -162,13 +160,9 @@ function toggleEditProfile() {
   isEditingProfile.value = !isEditingProfile.value
   if (!isEditingProfile.value) return
   Object.assign(editForm, {
-    name: state.user.name,
-    email: state.user.email,
-    password: '',
-    birthday: state.user.birthday,
-    cpf: state.user.cpf,
-    phone: state.user.phone,
-    bio: state.user.bio,
+    name: profileData.value?.name || '',
+    birthday: profileData.value?.birthday || '',
+    phone: profileData.value?.phone || '',
   })
 }
 
@@ -176,20 +170,15 @@ async function saveChanges() {
   saving.value = true
   const payload = {
     name: editForm.name,
-    email: editForm.email,
     birthday: editForm.birthday,
-    cpf: editForm.cpf.replace(/\D/g, ''),
     phone: editForm.phone.replace(/\D/g, ''),
-    bio: editForm.bio,
   }
-  if (editForm.password) payload.password = editForm.password
   try {
     const { data } = await api.patch('/users/me/', payload)
     Object.assign(state.user, data)
     localStorage.setItem('user', JSON.stringify(data))
     profileData.value = data
     isEditingProfile.value = false
-    editForm.password = ''
     showToast('Perfil atualizado!')
   } catch {
     showToast('Erro ao salvar', 'error')
@@ -201,14 +190,14 @@ async function saveChanges() {
 function toggleEditAddress() {
   isEditingAddress.value = !isEditingAddress.value
   if (!isEditingAddress.value) return
-  const p = parseAddress(state.user.address)
   Object.assign(addressForm, {
-    cep: p.cep || '',
-    street: p.street || '',
-    number: p.number || '',
-    neighborhood: p.neighborhood || '',
-    city: p.city || '',
-    state: p.state || '',
+    cep: profileData.value?.cep || '',
+    street: profileData.value?.street || '',
+    number: profileData.value?.number || '',
+    complement: profileData.value?.complement || '',
+    neighborhood: profileData.value?.neighborhood || '',
+    city: profileData.value?.city || '',
+    state: profileData.value?.state || '',
   })
 }
 
@@ -220,17 +209,19 @@ async function lookupCep() {
 async function saveAddress() {
   saving.value = true
   try {
-    const addr = JSON.stringify({
+    const payload = {
       cep: addressForm.cep.replace(/\D/g, ''),
       street: addressForm.street,
       number: addressForm.number,
+      complement: addressForm.complement,
       neighborhood: addressForm.neighborhood,
       city: addressForm.city,
       state: addressForm.state,
-    })
-    const { data } = await api.patch('/users/me/', { address: addr })
-    state.user.address = data.address
-    profileData.value.address = data.address
+    }
+    const { data } = await api.patch('/users/me/', payload)
+    Object.assign(state.user, data)
+    localStorage.setItem('user', JSON.stringify(data))
+    profileData.value = data
     isEditingAddress.value = false
     showToast('Endereço atualizado!')
   } catch {
@@ -271,7 +262,7 @@ function cancelAddressEdit() {
       <div class="cover-avatar">
         <AvatarUploader
           v-if="profileData"
-          :model-value="profileData.avatar"
+          :model-value="profileData.profile_picture_data?.url"
           @file-select="handlePhoto"
         />
         <div v-if="uploadState.uploading" class="upload-overlay">
@@ -306,7 +297,6 @@ function cancelAddressEdit() {
         <div class="profile-head">
           <h1 class="profile-name">{{ state.user.name }}</h1>
           <p class="profile-tag">{{ state.user.email }}</p>
-          <p v-if="state.user.bio" class="profile-bio">{{ state.user.bio }}</p>
           <div class="profile-badge">
             <span class="mdi mdi-account-check"></span>
             Passageiro
@@ -357,7 +347,6 @@ function cancelAddressEdit() {
                   { label: 'Nome', value: state.user.name },
                   { label: 'Email', value: state.user.email },
                   { label: 'Telefone', value: state.user.phone || '—' },
-                  { label: 'Senha', value: '••••••••••', cls: 'password-mask' },
                   { label: 'Data de Nascimento', value: state.user.birthday || '—' },
                   { label: 'CPF', value: state.user.cpf || '—' },
                 ]"
@@ -377,33 +366,13 @@ function cancelAddressEdit() {
             </div>
             <form class="edit-form" @submit.prevent="saveChanges">
               <FormField v-model="editForm.name" label="Nome" required />
-              <FormField v-model="editForm.email" label="Email" type="email" required />
               <FormattedField
                 v-model="editForm.phone"
                 label="Telefone"
                 placeholder="(99) 99999-9999"
                 :format="formatPhone"
               />
-              <FormField
-                v-model="editForm.password"
-                label="Nova Senha"
-                type="password"
-                placeholder="Deixe em branco para manter"
-              />
-              <FormField
-                v-model="editForm.bio"
-                label="Bio"
-                placeholder="Fale um pouco sobre você"
-              />
-              <div class="field-row">
-                <FormField v-model="editForm.birthday" label="Data de Nascimento" type="date" />
-                <FormattedField
-                  v-model="editForm.cpf"
-                  label="CPF"
-                  placeholder="000.000.000-00"
-                  :format="formatCPF"
-                />
-              </div>
+              <FormField v-model="editForm.birthday" label="Data de Nascimento" type="date" />
               <BaseButton variant="primary" block :loading="saving" @click="saveChanges">
                 Salvar Alterações
               </BaseButton>
@@ -422,8 +391,8 @@ function cancelAddressEdit() {
                 <span class="mdi mdi-home-outline"></span>
               </div>
               <div class="address-text">
-                <p>{{ formatAddress(state.user.address) }}</p>
-                <span v-if="state.user.address" class="address-hint"
+                <p>{{ formatAddress(profileData) }}</p>
+                <span v-if="profileData?.street" class="address-hint"
                   >Clique no lápis para editar</span
                 >
               </div>
@@ -445,6 +414,11 @@ function cancelAddressEdit() {
                 <FormField v-model="addressForm.street" label="Rua" placeholder="Nome da rua" />
                 <FormField v-model="addressForm.number" label="Número" placeholder="nº" />
               </div>
+              <FormField
+                v-model="addressForm.complement"
+                label="Complemento"
+                placeholder="Apto, bloco, referência..."
+              />
               <div class="field-row">
                 <FormField v-model="addressForm.neighborhood" label="Bairro" placeholder="Bairro" />
                 <FormField v-model="addressForm.city" label="Cidade" placeholder="Cidade" />
@@ -465,6 +439,25 @@ function cancelAddressEdit() {
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <span class="mdi mdi-crosshairs-gps"></span>
+            <h2>Localização</h2>
+          </div>
+          <div v-if="hasLocation" class="location-card">
+            <div class="location-coords">
+              <span class="mdi mdi-map-marker"></span>
+              <span>{{ profileData.latitude.toFixed(6) }}, {{ profileData.longitude.toFixed(6) }}</span>
+            </div>
+            <a :href="mapsUrl" target="_blank" rel="noopener noreferrer" class="location-link">
+              Ver no mapa <span class="mdi mdi-open-in-new"></span>
+            </a>
+          </div>
+          <p v-else class="location-empty">
+            Localização ainda não calculada. Cadastre um endereço completo para gerar a localização.
+          </p>
         </div>
       </template>
     </div>
@@ -890,6 +883,44 @@ function cancelAddressEdit() {
   display: flex;
   gap: 8px;
   margin-top: 4px;
+}
+
+.location-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid rgba(223, 128, 26, 0.08);
+}
+.location-coords {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+.location-coords .mdi {
+  color: var(--primary);
+  font-size: 1.15rem;
+}
+.location-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.location-empty {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+  padding: 4px;
 }
 
 .btn-icon {

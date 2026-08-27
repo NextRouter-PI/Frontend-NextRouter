@@ -3,16 +3,19 @@ import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/stores/useRegisterState'
 import { useSignUpPassengerDriverForm } from '@/composables/useSignUpForm'
+import { useEmailVerification } from '@/composables/useEmailVerification'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 import SelectField from '@/components/ui/SelectField.vue'
 import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
 import DateInput from '@/components/ui/DateInput.vue'
+import CodeInput from '@/components/ui/CodeInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 const router = useRouter()
 const registerState = useRegisterState()
+const { codigo, enviandoCodigo, erroCodigo, enviarCodigo, codigoCompleto, cooldown } = useEmailVerification()
 
 const goBack = () => {
   router.push('/signup');
@@ -40,35 +43,58 @@ const {
   requiredField,
   isPasswordVisible,
   showPassword,
+  passwordMatch,
 } = useSignUpPassengerDriverForm()
 
 const form = reactive({
-  name: 'Fábio Longo de Moura',
-  day: '04',
-  month: '09',
-  year: '1986',
-  cpf: '123.456.789-00',
-  email: 'fabio.moura@ifc.edu.br',
-  phone: '(00) 00000-0000',
-  password: 'teste.123',
-  confirmPassword: 'teste.123',
-  genre: 'Masculino',
-  cep: '89232380',
-  city: 'Joinville',
-  state: 'SC',
+  name: '',
+  day: '',
+  month: '',
+  year: '',
+  cpf: '',
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: '',
+  genre: '',
+  cep: '',
+  street: '',
+  number: '',
+  complement: '',
+  neighborhood: '',
+  city: '',
+  state: '',
 })
+
+const avancarParaVerificacao = async () => {
+  const sucesso = await enviarCodigo(form.email.trim().toLowerCase())
+  if (sucesso) currentPage.value = 3
+}
 
 // TODO: Refatorar função (para usar try, catch e finally)
 const handleSubmit = async () => {
   if (!validarFormulario(form)) return
+
+  if (codigoCompleto().length !== 6) {
+    erroCodigo.value = 'Digite o código completo de 6 dígitos.'
+    return
+  }
 
   let formData = new FormData()
 
   formData.append('user_data.email', form.email.trim().toLowerCase())
   formData.append('user_data.cpf', form.cpf)
   formData.append('user_data.name', form.name.trim())
+  formData.append('user_data.phone', form.phone.replace(/\D/g, ''))
   formData.append('user_data.cep', form.cep)
+  formData.append('user_data.street', form.street)
+  formData.append('user_data.number', form.number)
+  formData.append('user_data.complement', form.complement)
+  formData.append('user_data.neighborhood', form.neighborhood)
+  formData.append('user_data.city', form.city)
+  formData.append('user_data.state', form.state)
   formData.append('user_data.password', form.password)
+  formData.append('user_data.code', codigoCompleto())
 
   const birthday = formatBirthday(form)
 
@@ -186,6 +212,34 @@ const handleSubmit = async () => {
         />
         <div class="row-fields">
           <FormField
+            v-model="form.street"
+            label="Rua"
+            placeholder="Nome da rua"
+            class="half"
+          />
+          <FormField
+            v-model="form.number"
+            label="Número"
+            placeholder="Nº"
+            class="half"
+          />
+        </div>
+        <div class="row-fields">
+          <FormField
+            v-model="form.neighborhood"
+            label="Bairro"
+            placeholder="Bairro"
+            class="half"
+          />
+          <FormField
+            v-model="form.complement"
+            label="Complemento"
+            placeholder="Apto, bloco... (opcional)"
+            class="half"
+          />
+        </div>
+        <div class="row-fields">
+          <FormField
             v-model="form.city"
             disabled
             label="Cidade"
@@ -214,7 +268,7 @@ const handleSubmit = async () => {
           @blur="
             validateField(
               form.password,
-              [(v) => required(v, 'Senha') || minLengthField(v, 6, 'Senha')],
+              [(v) => requiredField(v, 'Senha') || minLengthField(v, 6, 'Senha')],
               'password',
             )
           "
@@ -232,7 +286,7 @@ const handleSubmit = async () => {
           @blur="
             validateField(
               form.confirmPassword,
-              [(v) => required(v, 'Confirmação') || match(v, form.password, 'Senhas')],
+              [(v) => requiredField(v, 'Confirmação') || passwordMatch(v, form.password)],
               'confirmPassword',
             )
           "
@@ -293,16 +347,48 @@ const handleSubmit = async () => {
           </div>
         </div>
       </div>
+
+      <div v-if="currentPage === 3" class="page-container">
+        <h2 class="page-title">Verificação de <span class="highlight-orange">E-mail</span></h2>
+        <p class="texto-principal">
+          Digite o código de verificação enviado para <strong>{{ form.email }}</strong>
+        </p>
+
+        <CodeInput v-model="codigo" />
+
+        <p class="reenviar-texto">
+          <template v-if="cooldown > 0">Reenviar código em {{ cooldown }}s</template>
+          <template v-else>
+            Não recebeu?
+            <a href="#" @click.prevent="enviarCodigo(form.email.trim().toLowerCase())">Enviar novo código</a>
+          </template>
+        </p>
+
+        <ErrorMessage v-if="erroCodigo" :message="erroCodigo" />
+      </div>
+
       <ErrorMessage :message="errorMessage" />
       <ErrorMessage v-if="registerState.state.error" :message="registerState.state.error" />
+
       <button
         v-if="currentPage === 2"
+        type="button"
+        class="btn-submit"
+        :disabled="enviandoCodigo"
+        @click="avancarParaVerificacao"
+      >
+        <LoadingSpinner v-if="enviandoCodigo" />
+        {{ enviandoCodigo ? 'Enviando código...' : 'Continuar' }}
+      </button>
+
+      <button
+        v-if="currentPage === 3"
         type="submit"
         class="btn-submit"
         :disabled="registerState.state.loading"
       >
         <LoadingSpinner v-if="registerState.state.loading" />
-        {{ registerState.state.loading ? 'Enviando cadastro...' : 'Criar conta' }}
+        {{ registerState.state.loading ? 'Enviando cadastro...' : 'Confirmar e Criar Conta' }}
       </button>
     </form>
   </section>
@@ -478,6 +564,27 @@ const handleSubmit = async () => {
   text-align: right;
   flex: 1;
   margin-left: 1rem;
+}
+
+.texto-principal {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.reenviar-texto {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 15px;
+}
+
+.reenviar-texto a {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 @media (max-width: 640px) {

@@ -45,6 +45,36 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: "/cadastro-rota",
+      name: "cadastro-rota",
+      component: () => import("../components/pages/company/CadastrarRota.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/rotas/editar/:id",
+      name: "editar-rota",
+      component: () => import("../components/pages/company/EditarRota.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/usuarios",
+      name: "usuarios",
+      component: () => import("../components/pages/company/CompanyUsuarios.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/usuarios/motorista/:id",
+      name: "usuario-motorista",
+      component: () => import("../components/pages/company/UsuarioDetalhe.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/usuarios/passageiro/:id",
+      name: "usuario-passageiro",
+      component: () => import("../components/pages/company/UsuarioDetalhe.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
       path: "/login",
       name: "login",
       component: () => import("../views/LoginView.vue"),
