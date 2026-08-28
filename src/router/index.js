@@ -33,6 +33,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: "/escolher-empresa",
+      name: "escolher-empresa",
+      component: () => import("../views/CompanySelectionView.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
       path: "/cadastro-veiculo",
       name: "cadastro-veiculo",
       component: () => import("../components/pages/company/CadastrarVeiculo.vue"),

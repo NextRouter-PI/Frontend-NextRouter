@@ -36,8 +36,11 @@ onMounted(() => {
       <p>Carregando dados do transporte...</p>
     </div>
 
-    <div v-else-if="transport && !transport.attached" class="card loading-card">
+    <div v-else-if="transport && !transport.attached" class="card loading-card not-attached-card">
       <p>Passageiro não anexado a Rota</p>
+      <button class="btn-primary" @click="router.push({ name: 'escolher-empresa' })">
+        Escolher empresa <span class="mdi mdi-arrow-right"></span>
+      </button>
     </div>
 
     <template v-else-if="transport">
@@ -172,6 +175,16 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   min-height: 120px;
+}
+
+.not-attached-card {
+  flex-direction: column;
+  gap: 16px;
+}
+
+.not-attached-card .btn-primary {
+  width: auto;
+  padding: 10px 20px;
 }
 
 .loading-card p {
