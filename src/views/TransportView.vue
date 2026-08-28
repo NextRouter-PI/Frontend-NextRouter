@@ -9,7 +9,7 @@ const userLogged = computed(() => state)
 </script>
 
 <template>
-  <div v-if="!userLogged.checkingAuth">
+  <div v-if="!userLogged.checkingAuth && userLogged.user">
     <PassengerTransport v-if="userLogged.user.type == 'passenger'" />
     <DriverTransport v-else-if="userLogged.user.type == 'driver'" />
     <CompanyVeiculos v-else-if="userLogged.user.type == 'company'" />
