@@ -34,7 +34,6 @@ async function enviarLogin() {
 
 <template>
   <div class="auth-page" :class="{ desktop: !isMobile }">
-    <!-- Painel lateral: somente laptop/desktop -->
     <aside v-if="!isMobile" class="auth-side">
       <div class="side-content">
         <AuthBranding light />
