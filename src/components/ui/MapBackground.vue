@@ -37,7 +37,6 @@ const { state: tracking } = useTravelTracking()
 
 const mapContainer = ref(null)
 let map = null
-let selfMarker = null
 let trackingMarker = null
 let tileLayer = null
 let themeObserver = null
@@ -69,7 +68,7 @@ function ensureMap() {
   applyTileLayer(currentTheme())
 
   if (state.user?.latitude != null && state.user?.longitude != null) {
-    selfMarker = L.marker([state.user.latitude, state.user.longitude])
+    L.marker([state.user.latitude, state.user.longitude])
       .addTo(map)
       .bindPopup(props.selfMarkerLabel)
   }

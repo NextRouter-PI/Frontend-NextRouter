@@ -24,7 +24,8 @@ const {
   validateField,
   isCPF,
   isCEP,
-  isPhone
+  isPhone,
+  isStrongPassword
 } = useValidator()
 
 
@@ -58,12 +59,34 @@ export function useSignUpPassengerDriverForm() {
     isPasswordVisible.value = !isPasswordVisible.value
   }
 
+  // Aceita o mês pelo nome ("Março") ou pelo número ("3" / "03").
+  function resolveMonth(value) {
+    const text = String(value ?? '').trim().toLowerCase()
+    const byLabel = months.find((item) => item.label.toLowerCase() === text)
+    if (byLabel) return byLabel.value
+
+    const number = Number(text)
+    return Number.isInteger(number) && number >= 1 && number <= 12 ? String(number).padStart(2, '0') : null
+  }
+
+  function birthdayError(form) {
+    const day = Number(form.day)
+    const month = resolveMonth(form.month)
+    const year = Number(form.year)
+
+    if (!month) return 'Mês de nascimento inválido'
+    if (!Number.isInteger(year) || year < 1900 || year > currentYear) return 'Ano de nascimento inválido'
+
+    const date = new Date(year, Number(month) - 1, day)
+    const isRealDate = date.getFullYear() === year && date.getMonth() === Number(month) - 1 && date.getDate() === day
+    if (!Number.isInteger(day) || !isRealDate) return 'Data de nascimento inválida'
+    if (date > new Date()) return 'A data de nascimento não pode estar no futuro'
+    return ''
+  }
+
   function formatBirthday(form) {
-    const day = String(form.day).padStart(2, '0')
-
-    const month = months.find((item) => item.label === form.month)?.value || '01'
-
-    return `${form.year}-${month}-${day}`
+    const day = String(Number(form.day)).padStart(2, '0')
+    return `${form.year}-${resolveMonth(form.month)}-${day}`
   }
 
   function validarFormulario(form) {
@@ -72,12 +95,13 @@ export function useSignUpPassengerDriverForm() {
       { fn: () => requiredField(form.name, 'Nome completo'), field: 'name' }, { fn: () => requiredField(form.day, 'Dia de nascimento'), field: 'day' },
       { fn: () => requiredField(form.month, 'Mês de nascimento'), field: 'month' },
       { fn: () => requiredField(form.year, 'Ano de nascimento'), field: 'year' },
+      { fn: () => birthdayError(form), field: 'day' },
       { fn: () => requiredField(form.cpf, 'CPF') || isCPF(form.cpf), field: 'cpf', },
       { fn: () => requiredField(form.email, 'Email') || isEmail(form.email), field: 'email' },
 
       {
         fn: () =>
-          requiredField(form.password, 'Senha') || minLengthField(form.password, 6, 'Senha'),
+          requiredField(form.password, 'Senha') || isStrongPassword(form.password),
         field: 'password',
       },
       {
@@ -113,6 +137,7 @@ export function useSignUpPassengerDriverForm() {
     getCEP,
     isCEP,
     isCPF,
-    isPhone
+    isPhone,
+    isStrongPassword
   }
 }

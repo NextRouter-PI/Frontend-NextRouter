@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import api from '@/api/client';
+import { formatApiError } from '@/utils/apiErrors';
 
 function formatHour(value) {
   if (!value) return '';
@@ -115,7 +116,7 @@ export const useRotasStore = defineStore('rotas', {
         this.grupos = grupos;
         return true;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao carregar rotas';
+        this.error = formatApiError(error, 'Erro ao carregar rotas');
         return false;
       } finally {
         this.loading = false;
@@ -131,7 +132,7 @@ export const useRotasStore = defineStore('rotas', {
         });
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao cadastrar rota';
+        this.error = formatApiError(error, 'Erro ao cadastrar rota');
         return null;
       }
     },
@@ -145,7 +146,7 @@ export const useRotasStore = defineStore('rotas', {
         const { data } = await api.patch(`/company-route-groups/${id}/`, payload);
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao atualizar rota';
+        this.error = formatApiError(error, 'Erro ao atualizar rota');
         return null;
       }
     },
@@ -160,7 +161,7 @@ export const useRotasStore = defineStore('rotas', {
       } catch (error) {
         const responseData = error.response?.data;
         const detail = responseData?.detail || (typeof responseData === 'string' ? responseData : null);
-        this.error = responseData || error.message || 'Erro ao remover rota';
+        this.error = formatApiError(error, 'Erro ao remover rota');
         return {
           success: false,
           status: error.response?.status,
@@ -179,7 +180,7 @@ export const useRotasStore = defineStore('rotas', {
         });
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao cadastrar horário';
+        this.error = formatApiError(error, 'Erro ao cadastrar horário');
         return null;
       }
     },
@@ -193,7 +194,7 @@ export const useRotasStore = defineStore('rotas', {
         const { data } = await api.patch(`/route-schedules/${id}/`, payload);
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao atualizar horário';
+        this.error = formatApiError(error, 'Erro ao atualizar horário');
         return null;
       }
     },
@@ -204,7 +205,7 @@ export const useRotasStore = defineStore('rotas', {
         await api.delete(`/route-schedules/${id}/`);
         return true;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao remover horário';
+        this.error = formatApiError(error, 'Erro ao remover horário');
         return false;
       }
     },
@@ -215,7 +216,7 @@ export const useRotasStore = defineStore('rotas', {
         const { data } = await api.patch(`/vehicles/${vehicleId}/`, { route_group: routeGroupId });
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao atribuir veículo à rota';
+        this.error = formatApiError(error, 'Erro ao atribuir veículo à rota');
         return null;
       }
     },
@@ -226,7 +227,7 @@ export const useRotasStore = defineStore('rotas', {
         const { data } = await api.patch(`/drivers/${driverId}/`, { route_group: routeGroupId });
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao atribuir motorista à rota';
+        this.error = formatApiError(error, 'Erro ao atribuir motorista à rota');
         return null;
       }
     },
@@ -237,7 +238,7 @@ export const useRotasStore = defineStore('rotas', {
         const { data } = await api.patch(`/drivers/${driverId}/`, { route_group: null });
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao desvincular motorista da rota';
+        this.error = formatApiError(error, 'Erro ao desvincular motorista da rota');
         return null;
       }
     },
@@ -248,7 +249,7 @@ export const useRotasStore = defineStore('rotas', {
         const { data } = await api.patch(`/passengers/${passengerId}/`, { route_group: routeGroupId });
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao atribuir passageiro à rota';
+        this.error = formatApiError(error, 'Erro ao atribuir passageiro à rota');
         return null;
       }
     },
@@ -259,7 +260,7 @@ export const useRotasStore = defineStore('rotas', {
         const { data } = await api.patch(`/passengers/${passengerId}/`, { route_group: null });
         return data;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao desvincular passageiro da rota';
+        this.error = formatApiError(error, 'Erro ao desvincular passageiro da rota');
         return null;
       }
     },

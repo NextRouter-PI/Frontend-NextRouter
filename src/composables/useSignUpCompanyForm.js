@@ -4,6 +4,7 @@ import { useValidator } from '@/composables/useValidation'
 import { useInputFormat } from '@/composables/useInputFormat'
 import { useEmailVerification } from '@/composables/useEmailVerification'
 import { uploadDocument } from '@/api/upload'
+import { formatApiError } from '@/utils/apiErrors'
 
 const registerState = useRegisterState()
 
@@ -27,6 +28,7 @@ const {
   validateForm,
   validateField,
   minLengthField,
+  isStrongPassword,
   passwordMatch,
   getCEP,
   requiredField,
@@ -139,7 +141,21 @@ export function useSignUpCompanyForm() {
 
 
   function goToPreviousPage() {
+    erroCodigo.value = ''
+    registerState.reset()
     if (currentPage.value > 1) currentPage.value--
+  }
+
+  // Documentos já enviados (por campo): evita reenviar e duplicar arquivos a cada tentativa.
+  const arquivosEnviados = {}
+
+  async function enviarDocumento(campo, descricao) {
+    const arquivo = files[campo].file
+    if (arquivosEnviados[campo] !== arquivo) {
+      const { data } = await uploadDocument(arquivo, descricao)
+      documentKeys[campo] = data.attachment_key
+      arquivosEnviados[campo] = arquivo
+    }
   }
 
 
@@ -154,16 +170,13 @@ export function useSignUpCompanyForm() {
 
     enviandoDocumentos.value = true
     try {
-      const [articles, license, certificate] = await Promise.all([
-        uploadDocument(files.articlesOfAssociation.file, `Contrato social de ${page1Form.tradeName}`),
-        uploadDocument(files.stateOperatingLicense.file, `Licença de operação de ${page1Form.tradeName}`),
-        uploadDocument(files.certificateOfGoodStading.file, `Certidões negativas de ${page1Form.tradeName}`),
+      await Promise.all([
+        enviarDocumento('articlesOfAssociation', `Contrato social de ${page1Form.tradeName}`),
+        enviarDocumento('stateOperatingLicense', `Licença de operação de ${page1Form.tradeName}`),
+        enviarDocumento('certificateOfGoodStading', `Certidões negativas de ${page1Form.tradeName}`),
       ])
-      documentKeys.articlesOfAssociation = articles.data.attachment_key
-      documentKeys.stateOperatingLicense = license.data.attachment_key
-      documentKeys.certificateOfGoodStading = certificate.data.attachment_key
     } catch (error) {
-      errorMessage.value = 'Não foi possível enviar os documentos. Verifique se todos são PDFs válidos.'
+      errorMessage.value = formatApiError(error, 'Não foi possível enviar os documentos. Verifique se todos são PDFs válidos.')
       enviandoDocumentos.value = false
       return
     }
@@ -187,10 +200,10 @@ export function useSignUpCompanyForm() {
       // * Criação do objeto a ser enviado para api
       const formData = new FormData()
 
-      formData.append('user_data.email', page3Form.loginEmail)
+      formData.append('user_data.email', page3Form.loginEmail.trim().toLowerCase())
       formData.append('user_data.password', page3Form.password)
       formData.append('user_data.name', page3Form.ceoName)
-      formData.append('user_data.cpf', page3Form.ceoCpf)
+      formData.append('user_data.cpf', page3Form.ceoCpf.replace(/\D/g, ''))
       formData.append('user_data.code', codigoCompleto())
       formData.append('cnpj', page1Form.cnpj.replace(/[^\d]/g, ''))
       formData.append('trade_name', page1Form.tradeName)
@@ -210,21 +223,11 @@ export function useSignUpCompanyForm() {
       formData.append('state_operating_license_document', documentKeys.stateOperatingLicense)
       formData.append('certificate_of_good_stading_document', documentKeys.certificateOfGoodStading)
 
-      // Requisição
+      // Requisição (os erros da API ficam em registerState.state.error, já formatados)
       await registerState.registerCompany(formData)
-
-      if (registerState.state.error) errorMessage.value =
-        typeof registerState.state.error === 'string'
-          ? registerState.state.error
-          : JSON.stringify(registerState.state.error)
-
-      // * Erro de servidor ou de internet
     } catch (error) {
       console.error(error)
-      errorMessage.value =
-        error.response?.data?.message ||
-        error.message ||
-        'Erro ao cadastrar'
+      errorMessage.value = formatApiError(error, 'Erro ao cadastrar')
     }
   }
 
@@ -244,6 +247,7 @@ export function useSignUpCompanyForm() {
     isCNPJ,
     isCPF,
     minLengthField,
+    isStrongPassword,
     passwordMatch,
     validatePassword,
     goToNextPage,

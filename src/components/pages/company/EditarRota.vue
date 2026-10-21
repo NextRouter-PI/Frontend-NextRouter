@@ -42,7 +42,7 @@ onMounted(async () => {
         } else {
             erro.value = 'Rota não encontrada.'
         }
-    } catch (error) {
+    } catch {
         erro.value = 'Não foi possível carregar a rota.'
     } finally {
         carregando.value = false

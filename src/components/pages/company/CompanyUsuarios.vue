@@ -37,7 +37,7 @@ async function carregar() {
 
     motoristas.value = asList(driversData);
     passageiros.value = asList(passengersData);
-  } catch (error) {
+  } catch {
     erro.value = 'Não foi possível carregar os usuários da empresa.';
   } finally {
     carregando.value = false;

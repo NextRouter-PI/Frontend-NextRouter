@@ -1,10 +1,11 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/stores/useRegisterState'
 import { useSignUpPassengerDriverForm } from '@/composables/useSignUpForm'
 import { useEmailVerification } from '@/composables/useEmailVerification'
 import { uploadDocument } from '@/api/upload'
+import { formatApiError } from '@/utils/apiErrors'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 import SelectField from '@/components/ui/SelectField.vue'
@@ -18,6 +19,9 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 const router = useRouter()
 
 const registerState = useRegisterState()
+
+// Limpa o estado de um cadastro anterior (sucesso/erro) ao abrir a tela.
+onMounted(registerState.reset)
 const { codigo, enviandoCodigo, erroCodigo, enviarCodigo, codigoCompleto, cooldown } = useEmailVerification()
 const cnhAttachmentKey = ref('')
 const enviandoDocumento = ref(false)
@@ -42,7 +46,7 @@ const {
   validateField,
   requiredField,
   isEmail,
-  minLengthField,
+  isStrongPassword,
   passwordMatch,
   currentPage,
   getCEP,
@@ -78,15 +82,28 @@ const cnh = reactive({
   name: '',
 })
 
+// Arquivo da CNH já enviado: evita reenviar (e duplicar) a cada clique em "Continuar".
+let cnhArquivoEnviado = null
+
+const voltarPagina = () => {
+  erroCodigo.value = ''
+  registerState.reset()
+  currentPage.value -= 1
+}
+
 const avancarParaVerificacao = async () => {
   if (!validateField(cnh.file, [(v) => requiredField(v, 'Arquivo CNH')], 'cnh')) return
 
+  errorMessage.value = ''
   enviandoDocumento.value = true
   try {
-    const { data } = await uploadDocument(cnh.file, `CNH de ${form.name.trim()}`)
-    cnhAttachmentKey.value = data.attachment_key
+    if (cnhArquivoEnviado !== cnh.file) {
+      const { data } = await uploadDocument(cnh.file, `CNH de ${form.name.trim()}`)
+      cnhAttachmentKey.value = data.attachment_key
+      cnhArquivoEnviado = cnh.file
+    }
   } catch (error) {
-    errorMessage.value = 'Não foi possível enviar o arquivo da CNH. Verifique se é um PDF válido.'
+    errorMessage.value = formatApiError(error, 'Não foi possível enviar o arquivo da CNH. Verifique se é um PDF válido.')
     enviandoDocumento.value = false
     return
   }
@@ -108,7 +125,7 @@ const handleSubmit = async () => {
   let formData = new FormData()
 
   formData.append('user_data.email', form.email.trim().toLowerCase())
-  formData.append('user_data.cpf', form.cpf)
+  formData.append('user_data.cpf', form.cpf.replace(/\D/g, ''))
   formData.append('user_data.name', form.name.trim())
   formData.append('user_data.phone', form.phone.replace(/\D/g, ''))
   formData.append('user_data.cep', form.cep)
@@ -128,9 +145,7 @@ const handleSubmit = async () => {
 
   await registerState.registerDriver(formData)
   if (registerState.state.success) {
-    setTimeout(() => {
-      router.push('/')
-    }, 2000)
+    setTimeout(() => router.push({ name: 'login' }), 2000)
   }
 }
 </script>
@@ -299,7 +314,7 @@ const handleSubmit = async () => {
           v-model="form.password"
           label="Senha"
           required
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Mínimo 8 caracteres, não só números"
           :disabled="registerState.state.loading"
           :show-password="isPasswordVisible"
           :error="fieldErrors.password"
@@ -308,7 +323,7 @@ const handleSubmit = async () => {
           @blur="
             validateField(
               form.password,
-              [(v) => requiredField(v, 'Senha') || minLengthField(v, 6, 'Senha')],
+              [(v) => requiredField(v, 'Senha') || isStrongPassword(v)],
               'password',
             )
           "
@@ -415,10 +430,10 @@ const handleSubmit = async () => {
             <a href="#" @click.prevent="enviarCodigo(form.email.trim().toLowerCase())">Enviar novo código</a>
           </template>
         </p>
-
-        <ErrorMessage v-if="erroCodigo" :message="erroCodigo" />
       </div>
 
+      <!-- Fora das etapas: o erro ao enviar o código acontece na etapa de revisão e precisa aparecer nela -->
+      <ErrorMessage v-if="erroCodigo" :message="erroCodigo" />
       <ErrorMessage :message="errorMessage" />
       <ErrorMessage v-if="registerState.state.error" :message="registerState.state.error" />
 
@@ -441,6 +456,16 @@ const handleSubmit = async () => {
       >
         <LoadingSpinner v-if="registerState.state.loading" />
         {{ registerState.state.loading ? 'Enviando cadastro...' : 'Confirmar e Criar Conta' }}
+      </button>
+
+      <button
+        v-if="currentPage > 1"
+        type="button"
+        class="btn-back"
+        :disabled="enviandoCodigo || registerState.state.loading"
+        @click="voltarPagina"
+      >
+        Voltar e corrigir dados
       </button>
     </form>
   </section>
@@ -635,6 +660,23 @@ const handleSubmit = async () => {
   color: var(--primary);
   cursor: pointer;
   text-decoration: underline;
+}
+
+.btn-back {
+  width: 100%;
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+.btn-back:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {

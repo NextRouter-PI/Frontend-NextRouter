@@ -452,7 +452,7 @@ function cancelCnhEdit() {
               </button>
             </div>
             <div v-else class="cnh-edit">
-              <input ref="cnhFileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" hidden @change="handleCnhFile" />
+              <input ref="cnhFileInput" type="file" accept=".pdf" hidden @change="handleCnhFile" />
               <BaseButton variant="outline" icon="mdi-file-upload-outline" @click="cnhFileInput?.click()">
                 {{ cnhFile ? cnhFile.name : 'Selecionar arquivo' }}
               </BaseButton>

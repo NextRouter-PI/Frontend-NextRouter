@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 
-const props = defineProps({
+defineProps({
   fileName: { type: String, default: 'Nenhum arquivo selecionado' },
   fileUrl: { type: String, default: '' },
   localUrl: { type: String, default: '' },
@@ -33,7 +33,7 @@ function viewFile() {
     <input
       ref="inputRef"
       type="file"
-      accept=".pdf,image/*"
+      accept=".pdf"
       class="file-input-hidden"
       @change="handleFile"
     />

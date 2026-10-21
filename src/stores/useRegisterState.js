@@ -1,13 +1,13 @@
 import { reactive } from 'vue'
 import api from '@/api/client'
+import { formatApiError } from '@/utils/apiErrors'
 
 
 // Objeto de estado de registro
 const state = reactive({
   loading: false,
   success: false,
-  // String de texto informando qual o erro que é recebida das requisições e é atribuida a uma variável posteior que é exibida na tela do usuário
-  // TODO; Mensagens de erro recebidas do banco vêm aninhadas, seria muito bom se elas fossem tratadas!
+  // Mensagem de erro (já formatada e legível) exibida na tela do usuário
   error: null,
   // Objeto contendo o usuário após o login
   user: null
@@ -41,10 +41,7 @@ export function useRegisterState() {
       state.success = true
       state.user = response.data
     } catch (error) {
-      state.error =
-        error.response?.data ||
-        error.message ||
-        'Erro ao cadastrar'
+      state.error = formatApiError(error, 'Erro ao cadastrar. Verifique os dados e tente novamente.')
     } finally {
       state.loading = false
     }
@@ -52,6 +49,7 @@ export function useRegisterState() {
 
   return {
     state,
+    reset,
     registerPassenger: data => register('passenger', data),
     registerDriver: data => register('driver', data),
     registerCompany: data => register('company', data)

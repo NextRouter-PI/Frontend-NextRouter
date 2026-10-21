@@ -2,6 +2,8 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/api/client';
+import { formatApiError } from '@/utils/apiErrors';
+import { useValidator } from '@/composables/useValidation';
 
 import AuthBranding from "@/components/ui/AuthBranding.vue";
 import FloatingInput from "@/components/ui/FloatingInput.vue";
@@ -16,6 +18,7 @@ const senhaEmail = ref('');
 const novaSenha = ref('');
 const confirmarSenha = ref('');
 const erro = ref('');
+const { isStrongPassword } = useValidator();
 
 async function enviarCodigo() {
   erro.value = '';
@@ -25,15 +28,16 @@ async function enviarCodigo() {
     return;
   }
 
+  const emailNormalizado = email.value.trim().toLowerCase();
   try {
     await api.post('/email-tokens/send-email/', {
-      email: email.value,
+      email: emailNormalizado,
       token_type: 'new-password',
     });
-    senhaEmail.value = email.value;
+    senhaEmail.value = emailNormalizado;
     etapa.value = 2;
   } catch (error) {
-    erro.value = 'Não foi possível enviar o código. Verifique o e-mail informado.';
+    erro.value = formatApiError(error, 'Não foi possível enviar o código. Verifique o e-mail informado.');
   }
 }
 
@@ -45,7 +49,7 @@ async function enviarNovoCodigo() {
       token_type: 'new-password',
     });
   } catch (error) {
-    erro.value = 'Não foi possível reenviar o código.';
+    erro.value = formatApiError(error, 'Não foi possível reenviar o código.');
   }
 }
 
@@ -79,6 +83,12 @@ async function resetarSenha() {
     return;
   }
 
+  const erroSenha = isStrongPassword(novaSenha.value);
+  if (erroSenha) {
+    erro.value = erroSenha;
+    return;
+  }
+
   try {
     await api.post('/email-tokens/reset-password/', {
       email: senhaEmail.value,
@@ -90,8 +100,9 @@ async function resetarSenha() {
       router.push('/login');
     }, 1000);
   } catch (error) {
-    erro.value = 'Código inválido ou expirado. Tente novamente.';
-    etapa.value = 2;
+    erro.value = formatApiError(error, 'Código inválido ou expirado. Tente novamente.');
+    // Volta para a etapa do código só quando o problema é o código (e não a senha).
+    if (error.response?.data?.code) etapa.value = 2;
   }
 }
 

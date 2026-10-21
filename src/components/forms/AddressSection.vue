@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 
-const props = defineProps({
+defineProps({
   addresses: { type: Array, required: true },
   selectedIndex: { type: Number, default: 0 }
 })

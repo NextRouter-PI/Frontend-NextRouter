@@ -39,7 +39,7 @@ onMounted(async () => {
         if (routeGroups.value.length === 1) {
             veiculo.value.routeGroup = routeGroups.value[0].id;
         }
-    } catch (error) {
+    } catch {
         erro.value = 'Não foi possível carregar os grupos de rota da empresa.';
     }
 });

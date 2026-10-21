@@ -32,7 +32,7 @@ async function enviarCodigo() {
     });
     senhaEmail.value = email.value;
     etapa.value = 2;
-  } catch (error) {
+  } catch {
     erro.value = 'Não foi possível enviar o código. Verifique o e-mail informado.';
   }
 }
@@ -44,7 +44,7 @@ async function enviarNovoCodigo() {
       email: senhaEmail.value,
       token_type: 'new-password',
     });
-  } catch (error) {
+  } catch {
     erro.value = 'Não foi possível reenviar o código.';
   }
 }
@@ -89,7 +89,7 @@ async function resetarSenha() {
     setTimeout(() => {
       router.push('/login');
     }, 1000);
-  } catch (error) {
+  } catch {
     erro.value = 'Código inválido ou expirado. Tente novamente.';
     etapa.value = 2;
   }

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import api from '@/api/client';
+import { formatApiError } from '@/utils/apiErrors';
 
 const STATUS_TO_API = {
   Ativo: 'active',
@@ -61,7 +62,7 @@ export const useTransporteStore = defineStore('transporte', {
         this.veiculos = results.map(mapVehicleFromApi);
         return true;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao carregar veículos';
+        this.error = formatApiError(error, 'Erro ao carregar veículos');
         return false;
       } finally {
         this.loading = false;
@@ -75,7 +76,7 @@ export const useTransporteStore = defineStore('transporte', {
         this.veiculos.unshift(mapVehicleFromApi(data));
         return true;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao cadastrar veículo';
+        this.error = formatApiError(error, 'Erro ao cadastrar veículo');
         return false;
       }
     },
@@ -91,7 +92,7 @@ export const useTransporteStore = defineStore('transporte', {
         Object.assign(veiculo, mapVehicleFromApi(data));
         return true;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao alterar status do veículo';
+        this.error = formatApiError(error, 'Erro ao alterar status do veículo');
         return false;
       }
     },
@@ -104,7 +105,7 @@ export const useTransporteStore = defineStore('transporte', {
         if (index !== -1) this.veiculos[index] = mapVehicleFromApi(data);
         return true;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao atualizar veículo';
+        this.error = formatApiError(error, 'Erro ao atualizar veículo');
         return false;
       }
     },
@@ -116,7 +117,7 @@ export const useTransporteStore = defineStore('transporte', {
         this.veiculos = this.veiculos.filter(v => v.id !== id);
         return true;
       } catch (error) {
-        this.error = error.response?.data || error.message || 'Erro ao remover veículo';
+        this.error = formatApiError(error, 'Erro ao remover veículo');
         return false;
       }
     },

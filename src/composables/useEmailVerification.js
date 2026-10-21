@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue'
 import api from '@/api/client'
+import { formatApiError } from '@/utils/apiErrors'
 
 const RESEND_COOLDOWN_SECONDS = 60
 
@@ -39,10 +40,10 @@ export function useEmailVerification() {
       startCooldown()
       return true
     } catch (error) {
-      erroCodigo.value =
-        error.response?.data?.detail ||
-        error.response?.data?.email?.[0] ||
-        'Não foi possível enviar o código de verificação. Verifique o e-mail informado.'
+      erroCodigo.value = formatApiError(
+        error,
+        'Não foi possível enviar o código de verificação. Verifique o e-mail informado.',
+      )
       return false
     } finally {
       enviandoCodigo.value = false

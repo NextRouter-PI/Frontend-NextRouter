@@ -23,6 +23,7 @@ defineProps({
   color: var(--danger);
   font-size: 13px;
   font-weight: 500;
+  white-space: pre-line;
   margin-bottom: 12px;
 }
 

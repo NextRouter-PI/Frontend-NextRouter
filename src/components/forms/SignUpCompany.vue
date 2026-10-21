@@ -1,5 +1,6 @@
 <script setup>
 import { useSignUpCompanyForm } from '@/composables/useSignUpCompanyForm'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
@@ -33,7 +34,7 @@ const {
   passwordMatch,
   getCEP,
   isPasswordVisible,
-  minLengthField,
+  isStrongPassword,
   requiredField,
   isPhone,
   isEmail,
@@ -48,6 +49,9 @@ const {
 
 const router = useRouter()
 
+// Limpa o estado de um cadastro anterior (sucesso/erro) ao abrir a tela.
+onMounted(registerState.reset)
+
 const goBack = () => {
   router.push('/signup');
 }
@@ -55,9 +59,7 @@ const goBack = () => {
 const onSubmit = async () => {
   await handleSubmit()
   if (registerState.state.success) {
-    setTimeout(() => {
-      router.push('/')
-    }, 2000)
+    setTimeout(() => router.push({ name: 'login' }), 2000)
   }
 }
 </script>
@@ -332,7 +334,7 @@ const onSubmit = async () => {
           v-model="page3Form.password"
           label="Defina uma senha"
           required
-          placeholder="Mínimo 6 caracteres"
+          placeholder="Mínimo 8 caracteres, não só números"
           :disabled="registerState.state.loading"
           :show-password="isPasswordVisible"
           :error="fieldErrors.password"
@@ -341,7 +343,7 @@ const onSubmit = async () => {
           @blur="
             validateField(
               page3Form.password,
-              [(v) => requiredField(v, 'Senha') || minLengthField(v, 6, 'Senha')],
+              [(v) => requiredField(v, 'Senha') || isStrongPassword(v)],
               'password',
             )
           "
@@ -447,16 +449,16 @@ const onSubmit = async () => {
             <a href="#" @click.prevent="enviarCodigo(page3Form.loginEmail.trim().toLowerCase())">Enviar novo código</a>
           </template>
         </p>
-
-        <ErrorMessage v-if="erroCodigo" :message="erroCodigo" />
       </div>
 
+      <!-- Fora das etapas: o erro ao enviar o código acontece na etapa de revisão e precisa aparecer nela -->
+      <ErrorMessage v-if="erroCodigo" :message="erroCodigo" />
       <ErrorMessage :message="errorMessage" />
       <ErrorMessage v-if="registerState.state.error" :message="registerState.state.error" />
 
       <div class="button-group">
         <button
-          v-if="currentPage > 1 && currentPage < 4"
+          v-if="currentPage > 1"
           type="button"
           class="btn-back"
           @click="goToPreviousPage"

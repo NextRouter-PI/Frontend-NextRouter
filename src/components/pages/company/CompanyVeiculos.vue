@@ -69,7 +69,7 @@ const toggleMenu = (id) => {
     </div>
 
     <p v-if="store.loading" class="status-message">Carregando veículos...</p>
-    <p v-else-if="store.error" class="status-message error">{{ store.error?.detail || 'Erro ao carregar veículos.' }}</p>
+    <p v-else-if="store.error" class="status-message error">{{ store.error || 'Erro ao carregar veículos.' }}</p>
     <p v-else-if="!veiculosFiltrados.length" class="status-message">Nenhum veículo encontrado.</p>
 
     <div class="list-container">

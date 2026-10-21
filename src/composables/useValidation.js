@@ -126,8 +126,17 @@ export function useValidator() {
   }
 
 
+  // Mesmas regras do backend (validadores de senha do Django): mínimo de 8 caracteres e não pode ser só números.
+  function isStrongPassword(value) {
+    if (!value) return ''
+    const lengthErr = minLengthField(value, 8, 'Senha')
+    if (lengthErr) return lengthErr
+    if (/^\d+$/.test(value)) return 'A senha não pode conter apenas números'
+    return ''
+  }
+
   function validatePassword(password, confirmation) {
-    const lengthErr = minLengthField(password, 6, 'Senha');
+    const lengthErr = requiredField(password, 'Senha') || isStrongPassword(password);
     if (lengthErr) return lengthErr;
 
     if (confirmation !== undefined) {
@@ -231,6 +240,7 @@ export function useValidator() {
     isPhone,
     isCEP,
     validatePassword,
+    isStrongPassword,
     validateForm,
     getCEP
   }
