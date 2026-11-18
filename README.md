@@ -105,6 +105,17 @@ O mapeamento Figma → Vue → API e as evidências por revisão estão no
 [plano central](../PLANO_IMPLEMENTACAO.md). Cadastro, recuperação de senha,
 pesquisa/vínculo e telas operacionais ainda exigem seus próprios recortes.
 
+**Evidência de 2026-11-18:** 40/40 testes JS e ESLint focal aprovados. Smoke
+Vue/Django/Firefox aprovado sobre frontend
+`d468a325997a0ff18053d4d00cf20ca09876ec0f` e backend
+`07639fd372ee874cf226b871cc5be6c960273de6`: login/recarga, cookies HttpOnly,
+negação CSRF, perfis isolados, uma renovação entre duas abas após remoção controlada
+do cookie de access e logout propagado. Build real preparado/verificado pelo
+contrato existente. HTTP local/SQLite, sem TLS/WS, operação, instalação antiga
+offline ou validação visual/responsiva abrangente. Perfil Firefox configurado
+para bloquear cookies de terceiros; Internet bloqueada. Suíte focal do backend:
+21 descobertos, 20 passaram e 1 ignorado (concorrência exige PostgreSQL).
+
 ### Lint e correção automática
 
 O script pode alterar arquivos (`--fix`).
