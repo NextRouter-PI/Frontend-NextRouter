@@ -1,6 +1,17 @@
-# .
+# NextRouter — frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+Interface Vue do NextRouter. No workspace completo, este repositório fica em
+`frontend/`, ao lado de `backend/` e `doc/`. O planejamento e o contexto foram
+centralizados na raiz comum, um nível acima:
+
+- [Plano de implementação](../PLANO_IMPLEMENTACAO.md)
+- [Contexto do frontend e referências do Figma](../CONTEXTO_FRONTEND.md)
+- [Contrato da API](../CONTRATO_API.md)
+- [Build integrado ao Django](../BUILD_VUE.md)
+
+Se você clonou apenas este repositório, solicite acesso à raiz compartilhada
+para consultar esses documentos. Os comandos a seguir são executados aqui,
+no repositório frontend.
 
 ## Recommended IDE Setup
 
@@ -22,7 +33,7 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 ## Project Setup
 
 ```sh
-npm install
+npm ci
 ```
 
 ### Compile and Hot-Reload for Development
@@ -37,7 +48,12 @@ npm run dev
 npm run build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+`npm run build` gera o artefato do Vue; isso não valida a aplicação servida pelo
+Django. Consulte o guia de build para o empacotamento e as verificações integradas.
+
+### Lint e correção automática
+
+O script pode alterar arquivos (`--fix`).
 
 ```sh
 npm run lint
