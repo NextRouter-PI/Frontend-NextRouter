@@ -10,9 +10,9 @@ const userLogged = computed(() => state)
 
 <template>
   <div v-if="!userLogged.checkingAuth">
-    <PassengerList v-if="userLogged.user.type == 'passenger'" />
-    <DriverList v-else-if="userLogged.user.type == 'driver'" />
-    <CompanyRotas v-else-if="userLogged.user.type == 'company'" />
+    <PassengerList v-if="userLogged.role === 'passenger'" />
+    <DriverList v-else-if="userLogged.role === 'driver'" />
+    <CompanyRotas v-else-if="userLogged.role === 'company'" />
   </div>
   <div v-else>
     <p>Carregando...</p>

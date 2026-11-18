@@ -10,8 +10,8 @@ defineProps({
 
 <template>
   <div v-if="state.user" class="role-view">
-    <component :is="passageiroComponent" v-if="state.user.user_type === 'passenger'" />
-    <component :is="motoristaComponent" v-else-if="state.user.user_type === 'driver'" />
+    <component :is="passageiroComponent" v-if="state.role === 'passenger'" />
+    <component :is="motoristaComponent" v-else-if="state.role === 'driver'" />
     <p v-else>{{ empresaText }}</p>
   </div>
 </template>

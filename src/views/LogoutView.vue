@@ -1,37 +1,36 @@
 <script setup>
 import { onMounted } from 'vue'
-import api from '@/api/client'
+import { useRouter } from 'vue-router'
+import { useLoginState } from '@/stores/useLoginState'
 import { state } from '@/stores/state'
 
-onMounted(async () => {
-  localStorage.setItem('manualLogout', 'true')
-  try {
-    await api.post('token/logout/')
-  } catch (error) {
-    console.error(error)
-  }
-  localStorage.removeItem('access')
-  localStorage.removeItem('user')
-  state.logged = false
-  state.user = null
-  state.access = null
-  state.error = null
-  window.location.href = '/login'
-})
+const router = useRouter()
+const { logout } = useLoginState()
+async function leave() {
+  if (await logout()) window.location.replace(router.resolve({ name: 'login' }).href)
+}
+onMounted(leave)
 </script>
 
 <template>
-  <div class="logout-container">
-    <p>Saindo...</p>
-  </div>
+  <section class="logout-container">
+    <p v-if="state.loading" role="status">Saindo...</p>
+    <template v-else>
+      <p role="alert">{{ state.error }}</p>
+      <button type="button" @click="leave">Tentar sair novamente</button>
+      <RouterLink to="/">Voltar</RouterLink>
+    </template>
+  </section>
 </template>
 
 <style scoped>
 .logout-container {
-  display: flex;
+  display: grid;
   justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  color: var(--text-muted);
+  align-content: center;
+  gap: 1rem;
+  min-height: 80vh;
+  padding: 2rem;
+  color: var(--text);
 }
 </style>

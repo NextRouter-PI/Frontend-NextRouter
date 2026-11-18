@@ -50,7 +50,7 @@ onUnmounted(() => {
       <p class="subtitle">Bem-vindo ao NextRouter</p>
       <div class="badge">
         <span class="mdi mdi-account-check"></span>
-        {{ userLogged.type === 'passenger' ? 'Passageiro' : 'Motorista' }}
+        Passageiro
       </div>
 
       <div v-if="isSharing" class="tracking-card">

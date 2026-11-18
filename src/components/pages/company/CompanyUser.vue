@@ -119,7 +119,6 @@ async function fetchProfile() {
     profileData.value = userData
     companyData.value = companyRes?.data || null
     Object.assign(state.user, userData)
-    localStorage.setItem('user', JSON.stringify(userData))
   } catch {
     error.value = 'Erro ao carregar perfil'
     profileData.value = state.user
@@ -173,7 +172,6 @@ async function handlePhoto(file) {
       const { data: updated } = await api.patch('/users/me/', { profile_picture: data.attachment_key })
       profileData.value = updated
       Object.assign(state.user, updated)
-      localStorage.setItem('user', JSON.stringify(updated))
     }
     showToast('Foto atualizada!')
   } catch {

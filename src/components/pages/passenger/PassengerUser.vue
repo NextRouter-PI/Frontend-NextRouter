@@ -94,7 +94,6 @@ async function fetchProfile() {
     const { data } = await api.get('/users/me/')
     profileData.value = data
     Object.assign(state.user, data)
-    localStorage.setItem('user', JSON.stringify(data))
   } catch {
     error.value = 'Erro ao carregar perfil'
     profileData.value = state.user
@@ -148,7 +147,6 @@ async function handlePhoto(file) {
       const { data: updated } = await api.patch('/users/me/', { profile_picture: data.attachment_key })
       profileData.value = updated
       Object.assign(state.user, updated)
-      localStorage.setItem('user', JSON.stringify(updated))
     }
     showToast('Foto atualizada!')
   } catch {
@@ -176,7 +174,6 @@ async function saveChanges() {
   try {
     const { data } = await api.patch('/users/me/', payload)
     Object.assign(state.user, data)
-    localStorage.setItem('user', JSON.stringify(data))
     profileData.value = data
     isEditingProfile.value = false
     showToast('Perfil atualizado!')
@@ -220,7 +217,6 @@ async function saveAddress() {
     }
     const { data } = await api.patch('/users/me/', payload)
     Object.assign(state.user, data)
-    localStorage.setItem('user', JSON.stringify(data))
     profileData.value = data
     isEditingAddress.value = false
     showToast('Endereço atualizado!')

@@ -1,13 +1,13 @@
 <script setup>
-import { useLoginState } from '@/stores/useLoginState'
+import { useRouter } from 'vue-router'
 import { computed } from 'vue'
 import { state } from '@/stores/state'
 
-const { logout } = useLoginState()
-const isCompany = computed(() => state.user?.type === 'company')
+const router = useRouter()
+const isCompany = computed(() => state.role === 'company')
 
 async function handleLogout() {
-  await logout()
+  await router.push({ name: 'logout' })
 }
 </script>
 

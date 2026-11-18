@@ -10,9 +10,10 @@ const userLogged = computed(() => state)
 
 <template>
   <div v-if="userLogged.logged">
-    <PassengerHome v-if="userLogged.user.type == 'passenger'" />
-    <DriverHome v-else-if="userLogged.user.type == 'driver'" />
-    <CompanyHome v-else-if="userLogged.user.type == 'company'" />
+    <PassengerHome v-if="userLogged.role === 'passenger'" />
+    <DriverHome v-else-if="userLogged.role === 'driver'" />
+    <CompanyHome v-else-if="userLogged.role === 'company'" />
+    <p v-else role="status">Conta autenticada, mas sem um perfil único disponível nesta interface. Contate o suporte.</p>
   </div>
   <div v-else>
     <p>Carregando...</p>

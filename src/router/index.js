@@ -125,7 +125,7 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach(async (to, from) => {
+router.beforeEach(async (to) => {
   const { checkAuth } = useLoginState()
 
   if (to.meta.requiresAuth === false) {
@@ -135,7 +135,7 @@ router.beforeEach(async (to, from) => {
     document.documentElement.className = saved === "dark" ? "dark" : ""
   }
 
-  if (!state.logged && to.meta.requiresAuth) {
+  if (!state.initialized && to.name !== 'logout') {
     await checkAuth();
   }
 

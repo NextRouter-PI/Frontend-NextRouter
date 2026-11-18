@@ -1,5 +1,4 @@
 import { reactive } from 'vue'
-import { state as authState } from '@/stores/state'
 
 const state = reactive({
   travelId: null,
@@ -15,9 +14,8 @@ let socket = null
 let watchId = null
 
 function wsUrlFor(travelId) {
-  const apiUrl = import.meta.env.VITE_API_URL || ''
-  const base = apiUrl.replace(/^http/, 'ws').replace(/\/api\/?$/, '')
-  return `${base}/ws/travels/${travelId}/location/?token=${authState.access || ''}`
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${window.location.host}/ws/travels/${travelId}/location/`
 }
 
 function openSocket(travelId) {

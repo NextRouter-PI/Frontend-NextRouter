@@ -25,7 +25,8 @@ async function enviarLogin() {
   const sucesso = await login(form.email, form.senha)
 
   if (sucesso) {
-    router.push('/')
+    // Também descarta stores privados das telas ainda não consolidadas.
+    window.location.replace(router.resolve({ name: 'home' }).href)
   } else {
     erro.value = state.error || 'Email ou senha inválidos.'
   }
@@ -75,7 +76,7 @@ async function enviarLogin() {
         {{ state.loading ? 'Entrando...' : 'Entrar' }}
       </button>
 
-      <p v-if="erro" class="erro">{{ erro }}</p>
+      <p v-if="erro" class="erro" role="alert">{{ erro }}</p>
 
       <p class="forgot-link">
         Esqueceu a senha?
