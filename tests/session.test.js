@@ -80,6 +80,16 @@ test('conta sem perfil não recebe papel inventado', async (t) => {
   assert.equal(state.role, null)
 })
 
+test('type extra na identidade não substitui as leituras autorizadas de perfil', async (t) => {
+  const { session, state } = fixture(t, { get: async (path) => {
+    if (path === 'users/me/') return { data: { name: 'fixture', type: 'company' } }
+    if (path === 'passengers/me/') return { data: { id: 1 } }
+    throw failure(404)
+  } })
+  await session.checkAuth()
+  assert.equal(state.role, 'passenger')
+})
+
 test('login aceito com falha posterior não preserva a identidade da conta anterior', async (t) => {
   let changed = false
   const { session, state } = fixture(t, { login: async () => { changed = true }, get: async (path) => {

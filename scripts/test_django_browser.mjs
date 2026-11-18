@@ -170,11 +170,18 @@ print(json.dumps({'company_user_id':str(company_user.pk)}))
       if (message.type === 'error') callback.reject(new Error(`BiDi: ${message.error}`))
       else callback.resolve(message.result)
     })
+    transport.addEventListener('close', () => {
+      for (const callback of pending.values()) callback.reject(new Error('Smoke encerrado.'))
+      pending.clear()
+    })
     await command('session.new', { capabilities: {} })
     await command('session.subscribe', { events: ['network.beforeRequestSent', 'network.responseCompleted'] })
     await command('network.addIntercept', { phases: ['beforeRequestSent'] })
     await command('script.addPreloadScript', { functionDeclaration: `() => {
-      window.__sessionEvidence = { bearer: false, jwtInJson: false };
+      window.__sessionEvidence = {
+        bearer: sessionStorage.getItem('__smoke_bearer') === 'true',
+        jwtInJson: sessionStorage.getItem('__smoke_jwt') === 'true'
+      };
       const open = XMLHttpRequest.prototype.open;
       const header = XMLHttpRequest.prototype.setRequestHeader;
       XMLHttpRequest.prototype.open = function(method, url, ...rest) {
@@ -182,12 +189,16 @@ print(json.dumps({'company_user_id':str(company_user.pk)}))
           if (new URL(url, location.href).pathname === '/api/login/' && this.status === 200) {
             const data = JSON.parse(this.responseText);
             window.__sessionEvidence.jwtInJson ||= 'access' in data || 'refresh' in data;
+            sessionStorage.setItem('__smoke_jwt', String(window.__sessionEvidence.jwtInJson));
           }
         });
         return open.call(this, method, url, ...rest);
       };
       XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
-        if (name.toLowerCase() === 'authorization') window.__sessionEvidence.bearer = true;
+        if (name.toLowerCase() === 'authorization') {
+          window.__sessionEvidence.bearer = true;
+          sessionStorage.setItem('__smoke_bearer', 'true');
+        }
         return header.call(this, name, value);
       };
     }` })
@@ -230,7 +241,8 @@ print(json.dumps({'company_user_id':str(company_user.pk)}))
     await navigate(passenger.context, '/usuario')
     await logged(passenger.context)
     assert.equal(await evaluate(passenger.context, `fetch('/api/users/me/').then(r => r.json()).then(u => u.email === 'passenger@fixture.example.invalid')`), true)
-    assert.equal(await evaluate(passenger.context, `fetch('/api/users/${fixture.company_user_id}/').then(r => r.status)`), 404)
+    // /users/{id}/ é restrito ao admin, ao contrário dos recursos de domínio invisíveis (404).
+    assert.equal(await evaluate(passenger.context, `fetch('/api/users/${fixture.company_user_id}/').then(r => r.status)`), 403)
     assert.equal(await evaluate(passenger.context, `fetch('/api/memberships/', {method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'}).then(r => r.status)`), 403)
 
     stage = 'retirada do legado, expiração e refresh entre abas'

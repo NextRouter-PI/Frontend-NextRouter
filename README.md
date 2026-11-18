@@ -56,7 +56,7 @@ Django. Consulte o guia de build para o empacotamento e as verificações integr
 O cliente usa `/api/` na mesma origem, cookies HttpOnly e bootstrap CSRF; não
 espera JWT no JSON nem persiste usuário/tokens no storage. O papel vem das
 leituras próprias de perfil (`companies/me/`, `drivers/me/`, `passengers/me/`),
-não de um campo inventado em `users/me/`. Permissão continua no backend.
+sem depender de `type` em `users/me/`. Permissão continua no backend.
 
 GET pode repetir uma leitura uma vez após refresh coordenado por Web Locks.
 403 e mutações nunca disparam refresh/replay automático. Sem Web Locks, a sessão

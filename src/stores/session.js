@@ -8,7 +8,7 @@ export function sessionError(error, fallback) {
   return fallback
 }
 
-// A identidade é relida do servidor. Papel e vínculo não vêm de users/me/.
+// A identidade é relida do servidor; não depender de type/papel ou vínculo em users/me/.
 export function createAuthSession({ state, http }) {
   let checking = null
   let generation = 0
