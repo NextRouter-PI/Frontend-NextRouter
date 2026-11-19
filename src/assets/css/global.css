@@ -61,23 +61,20 @@ table {
   min-height: 100vh;
 }
 
-.main-content {
-  padding-top: 70px;
-}
-
 .main-content.logged {
-  padding-bottom: 65px;
+  padding-top: 80px;
+  padding-bottom: 80px;
 }
 
 .main-content.logged-desktop {
   margin-left: 100px;
-  padding-top: 0;
-  padding-bottom: 0;
+  padding-top: 80px;
+  padding-bottom: 24px;
 }
 
 @media (min-width: 901px) {
   .main-content.logged {
-    padding-bottom: 0;
+    padding-bottom: 24px;
   }
 }
 

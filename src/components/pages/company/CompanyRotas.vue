@@ -4,6 +4,7 @@ import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useToast } from '@/composables/useToast'
 import { useRouter } from 'vue-router'
+import TransportHistoryNotifications from '@/components/transport/TransportHistoryNotifications.vue'
 
 const store = useRotasStore()
 const scope = useAccountScope()
@@ -347,12 +348,15 @@ async function aplicarPedido(req) {
       </div>
     </transition>
 
-    <div class="tab-bar" role="tablist" aria-label="Programação habitual e operação por data">
+    <div class="tab-bar" role="tablist" aria-label="Programação habitual, operação por data e histórico">
       <button type="button" :class="['tab-btn', { active: aba === 'grupos' }]" @click="aba = 'grupos'">
         Grupos e Programação Habitual ({{ store.grupos.length }})
       </button>
       <button type="button" :class="['tab-btn', { active: aba === 'operacao' }]" @click="aba = 'operacao'">
         Atendimentos, Respostas e Viagens por Data ({{ store.diasAtendimento.length }})
+      </button>
+      <button type="button" :class="['tab-btn', { active: aba === 'historico' }]" @click="aba = 'historico'">
+        Avisos, Avaliações e Objetos Perdidos
       </button>
     </div>
 
@@ -419,7 +423,7 @@ async function aplicarPedido(req) {
     </template>
 
     <!-- ABA 2: ATENDIMENTO POR DATA, RESPOSTAS, CÁLCULO E PUBLICAÇÃO -->
-    <template v-else>
+    <template v-else-if="aba === 'operacao'">
       <section class="card-rota">
         <h3>Gerar Horizonte ou Cancelar Data</h3>
         <p class="card-subtitle">
@@ -639,6 +643,11 @@ async function aplicarPedido(req) {
           </div>
         </div>
       </div>
+    </template>
+
+    <!-- ABA 3: AVISOS, AVALIAÇÕES E OBJETOS PERDIDOS (6.5 e 6.6) -->
+    <template v-else>
+      <TransportHistoryNotifications />
     </template>
   </div>
 </template>

@@ -1,4 +1,6 @@
 <script setup>
+import { useId } from 'vue'
+
 defineProps({
   modelValue: String,
   label: String,
@@ -6,32 +8,41 @@ defineProps({
   disabled: { type: Boolean, default: false },
   placeholder: String,
   showPassword: { type: Boolean, default: false },
-  error: String
+  error: String,
 })
 
+const fieldId = useId()
 const emit = defineEmits(['update:modelValue', 'update:showPassword'])
 </script>
 
 <template>
   <div class="field-group" :class="{ 'has-error': error }">
-    <label v-if="label">
+    <label v-if="label" :for="fieldId">
       {{ label }} <span v-if="required" class="required">*</span>
     </label>
     <div class="password-input">
       <input
+        :id="fieldId"
         :value="modelValue"
-        @input="emit('update:modelValue', $event.target.value)"
         :type="showPassword ? 'text' : 'password'"
         :placeholder="placeholder"
         :disabled="disabled"
+        :required="required"
+        :aria-invalid="error ? true : undefined"
+        :aria-describedby="error ? `${fieldId}-error` : undefined"
+        @input="emit('update:modelValue', $event.target.value)"
       />
-      <span
+      <button
+        type="button"
         class="mdi toggle-password"
         :class="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+        :disabled="disabled"
+        :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+        :aria-pressed="showPassword"
         @click="emit('update:showPassword', !showPassword)"
-      ></span>
+      ></button>
     </div>
-    <p v-if="error" class="field-error">{{ error }}</p>
+    <p v-if="error" :id="`${fieldId}-error`" class="field-error">{{ error }}</p>
   </div>
 </template>
 
@@ -90,8 +101,11 @@ const emit = defineEmits(['update:modelValue', 'update:showPassword'])
 }
 
 .toggle-password {
+  border: none;
+  background: transparent;
+  padding: 4px;
   position: absolute;
-  right: 16px;
+  right: 12px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
@@ -99,5 +113,6 @@ const emit = defineEmits(['update:modelValue', 'update:showPassword'])
   font-size: 20px;
 }
 
-.toggle-password:hover { color: var(--primary); }
+.toggle-password:hover:not(:disabled) { color: var(--primary); }
+.toggle-password:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

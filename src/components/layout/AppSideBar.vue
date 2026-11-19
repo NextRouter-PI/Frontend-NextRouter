@@ -86,7 +86,7 @@ async function handleLogout() {
 .logo-content h1 {
   font-size: 18px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
 
   opacity: 0;
   transform: translateX(-10px);

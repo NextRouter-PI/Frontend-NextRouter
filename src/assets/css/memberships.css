@@ -28,5 +28,5 @@
   background: var(--superfice);
 }
 @media (min-width: 901px) {
-  .membership-workspace.authenticated { padding-left: 130px; }
+  .membership-workspace.authenticated { padding-left: 30px; }
 }

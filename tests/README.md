@@ -183,3 +183,25 @@ validação com dados fictícios de:
   pelo passageiro alocado/embarcado e pela empresa; tratar posição ausente/desatualizada
   (`stale`), códigos de fechamento (`4001/4003/4009/1009/1000`), reconexão após `refresh`
   e encerramento em `travel.closed`.
+
+## Validação focal pendente — R6 / Etapa 6 (6.5–6.6 e consolidação visual/técnica)
+
+Implementação com revisão estática somente. Nenhum teste foi criado/executado. Antes do
+aceite, autorizar validação com dados fictícios de:
+
+- **Avisos persistentes (`notifications/`, 6.6):** consultar avisos do próprio usuário
+  autenticado (sem expor avisos de terceiros, inclusive para staff) e marcar como lidos
+  (`POST /notifications/{id}/read/` idempotente).
+- **Avaliações e objetos perdidos (`driver-ratings/` e `lost-items/`, 6.5):** avaliar
+  motorista (`1..5` estrelas e comentário opcional) somente por passageiro com desembarque
+  registrado (`dropped_off`) em viagem finalizada e vínculo ativo; relatar objeto perdido
+  pelo passageiro desembarcado ou motorista da viagem finalizada com `operation_id` UUID
+  (verificando que outros alunos não veem relatos de terceiros e que ex-vinculados não
+  acessam histórico operacional); avançar custódia exclusivamente pela empresa dona na
+  sequência `reported → found → returned` (`POST /lost-items/{id}/transition/`), sem
+  reabertura ou exclusão.
+- **Consolidação visual e controles (`App.vue`, `global.css`, `theme.css`, `FormattedField`,
+  `SelectField`, `PasswordFieldSignUp`):** verificar espaçamento do `.main-content` com
+  `AppHeader`, `AppSideBar` (desktop > 900px) e `AppBottomNavigationBar` (mobile <= 900px);
+  contraste no tema escuro (`.dark`); colagem e saneamento numérico em `FormattedField`
+  sem bloqueio por `@keypress`; e associação `label`/`id`/`aria-invalid` nos inputs.

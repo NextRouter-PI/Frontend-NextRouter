@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/composables/useTravelTracking'
 import LiveLocationMap from '@/components/ui/LiveLocationMap.vue'
+import TransportHistoryNotifications from '@/components/transport/TransportHistoryNotifications.vue'
 
 const {
   state,
@@ -276,6 +277,8 @@ onMounted(async () => {
       <div v-else class="card loading-card">
         <p>Você não possui viagens designadas no momento.</p>
       </div>
+
+      <TransportHistoryNotifications />
     </template>
   </div>
 </template>

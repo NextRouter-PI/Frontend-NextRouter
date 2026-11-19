@@ -33,6 +33,11 @@
 .dark {
   --bg: #0e0d0c;
   --text: #e3dfda;
+  --primary-orange: #f48a1d;
+  --text-black: #1c1917;
+  --bg-white: #191716;
+  --input-border: #f48a1d;
+  --altbg: #151311;
 
   --superfice: #191716;
 

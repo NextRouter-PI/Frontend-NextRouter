@@ -31,7 +31,7 @@ router.beforeEach((to, from) => {
     <AppHeader v-if="state.logged" />
     <Sidebar v-if="!isMobile && state.logged" />
 
-    <main :class="state.logged ? 'logado' : ''">
+    <main :class="['main-content', { logged: state.logged, 'logged-desktop': state.logged && !isMobile }]">
       <router-view v-slot="{ Component }">
         <Transition :name="transitionName">
           <component :is="Component" />
@@ -44,12 +44,6 @@ router.beforeEach((to, from) => {
     />
   </div>
 </template>
-
-<style scoped>
-.logado{
-  margin: 80px 0;
-}
-</style>
 
 <!-- Sem scoped: as classes são aplicadas na raiz das páginas -->
 <style>

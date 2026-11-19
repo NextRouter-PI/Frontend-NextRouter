@@ -62,9 +62,11 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
   - `src/api/transport.js`: recursos de configuração habitual (`operational-points/`,
     `vehicles/`, `company-route-groups/`, `response-policies/`, `recurring-services/`,
     `group-memberships/`, `assign-group/`, `authorize-services/`, `automation/` e
-    `automation-status/`) e de operação datada (`service-days/`, `eligibilities/`,
-    `change-requests/`, `travels/`, `travel-participations/`, `route-snapshots/`,
-    `route-stops/`, `optimization-jobs/`, `driver-invitations/` e `companies/me/stats/`).
+    `automation-status/`), de operação datada (`service-days/`, `eligibilities/`,
+    `change-requests/`, `travels/`, `travel-participations/`, `participation-events/`,
+    `route-snapshots/`, `route-stops/`, `optimization-jobs/`, `driver-invitations/` e
+    `companies/me/stats/`) e de avisos e histórico autorizado (`notifications/`,
+    `driver-ratings/` e `lost-items/`).
   - `src/legacyPwa.js`: remoção seletiva das chaves antigas (`access`, `user`,
     `manualLogout`) do storage, desregistro de `/sw.js` e `/dev-sw.js` da mesma
     origem e limpeza apenas dos caches conhecidos (`api-cache`, `google-fonts-cache`,
@@ -111,12 +113,16 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     `SignUpView`, `ConfirmationView`, `ForgotPasswordView`, `LogoutView`, `UserView`,
     `AccountSecurityView`, `LinkedProfileView`, `ListView`, `TransportView`,
     `CompanyDirectoryView`, `MembershipsView`).
-  - `src/components/layout/`: `RoleBasedView.vue` (seleciona a tela por papel ativo),
-    `AppHeader.vue`, `AppSideBar.vue`, `AppBottomNavigationBar.vue`, `AvatarUpload.vue`.
+  - `src/components/layout/`: `AppHeader.vue`, `AppSideBar.vue`,
+    `AppBottomNavigationBar.vue`, `AvatarUpload.vue`.
   - `src/components/auth/` e `src/components/forms/`: login, redefinição de senha
     (`PasswordResetForm.vue`), confirmação de código e formulários de cadastro por perfil
-    (`SignUpPassenger.vue`, `SignUpDriver.vue`, `SignUpCompany.vue`, `AddressSection.vue`,
-    `CnhSection.vue`).
+    (`SignUpPassenger.vue`, `SignUpDriver.vue`, `SignUpCompany.vue`). Os componentes
+    órfãos `RoleBasedView.vue`, `AddressSection.vue` e `CnhSection.vue` foram retirados na R6.
+  - `src/components/transport/`: `TransportHistoryNotifications.vue` consolida avisos
+    persistentes (`notifications/` e `read/`), avaliações de viagens finalizadas
+    (`driver-ratings/`) e relato/transição de custódia de objetos perdidos (`lost-items/`
+    e `transition/`).
   - `src/components/profile/` e `src/components/account/`: cabeçalho/foto (`ProfileHeader.vue`),
     edição por seção (`ProfileFieldsSection.vue`), upload/download de documentos
     (`ProfileDocumentSlot.vue`), troca de e-mail (`EmailChangeForm.vue`) e sessões ativas

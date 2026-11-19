@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { useId } from 'vue'
+
+const props = defineProps({
   modelValue: [String, Number],
   label: String,
   required: { type: Boolean, default: false },
@@ -11,36 +13,42 @@ defineProps({
   onlyNumbers: { type: Boolean, default: false },
 })
 
+const fieldId = useId()
 const emit = defineEmits(['update:modelValue', 'blur'])
 
-const onlyNumbersKeypress = (event) => {
-  const keysAllowed = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-  const keyPressed = event.key
-
-  if (!keysAllowed.includes(keyPressed)) {
-    event.preventDefault()
+function handleInput(event) {
+  if (props.format) {
+    props.format(event, (v) => emit('update:modelValue', v))
+    return
   }
+  let value = event.target.value
+  if (props.onlyNumbers) {
+    value = String(value || '').replace(/\D/g, '')
+    if (props.maxlength) value = value.slice(0, Number(props.maxlength))
+    event.target.value = value
+  }
+  emit('update:modelValue', value)
 }
 </script>
 
 <template>
   <div class="field-group" :class="{ 'has-error': error }">
-    <label v-if="label"> {{ label }} <span v-if="required" class="required">*</span> </label>
+    <label v-if="label" :for="fieldId"> {{ label }} <span v-if="required" class="required">*</span> </label>
     <input
+      :id="fieldId"
       :value="modelValue"
-      @input="
-        format
-          ? format($event, (v) => emit('update:modelValue', v))
-          : emit('update:modelValue', $event.target.value)
-      "
       type="text"
+      :inputmode="onlyNumbers || format ? 'numeric' : undefined"
       :placeholder="placeholder"
-      @blur="$emit('blur', $event)"
       :maxlength="maxlength"
       :disabled="disabled"
-      @keypress="onlyNumbers ? onlyNumbersKeypress($event) : null"
+      :required="required"
+      :aria-invalid="error ? true : undefined"
+      :aria-describedby="error ? `${fieldId}-error` : undefined"
+      @input="handleInput"
+      @blur="$emit('blur', $event)"
     />
-    <p v-if="error" class="field-error">{{ error }}</p>
+    <p v-if="error" :id="`${fieldId}-error`" class="field-error">{{ error }}</p>
   </div>
 </template>
 

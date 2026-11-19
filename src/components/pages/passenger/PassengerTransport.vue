@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTransportState } from '@/stores/useTransportState'
 import LiveLocationMap from '@/components/ui/LiveLocationMap.vue'
+import TransportHistoryNotifications from '@/components/transport/TransportHistoryNotifications.vue'
 
 const router = useRouter()
 const { state, loadPassengerData } = useTransportState()
@@ -160,6 +161,8 @@ onMounted(() => {
           <RouterLink to="/lista" class="link-action">Responder atendimentos por data</RouterLink>
         </div>
       </div>
+
+      <TransportHistoryNotifications />
     </template>
   </div>
 </template>

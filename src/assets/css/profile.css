@@ -13,4 +13,4 @@
 .account-grid dd { margin: 0; overflow-wrap: anywhere; }
 .account-hint { font-size: 0.9rem; line-height: 1.5; }
 .account-form { margin-top: 16px; }
-@media (min-width: 901px) { .account-workspace.authenticated { padding-left: 130px; } }
+@media (min-width: 901px) { .account-workspace.authenticated { padding-left: 30px; } }

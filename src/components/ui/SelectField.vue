@@ -1,25 +1,30 @@
 <script setup>
+import { useId } from 'vue'
+
 defineProps({
   modelValue: String,
   label: String,
   options: { type: Array, default: () => [] },
   required: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
-  placeholder: { type: String, default: 'Selecione' }
+  placeholder: { type: String, default: 'Selecione' },
 })
 
+const fieldId = useId()
 const emit = defineEmits(['update:modelValue'])
 </script>
 
 <template>
   <div class="field-group">
-    <label v-if="label">
+    <label v-if="label" :for="fieldId">
       {{ label }} <span v-if="required" class="required">*</span>
     </label>
     <select
+      :id="fieldId"
       :value="modelValue"
-      @change="emit('update:modelValue', $event.target.value)"
       :disabled="disabled"
+      :required="required"
+      @change="emit('update:modelValue', $event.target.value)"
     >
       <option value="">{{ placeholder }}</option>
       <option
