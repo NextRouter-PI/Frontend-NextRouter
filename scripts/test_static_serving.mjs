@@ -162,18 +162,17 @@ Opções:
       ...process.env,
       DJANGO_SETTINGS_MODULE: 'nr_static_smoke_settings',
       PYTHONPATH: `${root}:${backendDir}`,
-      DEV_DATABASE_PATH: `${root}/db.sqlite3`,
-      DEV_PRIVATE_DOCUMENT_ROOT: `${root}/private`,
-      DEV_MEDIA_ROOT: `${root}/media`,
-      DEV_LAN_HOST: '',
-      DEV_OSRM_URL: '',
-      DEV_GEOCODING_URL: '',
+      NEXTROUTER_ENV_FILE: `${root}/empty.env`,
+      DATABASE_URL: `sqlite:///${root}/db.sqlite3`,
+      PRIVATE_DOCUMENT_ROOT: `${root}/private`,
+      MEDIA_ROOT: `${root}/media`,
+      NEXTROUTER_LAN_HOST: '',
       REDIS_URL: '',
       OSRM_URL: '',
       GEOCODING_URL: '',
       EMAIL_HOST: '',
       CLOUDINARY_URL: '',
-      DEV_SECRET_KEY: randomBytes(32).toString('hex'),
+      SECRET_KEY: randomBytes(32).toString('hex'),
       PYTHONDONTWRITEBYTECODE: '1',
       FRONTEND_REVISION: frontendRevision,
       BACKEND_REVISION: backendRevision,
@@ -230,7 +229,7 @@ print("PREPARE_OK")
     stage = 'inicialização do servidor Daphne'
     const port = await freePort(requestedPort)
     const origin = `http://127.0.0.1:${port}`
-    env.DEV_FRONTEND_ORIGIN = origin
+    env.FRONTEND_URL = origin
 
     process.stdout.write(`🚀 [3/4] Iniciando Daphne ASGI em ${origin}... `)
     const serverChild = spawn(

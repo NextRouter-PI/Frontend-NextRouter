@@ -65,11 +65,11 @@ async function main() {
     const env = {
       ...process.env,
       DJANGO_SETTINGS_MODULE: 'nr_vue_smoke_settings', PYTHONPATH: `${root}:${backend}`,
-      DEV_DATABASE_PATH: `${root}/db.sqlite3`, DEV_PRIVATE_DOCUMENT_ROOT: `${root}/private`,
-      DEV_MEDIA_ROOT: `${root}/media`, DEV_LAN_HOST: '', DEV_OSRM_URL: '', DEV_GEOCODING_URL: '',
+      NEXTROUTER_ENV_FILE: `${root}/empty.env`, DATABASE_URL: `sqlite:///${root}/db.sqlite3`,
+      PRIVATE_DOCUMENT_ROOT: `${root}/private`, MEDIA_ROOT: `${root}/media`, NEXTROUTER_LAN_HOST: '',
       REDIS_URL: '', OSRM_URL: '', GEOCODING_URL: '', EMAIL_HOST: '', CLOUDINARY_URL: '',
-      DEV_FRONTEND_ORIGIN: origin, FIXTURE_PASSWORD: password,
-      DEV_SECRET_KEY: randomBytes(32).toString('hex'), PYTHONDONTWRITEBYTECODE: '1',
+      FRONTEND_URL: origin, FIXTURE_PASSWORD: password,
+      SECRET_KEY: randomBytes(32).toString('hex'), PYTHONDONTWRITEBYTECODE: '1',
       FRONTEND_REVISION: frontendRevision, BACKEND_REVISION: backendRevision,
       SMOKE_ROOT: root,
     }
