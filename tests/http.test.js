@@ -45,14 +45,14 @@ test('mutações compartilham bootstrap e enviam CSRF, não Bearer', async (t) =
   }
 })
 
-test('login aceita somente detail/CSRF e usa o token rotacionado na próxima mutação', async (t) => {
+test('login envia CSRF, usa o token rotacionado e avisa outras abas', async (t) => {
   const sent = []
   const channel = { postMessage: (value) => sent.push(value), close() {} }
   const { client, calls, count } = fixture(t, ({ url }) => ({ data: url === 'csrf/'
     ? { csrfToken: 'csrf-antes' } : url === 'login/' ? { detail: 'Sessão iniciada.', csrfToken: 'csrf-depois' } : {} }), { channel })
-  const response = await client.login('aluno@example.invalid', 'senha-ficticia')
+  await client.login('aluno@example.invalid', 'senha-ficticia')
   await client.api.post('memberships/', {})
-  assert.deepEqual(Object.keys(response.data).sort(), ['csrfToken', 'detail'])
+  assert.equal(calls.find((config) => config.url === 'login/').headers.get('X-CSRFToken'), 'csrf-antes')
   assert.equal(count('csrf/'), 1)
   assert.equal(calls.find((config) => config.url === 'memberships/').headers.get('X-CSRFToken'), 'csrf-depois')
   assert.deepEqual(sent, ['changed'])

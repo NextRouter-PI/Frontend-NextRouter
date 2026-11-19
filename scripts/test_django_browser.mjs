@@ -9,7 +9,6 @@ import { resolve } from 'node:path'
 import process from 'node:process'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
-import { stopChild } from '../../backend/scripts/test_html_browser.mjs'
 
 async function freePort() {
   const server = createServer()
@@ -32,6 +31,8 @@ async function waitFor(condition, description) {
 async function main() {
   if (!process.argv.includes('--confirm-fictitious')) throw new Error('Exige --confirm-fictitious.')
   if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('O smoke exige Node >=22 já instalado.')
+  // A guarda pode ser verificada com o frontend sozinho, antes de importar o repositório irmão.
+  const { stopChild } = await import('../../backend/scripts/test_html_browser.mjs')
   const frontend = fileURLToPath(new URL('../', import.meta.url))
   const backend = resolve(frontend, '../backend')
   const python = resolve(backend, '.venv/bin/python')

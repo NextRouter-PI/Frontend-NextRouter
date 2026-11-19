@@ -33,6 +33,7 @@ HTTP na rede pode limitar GPS e renovação de sessão.
 
 ## Documentação
 
+- [Testes locais e smoke integrado](tests/README.md)
 - [Desenvolvimento e ambientes](../OPERACAO.md) · [Build integrado](../BUILD_VUE.md)
 - [Contrato da API](../CONTRATO_API.md) · [Plano e evidências](../PLANO_IMPLEMENTACAO.md)
 - [Contexto do frontend](../CONTEXTO_FRONTEND.md) · [Backend](../backend/README.md)
