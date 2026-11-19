@@ -9,15 +9,13 @@ const { state, loadPassengerData } = useTransportState()
 
 const transport = computed(() => state.passenger)
 
-const progressPercentage = computed(() => {
-  if (!transport.value?.veiculo?.capacidade) return 0
-  return (transport.value.passageirosNaRota / transport.value.veiculo.capacidade) * 100
-})
-
-const fullStars = computed(() => {
-  if (!transport.value?.motorista?.avaliacao) return 0
-  return Math.floor(transport.value.motorista.avaliacao)
-})
+const participationStatusLabel = {
+  allocated: 'Alocado na viagem',
+  on_board: 'Embarcado',
+  dropped_off: 'Desembarcado',
+  no_show: 'Ausente registrado',
+  withdrawn: 'Desistência registrada',
+}
 
 const goToPassengerHome = () => {
   router.push({ name: 'home' })
@@ -30,140 +28,205 @@ onMounted(() => {
 
 <template>
   <div class="transport-container">
-    <h2 class="page-title">Meu Transporte</h2>
+    <div class="header-row">
+      <h2 class="page-title">Meu Transporte</h2>
+      <button
+        type="button"
+        class="btn-outline"
+        :disabled="state.loading"
+        @click="loadPassengerData(transport?.travelId)"
+      >
+        Atualizar
+      </button>
+    </div>
+
+    <p v-if="state.error" class="error-banner" role="alert">{{ state.error }}</p>
 
     <div v-if="state.loading" class="card loading-card">
       <p>Carregando dados do transporte...</p>
     </div>
 
     <div v-else-if="transport && !transport.attached" class="card loading-card">
-      <p>Passageiro não anexado a Rota</p>
+      <div>
+        <p>Você ainda não possui participação ativa em grupo de atendimento.</p>
+        <p class="sub-text">
+          Estar vinculado a uma empresa não atribui grupo, ponto operacional, serviços autorizados ou viagem automaticamente.
+        </p>
+        <RouterLink to="/vinculos" class="link-action">Consultar meu vínculo empresarial</RouterLink>
+      </div>
     </div>
 
     <template v-else-if="transport">
-      <div class="card vehicle-card">
-        <div class="vehicle-header">
-          <div>
-            <span class="vehicle-model">{{ transport.veiculo.modelo }}</span>
-            <span class="vehicle-year">{{ transport.veiculo.ano }}</span>
-          </div>
-          <span class="vehicle-plate">{{ transport.veiculo.placa }}</span>
-        </div>
-
-        <div class="vehicle-details">
-          <span class="detail-tag">{{ transport.veiculo.cor }}</span>
-        </div>
-
-        <div class="vehicle-stats">
-          <div class="stat-item">
-            <span class="mdi mdi-seat"></span>
-            <span>{{ transport.veiculo.capacidade }} lugares</span>
-          </div>
-          <div class="stat-item">
-            <span class="mdi mdi-account"></span>
-            <span>{{ transport.motorista.nome }}</span>
-          </div>
-        </div>
-
-        <div class="progress-section">
-          <div class="progress-text">
-            {{ transport.passageirosNaRota }} / {{ transport.veiculo.capacidade }} pessoas nesta rota
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
-          </div>
-        </div>
-
-        <button class="btn-primary" @click="goToPassengerHome">
-          Acompanhar Rota <span class="mdi mdi-arrow-right"></span>
+      <!-- Seletor de participações em viagens -->
+      <div v-if="transport.participations.length" class="travel-chips" role="tablist" aria-label="Suas participações em viagens">
+        <button
+          v-for="p in transport.participations"
+          :key="p.id"
+          type="button"
+          :class="['travel-chip', { active: p.travel === transport.travelId }]"
+          @click="loadPassengerData(p.travel)"
+        >
+          Viagem #{{ p.travel }} · {{ p.date }} ({{ p.direction === 'outbound' ? 'Ida' : 'Retorno' }}) · {{ p.status }}
         </button>
       </div>
 
-      <div v-if="transport.travelStatus === 'in_progress'" class="card info-card">
-        <h2 class="card-title">Localização do motorista ao vivo</h2>
-        <LiveLocationMap
-          :travel-id="transport.travelId"
-          auto-start-viewer
-          marker-label="Motorista"
-        />
-      </div>
-
-      <div class="card info-card">
-        <h2 class="card-title">Rota</h2>
-        <div class="route-info">
-          <div class="route-point">
-            <span class="route-dot origin"></span>
+      <template v-if="transport.currentParticipation && transport.travel">
+        <div class="card vehicle-card">
+          <div class="vehicle-header">
             <div>
-              <span class="route-label">Saída</span>
-              <span class="route-value">{{ transport.rota.ponto_origem }}</span>
-              <span class="route-time">{{ transport.rota.horario_saida }}</span>
+              <span class="vehicle-model">
+                Viagem #{{ transport.travel.id }} · {{ transport.travel.date }} ({{ transport.travel.direction === 'outbound' ? 'Ida' : 'Retorno' }})
+              </span>
+              <span class="vehicle-year">
+                Sua participação: {{ participationStatusLabel[transport.currentParticipation.status] || transport.currentParticipation.status }}
+              </span>
+            </div>
+            <span class="vehicle-plate">{{ transport.travel.status }}</span>
+          </div>
+
+          <div class="publication-box">
+            <p v-if="transport.publicationCurrent">
+              <strong>Viagem publicada:</strong> Revisão publicada vigente ({{ transport.publishedRevision }}).
+            </p>
+            <p v-else-if="transport.publishedRevision != null" class="warning-text">
+              <strong>Publicação anterior ({{ transport.publishedRevision }}):</strong> A revisão atual ({{ transport.travel.revision }}) aguarda novo cálculo/publicação pela empresa.
+            </p>
+            <p v-else class="warning-text">
+              <strong>Aguardando publicação:</strong> Você está alocado, mas o cálculo não publica a viagem automaticamente.
+            </p>
+          </div>
+
+          <div class="vehicle-stats">
+            <div class="stat-item">
+              <span class="mdi mdi-bus"></span>
+              <span>Veículo: {{ transport.travel.vehicle ? `#${transport.travel.vehicle}` : 'A definir' }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="mdi mdi-account-tie"></span>
+              <span>Motorista: {{ transport.travel.driver ? `#${transport.travel.driver}` : 'A definir' }}</span>
             </div>
           </div>
-          <div class="route-line"></div>
-          <div class="route-point">
-            <span class="route-dot destination"></span>
-            <div>
-              <span class="route-label">Destino</span>
-              <span class="route-value">{{ transport.rota.ponto_destino }}</span>
-              <span class="route-time">{{ transport.rota.horario_chegada }}</span>
+
+          <button type="button" class="btn-primary" @click="goToPassengerHome">
+            Acompanhar no Mapa Principal <span class="mdi mdi-arrow-right"></span>
+          </button>
+        </div>
+
+        <div
+          v-if="
+            transport.travelStatus === 'in_progress' &&
+            ['allocated', 'on_board'].includes(transport.currentParticipation.status)
+          "
+          class="card info-card"
+        >
+          <h3 class="card-title">Localização do motorista ao vivo</h3>
+          <LiveLocationMap
+            :travel-id="transport.travelId"
+            auto-start-viewer
+            marker-label="Motorista"
+          />
+        </div>
+
+        <div class="card info-card">
+          <h3 class="card-title">Seu Trecho e Ponto Operacional</h3>
+          <div class="route-info">
+            <div class="route-point">
+              <span class="route-dot origin"></span>
+              <div>
+                <span class="route-label">Saída</span>
+                <span class="route-value">{{ transport.rota.ponto_origem }}</span>
+                <span class="route-time">{{ transport.rota.horario_saida }}</span>
+              </div>
+            </div>
+            <div class="route-line"></div>
+            <div class="route-point">
+              <span class="route-dot destination"></span>
+              <div>
+                <span class="route-label">Destino</span>
+                <span class="route-value">{{ transport.rota.ponto_destino }}</span>
+                <span class="route-time">{{ transport.rota.horario_chegada }}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </template>
 
-      <div class="card info-card">
-        <h2 class="card-title">Motorista</h2>
-        <div class="driver-info">
-          <div class="driver-avatar">{{ transport.motorista.nome.charAt(0) }}</div>
-          <div class="driver-details">
-            <span class="driver-name">{{ transport.motorista.nome }}</span>
-            <div class="driver-rating">
-              <span v-for="i in 5" :key="i" class="mdi mdi-star" :class="{ filled: i <= fullStars }"></span>
-              <span class="rating-value">{{ transport.motorista.avaliacao }}</span>
-            </div>
-          </div>
-        </div>
-        <div v-if="transport.motorista.email || transport.motorista.telefone" class="driver-contact">
-          <div v-if="transport.motorista.email" class="contact-item">
-            <span class="mdi mdi-email-outline"></span>
-            <span>{{ transport.motorista.email }}</span>
-          </div>
-          <div v-if="transport.motorista.telefone" class="contact-item">
-            <span class="mdi mdi-phone-outline"></span>
-            <span>{{ transport.motorista.telefone }}</span>
-          </div>
+      <div v-else class="card loading-card">
+        <div>
+          <p>Você está atribuído a {{ transport.activeGroups.length }} grupo(s), mas ainda não possui alocação em viagem publicada.</p>
+          <p class="sub-text">
+            Responda aos atendimentos abertos na aba Lista e aguarde o fechamento da janela, o cálculo e a publicação da viagem pela empresa.
+          </p>
+          <RouterLink to="/lista" class="link-action">Responder atendimentos por data</RouterLink>
         </div>
       </div>
     </template>
-
-    <div v-else class="card loading-card">
-      <p>Nenhum dado de transporte disponível.</p>
-    </div>
-
   </div>
 </template>
 
 <style scoped>
 .transport-container {
-  padding: 20px;
+  padding: 20px 20px 140px;
   background: var(--bg);
   min-height: 100vh;
-  position: relative;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .page-title {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: var(--text);
-  margin-bottom: 20px;
+  margin: 0;
+}
+
+.error-banner {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--danger, #dc2626);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.travel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.travel-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--superfice);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.travel-chip.active {
+  border-color: var(--primary);
+  background: rgba(223, 128, 26, 0.12);
+  color: var(--primary);
 }
 
 .card {
   background: var(--superfice);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   box-shadow: var(--shadow);
 }
 
@@ -171,25 +234,38 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 120px;
+  text-align: center;
+  min-height: 130px;
+  color: var(--text-muted);
 }
 
-.loading-card p {
+.sub-text {
+  font-size: 0.85rem;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.link-action {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .vehicle-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .vehicle-header div {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .vehicle-model {
@@ -199,39 +275,42 @@ onMounted(() => {
 }
 
 .vehicle-year {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
 }
 
 .vehicle-plate {
-  font-size: 1.1rem;
-  font-weight: 900;
-  color: var(--text);
-  letter-spacing: 0.5px;
-}
-
-.vehicle-details {
-  margin-bottom: 16px;
-}
-
-.detail-tag {
-  display: inline-block;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 800;
   color: var(--primary);
-  background: rgba(223, 128, 26, 0.1);
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.publication-box {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+}
+
+.publication-box p {
+  margin: 0;
+}
+
+.warning-text {
+  color: var(--danger, #dc2626);
 }
 
 .vehicle-stats {
   display: flex;
-  gap: 24px;
-  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 16px;
 }
 
 .stat-item {
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   color: var(--text);
   display: flex;
   align-items: center;
@@ -243,65 +322,38 @@ onMounted(() => {
   color: var(--primary);
 }
 
-.progress-section {
-  margin-bottom: 20px;
-}
-
-.progress-text {
-  text-align: right;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-
-.progress-track {
-  width: 100%;
-  height: 8px;
-  border: 1px solid var(--primary);
-  border-radius: 10px;
-  background: transparent;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--gradient-primary);
-  border-radius: 10px;
-  transition: width 0.3s ease;
-}
-
 .btn-primary {
   width: 100%;
   background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: opacity 0.2s;
-  box-shadow: var(--shadow-primary);
 }
 
-.btn-primary:active {
-  opacity: 0.85;
-}
-
-.info-card {
-  position: relative;
+.btn-outline {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .card-title {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 16px;
+  margin: 0 0 14px;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--primary);
 }
@@ -310,7 +362,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-left: 8px;
 }
 
 .route-point {
@@ -322,45 +373,40 @@ onMounted(() => {
 .route-point div {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding-bottom: 8px;
+  gap: 2px;
 }
 
 .route-dot {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   margin-top: 4px;
-  flex-shrink: 0;
 }
 
 .route-dot.origin {
   background: var(--success);
-  border: 2px solid rgba(34, 197, 94, 0.3);
 }
 
 .route-dot.destination {
   background: var(--primary);
-  border: 2px solid rgba(223, 128, 26, 0.3);
 }
 
 .route-line {
   width: 2px;
-  height: 20px;
+  height: 16px;
   background: var(--border);
-  margin-left: 14px;
+  margin-left: 5px;
 }
 
 .route-label {
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .route-value {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 600;
   color: var(--text);
 }
@@ -368,114 +414,5 @@ onMounted(() => {
 .route-time {
   font-size: 0.8rem;
   color: var(--text-muted);
-}
-
-.driver-info {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
-}
-
-.driver-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: var(--gradient-primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.driver-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.driver-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.driver-rating {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.mdi-star {
-  font-size: 1.1rem;
-  color: var(--border);
-}
-
-.mdi-star.filled {
-  color: #f59e0b;
-}
-
-.rating-value {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-left: 4px;
-  font-weight: 600;
-}
-
-.driver-contact {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-
-.contact-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.88rem;
-  color: var(--text);
-}
-
-.contact-item .mdi {
-  font-size: 1.1rem;
-  color: var(--primary);
-}
-
-.fab-button {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  width: 56px;
-  height: 56px;
-  background: var(--gradient-primary);
-  border: none;
-  border-radius: 50%;
-  box-shadow: var(--shadow-primary);
-  cursor: pointer;
-  color: white;
-  font-size: 1.8rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s, opacity 0.2s;
-}
-
-.fab-button:active {
-  transform: scale(0.92);
-  opacity: 0.85;
-}
-
-@media (min-width: 768px) {
-  .transport-container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 40px 20px;
-  }
 }
 </style>

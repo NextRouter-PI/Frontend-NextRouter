@@ -59,6 +59,12 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     autorizado de documentos (`uploads/documents/{key}/download/`), leitura da conta,
     troca de e-mail (`email-change/request|verify|confirm/`) e consulta/revogação de
     sessões (`sessions/`, `sessions/{id}/` e `me/revoke-sessions/`).
+  - `src/api/transport.js`: recursos de configuração habitual (`operational-points/`,
+    `vehicles/`, `company-route-groups/`, `response-policies/`, `recurring-services/`,
+    `group-memberships/`, `assign-group/`, `authorize-services/`, `automation/` e
+    `automation-status/`) e de operação datada (`service-days/`, `eligibilities/`,
+    `change-requests/`, `travels/`, `travel-participations/`, `route-snapshots/`,
+    `route-stops/`, `optimization-jobs/`, `driver-invitations/` e `companies/me/stats/`).
   - `src/legacyPwa.js`: remoção seletiva das chaves antigas (`access`, `user`,
     `manualLogout`) do storage, desregistro de `/sw.js` e `/dev-sw.js` da mesma
     origem e limpeza apenas dos caches conhecidos (`api-cache`, `google-fonts-cache`,
@@ -74,9 +80,12 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     `profileSnapshot.js` publica e invalida snapshots de apresentação por revisão e
     identidade, sem substituir a releitura autoritativa de `/me/`.
   - Demais stores (`useRegisterState.js`, `useRotasStore.js`, `useTransporteStore.js`,
-    `useTransportState.js`, `useQuestionnaireState.js`, `useUploadImage.js`): estado
-    de fluxos específicos de cadastro e operação (verificar alinhamento com o contrato
-    atual antes de reutilizar chamadas legadas).
+    `useTransportState.js`, `useUploadImage.js`): estado de fluxos de cadastro,
+    configuração habitual e operação datada. `useRotasStore` e `useTransporteStore`
+    implementam `$reset()` e limpam seu estado automaticamente ao trocar de conta ou
+    sair; `useTransportState` cancela requisições em andamento e limpa os dados de
+    motorista e passageiro na troca de identidade. O antigo `useQuestionnaireState.js`
+    foi removido na R5.
   - `useRegisterState.js` e `useUploadImage.js` mantêm os nomes/caminhos históricos,
     mas são composables locais, não stores Pinia. Chamá-los durante `setup` ou em
     um escopo Vue ativo: estado e requisições pertencem à instância e são descartados
@@ -130,6 +139,12 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     `useOwnProfile` coordena leitura `/me/`, edição por seção, substituição de foto/documentos
     e publicação/invalidação do snapshot de perfil, preservando o rascunho em caso de falha.
     `useAccountScope` vincula requisições autenticadas à identidade atual.
+    `useTransportQuestionnaire` gerencia elegibilidades por data, respostas de ida/retorno
+    independentes na janela normal, pedidos de alteração na prorrogação (`request-change/`)
+    e desistência por trecho (`withdraw-leg/`), sem usar relógio local nem horários fixos.
+    `useTravelTracking` sincroniza a posição inicial via `GET /travels/{id}/location/` e
+    mantém o WebSocket na mesma origem com `recorded_at`, `stale`, tratamento dos códigos
+    `4001/4003/4009/1009/1000` e reconexão após `refresh`.
   - `useEmailVerification` vincula o código ao e-mail solicitado; voltar à revisão
     não reenvia código durante o cooldown. `usePasswordReset` e `useEmailChange` mantêm
     fluxos próprios de solicitação/verificação/confirmação, com mensagens antienumeração

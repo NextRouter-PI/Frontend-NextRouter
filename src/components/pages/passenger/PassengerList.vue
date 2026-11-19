@@ -1,166 +1,354 @@
+<script setup>
+import { computed } from 'vue'
+import { useTransportQuestionnaire } from '@/composables/useTransportQuestionnaire'
+
+const {
+  loading,
+  busy,
+  error,
+  notice,
+  enrichedEligibilities,
+  selectedEligibility,
+  outboundChoice,
+  returnChoice,
+  changeLeg,
+  proposedServiceId,
+  selectEligibility,
+  refresh,
+  sendNormalAnswer,
+  sendExtensionRequest,
+  cancelPendingRequest,
+  withdrawLeg,
+} = useTransportQuestionnaire()
+
+const windowLabel = computed(() => {
+  const w = selectedEligibility.value?.dayData?.window
+  return {
+    not_open: 'Janela ainda não aberta',
+    normal: 'Janela normal aberta (resposta direta)',
+    extension: 'Em prorrogação (pedidos de inclusão/troca)',
+    closed: 'Janela encerrada',
+    canceled: 'Atendimento cancelado pela empresa',
+  }[w] || 'Estado da janela não informado'
+})
+
+const responseStateLabel = computed(() => {
+  const r = selectedEligibility.value?.response
+  if (!r || !r.answered_at) return 'Sem resposta enviada (ausência de resposta)'
+  const ida = r.outbound_service && !r.outbound_withdrawn_at
+  const volta = r.return_service && !r.return_withdrawn_at
+  if (!ida && !volta) return 'Negativa explícita registrada (não utilizará o transporte neste atendimento)'
+  return `Intenção enviada (revisão ${r.revision})`
+})
+
+const extensionServices = computed(() => {
+  const elig = selectedEligibility.value
+  if (!elig) return []
+  return changeLeg.value === 'outbound' ? elig.outboundServices : elig.returnServices
+})
+
+function serviceLabel(elig, serviceId) {
+  if (!serviceId) return 'Não vou neste trecho'
+  const all = [...(elig?.outboundServices || []), ...(elig?.returnServices || [])]
+  const found = all.find((s) => s.id === serviceId)
+  return found ? `${found.name} (${found.targetTimeLabel})` : `Serviço #${serviceId}`
+}
+</script>
+
 <template>
   <div class="lista-page">
     <div class="page-header">
       <div class="header-accent"></div>
-      <h2>Transporte do Amanhã</h2>
-      <p class="header-date">{{ formatarDataProxima() }}</p>
-    </div>
-
-    <div v-if="!questionarioState.state.submitted && questionarioState.canAnswerToday()" class="questionario-card">
-      <div class="progress-indicator">
-        <div class="progress-steps">
-          <div class="step" :class="{ active: step >= 1, completed: step > 1 }">1</div>
-          <div class="step-line" :class="{ active: step > 1 }"></div>
-          <div class="step" :class="{ active: step >= 2, completed: step > 2 }">2</div>
-          <div class="step-line" :class="{ active: step > 2 }"></div>
-          <div class="step" :class="{ active: step >= 3 }">3</div>
-        </div>
-      </div>
-
-      <div class="pergunta-container" :class="{ 'fade-in': step === 1 }" v-show="step === 1">
-        <div class="pergunta-titulo">
-          <span class="pergunta-numero">1</span>
-          <span>Vou com o transporte?</span>
-          <span class="tag-data">{{ formatarData() }}</span>
-        </div>
-
-        <div class="opcoes">
-          <button
-            @click="setResponse('transporteIda', 'sim'); nextStep()"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteIda === 'sim' }]"
-          >
-            <span class="mdi mdi-check-circle-outline"></span>
-            Sim
-          </button>
-          <button
-            @click="setResponse('transporteIda', 'nao'); nextStep()"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteIda === 'nao' }]"
-          >
-            <span class="mdi mdi-close-circle-outline"></span>
-            Não
-          </button>
-        </div>
-      </div>
-
-      <div class="pergunta-container" :class="{ 'fade-in': step === 2 }" v-show="step === 2">
-        <div class="pergunta-titulo">
-          <span class="pergunta-numero">2</span>
-          <span>Voltarei com o transporte?</span>
-        </div>
-
-        <div class="opcoes">
-          <button
-            @click="setResponse('transporteVolta', 'sim'); nextStep()"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteVolta === 'sim' }]"
-          >
-            <span class="mdi mdi-check-circle-outline"></span>
-            Sim
-          </button>
-          <button
-            @click="setResponse('transporteVolta', 'nao'); finalStep()"
-            :class="['opcao-btn', { 'selecionado': questionarioState.state.responses.transporteVolta === 'nao' }]"
-          >
-            <span class="mdi mdi-close-circle-outline"></span>
-            Não
-          </button>
-        </div>
-      </div>
-
-      <div class="pergunta-container" :class="{ 'fade-in': step === 3 }" v-show="step === 3">
-        <div class="pergunta-titulo">
-          <span class="pergunta-numero">3</span>
-          <span>Voltarei que horas?</span>
-        </div>
-
-        <div class="opcoes-horario">
-          <button
-            @click="setResponse('horaVolta', '12:00'); finalStep()"
-            :class="['opcao-horario', { 'selecionado': questionarioState.state.responses.horaVolta === '12:00' }]"
-          >
-            <span class="mdi mdi-weather-sunset"></span>
-            <div class="horario-info">
-              <span class="hora">12:00</span>
-              <span class="periodo">Meio-dia</span>
-            </div>
-          </button>
-          <button
-            @click="setResponse('horaVolta', '17:00'); finalStep()"
-            :class="['opcao-horario', { 'selecionado': questionarioState.state.responses.horaVolta === '17:00' }]"
-          >
-            <span class="mdi mdi-weather-night"></span>
-            <div class="horario-info">
-              <span class="hora">17:00</span>
-              <span class="periodo">Tarde</span>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      <div class="navigation-buttons" v-if="step > 1 && step < 3">
-        <button @click="prevStep" class="btn-voltar">
-          <span class="mdi mdi-arrow-left"></span>
-          Voltar
-        </button>
-      </div>
-
-      <button
-        v-if="step === 3 && podeEnviar"
-        @click="enviarFormulario"
-        class="btn-enviar"
-      >
-        <span class="mdi mdi-check"></span>
-        Confirmar Respostas
+      <h2>Atendimentos e Respostas por Data</h2>
+      <p class="header-date">
+        Intenção enviada, pedido na prorrogação, alocação e viagem publicada são estados distintos. Ida e retorno são independentes e usam somente seus serviços autorizados.
+      </p>
+      <button type="button" class="btn-voltar" :disabled="loading || busy" @click="refresh">
+        <span class="mdi mdi-refresh"></span> Atualizar atendimentos
       </button>
     </div>
 
-    <div v-else-if="isSubmitting" class="status-card">
+    <p v-if="notice" class="notice-banner" role="status">{{ notice }}</p>
+    <p v-if="error" class="error-banner" role="alert">{{ error }}</p>
+
+    <div v-if="loading" class="status-card">
       <div class="spinner"></div>
-      <p class="status-msg">Enviando respostas...</p>
+      <p class="status-msg">Consultando elegibilidades e atendimentos no servidor...</p>
     </div>
 
-    <div v-else-if="questionarioState.state.submitted" class="status-card success">
-      <div class="status-icon">
-        <span class="mdi mdi-check-circle"></span>
-      </div>
-      <h3 class="status-title">Resposta registrada!</h3>
-      <p class="status-msg">Aguarde até amanhã para a próxima enquete</p>
-      <div class="next-date-tag">
-        <span class="mdi mdi-calendar"></span>
-        Próxima enquete: {{ formatarDataProxima() }}
-      </div>
+    <div v-else-if="!enrichedEligibilities.length" class="status-card">
+      <h3 class="status-title">Nenhum atendimento disponível</h3>
+      <p class="status-msg">
+        Você ainda não possui elegibilidades geradas para datas de atendimento. É necessário vínculo ativo, atribuição a um grupo de atendimento, serviços autorizados e geração de datas pela empresa.
+      </p>
     </div>
 
-    <div v-else-if="questionarioState.state.hasAnsweredToday" class="status-card">
-      <div class="status-icon thanks">
-        <span class="mdi mdi-hand-wave"></span>
+    <template v-else-if="selectedEligibility">
+      <div class="day-selector" role="tablist" aria-label="Datas de atendimento">
+        <button
+          v-for="item in enrichedEligibilities"
+          :key="item.id"
+          type="button"
+          :class="['day-chip', { active: item.id === selectedEligibility.id }]"
+          :disabled="busy"
+          @click="selectEligibility(item.id)"
+        >
+          {{ item.dayData.date }} · {{ item.dayData.window }}
+        </button>
       </div>
-      <h3 class="status-title">Obrigado por responder!</h3>
-      <p class="status-msg">Você já respondeu a enquete de hoje</p>
-      <div class="next-date-tag">
-        <span class="mdi mdi-calendar"></span>
-        Próxima enquete: {{ formatarDataProxima() }}
+
+      <div class="questionario-card">
+        <div class="section-head">
+          <h3>Atendimento de {{ selectedEligibility.dayData.date }}</h3>
+          <span class="tag-data">{{ windowLabel }}</span>
+        </div>
+
+        <p v-if="selectedEligibility.point_snapshot?.name" class="sub-info">
+          Ponto operacional congelado: <strong>{{ selectedEligibility.point_snapshot.name }}</strong>
+          ({{ selectedEligibility.point_snapshot.city }}/{{ selectedEligibility.point_snapshot.state }})
+        </p>
+
+        <!-- Resumo dos 3 eixos separados: Intenção vs Alocação vs Viagem Publicada -->
+        <div class="axes-box">
+          <div>
+            <strong>1. Sua intenção registrada:</strong>
+            <p>{{ responseStateLabel }}</p>
+            <p v-if="selectedEligibility.response?.answered_at">
+              Ida:
+              <strong>
+                {{
+                  selectedEligibility.response.outbound_withdrawn_at
+                    ? 'Desistência registrada'
+                    : serviceLabel(selectedEligibility, selectedEligibility.response.outbound_service)
+                }}
+              </strong>
+              · Retorno:
+              <strong>
+                {{
+                  selectedEligibility.response.return_withdrawn_at
+                    ? 'Desistência registrada'
+                    : serviceLabel(selectedEligibility, selectedEligibility.response.return_service)
+                }}
+              </strong>
+            </p>
+          </div>
+
+          <div>
+            <strong>2. Alocação e 3. Publicação de Viagem:</strong>
+            <p v-if="!selectedEligibility.participations.length">
+              Nenhuma alocação em viagem até o momento. Enviar resposta ou ter pedido aprovado não publica viagem automaticamente.
+            </p>
+            <ul v-else class="part-list">
+              <li v-for="part in selectedEligibility.participations" :key="part.id">
+                Trecho <strong>{{ part.leg === 'outbound' ? 'Ida' : 'Retorno' }}</strong> ·
+                Participação: <strong>{{ part.status }}</strong> ·
+                Viagem #{{ part.travel }}:
+                <strong v-if="part.isPublicationCurrent">Publicada (revisão vigente {{ part.travelData?.published_revision }})</strong>
+                <strong v-else-if="part.isPublished">Publicação anterior (aguardando republicação da revisão atual)</strong>
+                <strong v-else>Ainda não publicada pela empresa</strong>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Desistência por trecho antes do embarque (6.2) -->
+        <div
+          v-if="
+            selectedEligibility.response &&
+            ((selectedEligibility.response.outbound_service && !selectedEligibility.response.outbound_withdrawn_at) ||
+              (selectedEligibility.response.return_service && !selectedEligibility.response.return_withdrawn_at))
+          "
+          class="withdraw-box"
+        >
+          <h4>Desistir de um trecho antes do embarque</h4>
+          <p class="sub-info">Desistir de um trecho invalida pedidos conflitantes daquele trecho sem desfazer o outro trecho.</p>
+          <div class="opcoes">
+            <button
+              v-if="selectedEligibility.response.outbound_service && !selectedEligibility.response.outbound_withdrawn_at"
+              type="button"
+              class="btn-voltar"
+              :disabled="busy"
+              @click="withdrawLeg('outbound')"
+            >
+              Desistir da Ida
+            </button>
+            <button
+              v-if="selectedEligibility.response.return_service && !selectedEligibility.response.return_withdrawn_at"
+              type="button"
+              class="btn-voltar"
+              :disabled="busy"
+              @click="withdrawLeg('return')"
+            >
+              Desistir do Retorno
+            </button>
+          </div>
+        </div>
+
+        <!-- JANELA NORMAL: Resposta direta com ida e retorno independentes (4.2) -->
+        <form
+          v-if="selectedEligibility.dayData.window === 'normal'"
+          class="normal-form"
+          @submit.prevent="sendNormalAnswer"
+        >
+          <h4>Responder na Janela Normal (Revisão esperada: {{ selectedEligibility.response?.revision ?? 0 }})</h4>
+
+          <div class="pergunta-container">
+            <div class="pergunta-titulo">
+              <span class="pergunta-numero">1</span>
+              <span>Trecho de Ida (serviços autorizados)</span>
+            </div>
+            <div class="opcoes-horario">
+              <button
+                type="button"
+                :class="['opcao-horario', { selecionado: outboundChoice === '' }]"
+                :disabled="busy"
+                @click="outboundChoice = ''"
+              >
+                <span class="mdi mdi-close-circle-outline"></span>
+                <div class="horario-info">
+                  <span class="hora">Não vou na ida</span>
+                  <span class="periodo">Negativa para o trecho de ida</span>
+                </div>
+              </button>
+              <button
+                v-for="srv in selectedEligibility.outboundServices"
+                :key="srv.id"
+                type="button"
+                :class="['opcao-horario', { selecionado: outboundChoice === String(srv.id) }]"
+                :disabled="busy"
+                @click="outboundChoice = String(srv.id)"
+              >
+                <span class="mdi mdi-bus-clock"></span>
+                <div class="horario-info">
+                  <span class="hora">{{ srv.targetTimeLabel }}</span>
+                  <span class="periodo">{{ srv.name }}</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="pergunta-container">
+            <div class="pergunta-titulo">
+              <span class="pergunta-numero">2</span>
+              <span>Trecho de Retorno (serviços autorizados)</span>
+            </div>
+            <div class="opcoes-horario">
+              <button
+                type="button"
+                :class="['opcao-horario', { selecionado: returnChoice === '' }]"
+                :disabled="busy"
+                @click="returnChoice = ''"
+              >
+                <span class="mdi mdi-close-circle-outline"></span>
+                <div class="horario-info">
+                  <span class="hora">Não volto com o transporte</span>
+                  <span class="periodo">Negativa para o trecho de retorno</span>
+                </div>
+              </button>
+              <button
+                v-for="srv in selectedEligibility.returnServices"
+                :key="srv.id"
+                type="button"
+                :class="['opcao-horario', { selecionado: returnChoice === String(srv.id) }]"
+                :disabled="busy"
+                @click="returnChoice = String(srv.id)"
+              >
+                <span class="mdi mdi-bus-clock"></span>
+                <div class="horario-info">
+                  <span class="hora">{{ srv.targetTimeLabel }}</span>
+                  <span class="periodo">{{ srv.name }}</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-enviar" :disabled="busy">
+            <span class="mdi mdi-check"></span>
+            {{ busy ? 'Enviando...' : 'Salvar Resposta de Ida e Retorno' }}
+          </button>
+        </form>
+
+        <!-- PRORROGAÇÃO: Solicitar inclusão ou troca por trecho (6.1) -->
+        <form
+          v-else-if="selectedEligibility.dayData.window === 'extension'"
+          class="normal-form"
+          @submit.prevent="sendExtensionRequest"
+        >
+          <h4>Janela em Prorrogação — Solicitar Inclusão ou Troca</h4>
+          <p class="sub-info">
+            Na prorrogação, alterações dependem de decisão da empresa, recálculo de rota e aplicação validada. Sua escolha e alocação anteriores são preservadas até a aplicação.
+          </p>
+
+          <div class="opcoes">
+            <button
+              type="button"
+              :class="['opcao-btn', { selecionado: changeLeg === 'outbound' }]"
+              :disabled="busy"
+              @click="changeLeg = 'outbound'; proposedServiceId = ''"
+            >
+              Alterar Ida
+            </button>
+            <button
+              type="button"
+              :class="['opcao-btn', { selecionado: changeLeg === 'return' }]"
+              :disabled="busy"
+              @click="changeLeg = 'return'; proposedServiceId = ''"
+            >
+              Alterar Retorno
+            </button>
+          </div>
+
+          <div class="opcoes-horario" style="margin-top: 14px">
+            <button
+              v-for="srv in extensionServices"
+              :key="srv.id"
+              type="button"
+              :class="['opcao-horario', { selecionado: proposedServiceId === String(srv.id) }]"
+              :disabled="busy"
+              @click="proposedServiceId = String(srv.id)"
+            >
+              <span class="mdi mdi-clock-edit-outline"></span>
+              <div class="horario-info">
+                <span class="hora">{{ srv.targetTimeLabel }}</span>
+                <span class="periodo">{{ srv.name }}</span>
+              </div>
+            </button>
+            <p v-if="!extensionServices.length" class="sub-info">Nenhum serviço autorizado neste sentido.</p>
+          </div>
+
+          <button type="submit" class="btn-enviar" :disabled="busy || !proposedServiceId">
+            {{ busy ? 'Enviando pedido...' : 'Enviar Pedido na Prorrogação' }}
+          </button>
+        </form>
+
+        <!-- Histórico de pedidos na prorrogação deste atendimento -->
+        <div v-if="selectedEligibility.requests.length" class="requests-box">
+          <h4>Pedidos na Prorrogação deste Atendimento</h4>
+          <div v-for="req in selectedEligibility.requests" :key="req.id" class="req-item">
+            <div>
+              <strong>Pedido #{{ req.id }} ({{ req.leg === 'outbound' ? 'Ida' : 'Retorno' }})</strong> →
+              {{ serviceLabel(selectedEligibility, req.proposed_service) }}
+              <p class="sub-info">
+                Decisão (`status`): <strong>{{ req.status }}</strong> ·
+                Aplicação (`application`): <strong>{{ req.application || 'não aplicada' }}</strong>
+                <span v-if="req.reason"> · Motivo: {{ req.reason }}</span>
+              </p>
+            </div>
+            <button
+              v-if="req.status === 'pending'"
+              type="button"
+              class="btn-voltar"
+              :disabled="busy"
+              @click="cancelPendingRequest(req.id)"
+            >
+              Retirar pedido
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
-
-<script setup>
-import { useTransportQuestionnaire } from "@/composables/useTransportQuestionnaire";
-
-const {
-  step,
-  isSubmitting,
-  questionarioState,
-  podeEnviar,
-  formatarDataProxima,
-  formatarData,
-  nextStep,
-  prevStep,
-  finalStep,
-  setResponse,
-  enviarFormulario
-} = useTransportQuestionnaire();
-</script>
 
 <style scoped>
 * {
@@ -168,16 +356,15 @@ const {
 }
 
 .lista-page {
-  padding: 24px 16px;
+  padding: 24px 16px 140px;
   min-height: 100vh;
+  max-width: 680px;
+  margin: 0 auto;
 }
 
 .page-header {
   text-align: center;
-  margin-bottom: 32px;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-bottom: 20px;
 }
 
 .header-accent {
@@ -185,182 +372,186 @@ const {
   height: 4px;
   background: var(--gradient-primary);
   border-radius: 4px;
-  margin: 0 auto 16px;
+  margin: 0 auto 12px;
 }
 
 .page-header h2 {
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   font-weight: 800;
   color: var(--text);
-  margin: 0 0 6px;
+  margin: 0 0 8px;
 }
 
 .header-date {
   font-size: 0.85rem;
   color: var(--text-muted);
-  margin: 0;
-  font-weight: 500;
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.notice-banner {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--success, #059669);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.error-banner {
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--danger, #dc2626);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.day-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.day-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--superfice);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.day-chip.active {
+  border-color: var(--primary);
+  background: rgba(223, 128, 26, 0.12);
+  color: var(--primary);
 }
 
 .questionario-card {
   background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  padding: 28px 24px;
-  max-width: 500px;
-  margin: 0 auto;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  animation: slideUp 0.4s ease;
+  padding: 24px 20px;
+  box-shadow: var(--shadow);
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Progress */
-.progress-indicator {
-  margin-bottom: 32px;
-}
-
-.progress-steps {
+.section-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 0 8px;
-}
-
-.step {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--bg);
-  display: flex;
   align-items: center;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.section-head h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+.tag-data {
+  font-size: 0.78rem;
   font-weight: 700;
-  font-size: 0.9rem;
+  color: var(--primary);
+  background: rgba(223, 128, 26, 0.1);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.sub-info {
+  font-size: 0.84rem;
   color: var(--text-muted);
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 2;
+  line-height: 1.45;
+  margin: 6px 0;
 }
 
-.step.active {
-  background: var(--primary);
-  color: white;
-  box-shadow: var(--shadow-primary);
-}
-
-.step.completed {
-  background: var(--primary);
-  color: white;
-}
-
-.step-line {
-  flex: 1;
-  height: 3px;
+.axes-box {
   background: var(--bg);
-  margin: 0 6px;
-  transition: all 0.3s ease;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.86rem;
+  color: var(--text);
 }
 
-.step-line.active {
-  background: var(--primary);
+.axes-box p {
+  margin: 4px 0 0;
 }
 
-/* Questions */
+.part-list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.withdraw-box,
+.requests-box,
+.normal-form {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.withdraw-box h4,
+.requests-box h4,
+.normal-form h4 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: var(--text);
+}
+
 .pergunta-container {
-  margin-bottom: 24px;
-  animation: fadeIn 0.35s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  margin-bottom: 20px;
 }
 
 .pergunta-titulo {
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .pergunta-numero {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   background: var(--primary);
   color: white;
   border-radius: 50%;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  flex-shrink: 0;
 }
 
-.tag-data {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--text-muted);
-  background: var(--bg);
-  padding: 4px 12px;
-  border-radius: 20px;
-  margin-left: auto;
-}
-
-/* Options */
 .opcoes {
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .opcao-btn {
   flex: 1;
   min-width: 120px;
-  padding: 16px 20px;
-  font-size: 0.95rem;
-  border: 2px solid rgba(223, 128, 26, 0.2);
-  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  border: 2px solid rgba(223, 128, 26, 0.25);
+  border-radius: 12px;
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
-  transition: all 0.25s ease;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.opcao-btn .mdi {
-  font-size: 1.2rem;
-}
-
-.opcao-btn:hover {
-  border-color: var(--primary);
-  background: rgba(223, 128, 26, 0.06);
-  transform: translateY(-2px);
 }
 
 .opcao-btn.selecionado {
@@ -371,27 +562,25 @@ const {
 
 .opcoes-horario {
   display: flex;
-  gap: 12px;
-  justify-content: center;
+  gap: 10px;
   flex-direction: column;
 }
 
 .opcao-horario {
-  padding: 18px 20px;
+  padding: 14px 16px;
   border: 2px solid rgba(223, 128, 26, 0.2);
   border-radius: 14px;
   background: var(--bg);
   cursor: pointer;
-  transition: all 0.25s ease;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  text-align: left;
 }
 
 .opcao-horario .mdi {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   color: var(--primary);
-  flex-shrink: 0;
 }
 
 .horario-info {
@@ -401,7 +590,7 @@ const {
 }
 
 .opcao-horario .hora {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text);
 }
@@ -409,12 +598,6 @@ const {
 .opcao-horario .periodo {
   font-size: 0.8rem;
   color: var(--text-muted);
-}
-
-.opcao-horario:hover {
-  border-color: var(--primary);
-  background: rgba(223, 128, 26, 0.06);
-  transform: translateX(4px);
 }
 
 .opcao-horario.selecionado {
@@ -428,36 +611,23 @@ const {
   color: white;
 }
 
-.navigation-buttons {
-  margin-top: 20px;
-}
-
 .btn-voltar {
-  width: 100%;
-  padding: 14px 24px;
-  font-size: 0.9rem;
+  padding: 10px 16px;
+  font-size: 0.85rem;
   font-weight: 600;
   background: var(--bg);
-  color: var(--text-muted);
-  border: 1px solid rgba(223, 128, 26, 0.15);
-  border-radius: 12px;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.btn-voltar:hover {
-  background: rgba(223, 128, 26, 0.06);
-  color: var(--primary);
-  transform: translateX(-3px);
+  gap: 6px;
 }
 
 .btn-enviar {
   width: 100%;
-  padding: 16px;
+  padding: 14px;
   font-size: 0.95rem;
   font-weight: 700;
   background: var(--primary);
@@ -465,73 +635,43 @@ const {
   border: none;
   border-radius: 14px;
   cursor: pointer;
-  margin-top: 20px;
-  transition: all 0.25s ease;
-  box-shadow: var(--shadow-primary);
+  margin-top: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 
-.btn-enviar:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(223, 128, 26, 0.4);
+.btn-enviar:disabled,
+.btn-voltar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.btn-enviar:active {
-  transform: translateY(0);
+.req-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
 }
 
-/* Status cards */
 .status-card {
   text-align: center;
   background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  max-width: 400px;
-  margin: 60px auto;
-  padding: 48px 28px;
-  animation: scaleUp 0.4s ease;
-}
-
-@keyframes scaleUp {
-  from {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.status-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-  background: linear-gradient(135deg, var(--success) 0%, #1e8449 100%);
-}
-
-.status-icon .mdi {
-  font-size: 2.4rem;
-  color: white;
-}
-
-.status-icon.thanks {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-}
-
-.status-icon.thanks .mdi {
-  font-size: 2.2rem;
+  padding: 36px 24px;
+  margin: 24px auto;
 }
 
 .status-title {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--text);
   margin: 0 0 8px;
@@ -540,62 +680,23 @@ const {
 .status-msg {
   font-size: 0.88rem;
   color: var(--text-muted);
-  margin: 0 0 20px;
-}
-
-.next-date-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  background: var(--bg);
-  padding: 10px 18px;
-  border-radius: 999px;
-  font-weight: 500;
-}
-
-.next-date-tag .mdi {
-  font-size: 1rem;
-  color: var(--primary);
+  margin: 0;
+  line-height: 1.5;
 }
 
 .spinner {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border: 4px solid var(--bg);
   border-top-color: var(--primary);
   border-radius: 50%;
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@media (min-width: 768px) {
-  .lista-page {
-    padding: 32px 24px;
-  }
-
-  .questionario-card {
-    padding: 36px 32px;
-  }
-
-  .opcoes-horario {
-    flex-direction: row;
-  }
-
-  .opcao-horario {
-    flex: 1;
-    justify-content: center;
-  }
-
-  .opcao-btn {
-    padding: 16px 28px;
   }
 }
 </style>

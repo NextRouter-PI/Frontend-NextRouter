@@ -1,268 +1,512 @@
-import { defineStore } from 'pinia';
-import api from '@/api/client';
-import { formatApiError } from '@/utils/apiErrors';
+import { defineStore } from 'pinia'
+import { watch } from 'vue'
+import api from '@/api/client'
+import { state as authState } from '@/stores/state'
+import { sessionError } from '@/stores/session'
+import { formatApiError } from '@/utils/apiErrors'
+import {
+  listRouteGroups,
+  createRouteGroup,
+  updateRouteGroup,
+  listOperationalPoints,
+  listResponsePolicies,
+  saveResponsePolicy,
+  listRecurringServices,
+  createRecurringService,
+  updateRecurringService,
+  saveServiceStops,
+  listGroupMemberships,
+  assignPassengerGroup,
+  authorizeGroupMemberServices,
+  listVehicles,
+  generateGroupHorizon,
+  cancelGroupDate,
+  getAutomationStatus,
+  saveAutomationSchedule,
+  listServiceDays,
+  closeServiceDay,
+  reviseServiceDay,
+  cancelServiceDay,
+  listEligibilities,
+  listChangeRequests,
+  decideChangeRequest,
+  applyChangeRequest,
+  listTravels,
+  calculateTravel,
+  publishTravel,
+  cancelTravel,
+  assignTravelVehicle,
+  inviteTravelDriver,
+  listTravelParticipations,
+  listRouteSnapshots,
+  listOptimizationJobs,
+} from '@/api/transport'
 
 function formatHour(value) {
-  if (!value) return '';
-  return value.slice(0, 5);
+  if (!value) return ''
+  return String(value).slice(0, 5)
 }
 
 function asList(data) {
-  return Array.isArray(data) ? data : data?.results || [];
+  return Array.isArray(data) ? data : data?.results || []
 }
 
-function mapGroupFromApi(group, { schedules = [], vehicles = [], drivers = [], passengers = [] } = {}) {
-  return {
-    id: group.id,
-    name: group.name,
-    commonCep: group.common_cep,
-    passengersCount: group.passengers_count,
-    schedules: schedules.map((s) => ({
-      id: s.id,
-      goHour: s.go_hour,
-      returnHour: s.return_hour,
-      goHourLabel: formatHour(s.go_hour),
-      returnHourLabel: formatHour(s.return_hour),
-    })),
-    vehicles: vehicles.map((v) => ({ id: v.id, plate: v.plate, model: v.model, driverName: v.driver_name })),
-    drivers: drivers.map((d) => ({ id: d.id, name: d.user_data?.name || 'Sem nome' })),
-    passengers: passengers.map((p) => ({ id: p.id, name: p.user_data?.name || 'Sem nome' })),
-  };
+export const WEEKDAY_OPTIONS = [
+  { bit: 1, label: 'Seg' },
+  { bit: 2, label: 'Ter' },
+  { bit: 4, label: 'Qua' },
+  { bit: 8, label: 'Qui' },
+  { bit: 16, label: 'Sex' },
+  { bit: 32, label: 'Sáb' },
+  { bit: 64, label: 'Dom' },
+]
+
+export function formatWeekdays(mask) {
+  const num = Number(mask) || 0
+  return WEEKDAY_OPTIONS.filter((w) => (num & w.bit) !== 0).map((w) => w.label).join(', ') || 'Nenhum dia'
 }
 
 export const useRotasStore = defineStore('rotas', {
   state: () => ({
-    rotas: [],
     grupos: [],
-    companyId: null,
+    pontosOperacionais: [],
     todosVeiculos: [],
-    todosMotoristas: [],
-    todosPassageiros: [],
+    vinculosAtivos: [],
+    participacoesGrupo: [],
+    politicas: [],
+    servicos: [],
+    diasAtendimento: [],
+    elegibilidadesDia: [],
+    pedidosAlteracao: [],
+    viagensDia: [],
+    participacoesViagem: [],
+    snapshotsViagem: [],
+    jobsCalculo: [],
     loading: false,
+    dayLoading: false,
     error: null,
   }),
   actions: {
-    async fetchRotas() {
-      this.loading = true;
-      this.error = null;
+    $reset() {
+      this.grupos = []
+      this.pontosOperacionais = []
+      this.todosVeiculos = []
+      this.vinculosAtivos = []
+      this.participacoesGrupo = []
+      this.politicas = []
+      this.servicos = []
+      this.diasAtendimento = []
+      this.elegibilidadesDia = []
+      this.pedidosAlteracao = []
+      this.viagensDia = []
+      this.participacoesViagem = []
+      this.snapshotsViagem = []
+      this.jobsCalculo = []
+      this.loading = false
+      this.dayLoading = false
+      this.error = null
+    },
 
+    async fetchRotas({ signal } = {}) {
+      this.loading = true
+      this.error = null
       try {
-        const { data: company } = await api.get('/companies/me/');
-        this.companyId = company.id;
+        const [groups, points, policies, services, vehicles, membershipsRes, groupMemberships] = await Promise.all([
+          listRouteGroups({}, { signal }),
+          listOperationalPoints({}, { signal }),
+          listResponsePolicies({}, { signal }),
+          listRecurringServices({}, { signal }),
+          listVehicles({}, { signal }),
+          api.get('/memberships/', { params: { status: 'active' }, signal }).then((r) => asList(r.data)),
+          listGroupMemberships({}, { signal }),
+        ])
+        if (signal?.aborted) return false
 
-        const { data: groupsData } = await api.get('/company-route-groups/', {
-          params: { company: company.id },
-        });
-        const groups = asList(groupsData);
+        this.pontosOperacionais = points
+        this.todosVeiculos = vehicles
+        this.vinculosAtivos = membershipsRes
+        this.participacoesGrupo = groupMemberships
+        this.politicas = policies
+        this.servicos = services
 
-        const [
-          { data: allVehiclesData },
-          { data: allDriversData },
-          { data: allPassengersData },
-        ] = await Promise.all([
-          api.get('/vehicles/'),
-          api.get('/drivers/'),
-          api.get('/passengers/'),
-        ]);
+        const pointsMap = new Map(points.map((p) => [p.id, p]))
+        const vehiclesMap = new Map(vehicles.map((v) => [v.id, v]))
+        const membershipsMap = new Map(membershipsRes.map((m) => [m.id, m]))
+        const policiesByGroup = new Map(policies.map((p) => [p.route_group, p]))
 
-        const allVehicles = asList(allVehiclesData);
-        const allDrivers = asList(allDriversData);
-        const allPassengers = asList(allPassengersData);
+        this.grupos = groups.map((group) => {
+          const dest = pointsMap.get(group.destination)
+          const policy = policiesByGroup.get(group.id) || null
+          const groupServices = services
+            .filter((s) => s.route_group === group.id)
+            .map((s) => ({
+              ...s,
+              targetTimeLabel: formatHour(s.target_time),
+              weekdaysLabel: formatWeekdays(s.weekdays),
+              vehiclePlate: s.vehicle ? vehiclesMap.get(s.vehicle)?.plate || `Veículo #${s.vehicle}` : 'Sem veículo habitual',
+              driverName: s.driver_membership
+                ? membershipsMap.get(s.driver_membership)?.applicant_name || `Vínculo #${s.driver_membership}`
+                : 'Sem motorista habitual',
+              originName: s.origin ? pointsMap.get(s.origin)?.name || `Ponto #${s.origin}` : 'Garagem do veículo',
+              destinationName: s.destination
+                ? pointsMap.get(s.destination)?.name || `Ponto #${s.destination}`
+                : dest?.name || `Ponto #${group.destination}`,
+            }))
 
-        this.todosVeiculos = allVehicles;
-        this.todosMotoristas = allDrivers;
-        this.todosPassageiros = allPassengers;
+          const activeMembers = groupMemberships
+            .filter((gm) => gm.route_group === group.id && !gm.ended_at)
+            .map((gm) => {
+              const member = membershipsMap.get(gm.membership)
+              const point = gm.transport_point ? pointsMap.get(gm.transport_point) : null
+              return {
+                ...gm,
+                applicantName: member?.applicant_name || `Vínculo #${gm.membership}`,
+                passengerId: member?.passenger || null,
+                pointName: point ? `${point.name} (${point.city}/${point.state})` : 'Sem ponto operacional',
+              }
+            })
 
-        const rotas = [];
-        const grupos = [];
-
-        for (const group of groups) {
-          const { data: schedulesData } = await api.get('/route-schedules/', {
-            params: { route_group: group.id },
-          });
-          const schedules = asList(schedulesData);
-          const vehicles = allVehicles.filter((v) => v.route_group === group.id);
-          const drivers = allDrivers.filter((d) => d.route_group === group.id);
-          const passengers = allPassengers.filter((p) => p.route_group === group.id);
-          const vehicle = vehicles[0];
-
-          grupos.push(mapGroupFromApi(group, { schedules, vehicles, drivers, passengers }));
-
-          if (!schedules.length) {
-            rotas.push({
-              id: `group-${group.id}`,
-              origem: group.name,
-              destino: 'Sem horários cadastrados',
-              horario: '-',
-              van: vehicle?.plate || 'Não atribuída',
-              motorista: vehicle?.driver_name || 'Não atribuído',
-            });
-            continue;
+          return {
+            id: group.id,
+            company: group.company,
+            name: group.name,
+            destinationId: group.destination,
+            destinationName: dest ? `${dest.name} (${dest.city}/${dest.state})` : `Ponto #${group.destination}`,
+            policy,
+            services: groupServices,
+            members: activeMembers,
           }
-
-          for (const schedule of schedules) {
-            rotas.push({
-              id: `schedule-${schedule.id}`,
-              origem: group.name,
-              destino: `Ida ${formatHour(schedule.go_hour)} - Volta ${formatHour(schedule.return_hour)}`,
-              horario: formatHour(schedule.go_hour),
-              van: vehicle?.plate || 'Não atribuída',
-              motorista: vehicle?.driver_name || 'Não atribuído',
-            });
-          }
+        })
+        return true
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao carregar configuração de grupos e serviços.'))
         }
-
-        this.rotas = rotas;
-        this.grupos = grupos;
-        return true;
-      } catch (error) {
-        this.error = formatApiError(error, 'Erro ao carregar rotas');
-        return false;
+        return false
       } finally {
-        this.loading = false;
+        if (!signal?.aborted) this.loading = false
       }
     },
 
-    async criarRota({ name, commonCep }) {
-      this.error = null;
+    async criarGrupo({ name, destinationId }, { signal } = {}) {
+      this.error = null
       try {
-        const { data } = await api.post('/company-route-groups/', {
-          name,
-          common_cep: commonCep,
-        });
-        return data;
+        return await createRouteGroup({ name, destination_id: destinationId }, { signal })
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao cadastrar rota');
-        return null;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao cadastrar grupo de atendimento.'))
+        }
+        return null
       }
     },
 
-    async atualizarRota(id, { name, commonCep } = {}) {
-      this.error = null;
+    async atualizarGrupo(id, { name, destinationId }, { signal } = {}) {
+      this.error = null
       try {
-        const payload = {};
-        if (name !== undefined) payload.name = name;
-        if (commonCep !== undefined) payload.common_cep = commonCep;
-        const { data } = await api.patch(`/company-route-groups/${id}/`, payload);
-        return data;
+        return await updateRouteGroup(id, { name, destination_id: destinationId }, { signal })
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao atualizar rota');
-        return null;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao atualizar grupo de atendimento.'))
+        }
+        return null
       }
     },
 
-    async removerRota(id) {
-      this.error = null;
+    async salvarPolitica(groupId, policyInput, { signal } = {}) {
+      this.error = null
       try {
-        await api.delete(`/company-route-groups/${id}/`);
-        this.grupos = this.grupos.filter((g) => g.id !== id);
-        this.rotas = this.rotas.filter((r) => !String(r.id).includes(`group-${id}`));
-        return { success: true };
+        return await saveResponsePolicy(groupId, policyInput, { signal })
       } catch (error) {
-        const responseData = error.response?.data;
-        const detail = responseData?.detail || (typeof responseData === 'string' ? responseData : null);
-        this.error = formatApiError(error, 'Erro ao remover rota');
-        return {
-          success: false,
-          status: error.response?.status,
-          detail: detail || 'Não foi possível excluir esta rota. Desvincule veículos, motoristas e passageiros antes de tentar novamente.',
-        };
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao configurar política de respostas.'))
+        }
+        return null
       }
     },
 
-    async criarHorario(routeGroupId, { goHour, returnHour }) {
-      this.error = null;
+    async criarServico(serviceInput, { signal } = {}) {
+      this.error = null
       try {
-        const { data } = await api.post('/route-schedules/', {
-          route_group: routeGroupId,
-          go_hour: goHour,
-          return_hour: returnHour,
-        });
-        return data;
+        return await createRecurringService(serviceInput, { signal })
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao cadastrar horário');
-        return null;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao cadastrar serviço habitual.'))
+        }
+        return null
       }
     },
 
-    async atualizarHorario(id, { goHour, returnHour } = {}) {
-      this.error = null;
+    async atualizarServico(serviceId, serviceInput, { signal } = {}) {
+      this.error = null
       try {
-        const payload = {};
-        if (goHour !== undefined) payload.go_hour = goHour;
-        if (returnHour !== undefined) payload.return_hour = returnHour;
-        const { data } = await api.patch(`/route-schedules/${id}/`, payload);
-        return data;
+        return await updateRecurringService(serviceId, serviceInput, { signal })
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao atualizar horário');
-        return null;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao atualizar serviço habitual.'))
+        }
+        return null
       }
     },
 
-    async removerHorario(id) {
-      this.error = null;
+    async salvarParadasServico(serviceId, pointIds, { signal } = {}) {
+      this.error = null
       try {
-        await api.delete(`/route-schedules/${id}/`);
-        return true;
+        return await saveServiceStops(serviceId, pointIds, { signal })
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao remover horário');
-        return false;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao configurar paradas habituais.'))
+        }
+        return null
       }
     },
 
-    async atribuirVeiculo(vehicleId, routeGroupId) {
-      this.error = null;
+    async atribuirPassageiroGrupo(membershipId, { routeGroupId, transportPointId }, { signal } = {}) {
+      this.error = null
       try {
-        const { data } = await api.patch(`/vehicles/${vehicleId}/`, { route_group: routeGroupId });
-        return data;
+        return await assignPassengerGroup(
+          membershipId,
+          { route_group_id: routeGroupId, transport_point_id: transportPointId },
+          { signal },
+        )
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao atribuir veículo à rota');
-        return null;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao atribuir passageiro ao grupo e ponto.'))
+        }
+        return null
       }
     },
 
-    async atribuirMotorista(driverId, routeGroupId) {
-      this.error = null;
+    async autorizarServicosPassageiro(groupMembershipId, { serviceIds, habitualOutboundId }, { signal } = {}) {
+      this.error = null
       try {
-        const { data } = await api.patch(`/drivers/${driverId}/`, { route_group: routeGroupId });
-        return data;
+        return await authorizeGroupMemberServices(
+          groupMembershipId,
+          { service_ids: serviceIds, habitual_outbound_id: habitualOutboundId },
+          { signal },
+        )
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao atribuir motorista à rota');
-        return null;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao autorizar serviços do passageiro.'))
+        }
+        return null
       }
     },
 
-    async desvincularMotorista(driverId) {
-      this.error = null;
+    async consultarAgendaAutomatica(groupId, { signal } = {}) {
       try {
-        const { data } = await api.patch(`/drivers/${driverId}/`, { route_group: null });
-        return data;
+        return await getAutomationStatus(groupId, { signal })
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao desvincular motorista da rota');
-        return null;
+        if (error.response?.status === 404) return null
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao consultar agenda automática.'))
+        }
+        return null
       }
     },
 
-    async atribuirPassageiro(passengerId, routeGroupId) {
-      this.error = null;
+    async salvarAgendaAutomatica(groupId, input, { signal } = {}) {
+      this.error = null
       try {
-        const { data } = await api.patch(`/passengers/${passengerId}/`, { route_group: routeGroupId });
-        return data;
+        return await saveAutomationSchedule(groupId, input, { signal })
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao atribuir passageiro à rota');
-        return null;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao configurar agenda automática.'))
+        }
+        return null
       }
     },
 
-    async desvincularPassageiro(passengerId) {
-      this.error = null;
+    async gerarHorizonte(groupId, input, { signal } = {}) {
+      this.error = null
       try {
-        const { data } = await api.patch(`/passengers/${passengerId}/`, { route_group: null });
-        return data;
+        return await generateGroupHorizon(groupId, input, { signal })
       } catch (error) {
-        this.error = formatApiError(error, 'Erro ao desvincular passageiro da rota');
-        return null;
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao gerar atendimentos por data.'))
+        }
+        return null
+      }
+    },
+
+    async cancelarDataGrupo(groupId, { date, reason }, { signal } = {}) {
+      this.error = null
+      try {
+        return await cancelGroupDate(groupId, { date, reason }, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao cancelar data do grupo.'))
+        }
+        return null
+      }
+    },
+
+    async fetchOperacaoDatada(params = {}, { signal } = {}) {
+      this.dayLoading = true
+      this.error = null
+      try {
+        const dayParams = {}
+        if (params.route_group) dayParams.route_group = params.route_group
+        if (params.date) dayParams.date = params.date
+
+        const [days, travels, eligibilities, requests, participations, snapshots, jobs] = await Promise.all([
+          listServiceDays(dayParams, { signal }),
+          listTravels(params.date ? { service_day__date: params.date } : {}, { signal }),
+          listEligibilities(params.day ? { day: params.day } : {}, { signal }),
+          listChangeRequests({}, { signal }),
+          listTravelParticipations({}, { signal }),
+          listRouteSnapshots({}, { signal }),
+          listOptimizationJobs({}, { signal }),
+        ])
+        if (signal?.aborted) return false
+
+        this.diasAtendimento = days
+        this.viagensDia = travels
+        this.elegibilidadesDia = eligibilities
+        this.pedidosAlteracao = requests
+        this.participacoesViagem = participations
+        this.snapshotsViagem = snapshots
+        this.jobsCalculo = jobs
+        return true
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao carregar operação por data.'))
+        }
+        return false
+      } finally {
+        if (!signal?.aborted) this.dayLoading = false
+      }
+    },
+
+    async fecharDiaAtendimento(dayId, { signal } = {}) {
+      this.error = null
+      try {
+        return await closeServiceDay(dayId, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível preparar alocações do atendimento.'))
+        }
+        return null
+      }
+    },
+
+    async revisarDiaAtendimento(dayId, expectedRevision, { signal } = {}) {
+      this.error = null
+      try {
+        return await reviseServiceDay(dayId, expectedRevision, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível revisar o atendimento.'))
+        }
+        return null
+      }
+    },
+
+    async cancelarDiaAtendimento(dayId, reason, { signal } = {}) {
+      this.error = null
+      try {
+        return await cancelServiceDay(dayId, reason, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível cancelar o atendimento.'))
+        }
+        return null
+      }
+    },
+
+    async calcularViagem(travelId, expectedRevision, { signal } = {}) {
+      this.error = null
+      try {
+        return await calculateTravel(travelId, expectedRevision, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível enfileirar o cálculo do percurso.'))
+        }
+        return null
+      }
+    },
+
+    async publicarViagem(travelId, expectedRevision, { signal } = {}) {
+      this.error = null
+      try {
+        return await publishTravel(travelId, expectedRevision, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível publicar a viagem.'))
+        }
+        return null
+      }
+    },
+
+    async cancelarViagem(travelId, { signal } = {}) {
+      this.error = null
+      try {
+        return await cancelTravel(travelId, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível cancelar a viagem.'))
+        }
+        return null
+      }
+    },
+
+    async designarVeiculoViagem(travelId, vehicleId, { signal } = {}) {
+      this.error = null
+      try {
+        return await assignTravelVehicle(travelId, vehicleId, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível substituir o veículo da viagem.'))
+        }
+        return null
+      }
+    },
+
+    async convidarMotoristaViagem(travelId, { driverMembershipId, expiresAt }, { signal } = {}) {
+      this.error = null
+      try {
+        return await inviteTravelDriver(
+          travelId,
+          { driver_membership_id: driverMembershipId, expires_at: expiresAt },
+          { signal },
+        )
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível enviar convite ao motorista.'))
+        }
+        return null
+      }
+    },
+
+    async decidirPedidoAlteracao(requestId, action, reason = '', { signal } = {}) {
+      this.error = null
+      try {
+        return await decideChangeRequest(requestId, action, reason, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível decidir o pedido na prorrogação.'))
+        }
+        return null
+      }
+    },
+
+    async aplicarPedidoAlteracao(requestId, { signal } = {}) {
+      this.error = null
+      try {
+        return await applyChangeRequest(requestId, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Não foi possível aplicar o pedido de alteração.'))
+        }
+        return null
       }
     },
   },
-});
+})
+
+watch(() => `${authState.logged}:${authState.user?.id || ''}`, () => {
+  try {
+    useRotasStore().$reset()
+  } catch {
+    // Store ainda não inicializada pelo Pinia
+  }
+}, { flush: 'sync' })

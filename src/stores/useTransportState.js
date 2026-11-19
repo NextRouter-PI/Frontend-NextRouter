@@ -1,17 +1,34 @@
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 import api from '@/api/client'
 import { state as authState } from '@/stores/state'
+import { sessionError } from '@/stores/session'
+import { formatApiError } from '@/utils/apiErrors'
+import {
+  listTravels,
+  listTravelParticipations,
+  listRouteSnapshots,
+  listRouteStops,
+  listGroupMemberships,
+  listEligibilities,
+  listDriverInvitations,
+  startTravel,
+  finishTravel,
+  reportTravelUnavailability,
+  recordParticipationPresence,
+  handleRouteStop,
+  respondDriverInvitation,
+} from '@/api/transport'
 
 const state = reactive({
   passenger: null,
   driver: null,
   loading: false,
+  busy: false,
   error: null,
+  notice: null,
 })
 
-function toList(data) {
-  return Array.isArray(data) ? data : data?.results || []
-}
+let activeController = null
 
 function formatTime(value) {
   if (!value) return '—'
@@ -20,207 +37,279 @@ function formatTime(value) {
   return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-function routeEndpoints(points) {
-  const list = points || []
-  const first = list[0]
-  const last = list[list.length - 1]
-  return {
-    origem: first?.label || first?.address || '—',
-    destino: last?.label || last?.address || '—',
-  }
+function pointLabel(point) {
+  if (!point || typeof point !== 'object') return '—'
+  const parts = [point.name, point.street && point.number ? `${point.street}, ${point.number}` : point.street, point.city && point.state ? `${point.city}/${point.state}` : point.city].filter(Boolean)
+  return parts.length ? parts.join(' · ') : '—'
 }
 
-async function fetchOwnDriver() {
-  const { data } = await api.get('/drivers/me/')
-  return data
+function nextSignal() {
+  activeController?.abort()
+  activeController = new AbortController()
+  return activeController.signal
 }
 
-async function fetchOwnPassenger() {
-  const { data } = await api.get('/passengers/me/')
-  return data
+function resetTransportState() {
+  activeController?.abort()
+  activeController = null
+  state.passenger = null
+  state.driver = null
+  state.loading = false
+  state.busy = false
+  state.error = null
+  state.notice = null
 }
 
-async function fetchTravelPath(travel) {
-  if (!travel?.path) return null
-  const { data } = await api.get(`/paths/${travel.path}/`)
-  return data
-}
+watch(() => `${authState.logged}:${authState.user?.id || ''}:${authState.role || ''}`, () => {
+  resetTransportState()
+}, { flush: 'sync' })
 
-async function fetchVehicleForRouteGroup(routeGroupId) {
-  if (!routeGroupId) return []
-  const { data } = await api.get('/vehicles/', { params: { route_group: routeGroupId } })
-  return toList(data)
-}
-
-async function fetchConfirmations(params) {
-  const { data } = await api.get('/confirmations/', { params })
-  return toList(data)
-}
-
-async function fetchRoutePassengers() {
-  const { data } = await api.get('/passengers/')
-  return toList(data)
-}
-
-function passengerAddress(userData) {
-  if (!userData) return '—'
-  const parts = [userData.street, userData.number, userData.neighborhood, userData.city, userData.state].filter(Boolean)
-  return parts.length ? parts.join(', ') : '—'
-}
-
-async function loadDriverData() {
+async function loadDriverData(selectedTravelId = null) {
+  const signal = nextSignal()
+  const ownerId = authState.user?.id
   state.loading = true
   state.error = null
 
   try {
-    const driver = await fetchOwnDriver()
-    if (!driver) {
-      state.driver = null
-      return
-    }
+    const { data: driver } = await api.get('/drivers/me/', { signal })
+    if (signal.aborted || authState.user?.id !== ownerId) return
 
-    const { data: travelsData } = await api.get('/travels/', { params: { driver: driver.id } })
-    const travels = toList(travelsData)
-    const travel =
+    const [travels, invitations] = await Promise.all([
+      listTravels({ driver: driver.id }, { signal }),
+      listDriverInvitations({}, { signal }),
+    ])
+    if (signal.aborted || authState.user?.id !== ownerId) return
+
+    const currentTravel =
+      (selectedTravelId && travels.find((t) => t.id === Number(selectedTravelId))) ||
       travels.find((t) => t.status === 'in_progress') ||
+      travels.find((t) => t.status === 'scheduled' && t.publication_current) ||
       travels.find((t) => t.status === 'scheduled') ||
       travels[0] ||
       null
 
-    let path = null
-    let vehicles = []
-    let confirmations = []
-    let routePassengers = []
+    let participations = []
+    let snapshot = null
+    let stops = []
 
-    ;[vehicles, routePassengers] = await Promise.all([
-      fetchVehicleForRouteGroup(driver.route_group),
-      fetchRoutePassengers(),
-    ])
-
-    if (travel) {
-      ;[path, confirmations] = await Promise.all([
-        fetchTravelPath(travel),
-        fetchConfirmations({ travel: travel.id }),
+    if (currentTravel) {
+      const snapshotId = currentTravel.published_snapshot || currentTravel.current_snapshot
+      const [partsRes, snapsRes, stopsRes] = await Promise.all([
+        listTravelParticipations({ travel: currentTravel.id }, { signal }),
+        snapshotId ? listRouteSnapshots({ travel: currentTravel.id }, { signal }) : Promise.resolve([]),
+        snapshotId ? listRouteStops({ snapshot: snapshotId }, { signal }) : Promise.resolve([]),
       ])
+      if (signal.aborted || authState.user?.id !== ownerId) return
+      participations = partsRes
+      snapshot = snapsRes.find((s) => s.id === snapshotId) || snapsRes[0] || null
+      stops = stopsRes
     }
 
-    const vehicle = vehicles.find((v) => v.driver === driver.id) || vehicles[0] || null
-    const { origem, destino } = routeEndpoints(path?.points)
-
-    state.driver = {
-      veiculo: {
-        modelo: vehicle?.model || '—',
-        placa: vehicle?.plate || '—',
-        capacidade: vehicle?.capacity || 0,
-        cor: vehicle?.color || '',
-        ano: vehicle?.year || null,
-        ativo: vehicle?.status === 'active',
-        caracteristicas: vehicle?.features || [],
-      },
-      rota: {
-        ponto_origem: origem,
-        ponto_destino: destino,
-        horario_saida: formatTime(travel?.started_at),
-        horario_chegada: formatTime(travel?.finished_at),
-      },
-      passageiros: routePassengers.map((passenger) => {
-        const confirmation = confirmations.find((c) => c.user === passenger.user_data?.id)
+    const partsById = new Map(participations.map((p) => [p.id, p]))
+    const enrichedStops = stops.map((stop) => ({
+      ...stop,
+      pointLabel: pointLabel(stop.point_snapshot),
+      enrichedParticipants: (stop.participants || []).map((sp) => {
+        const part = partsById.get(sp.participation)
         return {
-          nome: passenger.user_data?.name || 'Passageiro',
-          embarque: passengerAddress(passenger.user_data),
-          desembarque: destino,
-          confirmado: confirmation?.confirm ?? null,
+          ...sp,
+          name: part?.name || `Participante #${sp.participation}`,
+          status: part?.status || 'allocated',
         }
       }),
-      passageirosNaRota: routePassengers.length,
-      passageirosAtuais: confirmations.filter((c) => c.confirm).length,
-      travelId: travel?.id || null,
-      travelStatus: travel?.status || null,
+    }))
+
+    state.driver = {
+      driverId: driver.id,
+      travels,
+      invitations,
+      travel: currentTravel,
+      travelId: currentTravel?.id || null,
+      travelStatus: currentTravel?.status || null,
+      planningStatus: currentTravel?.planning_status || null,
+      revision: currentTravel?.revision ?? null,
+      publishedRevision: currentTravel?.published_revision ?? null,
+      publicationCurrent: Boolean(currentTravel?.publication_current),
+      vehicleId: currentTravel?.vehicle || null,
+      rota: {
+        ponto_origem: pointLabel(snapshot?.origin),
+        ponto_destino: pointLabel(snapshot?.destination),
+        horario_saida: formatTime(currentTravel?.started_at || currentTravel?.planned_start),
+        horario_chegada: formatTime(currentTravel?.finished_at || currentTravel?.planned_end),
+        distanciaKm: snapshot?.distance_meters != null ? (snapshot.distance_meters / 1000).toFixed(1) : null,
+        duracaoMin: snapshot?.duration_seconds != null ? Math.round(snapshot.duration_seconds / 60) : null,
+      },
+      participations,
+      stops: enrichedStops,
+      passageirosNaRota: participations.filter((p) => ['allocated', 'on_board', 'dropped_off'].includes(p.status)).length,
+      passageirosEmbarcados: participations.filter((p) => p.status === 'on_board').length,
+      passageirosPendentes: participations.filter((p) => p.status === 'allocated').length,
     }
   } catch (error) {
-    state.error = error.response?.data || error.message || 'Erro ao carregar dados do transporte'
-    state.driver = null
+    if (!signal.aborted && authState.user?.id === ownerId) {
+      state.error = sessionError(error, formatApiError(error, 'Erro ao carregar dados operacionais do motorista.'))
+      state.driver = null
+    }
   } finally {
-    state.loading = false
+    if (!signal.aborted && authState.user?.id === ownerId) state.loading = false
   }
 }
 
-async function loadPassengerData() {
+async function loadPassengerData(selectedTravelId = null) {
+  const signal = nextSignal()
+  const ownerId = authState.user?.id
   state.loading = true
   state.error = null
 
   try {
-    const passenger = await fetchOwnPassenger()
+    await api.get('/passengers/me/', { signal })
+    if (signal.aborted || authState.user?.id !== ownerId) return
 
-    if (!passenger?.route_group) {
-      state.passenger = { attached: false }
-      return
-    }
-
-    const [vehicles, routeGroup] = await Promise.all([
-      fetchVehicleForRouteGroup(passenger.route_group),
-      api.get(`/company-route-groups/${passenger.route_group}/`).then((r) => r.data),
+    const [groupMemberships, eligibilities, participations, travels] = await Promise.all([
+      listGroupMemberships({}, { signal }),
+      listEligibilities({}, { signal }),
+      listTravelParticipations({}, { signal }),
+      listTravels({}, { signal }),
     ])
-    const vehicle = vehicles[0] || null
+    if (signal.aborted || authState.user?.id !== ownerId) return
 
-    let driverInfo = null
-    if (vehicle?.driver) {
-      const { data } = await api.get(`/drivers/${vehicle.driver}/`)
-      driverInfo = data
-    }
+    const activeGroups = groupMemberships.filter((gm) => !gm.ended_at)
+    const travelsMap = new Map(travels.map((t) => [t.id, t]))
 
-    const myConfirmations = await fetchConfirmations({ user: authState.user?.id })
-    const confirmation = myConfirmations[0] || null
-    const travelId = confirmation?.travel || null
+    const enrichedParticipations = participations.map((p) => {
+      const travel = travelsMap.get(p.travel) || null
+      return {
+        ...p,
+        travelData: travel,
+        date: travel?.date || '—',
+        direction: travel?.direction || p.leg,
+        travelStatus: travel?.status || 'scheduled',
+        planningStatus: travel?.planning_status || 'draft',
+        revision: travel?.revision ?? null,
+        publishedRevision: travel?.published_revision ?? null,
+        publicationCurrent: Boolean(travel?.publication_current),
+        plannedStartLabel: formatTime(travel?.planned_start),
+        plannedEndLabel: formatTime(travel?.planned_end),
+        startedAtLabel: formatTime(travel?.started_at),
+        finishedAtLabel: formatTime(travel?.finished_at),
+      }
+    })
 
-    let travel = null
-    let path = null
-    let allConfirmations = []
+    const currentParticipation =
+      (selectedTravelId && enrichedParticipations.find((p) => p.travel === Number(selectedTravelId))) ||
+      enrichedParticipations.find((p) => p.travelStatus === 'in_progress' && ['allocated', 'on_board'].includes(p.status)) ||
+      enrichedParticipations.find((p) => p.publicationCurrent && ['allocated', 'on_board'].includes(p.status)) ||
+      enrichedParticipations[0] ||
+      null
 
-    if (travelId) {
-      const { data } = await api.get(`/travels/${travelId}/`)
-      travel = data
-      ;[path, allConfirmations] = await Promise.all([
-        fetchTravelPath(travel),
-        fetchConfirmations({ travel: travelId }),
-      ])
-    }
-
-    const { origem, destino } = routeEndpoints(path?.points)
+    const currentTravel = currentParticipation?.travelData || null
+    const currentEligibility = currentParticipation
+      ? eligibilities.find((e) => e.id === currentParticipation.eligibility) || null
+      : eligibilities[0] || null
 
     state.passenger = {
-      attached: true,
-      veiculo: {
-        modelo: vehicle?.model || '—',
-        placa: vehicle?.plate || '—',
-        capacidade: vehicle?.capacity || 0,
-        cor: vehicle?.color || '',
-        ano: vehicle?.year || null,
-      },
-      motorista: {
-        nome: driverInfo?.user_data?.name || 'Motorista não atribuído',
-        email: '',
-        telefone: '',
-        avaliacao: driverInfo?.average_rating || 0,
-      },
+      attached: activeGroups.length > 0,
+      activeGroups,
+      eligibilitiesCount: eligibilities.length,
+      participations: enrichedParticipations,
+      currentParticipation,
+      travel: currentTravel,
+      travelId: currentTravel?.id || null,
+      travelStatus: currentTravel?.status || null,
+      publicationCurrent: Boolean(currentTravel?.publication_current),
+      publishedRevision: currentTravel?.published_revision ?? null,
+      pointLabel: pointLabel(currentEligibility?.point_snapshot),
       rota: {
-        ponto_origem: origem,
-        ponto_destino: destino,
-        horario_saida: formatTime(travel?.started_at),
-        horario_chegada: formatTime(travel?.finished_at),
+        ponto_origem: currentTravel?.direction === 'outbound' ? pointLabel(currentEligibility?.point_snapshot) : 'Destino do grupo',
+        ponto_destino: currentTravel?.direction === 'outbound' ? 'Destino do grupo' : pointLabel(currentEligibility?.point_snapshot),
+        horario_saida: formatTime(currentTravel?.started_at || currentTravel?.planned_start),
+        horario_chegada: formatTime(currentTravel?.finished_at || currentTravel?.planned_end),
       },
-      passageirosNaRota: routeGroup?.passengers_count ?? 0,
-      passageirosAtuais: allConfirmations.filter((c) => c.confirm).length,
-      confirmado: confirmation?.confirm ?? false,
-      travelId: travel?.id || null,
-      travelStatus: travel?.status || null,
     }
   } catch (error) {
-    state.error = error.response?.data || error.message || 'Erro ao carregar dados do transporte'
-    state.passenger = null
+    if (!signal.aborted && authState.user?.id === ownerId) {
+      state.error = sessionError(error, formatApiError(error, 'Erro ao carregar dados de transporte do passageiro.'))
+      state.passenger = null
+    }
   } finally {
-    state.loading = false
+    if (!signal.aborted && authState.user?.id === ownerId) state.loading = false
   }
+}
+
+async function runDriverMutation(operation, successMessage, reloadTravelId = null) {
+  if (state.busy || !authState.logged) return false
+  const ownerId = authState.user?.id
+  state.busy = true
+  state.error = null
+  state.notice = null
+  try {
+    await operation()
+    if (authState.user?.id !== ownerId) return false
+    state.notice = successMessage
+    await loadDriverData(reloadTravelId ?? state.driver?.travelId)
+    return true
+  } catch (error) {
+    if (authState.user?.id === ownerId) {
+      state.error = sessionError(error, formatApiError(error, 'Não foi possível concluir a operação.'))
+    }
+    return false
+  } finally {
+    if (authState.user?.id === ownerId) state.busy = false
+  }
+}
+
+function iniciarViagemDesignada(travel) {
+  if (!travel) return false
+  return runDriverMutation(
+    () => startTravel(travel.id, travel.revision),
+    `Viagem #${travel.id} iniciada na revisão publicada ${travel.revision}.`,
+    travel.id,
+  )
+}
+
+function finalizarViagemDesignada(travel) {
+  if (!travel) return false
+  return runDriverMutation(
+    () => finishTravel(travel.id),
+    `Viagem #${travel.id} finalizada.`,
+    travel.id,
+  )
+}
+
+function informarIndisponibilidade(travel) {
+  if (!travel) return false
+  const operationId = globalThis.crypto?.randomUUID?.() || `00000000-0000-4000-8000-${String(Date.now()).padStart(12, '0').slice(-12)}`
+  return runDriverMutation(
+    () => reportTravelUnavailability(travel.id, operationId),
+    `Indisponibilidade informada para a viagem #${travel.id}. A empresa foi notificada para convidar substituto.`,
+  )
+}
+
+function registrarPresencaParticipante(participationId, kind) {
+  const operationId = globalThis.crypto?.randomUUID?.() || `00000000-0000-4000-8000-${String(Date.now()).padStart(12, '0').slice(-12)}`
+  const labels = {
+    boarded: 'Embarque registrado.',
+    no_show: 'Ausência registrada.',
+    dropped_off: 'Desembarque registrado.',
+  }
+  return runDriverMutation(
+    () => recordParticipationPresence(participationId, { kind, operation_id: operationId }),
+    labels[kind] || 'Evento de presença registrado.',
+  )
+}
+
+function tratarParadaPercurso(stopId, skipped = false) {
+  return runDriverMutation(
+    () => handleRouteStop(stopId, { skipped }),
+    skipped ? 'Parada marcada como ignorada.' : 'Parada marcada como concluída.',
+  )
+}
+
+function responderConviteMotorista(invitationId, accept) {
+  return runDriverMutation(
+    () => respondDriverInvitation(invitationId, accept),
+    accept ? 'Convite aceito. A empresa deverá recalcular e publicar a viagem antes do início.' : 'Convite recusado.',
+  )
 }
 
 export function useTransportState() {
@@ -228,5 +317,11 @@ export function useTransportState() {
     state,
     loadPassengerData,
     loadDriverData,
+    iniciarViagemDesignada,
+    finalizarViagemDesignada,
+    informarIndisponibilidade,
+    registrarPresencaParticipante,
+    tratarParadaPercurso,
+    responderConviteMotorista,
   }
 }

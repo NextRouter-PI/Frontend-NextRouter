@@ -1,212 +1,210 @@
+<script setup>
+import { computed, onMounted } from 'vue'
+import { useTransportState } from '@/stores/useTransportState'
+
+const { state, loadDriverData, registrarPresencaParticipante } = useTransportState()
+const transport = computed(() => state.driver)
+const isInProgress = computed(() => transport.value?.travelStatus === 'in_progress')
+
+const statusLabel = {
+  allocated: 'Alocado (aguardando embarque)',
+  on_board: 'Embarcado',
+  dropped_off: 'Desembarcado',
+  no_show: 'Ausente (no-show)',
+  withdrawn: 'Desistiu antes do embarque',
+}
+
+onMounted(() => {
+  loadDriverData()
+})
+</script>
+
 <template>
   <div class="usuarios-list-container">
     <div class="questionario-header-block">
-      <h2>Questionário ({{ formatarDataProxima() }})</h2>
+      <h2>Participantes e Paradas da Viagem Designada</h2>
+      <p class="header-sub">
+        Dados derivados das participações e paradas calculadas (`travel-participations/` e `route-stops/`), sem expor dados cadastrais privados dos passageiros.
+      </p>
     </div>
 
-    <div class="list-container">
-      <h3 class="list-title">Passageiros Designados</h3>
+    <p v-if="state.notice" class="notice-banner" role="status">{{ state.notice }}</p>
+    <p v-if="state.error" class="error-banner" role="alert">{{ state.error }}</p>
 
-      <div v-if="loading" class="no-passengers">Carregando passageiros...</div>
+    <div v-if="state.loading" class="no-passengers">Carregando lista operacional...</div>
 
-      <div v-else-if="allPassengers.length > 0">
-        <div
-          v-for="passenger in allPassengers"
-          :key="passenger.id"
-          class="passenger-card"
+    <template v-else-if="transport">
+      <div v-if="transport.travels.length" class="schedule-selector">
+        <button
+          v-for="t in transport.travels"
+          :key="t.id"
+          type="button"
+          :class="['chip-btn', { active: t.id === transport.travelId }]"
+          :disabled="state.busy"
+          @click="loadDriverData(t.id)"
         >
-          <div class="passenger-name">{{ passenger.name }}</div>
-          <div class="passenger-address">{{ passenger.address }}</div>
-          <div class="passenger-status" :class="passenger.confirmed ? 'confirmed' : 'pending'">
-            {{ passenger.confirmed ? 'Presença confirmada' : 'Aguardando confirmação' }}
+          Viagem #{{ t.id }} · {{ t.date }} ({{ t.direction === 'outbound' ? 'Ida' : 'Retorno' }}) · {{ t.status }}
+        </button>
+      </div>
+
+      <div class="list-container">
+        <h3 class="list-title">
+          Passageiros da Viagem ({{ transport.participations.length }})
+        </h3>
+
+        <div v-if="transport.participations.length">
+          <div v-for="part in transport.participations" :key="part.id" class="passenger-card">
+            <div class="passenger-name">{{ part.name || `Participante #${part.id}` }}</div>
+            <div class="passenger-status" :class="part.status === 'on_board' || part.status === 'dropped_off' ? 'confirmed' : 'pending'">
+              Estado: {{ statusLabel[part.status] || part.status }}
+            </div>
+
+            <div v-if="isInProgress" class="action-buttons">
+              <button
+                v-if="part.status === 'allocated'"
+                type="button"
+                class="btn-action primary"
+                :disabled="state.busy"
+                @click="registrarPresencaParticipante(part.id, 'boarded')"
+              >
+                Registrar Embarque
+              </button>
+              <button
+                v-if="part.status === 'allocated'"
+                type="button"
+                class="btn-action outline"
+                :disabled="state.busy"
+                @click="registrarPresencaParticipante(part.id, 'no_show')"
+              >
+                Registrar Ausência
+              </button>
+              <button
+                v-if="part.status === 'on_board'"
+                type="button"
+                class="btn-action primary"
+                :disabled="state.busy"
+                @click="registrarPresencaParticipante(part.id, 'dropped_off')"
+              >
+                Registrar Desembarque
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div v-else class="no-passengers">
-        Nenhum passageiro designado para a viagem atual
+        <div v-else class="no-passengers">
+          Nenhum participante alocado para a viagem selecionada.
+        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted } from "vue";
-import api from "@/api/client";
-
-const allPassengers = ref([]);
-const loading = ref(false);
-
-function toList(data) {
-  return Array.isArray(data) ? data : data?.results || [];
-}
-
-async function fetchOwnDriver() {
-  const { data } = await api.get('/drivers/me/');
-  return data;
-}
-
-async function loadPassengers() {
-  loading.value = true;
-  try {
-    const driver = await fetchOwnDriver();
-    if (!driver) {
-      allPassengers.value = [];
-      return;
-    }
-
-    const { data: travelsData } = await api.get("/travels/", { params: { driver: driver.id } });
-    const travels = toList(travelsData);
-    const travel =
-      travels.find((t) => t.status === "in_progress") ||
-      travels.find((t) => t.status === "scheduled") ||
-      travels[0] ||
-      null;
-
-    if (!travel) {
-      allPassengers.value = [];
-      return;
-    }
-
-    const { data: confirmationsData } = await api.get("/confirmations/", {
-      params: { travel: travel.id },
-    });
-    const confirmations = toList(confirmationsData);
-
-    allPassengers.value = confirmations.map((confirmation) => ({
-      id: confirmation.id,
-      name: confirmation.user_name || "Passageiro",
-      address: confirmation.user_address || "Endereço não informado",
-      confirmed: confirmation.confirm,
-    }));
-  } catch {
-    allPassengers.value = [];
-  } finally {
-    loading.value = false;
-  }
-}
-
-const formatarDataProxima = () => {
-  const amanha = new Date();
-  amanha.setDate(amanha.getDate() + 1);
-
-  const dia = String(amanha.getDate()).padStart(2, "0");
-  const mes = String(amanha.getMonth() + 1).padStart(2, "0");
-  const ano = amanha.getFullYear();
-
-  return `${dia}/${mes}/${ano}`;
-};
-
-onMounted(() => {
-  loadPassengers();
-});
-</script>
-
 <style scoped>
 .usuarios-list-container {
-  padding: 0 20px;
+  padding: 20px 20px 140px;
   min-height: 100vh;
+  max-width: 680px;
+  margin: 0 auto;
 }
 
 .questionario-header-block {
   background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
-  border-radius: 10px;
-  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .questionario-header-block h2 {
-  font-size: 1rem;
-  font-weight: bold;
+  font-size: 1.15rem;
+  font-weight: 800;
   color: var(--text);
-  margin: 0;
+  margin: 0 0 6px;
 }
 
-.schedule-selector {
-  background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
+.header-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.notice-banner {
+  padding: 10px 14px;
   border-radius: 10px;
-  padding: 10px 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: rgba(5, 150, 105, 0.12);
+  color: var(--success, #059669);
+  font-weight: 600;
   margin-bottom: 12px;
 }
 
-.time-text {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: var(--text);
+.error-banner {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--danger, #dc2626);
+  font-weight: 600;
+  margin-bottom: 12px;
 }
 
-.arrow-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 2px;
+.schedule-selector {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.chip-btn {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--superfice);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip-btn.active {
+  border-color: var(--primary);
+  background: rgba(223, 128, 26, 0.12);
   color: var(--primary);
-  transition: transform 0.2s;
-  width: 32px;
-  height: 32px;
-}
-
-.arrow-button:hover {
-  color: var(--primary-hover);
-}
-
-.arrow-button:active {
-  transform: scale(0.85);
 }
 
 .list-container {
   background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
-  border-radius: 15px;
-  padding: 12px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
 }
 
 .list-title {
-  font-size: 0.95rem;
-  font-weight: bold;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--text);
-  margin: 0 0 8px 0;
-  padding: 0;
+  margin: 0 0 10px;
 }
 
 .passenger-card {
   border: 1px solid var(--border-primary);
-  border-radius: 10px;
-  padding: 10px 12px;
-  text-align: left;
+  border-radius: 12px;
+  padding: 12px 14px;
   background: var(--bg);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin-top: 10px;
 }
 
 .passenger-name {
-  font-size: 0.95rem;
-  font-weight: bold;
+  font-size: 0.96rem;
+  font-weight: 700;
   color: var(--text);
 }
 
-.passenger-address {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
 .passenger-status {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -218,142 +216,37 @@ onMounted(() => {
   color: var(--text-muted);
 }
 
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-action {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-action.primary {
+  border: none;
+  background: var(--primary);
+  color: white;
+}
+
+.btn-action.outline {
+  border: 1px solid var(--border);
+  background: var(--superfice);
+  color: var(--text);
+}
+
 .no-passengers {
   text-align: center;
-  padding: 20px;
+  padding: 24px;
   color: var(--text-muted);
   font-size: 0.9rem;
-}
-
-@media (min-width: 480px) {
-  .usuarios-list-container {
-    padding: 15px;
-  }
-
-  .questionario-header-block {
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 12px;
-  }
-
-  .questionario-header-block h2 {
-    font-size: 1.1rem;
-  }
-
-  .schedule-selector {
-    padding: 12px 15px;
-    margin-bottom: 15px;
-    border-radius: 12px;
-  }
-
-  .time-text {
-    font-size: 1.2rem;
-  }
-
-  .arrow-button {
-    font-size: 1.5rem;
-    width: 35px;
-    height: 35px;
-    padding: 3px;
-  }
-
-  .list-container {
-    padding: 15px 10px;
-    gap: 10px;
-    border-radius: 18px;
-  }
-
-  .list-title {
-    font-size: 1rem;
-    margin-bottom: 10px;
-  }
-
-  .passenger-card {
-    padding: 12px 15px;
-    border-radius: 11px;
-  }
-
-  .passenger-name {
-    font-size: 1rem;
-  }
-
-  .passenger-address {
-    font-size: 0.85rem;
-  }
-
-  .no-passengers {
-    padding: 25px;
-    font-size: 0.92rem;
-  }
-}
-
-@media (min-width: 768px) {
-  .usuarios-list-container {
-    padding: 20px;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-
-  .questionario-header-block {
-    padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 15px;
-  }
-
-  .questionario-header-block h2 {
-    font-size: 1.3rem;
-  }
-
-  .schedule-selector {
-    padding: 15px 20px;
-    margin-bottom: 20px;
-    border-radius: 15px;
-  }
-
-  .time-text {
-    font-size: 1.4rem;
-  }
-
-  .arrow-button {
-    font-size: 1.8rem;
-    width: 40px;
-    height: 40px;
-    padding: 5px;
-  }
-
-  .list-container {
-    padding: 25px 15px;
-    gap: 12px;
-    border-radius: 20px;
-  }
-
-  .list-title {
-    font-size: 1.1rem;
-    margin-bottom: 15px;
-  }
-
-  .passenger-card {
-    padding: 15px 20px;
-    border-radius: 12px;
-  }
-
-  .passenger-name {
-    font-size: 1.1rem;
-  }
-
-  .passenger-address {
-    font-size: 0.9rem;
-  }
-
-  .no-passengers {
-    padding: 30px;
-    font-size: 0.95rem;
-  }
-}
-
-@media (min-width: 1201px) {
-  .usuarios-list-container {
-    max-width: 700px;
-  }
 }
 </style>

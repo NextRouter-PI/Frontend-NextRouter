@@ -22,7 +22,12 @@ const updatedAtLabel = computed(() => {
 watch(
   () => transportState.passenger,
   (passenger) => {
-    if (passenger?.travelId && passenger.travelStatus === 'in_progress') {
+    const partStatus = passenger?.currentParticipation?.status
+    if (
+      passenger?.travelId &&
+      passenger.travelStatus === 'in_progress' &&
+      ['allocated', 'on_board'].includes(partStatus)
+    ) {
       startViewerTracking(passenger.travelId)
     } else {
       stopTracking()
@@ -61,8 +66,10 @@ onUnmounted(() => {
         <p v-if="tracking.latitude != null" class="tracking-coords">
           {{ tracking.latitude.toFixed(6) }}, {{ tracking.longitude.toFixed(6) }}
           <span v-if="updatedAtLabel" class="tracking-time">· atualizado às {{ updatedAtLabel }}</span>
+          <span v-if="tracking.stale" class="tracking-time"> (posição desatualizada)</span>
         </p>
         <p v-else class="tracking-coords">Aguardando localização do motorista...</p>
+        <p v-if="tracking.error" class="tracking-time" role="alert">{{ tracking.error }}</p>
         <a v-if="mapsUrl" :href="mapsUrl" target="_blank" rel="noopener noreferrer" class="tracking-link">
           Ver no mapa <span class="mdi mdi-open-in-new"></span>
         </a>

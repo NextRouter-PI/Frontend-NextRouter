@@ -113,7 +113,15 @@ onUnmounted(() => {
 <template>
   <div class="live-map-wrap">
     <div ref="mapContainer" class="live-map"></div>
-    <p v-if="tracking.latitude == null" class="live-map-empty">Aguardando localização em tempo real...</p>
+    <p v-if="tracking.latitude == null" class="live-map-empty">
+      {{ tracking.error || 'Posição ainda não informada para esta viagem.' }}
+    </p>
+    <p v-else-if="tracking.stale" class="live-map-status">
+      Última posição conhecida (desatualizada). O rastreamento contínuo em segundo plano não é garantido.
+    </p>
+    <p v-if="tracking.error && tracking.latitude != null" class="live-map-status error" role="alert">
+      {{ tracking.error }}
+    </p>
   </div>
 </template>
 
@@ -143,6 +151,19 @@ onUnmounted(() => {
   font-size: 0.82rem;
   color: var(--text-muted);
   background: var(--superfice);
+}
+
+.live-map-status {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--superfice);
+  border-top: 1px solid var(--border, rgba(223, 128, 26, 0.12));
+}
+
+.live-map-status.error {
+  color: var(--danger, #dc2626);
 }
 </style>
 

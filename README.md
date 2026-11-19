@@ -48,16 +48,18 @@ CNH é opcional. Criar conta não aprova empresa nem solicita vínculo.
 Recuperação usa `password-reset/request/`, `verify/` e `confirm/` com `new_password`:
 a tela de nova senha só abre após verificação no servidor, sem informar se há conta.
 
-## Descoberta, vínculo, perfil e segurança — R3 e R4
+## Descoberta, vínculo, perfil, segurança e operação — R3 a R5
 
 `/empresas` permite busca pública por nome, cidade/UF atendidas e grupo/destino.
 O titular revisa e envia o pedido em `/vinculos`, acompanha o estado e pode retirar
 pedidos pendentes ou encerrar vínculos ativos. A empresa consulta e decide vínculos em
-`/usuarios`, além de consultar a identidade mínima de titulares vinculados. Em `/usuario`
-e `/seguranca`, o titular consulta e edita dados permitidos, substitui/baixa documentos,
-altera senha ou e-mail e gerencia sessões. Grupo e serviços ficam em recortes próprios.
+`/usuarios` e vê a identidade mínima de vinculados. Em `/usuario` e `/seguranca`, o titular
+edita dados permitidos, gerencia documentos, senha, e-mail e sessões. Em `/transporte` e
+`/lista`, a empresa configura pontos operacionais, frota, grupos, políticas, serviços,
+autorizações e operação datada; o passageiro responde por data e acompanha viagens
+publicadas; o motorista executa viagens designadas, paradas, presença e localização.
 
-CEP permanece inalterado e adiado. R1–R4 têm somente conferência estática;
+CEP permanece inalterado e adiado. R1–R5 têm somente conferência estática;
 validação funcional, de segurança e visual continuam pendentes de autorização.
 
 ## Documentação

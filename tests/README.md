@@ -139,3 +139,47 @@ navegador real nesta revisão. Antes do aceite, autorizar validação com dados 
   são recusados.
 - Verificar que leituras operacionais do próprio motorista/passageiro (`DriverList.vue`,
   `useTransportState.js`) usam `/drivers/me/` e `/passengers/me/` em vez de listagem com `.find()`.
+
+## Validação focal pendente — R5 / Etapas 3–5 e 6.1–6.4 (Configuração habitual e operação datada)
+
+Implementação com revisão estática somente. Nenhum teste foi criado/executado; não
+há evidência de cálculo OSRM/worker, publicação, WebSocket ao vivo ou registro de
+presença em navegador real nesta revisão. Antes do aceite do Marco B, autorizar
+validação com dados fictícios de:
+
+- **Configuração habitual (Etapa 3 + 6.4):** cadastrar e editar pontos operacionais
+  (`operational-points/` com coordenadas explícitas) e frota (`vehicles/` com
+  `garage_point_id`, sem vínculo direto legado a grupo/motorista e sem `DELETE`);
+  criar grupo (`company-route-groups/` com `destination_id`), política de respostas
+  (`policy/` com abertura, janela normal e prorrogação opcional), serviços habituais
+  (`recurring-services/` com sentido imutável, máscara de dias da semana, vigência,
+  duração, margem, motorista/veículo habituais e `stops/`), atribuição de passageiro
+  a grupo e ponto (`assign-group/`), autorização de serviços e ida habitual
+  (`authorize-services/`) e agenda automática opt-in (`automation/` e `automation-status/`).
+- **Atendimento por data, respostas e publicação (Etapa 4 + 6.1–6.2):** gerar horizonte
+  (`generate/` até 31 dias/lote) e cancelar datas (`cancel-date/` e `service-days/{id}/cancel/`);
+  responder pelo passageiro na janela normal (`eligibilities/{id}/answer/` com ida e
+  retorno independentes dentre os serviços autorizados e `expected_revision`); separar
+  negativa explícita de ausência de resposta; fechar janela normal e preparar alocações
+  (`service-days/{id}/close/`); solicitar cálculo (`travels/{id}/calculate/` → 202),
+  acompanhar `route-snapshots/` e `optimization-jobs/` e publicar viagem pronta
+  (`travels/{id}/publish/`), comprovando que resposta/cálculo não publicam automaticamente.
+  Na prorrogação, solicitar alteração (`request-change/`), aprovar/recusar pela empresa
+  (`change-requests/{id}/approve|reject/`), verificar que a escolha/alocação anteriores
+  permanecem vigentes durante `preparing` e aplicar após cálculo pronto (`apply/`).
+  Testar também desistência por trecho antes do embarque (`withdraw-leg/`).
+- **Execução, substituições e acompanhamento (Etapa 5 + 6.3):** substituir veículo
+  (`assign-vehicle/`), informar indisponibilidade do motorista (`unavailability/`),
+  convidar substituto (`invite-driver/`) e responder convite pelo motorista convidado
+  (`driver-invitations/{id}/respond/`), verificando que convite pendente não expõe o
+  percurso. Como motorista designado, iniciar viagem na revisão publicada vigente
+  (`travels/{id}/start/` com `expected_revision`), consultar paradas (`route-stops/`) e
+  participações (`travel-participations/` sem dados cadastrais/endereço pessoal),
+  registrar embarque, ausência e desembarque (`record/` com `operation_id`), tratar
+  paradas (`handle/`) e finalizar viagem (`finish/`), conferindo bloqueios quando
+  houver passageiros a bordo ou pendentes.
+- **Mapa e WebSocket na mesma origem (5.4–5.5):** enviar posição pelo motorista com
+  `{latitude, longitude, recorded_at}` e receber `{type: 'location', position, stale}`
+  pelo passageiro alocado/embarcado e pela empresa; tratar posição ausente/desatualizada
+  (`stale`), códigos de fechamento (`4001/4003/4009/1009/1000`), reconexão após `refresh`
+  e encerramento em `travel.closed`.

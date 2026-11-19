@@ -1,150 +1,320 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useTransporteStore } from '@/stores/useTransporteStore';
-import { useRouter } from 'vue-router';
-import api from '@/api/client';
+import { ref, computed, onMounted } from 'vue'
+import { useTransporteStore } from '@/stores/useTransporteStore'
+import { useAccountScope } from '@/composables/useAccountScope'
+import { useRouter } from 'vue-router'
 
-const store = useTransporteStore();
-const busca = ref('');
-const filtroAtivo = ref('Todas');
-const routeGroups = ref([]);
+const store = useTransporteStore()
+const scope = useAccountScope()
+const router = useRouter()
 
-function rotaNome(routeGroupId) {
-  return routeGroups.value.find((g) => g.id === routeGroupId)?.name || null;
+const abaAtiva = ref('frota') // 'frota' | 'pontos'
+const busca = ref('')
+const filtroAtivo = ref('Todas')
+const menuAberto = ref(null)
+
+const editandoPontoId = ref(null)
+const salvandoPonto = ref(false)
+const erroPonto = ref('')
+const avisoPonto = ref('')
+const pontoForm = ref(emptyPoint())
+
+function emptyPoint() {
+  return {
+    name: '',
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    cep: '',
+    latitude: '',
+    longitude: '',
+  }
 }
 
 onMounted(async () => {
-  store.fetchVeiculos();
-  try {
-    const { data: company } = await api.get('/companies/me/');
-    const { data } = await api.get('/company-route-groups/', { params: { company: company.id } });
-    routeGroups.value = Array.isArray(data) ? data : data.results || [];
-  } catch {
-    routeGroups.value = [];
-  }
-});
+  await store.fetchVeiculos({ signal: scope.signal })
+})
 
 const alterarStatus = async (id) => {
-  await store.alterarStatus(id);
-  menuAberto.value = null;
-};
+  await store.alterarStatus(id, { signal: scope.signal })
+  menuAberto.value = null
+}
 
 const veiculosFiltrados = computed(() => {
-  const lista = store.veiculos || [];
-  return lista.filter(v => {
-    const correspondeBusca = v.placa.toLowerCase().includes(busca.value.toLowerCase()) ||
-      v.modelo.toLowerCase().includes(busca.value.toLowerCase());
+  const lista = store.veiculos || []
+  return lista.filter((v) => {
+    const correspondeBusca =
+      v.placa.toLowerCase().includes(busca.value.toLowerCase()) ||
+      v.modelo.toLowerCase().includes(busca.value.toLowerCase())
 
-    const statusParaFiltro = filtroAtivo.value === 'Ativas' ? 'Ativo' : filtroAtivo.value;
-    const correspondeFiltro = filtroAtivo.value === 'Todas' || v.status === statusParaFiltro;
+    const statusParaFiltro = filtroAtivo.value === 'Ativas' ? 'Ativo' : filtroAtivo.value
+    const correspondeFiltro = filtroAtivo.value === 'Todas' || v.status === statusParaFiltro
 
-    return correspondeBusca && correspondeFiltro;
-  });
-});
-
-const router = useRouter();
-const cadastrar = () => {
-  router.push('/cadastro-veiculo');
-};
-
-const menuAberto = ref(null);
+    return correspondeBusca && correspondeFiltro
+  })
+})
 
 const toggleMenu = (id) => {
-  menuAberto.value = menuAberto.value === id ? null : id;
-};
+  menuAberto.value = menuAberto.value === id ? null : id
+}
+
+function iniciarEdicaoPonto(ponto) {
+  editandoPontoId.value = ponto.id
+  erroPonto.value = ''
+  avisoPonto.value = ''
+  pontoForm.value = {
+    name: ponto.name || '',
+    street: ponto.street || '',
+    number: ponto.number || '',
+    complement: ponto.complement || '',
+    neighborhood: ponto.neighborhood || '',
+    city: ponto.city || '',
+    state: ponto.state || '',
+    cep: ponto.cep || '',
+    latitude: String(ponto.latitude ?? ''),
+    longitude: String(ponto.longitude ?? ''),
+  }
+}
+
+function cancelarEdicaoPonto() {
+  editandoPontoId.value = null
+  erroPonto.value = ''
+  pontoForm.value = emptyPoint()
+}
+
+async function salvarPonto() {
+  if (!scope.current() || salvandoPonto.value) return
+  erroPonto.value = ''
+  avisoPonto.value = ''
+
+  const lat = Number(pontoForm.value.latitude)
+  const lng = Number(pontoForm.value.longitude)
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+    erroPonto.value = 'Informe latitude (-90 a 90) e longitude (-180 a 180) válidas.'
+    return
+  }
+
+  salvandoPonto.value = true
+  const resultado = editandoPontoId.value
+    ? await store.atualizarPontoOperacional(editandoPontoId.value, pontoForm.value, { signal: scope.signal })
+    : await store.adicionarPontoOperacional(pontoForm.value, { signal: scope.signal })
+  if (!scope.current()) return
+  salvandoPonto.value = false
+
+  if (resultado) {
+    avisoPonto.value = editandoPontoId.value
+      ? 'Ponto operacional atualizado.'
+      : 'Ponto operacional cadastrado.'
+    editandoPontoId.value = null
+    pontoForm.value = emptyPoint()
+  } else {
+    erroPonto.value = store.error || 'Não foi possível salvar o ponto operacional.'
+  }
+}
 </script>
 
 <template>
   <div class="content">
-    <div class="search-container">
-      <span class="mdi mdi-magnify search-icon"></span>
-      <input v-model="busca" type="text" placeholder="Busque por placa, modelo..." />
-    </div>
-
-    <div class="filter-chips">
-      <button v-for="f in ['Todas', 'Ativas', 'Manutenção']" :key="f" :class="['chip', { active: filtroAtivo === f }]"
-        @click="filtroAtivo = f">
-        {{ f }}
+    <div class="filter-chips" role="tablist" aria-label="Configuração de frota e pontos">
+      <button
+        type="button"
+        :class="['chip', { active: abaAtiva === 'frota' }]"
+        @click="abaAtiva = 'frota'"
+      >
+        Frota ({{ store.veiculos.length }})
+      </button>
+      <button
+        type="button"
+        :class="['chip', { active: abaAtiva === 'pontos' }]"
+        @click="abaAtiva = 'pontos'"
+      >
+        Pontos Operacionais ({{ store.pontosOperacionais.length }})
       </button>
     </div>
 
-    <p v-if="store.loading" class="status-message">Carregando veículos...</p>
-    <p v-else-if="store.error" class="status-message error">{{ store.error || 'Erro ao carregar veículos.' }}</p>
-    <p v-else-if="!veiculosFiltrados.length" class="status-message">Nenhum veículo encontrado.</p>
+    <template v-if="abaAtiva === 'frota'">
+      <div class="search-container">
+        <span class="mdi mdi-magnify search-icon"></span>
+        <input v-model="busca" type="text" placeholder="Busque por placa, modelo..." />
+      </div>
 
-    <div class="list-container">
-      <div v-for="veiculo in veiculosFiltrados" :key="veiculo.id" class="transport-card">
-        <div class="card-header">
-          <div class="header-main">
-            <h3>{{ veiculo.placa }}</h3>
-            <p class="card-subtitle">{{ veiculo.modelo }}</p>
+      <div class="filter-chips">
+        <button
+          v-for="f in ['Todas', 'Ativas', 'Manutenção']"
+          :key="f"
+          type="button"
+          :class="['chip', { active: filtroAtivo === f }]"
+          @click="filtroAtivo = f"
+        >
+          {{ f }}
+        </button>
+      </div>
+
+      <p v-if="store.loading" class="status-message">Carregando veículos...</p>
+      <p v-else-if="store.error" class="status-message error" role="alert">{{ store.error }}</p>
+      <p v-else-if="!veiculosFiltrados.length" class="status-message">Nenhum veículo encontrado.</p>
+
+      <div class="list-container">
+        <div v-for="veiculo in veiculosFiltrados" :key="veiculo.id" class="transport-card">
+          <div class="card-header">
+            <div class="header-main">
+              <h3>{{ veiculo.placa }}</h3>
+              <p class="card-subtitle">{{ veiculo.modelo || 'Modelo não informado' }}</p>
+            </div>
+
+            <div class="menu-container">
+              <button type="button" class="menu-dots" aria-label="Opções do veículo" @click="toggleMenu(veiculo.id)">
+                <span class="mdi mdi-dots-vertical"></span>
+              </button>
+
+              <div v-if="menuAberto === veiculo.id" class="menu-dropdown">
+                <button type="button" @click="router.push(`/veiculos/editar/${veiculo.id}`)">
+                  Editar informações do veículo
+                </button>
+                <button type="button" @click="alterarStatus(veiculo.id)">
+                  {{ veiculo.status === 'Ativo' ? 'Enviar para a manutenção' : 'Retirar de manutenção' }}
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div class="menu-container">
-            <button class="menu-dots" @click="toggleMenu(veiculo.id)">
-              <span class="mdi mdi-dots-vertical"></span>
-            </button>
+          <div class="card-details">
+            <div class="detail-item">
+              <span class="mdi mdi-seat-passenger"></span>
+              <span>{{ veiculo.capacidade }} Lugares</span>
+            </div>
+            <div v-if="veiculo.ano" class="detail-item">
+              <span class="mdi mdi-calendar-outline"></span>
+              <span>{{ veiculo.ano }}</span>
+            </div>
+            <div v-if="veiculo.cor" class="detail-item">
+              <span class="mdi mdi-palette-outline"></span>
+              <span>{{ veiculo.cor }}</span>
+            </div>
+            <div v-if="veiculo.garagePointName" class="detail-item">
+              <span class="mdi mdi-garage-outline"></span>
+              <span>Garagem: {{ veiculo.garagePointName }}</span>
+            </div>
+          </div>
 
-            <div v-if="menuAberto === veiculo.id" class="menu-dropdown">
-              <button @click="router.push(`/veiculos/editar/${veiculo.id}`)">
-                Editar informações do veículo
-              </button>
-              <button @click="alterarStatus(veiculo.id)">
-                {{ veiculo.status === 'Ativo' ? 'Enviar para a manutenção' : 'Retirar de manutenção' }}
-              </button>
+          <div v-if="veiculo.caracteristicas?.length" class="feature-chips">
+            <span v-for="feature in veiculo.caracteristicas" :key="feature" class="feature-chip">
+              {{ feature }}
+            </span>
+          </div>
+
+          <span :class="['status-tag', veiculo.status.toLowerCase()]">
+            {{ veiculo.status }}
+          </span>
+        </div>
+      </div>
+
+      <button type="button" class="fab-add" aria-label="Cadastrar veículo" @click="router.push('/cadastro-veiculo')">
+        <span class="mdi mdi-plus"></span>
+      </button>
+    </template>
+
+    <template v-else>
+      <div class="transport-card">
+        <h3>{{ editandoPontoId ? 'Editar ponto operacional' : 'Novo ponto operacional' }}</h3>
+        <p class="card-subtitle">
+          Pontos operacionais definem destinos de grupos, garagens, paradas habituais e pontos de transporte de alunos. São independentes de endereços pessoais e exigem coordenadas.
+        </p>
+
+        <form class="point-form" @submit.prevent="salvarPonto">
+          <div class="point-grid">
+            <div>
+              <label>Identificação<span>*</span></label>
+              <input v-model="pontoForm.name" placeholder="Ex.: Campus Norte / Garagem Central" required :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>CEP<span>*</span></label>
+              <input v-model="pontoForm.cep" placeholder="89200000" maxlength="9" required :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>Logradouro<span>*</span></label>
+              <input v-model="pontoForm.street" placeholder="Rua Exemplo" required :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>Número<span>*</span></label>
+              <input v-model="pontoForm.number" placeholder="100" required :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>Complemento</label>
+              <input v-model="pontoForm.complement" placeholder="Bloco A" :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>Bairro<span>*</span></label>
+              <input v-model="pontoForm.neighborhood" placeholder="Centro" required :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>Cidade<span>*</span></label>
+              <input v-model="pontoForm.city" placeholder="Joinville" required :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>UF<span>*</span></label>
+              <input v-model="pontoForm.state" placeholder="SC" maxlength="2" required :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>Latitude<span>*</span></label>
+              <input v-model="pontoForm.latitude" type="number" step="any" placeholder="-26.3044" required :disabled="salvandoPonto" />
+            </div>
+            <div>
+              <label>Longitude<span>*</span></label>
+              <input v-model="pontoForm.longitude" type="number" step="any" placeholder="-48.8455" required :disabled="salvandoPonto" />
+            </div>
+          </div>
+
+          <p v-if="erroPonto" class="status-message error" role="alert">{{ erroPonto }}</p>
+          <p v-if="avisoPonto" class="status-message" role="status">{{ avisoPonto }}</p>
+
+          <div class="point-actions">
+            <button type="submit" class="btn-primary-inline" :disabled="salvandoPonto">
+              {{ salvandoPonto ? 'Salvando...' : editandoPontoId ? 'Salvar ponto' : 'Cadastrar ponto' }}
+            </button>
+            <button v-if="editandoPontoId" type="button" class="btn-outline-inline" :disabled="salvandoPonto" @click="cancelarEdicaoPonto">
+              Cancelar edição
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <p v-if="store.pointsLoading" class="status-message">Carregando pontos operacionais...</p>
+      <p v-else-if="!store.pontosOperacionais.length" class="status-message">
+        Nenhum ponto operacional cadastrado. Cadastre ao menos um destino antes de criar grupos de atendimento.
+      </p>
+
+      <div class="list-container">
+        <div v-for="ponto in store.pontosOperacionais" :key="ponto.id" class="transport-card">
+          <div class="card-header">
+            <div class="header-main">
+              <h3>{{ ponto.name }} · #{{ ponto.id }}</h3>
+              <p class="card-subtitle">
+                {{ ponto.street }}, {{ ponto.number }}{{ ponto.complement ? ` (${ponto.complement})` : '' }} —
+                {{ ponto.neighborhood }}, {{ ponto.city }}/{{ ponto.state }} · CEP {{ ponto.cep }}
+              </p>
+            </div>
+            <button type="button" class="btn-outline-inline" @click="iniciarEdicaoPonto(ponto)">Editar</button>
+          </div>
+          <div class="card-details">
+            <div class="detail-item">
+              <span class="mdi mdi-crosshairs-gps"></span>
+              <span>{{ ponto.latitude }}, {{ ponto.longitude }}</span>
             </div>
           </div>
         </div>
-
-        <div class="card-details">
-          <div class="detail-item">
-            <span class="mdi mdi-seat-passenger"></span>
-            <span>{{ veiculo.capacidade }} Lugares</span>
-          </div>
-          <div class="detail-item">
-            <span class="mdi mdi-account-outline"></span>
-            <span>{{ veiculo.motorista }}</span>
-          </div>
-          <div class="detail-item" v-if="veiculo.ano">
-            <span class="mdi mdi-calendar-outline"></span>
-            <span>{{ veiculo.ano }}</span>
-          </div>
-          <div class="detail-item" v-if="veiculo.cor">
-            <span class="mdi mdi-palette-outline"></span>
-            <span>{{ veiculo.cor }}</span>
-          </div>
-          <div class="detail-item" v-if="veiculo.garageCep">
-            <span class="mdi mdi-garage-outline"></span>
-            <span>{{ veiculo.garageCep }}</span>
-          </div>
-          <div class="detail-item" v-if="rotaNome(veiculo.routeGroup)">
-            <span class="mdi mdi-map-marker-path"></span>
-            <span>{{ rotaNome(veiculo.routeGroup) }}</span>
-          </div>
-        </div>
-
-        <div v-if="veiculo.caracteristicas?.length" class="feature-chips">
-          <span v-for="feature in veiculo.caracteristicas" :key="feature" class="feature-chip">
-            {{ feature }}
-          </span>
-        </div>
-
-        <span :class="['status-tag', veiculo.status.toLowerCase()]">
-          {{ veiculo.status }}
-        </span>
       </div>
-    </div>
-
-    <button class="fab-add" @click="cadastrar">
-      <span class="mdi mdi-plus"></span>
-    </button>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .content {
   margin: 0 auto;
-  max-width: 600px;
+  max-width: 680px;
   padding: 18px 18px 140px;
 }
 
@@ -173,23 +343,26 @@ const toggleMenu = (id) => {
 
 .filter-chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .chip {
-  padding: 6px 16px;
+  padding: 8px 16px;
   border-radius: 20px;
   border: 1px solid var(--border);
   background: var(--superfice);
   font-size: 0.85rem;
   color: var(--text-muted);
+  cursor: pointer;
 }
 
 .chip.active {
   background: rgba(223, 128, 26, 0.08);
   border-color: var(--primary);
   color: var(--primary);
+  font-weight: 600;
 }
 
 .transport-card {
@@ -201,8 +374,15 @@ const toggleMenu = (id) => {
   box-shadow: var(--shadow);
 }
 
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
 .card-header h3 {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 800;
   margin: 0;
   color: var(--text);
@@ -210,16 +390,18 @@ const toggleMenu = (id) => {
 
 .card-subtitle {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin-top: 4px;
+  line-height: 1.4;
 }
 
 .card-details {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   margin: 12px 0;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
 }
 
 .detail-item {
@@ -271,11 +453,7 @@ const toggleMenu = (id) => {
 }
 
 .menu-dropdown button:not(:last-child) {
-  border-bottom: 1px solid rgba(255, 255, 255, .35);
-}
-
-.menu-dropdown button:hover {
-  background: rgba(255, 255, 255, .1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .feature-chips {
@@ -299,7 +477,7 @@ const toggleMenu = (id) => {
   display: inline-block;
   padding: 4px 12px;
   border-radius: 8px;
-  font-size: 0.80rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
@@ -311,6 +489,65 @@ const toggleMenu = (id) => {
 .status-tag.manutenção {
   background-color: rgba(239, 68, 68, 0.1);
   color: var(--danger);
+}
+
+.point-form {
+  margin-top: 16px;
+}
+
+.point-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.point-grid label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text);
+}
+
+.point-grid label span {
+  color: var(--primary);
+}
+
+.point-grid input {
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.point-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-primary-inline {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: var(--gradient-primary);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-outline-inline {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .fab-add {
@@ -328,27 +565,13 @@ const toggleMenu = (id) => {
   align-items: center;
   justify-content: center;
   box-shadow: var(--shadow-primary);
-  transition: transform 0.2s ease;
-}
-
-.fab-add:hover {
-  transform: scale(1.05);
-}
-
-.fab-add:active {
-  transform: scale(0.95);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  cursor: pointer;
 }
 
 .status-message {
   text-align: center;
   color: var(--text-muted);
-  padding: 24px 0;
+  padding: 16px 0;
 }
 
 .status-message.error {

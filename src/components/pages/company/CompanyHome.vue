@@ -23,7 +23,8 @@ ChartJS.register(
 )
 
 const routesToday = ref(null)
-const questionnaireSlots = ref([])
+const statsDate = ref('')
+const serviceSlots = ref([])
 const statsLoading = ref(false)
 const companyData = ref(null)
 const companyLoading = ref(false)
@@ -53,10 +54,14 @@ function formatAddress(data) {
 }
 
 const chartData = computed(() => ({
-  labels: questionnaireSlots.value.map((slot) => slot.label),
+  labels: serviceSlots.value.map((slot) => {
+    const dir = slot.service__direction === 'outbound' ? 'Ida' : 'Volta'
+    const hr = String(slot.service__target_time || '').slice(0, 5)
+    return `${dir} ${hr || `#${slot.service}`}`
+  }),
   datasets: [
     {
-      data: questionnaireSlots.value.map((slot) => slot.confirmed),
+      data: serviceSlots.value.map((slot) => (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0)),
       backgroundColor: '#df801a',
       borderRadius: 0,
       barThickness: 38
@@ -65,7 +70,10 @@ const chartData = computed(() => ({
 }))
 
 const chartMax = computed(() => {
-  const max = Math.max(2, ...questionnaireSlots.value.map((slot) => slot.confirmed))
+  const max = Math.max(
+    2,
+    ...serviceSlots.value.map((slot) => (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0)),
+  )
   return Math.ceil(max / 2) * 2
 })
 
@@ -102,7 +110,10 @@ const data = computed(() => {
 })
 
 const passageirosHoje = computed(() => {
-  return store.veiculos.reduce((total, veiculo) => total + veiculo.capacidade, 0)
+  return serviceSlots.value.reduce(
+    (acc, slot) => acc + (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0),
+    0,
+  )
 })
 
 const ativos = computed(() => {
@@ -116,10 +127,12 @@ async function fetchStats() {
   try {
     const { data: stats } = await api.get('/companies/me/stats/')
     routesToday.value = stats.routes_today
-    questionnaireSlots.value = stats.questionnaire_by_slot || []
+    statsDate.value = stats.date || ''
+    serviceSlots.value = Array.isArray(stats.services) ? stats.services : []
   } catch {
     routesToday.value = null
-    questionnaireSlots.value = []
+    statsDate.value = ''
+    serviceSlots.value = []
   } finally {
     statsLoading.value = false
   }
@@ -140,6 +153,7 @@ async function fetchCompany() {
 onMounted(() => {
   fetchStats()
   fetchCompany()
+  store.fetchVeiculos()
 })
 </script>
 
@@ -208,15 +222,15 @@ onMounted(() => {
     </div>
 
     <div class="grafico-card">
-      <h2>Questionário {{ data }}</h2>
+      <h2>Atendimento por Serviço {{ statsDate || data }}</h2>
       <div class="chart-container">
         <p v-if="statsLoading">Carregando...</p>
-        <p v-else-if="!questionnaireSlots.length">Nenhum horário de rota cadastrado ainda.</p>
+        <p v-else-if="!serviceSlots.length">Nenhuma viagem datada registrada para a data consultada.</p>
         <Bar v-else :data="chartData" :options="chartOptions" />
       </div>
-      <button class="btn-detalhes">
+      <RouterLink to="/lista" class="btn-detalhes">
         VER DETALHES
-      </button>
+      </RouterLink>
     </div>
 
   </div>
