@@ -9,11 +9,17 @@ export default defineConfig({
   publicDir: false,
   plugins: [vue(), vueDevTools()],
   server: {
+    host: '127.0.0.1',
+    port: 5173,
+    strictPort: true,
     proxy: {
-      '/api': { target: 'http://127.0.0.1:8000' },
-      '/ws': { target: 'http://127.0.0.1:8000', ws: true },
+      // Preservar Host e Origin mantém os checks de CSRF e WebSocket no Django.
+      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: false },
+      '/ws': { target: 'http://127.0.0.1:8000', changeOrigin: false, ws: true },
+      '/media': { target: 'http://127.0.0.1:8000', changeOrigin: false },
     },
   },
+  preview: { host: '127.0.0.1', port: 4173, strictPort: true },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
