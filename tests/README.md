@@ -43,3 +43,8 @@ confiável, autorizar a verificação de:
 ESLint focal sem `--fix`/cache e `git diff --check` passaram na revisão estática.
 Isso não comprova renderização, interação, contrato de cadastro ou integração real.
 CEP não faz parte desta evidência: seu tratamento foi adiado pelo responsável.
+
+Nos perfis, também ficam pendentes a verificação de loading/erro de upload isolados
+entre instâncias, de troca de foto ocupada até o PATCH terminar e sem continuação
+local após sair da tela, e de toasts sucessivos cujo timer anterior não apague a
+mensagem atual. Nenhum teste de perfil ou navegador foi executado nesta R1.

@@ -58,11 +58,12 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     `useTransportState.js`, `useQuestionnaireState.js`, `useUploadImage.js`): estado
     de fluxos específicos de cadastro e operação (verificar alinhamento com o contrato
     atual antes de reutilizar chamadas legadas).
-  - `useRegisterState.js` mantém o nome/caminho histórico, mas é um composable local,
-    não uma store Pinia. Chamá-lo durante `setup` ou em um escopo Vue ativo: estado
-    e requisições pertencem à instância e são descartados com ela. O envio de código
-    em `useEmailVerification.js` segue o mesmo ciclo de vida. Abortar a espera local
-    não desfaz escrita já aceita pelo servidor nem autoriza repetição automática.
+  - `useRegisterState.js` e `useUploadImage.js` mantêm os nomes/caminhos históricos,
+    mas são composables locais, não stores Pinia. Chamá-los durante `setup` ou em
+    um escopo Vue ativo: estado e requisições pertencem à instância e são descartados
+    com ela. O envio de código em `useEmailVerification.js` segue o mesmo ciclo de
+    vida. Abortar a espera local não desfaz escrita já aceita pelo servidor nem
+    autoriza repetição automática.
 - **Navegação (`src/router/index.js`):**
   - Rotas públicas (`meta: { requiresAuth: false }`): `/login`, `/signup`,
     `/signup/usuario`, `/signup/motorista`, `/signup/empresa`, `/signup/confirmacao`,
@@ -92,7 +93,8 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     separados e IDs por instância; não recebe nem altera o formulário inteiro.
   - `src/composables/`: lógica reutilizável (`useDeviceLayout`, `useEmailVerification`,
     `useInputFormat`, `useSignUpForm`, `useSignUpCompanyForm`, `useTransportQuestionnaire`,
-    `useTravelTracking`, `useValidation`).
+    `useTravelTracking`, `useValidation`, `useToast`). `useToast` mantém mensagem e
+    timer por escopo, substitui o timer anterior e ignora chamadas após descarte.
   - `src/utils/apiErrors.js`: `formatApiError` para traduzir respostas de erro aninhadas
     da API, erros de rede, `429` e `5xx` em mensagens legíveis em português.
   - `src/assets/css/`: variáveis de tema (`theme.css`) e estilos globais (`global.css`).

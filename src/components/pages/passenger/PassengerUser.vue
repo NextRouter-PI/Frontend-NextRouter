@@ -5,6 +5,7 @@ import api from '@/api/client'
 import { useUploadImage } from '@/stores/useUploadImage'
 import { useInputFormat } from '@/composables/useInputFormat'
 import { useValidator } from '@/composables/useValidation'
+import { useToast } from '@/composables/useToast'
 import AvatarUploader from '@/components/layout/AvatarUpload.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import FormField from '@/components/ui/FormField.vue'
@@ -16,8 +17,10 @@ const { state: uploadState, upload: uploadImage } = useUploadImage()
 
 const loading = ref(true)
 const saving = ref(false)
+const updatingPhoto = ref(false)
 const error = ref('')
-const toast = ref(null)
+const { toast, showToast } = useToast()
+let active = true
 const profileData = ref(null)
 const isEditingProfile = ref(false)
 const isEditingAddress = ref(false)
@@ -80,13 +83,6 @@ function formatAddress(data) {
   )
 }
 
-function showToast(message, type = 'success') {
-  toast.value = { message, type }
-  setTimeout(() => {
-    toast.value = null
-  }, 3000)
-}
-
 async function fetchProfile() {
   loading.value = true
   error.value = ''
@@ -135,22 +131,29 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  active = false
   window.removeEventListener('touchstart', onTouchStart)
   window.removeEventListener('touchmove', onTouchMove)
   window.removeEventListener('touchend', onTouchEnd)
 })
 
 async function handlePhoto(file) {
+  if (!active || updatingPhoto.value) return
+  updatingPhoto.value = true
   try {
     const data = await uploadImage(file, `Foto de perfil de ${state.user.name}`)
+    if (!active) return
     if (data?.attachment_key) {
       const { data: updated } = await api.patch('/users/me/', { profile_picture: data.attachment_key })
+      if (!active) return
       profileData.value = updated
       Object.assign(state.user, updated)
     }
     showToast('Foto atualizada!')
   } catch {
     showToast('Erro ao enviar foto', 'error')
+  } finally {
+    if (active) updatingPhoto.value = false
   }
 }
 
@@ -261,7 +264,7 @@ function cancelAddressEdit() {
           :model-value="profileData.profile_picture_data?.url"
           @file-select="handlePhoto"
         />
-        <div v-if="uploadState.uploading" class="upload-overlay">
+        <div v-if="uploadState.uploading || updatingPhoto" class="upload-overlay">
           <span class="mdi mdi-loading mdi-spin"></span>
         </div>
       </div>

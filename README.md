@@ -29,12 +29,16 @@ Use rede confiável e dados fictícios ao acessar via `dev:lan` (`http://<IPv4>:
 o uso de HTTP em IP da rede local pode limitar geolocalização e renovação
 automática de sessão.
 
-## Cadastros — refatoração R1
+## Estado local — refatoração R1
 
 Validação, submissão e envio de código pertencem à instância montada do formulário.
 Requisições e timers desse fluxo são descartados ao sair da tela; abortar a espera
 no cliente não desfaz cadastro ou upload já aceito pelo servidor, nem provoca replay.
 `DateInput` recebe modelos separados de dia/mês/ano e apresenta seus erros.
+
+Nos três perfis, o estado de upload é local e a troca de foto permanece ocupada
+até a associação do arquivo ao perfil terminar. Toasts substituem o timer anterior
+e são descartados ao sair da tela, reutilizando a apresentação existente.
 
 Esta mudança não adapta ainda os endpoints de cadastro/recuperação. A consulta
 externa de CEP permanece inalterada e foi adiada por decisão do responsável.
