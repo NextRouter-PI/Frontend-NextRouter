@@ -75,15 +75,21 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/seguranca',
+      name: 'seguranca',
+      component: () => import('../views/AccountSecurityView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/usuarios/motorista/:id",
       name: "usuario-motorista",
-      component: () => import("../components/pages/company/UsuarioDetalhe.vue"),
+      component: () => import('../views/LinkedProfileView.vue'),
       meta: { requiresAuth: true }
     },
     {
       path: "/usuarios/passageiro/:id",
       name: "usuario-passageiro",
-      component: () => import("../components/pages/company/UsuarioDetalhe.vue"),
+      component: () => import('../views/LinkedProfileView.vue'),
       meta: { requiresAuth: true }
     },
     {

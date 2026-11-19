@@ -1,25 +1,33 @@
 <script setup>
 import { ref } from 'vue'
 
-const modelValue = defineModel({ type: [String, null], default: null })
-const emit = defineEmits(['file-select'])
+const props = defineProps({
+  modelValue: { type: String, default: null },
+  disabled: { type: Boolean, default: false },
+})
+const emit = defineEmits(['file-select', 'error'])
 const fileInput = ref(null)
 
 function openSelector() {
-  fileInput.value?.click()
+  if (!props.disabled) fileInput.value?.click()
 }
 
 function handleFile(event) {
   const file = event.target.files?.[0]
-  if (file) {
-    modelValue.value = URL.createObjectURL(file)
-    emit('file-select', file)
+  event.target.value = ''
+  if (!file || props.disabled) return
+  if (file.size > 5 * 1024 * 1024 || !/\.(jpe?g|png)$/i.test(file.name)) {
+    emit('error', 'Selecione uma imagem JPG ou PNG de até 5 MB. O servidor também valida o conteúdo.')
+    return
   }
+  // A foto exibida continua sendo a confirmada no servidor; sem preview falso ou URL vazada.
+  emit('file-select', file)
 }
 </script>
 
 <template>
-  <div class="avatar-edit-wrapper" @click="openSelector">
+  <div class="avatar-edit-wrapper">
+    <button type="button" class="avatar-button" :disabled="disabled" aria-label="Alterar foto de perfil" @click="openSelector">
     <div class="avatar-circle">
       <img
         v-if="modelValue"
@@ -31,10 +39,12 @@ function handleFile(event) {
         <span class="mdi mdi-camera-plus-outline"></span>
       </div>
     </div>
+    </button>
     <input
       ref="fileInput"
       type="file"
-      accept="image/*"
+      accept=".jpg,.jpeg,.png"
+      :disabled="disabled"
       class="file-input-hidden"
       @change="handleFile"
     />
@@ -49,9 +59,13 @@ function handleFile(event) {
   cursor: pointer;
 }
 
+.avatar-button { padding: 0; background: none; border: 0; border-radius: 50%; cursor: pointer; }
+.avatar-button:disabled { opacity: 0.65; cursor: not-allowed; }
+.avatar-button:focus-visible { outline: 3px solid var(--text); outline-offset: 4px; }
+
 .avatar-circle {
-  width: 150px;
-  height: 150px;
+  width: 106px;
+  height: 106px;
   border-radius: 50%;
   overflow: hidden;
   position: relative;

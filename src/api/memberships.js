@@ -38,7 +38,7 @@ export async function requestMembership(companyId, profile, { signal }) {
 }
 
 export async function transitionMembership(id, action, reason, { signal }) {
-  if (!['approve', 'reject', 'withdraw'].includes(action)) throw new Error('Ação de vínculo inválida.')
+  if (!['approve', 'reject', 'withdraw', 'end'].includes(action)) throw new Error('Ação de vínculo inválida.')
   const { data } = await api.post(`/memberships/${id}/${action}/`, { reason }, { signal })
   return data
 }

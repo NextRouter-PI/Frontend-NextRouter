@@ -6,6 +6,8 @@ export const state = reactive({
   user: null,
   role: null,
   profiles: {},
+  profileRevision: 0,
+  profileStale: false,
   loading: false,
   error: null,
   checkingAuth: false,

@@ -3,7 +3,7 @@ import api from '@/api/client'
 import { useValidator } from './useValidation'
 import { formatApiError } from '@/utils/apiErrors'
 
-export function usePasswordReset() {
+export function usePasswordReset(options = {}) {
   const etapa = ref(1)
   const email = ref('')
   const emailCodigo = ref('')
@@ -15,7 +15,7 @@ export function usePasswordReset() {
   const cooldown = ref(0)
   const { requiredField, isEmail, isStrongPassword } = useValidator()
   const controller = new AbortController()
-  const { signal } = controller
+  const signal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal
   let verifiedCode = ''
   let interval = null
 

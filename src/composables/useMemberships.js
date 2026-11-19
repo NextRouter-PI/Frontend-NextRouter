@@ -87,16 +87,18 @@ export function useMemberships(scope, status = ref('')) {
   }
 
   function transition(record, action, reason) {
-    if (!record || record.status !== 'pending' || typeof reason !== 'string' || reason.length > 500) return false
+    const expectedStatus = action === 'end' ? 'active' : 'pending'
+    if (!record || record.status !== expectedStatus || typeof reason !== 'string' || reason.length > 500) return false
     const personal = Boolean(scope.value?.passenger || scope.value?.driver)
-    if (personal ? action !== 'withdraw' : !['approve', 'reject'].includes(action)) return false
-    const known = records.value.some((item) => item.id === record.id && item.status === 'pending') ||
-      openMembership.value?.id === record.id
+    if (personal ? !['withdraw', 'end'].includes(action) : !['approve', 'reject', 'end'].includes(action)) return false
+    const known = records.value.some((item) => item.id === record.id && item.status === expectedStatus) ||
+      (openMembership.value?.id === record.id && openMembership.value.status === expectedStatus)
     if (!known) return false
     const messages = {
       approve: 'Vínculo aprovado. Grupo, ponto e serviços são configurações posteriores.',
       reject: 'Pedido recusado. A conta do titular foi preservada.',
       withdraw: 'Pedido retirado. Sua conta foi preservada.',
+      end: 'Vínculo encerrado. Conta e registros foram preservados; o acesso operacional à empresa terminou.',
     }
     return write((signal) => transitionMembership(record.id, action, reason.trim(), { signal }), messages[action])
   }

@@ -1,4 +1,6 @@
 <script setup>
+import { useId } from 'vue'
+
 defineProps({
   modelValue: String,
   label: String,
@@ -7,11 +9,13 @@ defineProps({
   disabled: { type: Boolean, default: false },
 })
 defineEmits(['update:modelValue'])
+const fieldId = useId()
 </script>
 
 <template>
   <div class="input-group">
     <input
+      :id="fieldId"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
       :type="type"
@@ -19,7 +23,7 @@ defineEmits(['update:modelValue'])
       :disabled="disabled"
       required
     />
-    <label>{{ label }}</label>
+    <label :for="fieldId">{{ label }}</label>
   </div>
 </template>
 

@@ -31,15 +31,13 @@ function routeEndpoints(points) {
 }
 
 async function fetchOwnDriver() {
-  const { data } = await api.get('/drivers/')
-  const list = toList(data)
-  return list.find((d) => d.user_data?.id === authState.user?.id) || null
+  const { data } = await api.get('/drivers/me/')
+  return data
 }
 
 async function fetchOwnPassenger() {
-  const { data } = await api.get('/passengers/')
-  const list = toList(data)
-  return list.find((p) => p.user_data?.id === authState.user?.id) || null
+  const { data } = await api.get('/passengers/me/')
+  return data
 }
 
 async function fetchTravelPath(travel) {

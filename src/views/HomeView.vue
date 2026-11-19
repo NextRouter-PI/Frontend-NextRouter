@@ -10,6 +10,9 @@ const userLogged = computed(() => state)
 
 <template>
   <div v-if="userLogged.logged">
+    <p v-if="state.profileStale" role="status">
+      Os dados cadastrais podem estar desatualizados. <RouterLink to="/usuario">Consultar perfil</RouterLink>.
+    </p>
     <PassengerHome v-if="userLogged.role === 'passenger'" />
     <DriverHome v-else-if="userLogged.role === 'driver'" />
     <CompanyHome v-else-if="userLogged.role === 'company'" />

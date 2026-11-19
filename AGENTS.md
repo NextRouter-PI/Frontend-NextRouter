@@ -52,18 +52,27 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     `city`, `state`). Filtros de cidade/UF consultam destino atendido; os campos da
     resposta são cadastrais, não uma lista de cidades atendidas ou pontos operacionais.
   - `src/api/memberships.js`: listas com página explícita, pedido do próprio perfil e
-    transições `approve/reject/withdraw`. Consulta pessoal confere pending/active fora
+    transições `approve/reject/withdraw/end`. Consulta pessoal confere pending/active fora
     da página do histórico e resolve somente o nome público do ciclo aberto (sem N+1).
+  - `src/api/profile.js` e `src/api/account.js`: leitura do próprio perfil (`/{role}s/me/`),
+    edição por seção (`PATCH /users/me/` e `PATCH /companies/me/`), associação e download
+    autorizado de documentos (`uploads/documents/{key}/download/`), leitura da conta,
+    troca de e-mail (`email-change/request|verify|confirm/`) e consulta/revogação de
+    sessões (`sessions/`, `sessions/{id}/` e `me/revoke-sessions/`).
   - `src/legacyPwa.js`: remoção seletiva das chaves antigas (`access`, `user`,
     `manualLogout`) do storage, desregistro de `/sw.js` e `/dev-sw.js` da mesma
     origem e limpeza apenas dos caches conhecidos (`api-cache`, `google-fonts-cache`,
     `gstatic-fonts-cache` e `workbox-precache-v2-*`).
 - **Estado e sessão (`src/stores/`):**
-  - `src/stores/state.js`, `src/stores/session.js` e `src/stores/useLoginState.js`:
+  - `src/stores/state.js`, `src/stores/session.js`, `src/stores/profileSnapshot.js` e
+    `src/stores/useLoginState.js`:
     estado reativo de autenticação exclusivamente em memória (`logged`, `initialized`,
-    `user`, `role`, `profiles`, `loading`, `error`, `checkingAuth`). A identidade é
+    `user`, `role`, `profiles`, `profileRevision`, `profileStale`, `loading`, `error`,
+    `checkingAuth`). A identidade é
     obtida em `users/me/` e o papel ativo é resolvido consultando `companies/me/`,
     `drivers/me/` e `passengers/me/` (sem depender de campo `type` em `users/me/`).
+    `profileSnapshot.js` publica e invalida snapshots de apresentação por revisão e
+    identidade, sem substituir a releitura autoritativa de `/me/`.
   - Demais stores (`useRegisterState.js`, `useRotasStore.js`, `useTransporteStore.js`,
     `useTransportState.js`, `useQuestionnaireState.js`, `useUploadImage.js`): estado
     de fluxos específicos de cadastro e operação (verificar alinhamento com o contrato
@@ -74,28 +83,38 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     com ela. O envio de código em `useEmailVerification.js` segue o mesmo ciclo de
     vida. Abortar a espera local não desfaz escrita já aceita pelo servidor nem
     autoriza repetição automática.
-- **Navegação (`src/router/index.js`):**
+- **Navegação (`src/router/index.js` e `src/navigation.js`):**
   - Rotas públicas (`meta: { requiresAuth: false }`): `/login`, `/signup`,
     `/signup/usuario`, `/signup/motorista`, `/signup/empresa`, `/signup/confirmacao`,
     `/forgot-password`, `/logout` e `/empresas`. A descoberta usa
     `allowAuthenticated: true` para também aceitar contas autenticadas.
-  - Rotas autenticadas (`meta: { requiresAuth: true }`): `/`, `/usuario`, `/lista`,
+  - Rotas autenticadas (`meta: { requiresAuth: true }`): `/`, `/usuario`, `/seguranca`, `/lista`,
     `/transporte`, `/cadastro-veiculo`, `/veiculos/editar/:id`, `/cadastro-rota`,
     `/rotas/editar/:id`, `/usuarios`, `/usuarios/motorista/:id`, `/usuarios/passageiro/:id`
     e `/vinculos`.
+  - `src/navigation.js` centraliza os itens de menu por papel consumidos por
+    `AppSideBar.vue` e `AppBottomNavigationBar.vue`.
   - O guard `beforeEach` executa `checkAuth()` na primeira navegação autenticada,
     aplica o tema (`localStorage.getItem('theme')`) em rotas privadas e na descoberta e
     redireciona conforme `state.logged`.
 - **Componentes, views, composables e utilitários (`src/`):**
   - `src/views/`: views de página mapeadas pelo router (`HomeView`, `LoginView`,
     `SignUpView`, `ConfirmationView`, `ForgotPasswordView`, `LogoutView`, `UserView`,
-    `ListView`, `TransportView`, `CompanyDirectoryView`, `MembershipsView`).
+    `AccountSecurityView`, `LinkedProfileView`, `ListView`, `TransportView`,
+    `CompanyDirectoryView`, `MembershipsView`).
   - `src/components/layout/`: `RoleBasedView.vue` (seleciona a tela por papel ativo),
     `AppHeader.vue`, `AppSideBar.vue`, `AppBottomNavigationBar.vue`, `AvatarUpload.vue`.
-  - `src/components/auth/` e `src/components/forms/`: login, confirmação de código
-    e formulários de cadastro por perfil
+  - `src/components/auth/` e `src/components/forms/`: login, redefinição de senha
+    (`PasswordResetForm.vue`), confirmação de código e formulários de cadastro por perfil
     (`SignUpPassenger.vue`, `SignUpDriver.vue`, `SignUpCompany.vue`, `AddressSection.vue`,
     `CnhSection.vue`).
+  - `src/components/profile/` e `src/components/account/`: cabeçalho/foto (`ProfileHeader.vue`),
+    edição por seção (`ProfileFieldsSection.vue`), upload/download de documentos
+    (`ProfileDocumentSlot.vue`), troca de e-mail (`EmailChangeForm.vue`) e sessões ativas
+    (`AccountSessions.vue`), com metadados em `src/profileFields.js`. As views antigas de
+    perfil por papel (`PassengerUser.vue`, `DriverUser.vue`, `CompanyUser.vue`) e o detalhe
+    legado (`UsuarioDetalhe.vue`) foram substituídos por `UserView.vue`,
+    `AccountSecurityView.vue` e `LinkedProfileView.vue`.
   - `src/components/pages/`: telas segmentadas em `company/`, `driver/` e `passenger/`.
   - `src/components/ui/`: componentes visuais reutilizáveis (`BaseButton`, `FloatingInput`,
     `FormField`, `FormattedField`, `PasswordField`, `SelectField`, `CodeInput`, `DateInput`,
@@ -105,23 +124,30 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     separados e IDs por instância; não recebe nem altera o formulário inteiro.
   - `src/composables/`: lógica reutilizável (`useDeviceLayout`, `useEmailVerification`,
     `useInputFormat`, `useSignUpForm`, `useSignUpCompanyForm`, `useTransportQuestionnaire`,
-    `useTravelTracking`, `useValidation`, `useToast`). `useToast` mantém mensagem e
+    `useTravelTracking`, `useValidation`, `useToast`, `useOwnProfile`, `useAccountScope`,
+    `useEmailChange`, `usePullToRefresh`). `useToast` mantém mensagem e
     timer por escopo, substitui o timer anterior e ignora chamadas após descarte.
+    `useOwnProfile` coordena leitura `/me/`, edição por seção, substituição de foto/documentos
+    e publicação/invalidação do snapshot de perfil, preservando o rascunho em caso de falha.
+    `useAccountScope` vincula requisições autenticadas à identidade atual.
   - `useEmailVerification` vincula o código ao e-mail solicitado; voltar à revisão
-    não reenvia código durante o cooldown. `usePasswordReset` mantém um fluxo próprio
-    de solicitação/verificação/confirmação, com mensagens antienumeração. Validade e
+    não reenvia código durante o cooldown. `usePasswordReset` e `useEmailChange` mantêm
+    fluxos próprios de solicitação/verificação/confirmação, com mensagens antienumeração
+    e revogação de sessões apenas após confirmação do servidor. Validade e
     limites são do servidor; cooldown no cliente não é proteção autoritativa.
   - `useCompanyDirectory` mantém filtros aplicados, paginação e cancelamento de busca.
     `useMemberships` mantém consulta/escrita por escopo e identidade, bloqueia ações
     com leitura inválida ou escrita em andamento e exige releitura após falha. Uma
     confirmação de POST não implica sucesso da consulta posterior. Não há replay.
   - `src/components/memberships/`: apresentação mínima e confirmação com motivo
-    opcional. `CompanyUsuarios.vue` usa vínculos, não listas de identidade ou grupo.
-    Detalhes legados em `UsuarioDetalhe.vue` continuam fora dessa jornada, para revisão
-    em recorte de perfil. As quatro buscas antigas sem consumidores foram retiradas.
+    opcional (`approve`, `reject`, `withdraw`, `end`). `CompanyUsuarios.vue` usa vínculos,
+    permite encerrar vínculos ativos e abre `LinkedProfileView.vue` para consulta da
+    identidade mínima autorizada de titulares vinculados. As quatro buscas antigas sem
+    consumidores foram retiradas.
   - `src/utils/apiErrors.js`: `formatApiError` para traduzir respostas de erro aninhadas
     da API, erros de rede, `429` e `5xx` em mensagens legíveis em português.
-  - `src/assets/css/`: variáveis de tema (`theme.css`) e estilos globais (`global.css`).
+  - `src/assets/css/`: variáveis de tema (`theme.css`), estilos globais (`global.css`),
+    vínculos (`memberships.css`) e perfil/segurança (`profile.css`).
 - **Scripts e testes (`scripts/`, `tests/`):**
   - `tests/http.test.js`, `tests/session.test.js`, `tests/legacyPwa.test.js` e
     `tests/smokeHarness.test.js`: suíte unitária executada via `npm test`.
@@ -184,7 +210,9 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     CNH no cadastro de motorista é um documento opcional identificado por
     `attachment_key`, não um número de CNH obrigatório. Gênero não é campo da API
     atual e não é coletado como se fosse persistido.
-    A R3 só apresenta retirada de pedido pendente, não encerramento de vínculo ativo.
+    O encerramento de vínculo ativo (`end/`) termina o acesso operacional sem apagar
+    conta ou histórico; na empresa, a consulta de titular vinculado (`/usuarios/motorista/:id`
+    e `/usuarios/passageiro/:id`) exibe somente a identidade mínima autorizada.
     Não fabricar grupo/serviço ao aprovar. Cadastro empresarial pendente/recusado não
     autoriza consultar ou decidir vínculos; o titular pessoal ainda pode retirar seu
     pedido se a empresa deixar de ser pública/aprovada.

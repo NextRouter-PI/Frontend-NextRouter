@@ -106,3 +106,36 @@ Antes do aceite, autorizar ambiente fictício com integrações externas desabil
 ESLint focal e inspeção de imports/diffs não substituem essas demonstrações no Vue
 servido pelo Django. R1/R2 continuam sem aceite; CEP segue adiado. O smoke existente
 não foi ampliado e não comprova sozinho os cadastros ou vínculos da R2/R3.
+
+## Validação focal pendente — R4 / Etapa 2 (Perfil, segurança e encerramento de vínculo)
+
+Implementação com revisão estática somente. Nenhum teste foi criado/executado; não
+há evidência de edição, download, revogação de sessão ou encerramento de vínculo em
+navegador real nesta revisão. Antes do aceite, autorizar validação com dados fictícios de:
+
+- Em `/usuario`, consultar o próprio perfil (`passengers/me/`, `drivers/me/`, `companies/me/`)
+  e editar seções permitidas (`PATCH /users/me/` e `PATCH /companies/me/`), verificando que
+  CPF, CNPJ e e-mail de acesso permanecem somente leitura, que alterar endereço cadastral
+  não altera ponto operacional, e que falhas de escrita invalidam o snapshot (`profileStale`),
+  exigem releitura explícita antes de salvar novamente e preservam o rascunho aberto.
+- Trocar foto de perfil (JPG/PNG até 5 MB) sem exibir preview local não confirmado pelo
+  servidor e mantendo o arquivo pendente para nova tentativa explícita se a associação falhar.
+- Em motorista (`cnh`) e empresa (três documentos cadastrais), enviar PDF até 10 MB,
+  associar a chave ao perfil e baixar via `uploads/documents/{key}/download/`, além de
+  confirmar recusa (404) ao tentar baixar documento de terceiro.
+- Em `/seguranca`, validar redefinição de senha autenticada, troca de e-mail
+  (`email-change/request/` → `verify/` → `confirm/` com senha atual) e listagem/revogação
+  de sessões (`sessions/`, `DELETE sessions/{id}/` para outro dispositivo e
+  `POST me/revoke-sessions/`). Confirmar que redefinir senha, confirmar novo e-mail ou
+  revogar todas as sessões aciona `confirmSessionRevocation()`, descarta estado em memória,
+  propaga para outras abas e exige novo login, sem replay automático em resultado incerto.
+- Em `/vinculos` e `/usuarios`, encerrar vínculo ativo (`POST memberships/{id}/end/` com
+  motivo opcional de até 500 caracteres) tanto pelo titular quanto pela empresa, verificando
+  a preservação da conta/histórico e a exibição de bloqueios de domínio (viagens em
+  andamento ou alocações futuras).
+- Em `/usuarios/motorista/:id` e `/usuarios/passageiro/:id`, confirmar que a empresa
+  consulta apenas a identidade mínima (`id`, `name` e estatísticas de avaliação do motorista),
+  sem expor CPF, endereço, telefone, e-mail ou CNH, e que vínculos inativos/de outra empresa
+  são recusados.
+- Verificar que leituras operacionais do próprio motorista/passageiro (`DriverList.vue`,
+  `useTransportState.js`) usam `/drivers/me/` e `/passengers/me/` em vez de listagem com `.find()`.

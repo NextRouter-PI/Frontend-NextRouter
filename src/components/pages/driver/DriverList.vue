@@ -33,7 +33,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import api from "@/api/client";
-import { state as authState } from "@/stores/state";
 
 const allPassengers = ref([]);
 const loading = ref(false);
@@ -43,9 +42,8 @@ function toList(data) {
 }
 
 async function fetchOwnDriver() {
-  const { data } = await api.get("/drivers/");
-  const list = toList(data);
-  return list.find((d) => d.user_data?.id === authState.user?.id) || null;
+  const { data } = await api.get('/drivers/me/');
+  return data;
 }
 
 async function loadPassengers() {

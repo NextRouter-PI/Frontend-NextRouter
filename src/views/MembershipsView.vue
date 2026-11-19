@@ -27,7 +27,7 @@ const {
 const selectedCompany = ref(null)
 const selectionLoading = ref(false)
 const selectionError = ref('')
-const withdrawing = ref(false)
+const closingAction = ref('')
 const selectedId = computed(() => {
   const value = route.query.company
   return typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))
@@ -54,15 +54,15 @@ watch([selectedId, scope], async ([id, identity], _previous, onCleanup) => {
   }
 }, { immediate: true })
 
-watch(openMembership, () => { withdrawing.value = false })
+watch(openMembership, () => { closingAction.value = '' })
 
 function companyName(membership) {
   return openCompany.value?.id === membership.company
     ? openCompany.value.trade_name : `Empresa nº ${membership.company}`
 }
 
-async function withdraw(reason) {
-  if (await transition(openMembership.value, 'withdraw', reason)) withdrawing.value = false
+async function closeMembership(reason) {
+  if (await transition(openMembership.value, closingAction.value, reason)) closingAction.value = ''
 }
 </script>
 
@@ -88,11 +88,16 @@ async function withdraw(reason) {
               A empresa aprovou seu vínculo. Isso não atribui grupo, ponto, serviços ou viagem.
               Não é possível solicitar outra empresa enquanto este vínculo estiver ativo.
             </p>
+            <p v-else>Aguarde a decisão da empresa ou retire o pedido antes de solicitar outra empresa.</p>
+            <BaseButton v-if="!closingAction" type="button" variant="outline" :disabled="busy"
+              @click="closingAction = openMembership.status === 'active' ? 'end' : 'withdraw'">
+              {{ openMembership.status === 'active' ? 'Encerrar vínculo' : 'Retirar pedido' }}
+            </BaseButton>
             <template v-else>
-              <p>Aguarde a decisão da empresa ou retire o pedido antes de solicitar outra empresa.</p>
-              <BaseButton v-if="!withdrawing" type="button" variant="outline" :disabled="busy" @click="withdrawing = true">Retirar pedido</BaseButton>
-              <MembershipActionForm v-else :key="openMembership.id" title="Retirar este pedido de vínculo? Sua conta será preservada."
-                :busy="busy" :disabled="!ready" @confirm="withdraw" @cancel="withdrawing = false" />
+              <p v-if="closingAction === 'end'">Encerrar termina seu acesso operacional à empresa, sem apagar a conta ou o histórico. Alocações futuras e operação em andamento podem bloquear a ação; nada será cancelado automaticamente.</p>
+              <MembershipActionForm :key="`${openMembership.id}-${closingAction}`"
+                :title="closingAction === 'end' ? 'Confirmar encerramento deste vínculo?' : 'Retirar este pedido de vínculo? Sua conta será preservada.'"
+                :busy="busy" :disabled="!ready" @confirm="closeMembership" @cancel="closingAction = ''" />
             </template>
           </MembershipCard>
           <p v-else role="status">Você não tem pedido pendente nem vínculo ativo neste perfil.</p>

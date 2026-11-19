@@ -2,9 +2,10 @@
 import { useRouter } from 'vue-router'
 import { computed } from 'vue'
 import { state } from '@/stores/state'
+import { navigationItems } from '@/navigation'
 
 const router = useRouter()
-const isCompany = computed(() => state.role === 'company')
+const items = computed(() => navigationItems(state.role))
 
 async function handleLogout() {
   await router.push({ name: 'logout' })
@@ -13,34 +14,9 @@ async function handleLogout() {
 
 <template>
   <footer class="bottom-nav">
-    <router-link :to="`/`" class="nav-item" title="Home">
-      <span class="mdi mdi-home"></span>
-      <small>Home</small>
-    </router-link>
-
-    <router-link :to="`/usuario`" class="nav-item" title="Usuário">
-      <span class="mdi mdi-account"></span>
-      <small>Usuário</small>
-    </router-link>
-
-    <router-link :to="`/transporte`" class="nav-item" :title="isCompany ? 'Veículos' : 'Transporte'">
-      <span :class="isCompany ? 'mdi mdi-bus' : 'mdi mdi-car'"></span>
-      <small>{{ isCompany ? 'Veículos' : 'Transporte' }}</small>
-    </router-link>
-
-    <router-link :to="`/lista`" class="nav-item" :title="isCompany ? 'Rotas' : 'Lista'">
-      <span :class="isCompany ? 'mdi mdi-map-outline' : 'mdi mdi-format-list-bulleted'"></span>
-      <small>{{ isCompany ? 'Rotas' : 'Lista' }}</small>
-    </router-link>
-
-    <router-link v-if="isCompany" :to="`/usuarios`" class="nav-item" title="Usuários">
-      <span class="mdi mdi-account-group"></span>
-      <small>Usuários</small>
-    </router-link>
-
-    <router-link v-if="['passenger', 'driver'].includes(state.role)" to="/vinculos" class="nav-item" title="Vínculo empresarial">
-      <span class="mdi mdi-domain"></span>
-      <small>Vínculo</small>
+    <router-link v-for="item in items" :key="item.to" :to="item.to" class="nav-item" :title="item.title">
+      <span class="mdi" :class="item.icon"></span>
+      <small>{{ item.title }}</small>
     </router-link>
 
     <button class="nav-item logout-btn" title="Sair" @click="handleLogout">

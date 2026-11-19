@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, useId } from 'vue'
 
 defineProps({
   modelValue: String,
@@ -10,11 +10,13 @@ defineProps({
 defineEmits(['update:modelValue'])
 
 const mostrar = ref(false)
+const fieldId = useId()
 </script>
 
 <template>
   <div class="input-group">
     <input
+      :id="fieldId"
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"
       :type="mostrar ? 'text' : 'password'"
@@ -22,12 +24,16 @@ const mostrar = ref(false)
       :disabled="disabled"
       required
     />
-    <label>{{ label }}</label>
-    <span
+    <label :for="fieldId">{{ label }}</label>
+    <button
+      type="button"
       class="mdi toggle"
       :class="mostrar ? 'mdi-eye-off' : 'mdi-eye'"
+      :disabled="disabled"
+      :aria-label="mostrar ? 'Ocultar senha' : 'Mostrar senha'"
+      :aria-pressed="mostrar"
       @click="mostrar = !mostrar"
-    ></span>
+    ></button>
   </div>
 </template>
 
@@ -67,6 +73,10 @@ const mostrar = ref(false)
 }
 
 .toggle {
+  border: none;
+  background: transparent;
+  padding: 4px;
+  font-size: 16px;
   position: absolute;
   right: 10px;
   top: 50%;

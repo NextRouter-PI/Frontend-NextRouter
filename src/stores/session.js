@@ -19,6 +19,8 @@ export function createAuthSession({ state, http }) {
     state.user = null
     state.role = null
     state.profiles = {}
+    state.profileRevision = (state.profileRevision || 0) + 1
+    state.profileStale = false
   }
 
   async function identity() {
@@ -38,6 +40,8 @@ export function createAuthSession({ state, http }) {
     const roles = Object.keys(profiles)
     state.user = user
     state.profiles = profiles
+    state.profileRevision = (state.profileRevision || 0) + 1
+    state.profileStale = false
     state.role = roles.length === 1 ? roles[0] : null
     state.logged = true
     state.initialized = true

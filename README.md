@@ -48,16 +48,16 @@ CNH é opcional. Criar conta não aprova empresa nem solicita vínculo.
 Recuperação usa `password-reset/request/`, `verify/` e `confirm/` com `new_password`:
 a tela de nova senha só abre após verificação no servidor, sem informar se há conta.
 
-## Descoberta e vínculo — R3
+## Descoberta, vínculo, perfil e segurança — R3 e R4
 
 `/empresas` permite busca pública por nome, cidade/UF atendidas e grupo/destino.
-O titular revisa e envia o pedido em `/vinculos`, acompanha o estado e retira pedidos
-pendentes. A empresa consulta e aprova/recusa em `/usuarios`; sua moderação cadastral
-continua separada no admin Django. Seleção/login não enviam pedidos automaticamente.
-As listas são paginadas no servidor. Após falha de escrita, atualizar antes de nova
-ação; não há replay automático. Grupo, serviços e encerramento ficam em recortes próprios.
+O titular revisa e envia o pedido em `/vinculos`, acompanha o estado e pode retirar
+pedidos pendentes ou encerrar vínculos ativos. A empresa consulta e decide vínculos em
+`/usuarios`, além de consultar a identidade mínima de titulares vinculados. Em `/usuario`
+e `/seguranca`, o titular consulta e edita dados permitidos, substitui/baixa documentos,
+altera senha ou e-mail e gerencia sessões. Grupo e serviços ficam em recortes próprios.
 
-CEP permanece inalterado e adiado. R1–R3 têm somente conferência estática;
+CEP permanece inalterado e adiado. R1–R4 têm somente conferência estática;
 validação funcional, de segurança e visual continuam pendentes de autorização.
 
 ## Documentação

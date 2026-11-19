@@ -31,6 +31,11 @@ const filteredRecords = computed(() => records.value.filter((record) =>
 const moderationLabel = computed(() => ({
   pending: 'Pendente de moderação', approved: 'Aprovado', rejected: 'Recusado na moderação',
 })[company.value?.review_status] || 'Estado cadastral não reconhecido')
+const decisionTitle = computed(() => {
+  if (!decision.value) return ''
+  const action = { approve: 'Aprovar o vínculo', reject: 'Recusar o pedido', end: 'Encerrar o vínculo' }[decision.value.action]
+  return `${action} de ${decision.value.membership.applicant_name}?`
+})
 let companyRequest = null
 let disposed = false
 
@@ -119,15 +124,23 @@ async function confirmDecision(reason) {
             <div class="membership-list">
               <MembershipCard v-for="membership in filteredRecords" :key="membership.id"
                 :membership="membership" :title="membership.applicant_name || 'Nome não disponível'">
-                <p v-if="membership.status === 'active'">Vínculo aprovado. Grupo e serviços são configurações posteriores.</p>
+                <template v-if="membership.status === 'active'">
+                  <p>Vínculo aprovado. Grupo e serviços são configurações posteriores.</p>
+                  <div class="membership-actions">
+                    <RouterLink :to="membership.driver ? `/usuarios/motorista/${membership.driver}` : `/usuarios/passageiro/${membership.passenger}`">Consultar identidade mínima</RouterLink>
+                    <BaseButton v-if="decision?.membership.id !== membership.id" type="button" variant="outline" :disabled="busy"
+                      @click="decision = { membership, action: 'end' }">Encerrar vínculo</BaseButton>
+                  </div>
+                </template>
                 <div v-if="membership.status === 'pending' && decision?.membership.id !== membership.id" class="membership-actions">
                   <BaseButton type="button" :disabled="busy" @click="decision = { membership, action: 'approve' }">Aprovar vínculo</BaseButton>
                   <BaseButton type="button" variant="outline" :disabled="busy" @click="decision = { membership, action: 'reject' }">Recusar pedido</BaseButton>
                 </div>
-                <MembershipActionForm v-if="decision?.membership.id === membership.id"
-                  :key="`${membership.id}-${decision.action}`"
-                  :title="`${decision.action === 'approve' ? 'Aprovar o vínculo' : 'Recusar o pedido'} de ${membership.applicant_name}?`"
-                  :busy="busy" :disabled="!ready" @confirm="confirmDecision" @cancel="decision = null" />
+                <template v-if="decision?.membership.id === membership.id">
+                  <p v-if="decision.action === 'end'">Encerrar termina o acesso operacional do titular sem apagar a conta. Operação em andamento ou alocações futuras podem bloquear; a aplicação não as cancela automaticamente.</p>
+                  <MembershipActionForm :key="`${membership.id}-${decision.action}`" :title="decisionTitle"
+                    :busy="busy" :disabled="!ready" @confirm="confirmDecision" @cancel="decision = null" />
+                </template>
               </MembershipCard>
             </div>
             <PageNavigation :page="page" :total-pages="totalPages" :disabled="busy || loading" @change="goToPage" />

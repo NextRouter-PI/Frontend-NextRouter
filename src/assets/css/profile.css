@@ -1,0 +1,16 @@
+.account-workspace { padding: 24px 20px 100px; color: var(--text); }
+.account-content { max-width: 760px; margin: 0 auto; }
+.account-cover { background: var(--gradient-primary); border-radius: 18px; padding: 24px; text-align: center; }
+.account-cover h1 { color: var(--text-black); margin-bottom: 6px; }
+.account-section { background: var(--superfice); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin: 18px 0; }
+.account-section h2 { margin: 0 0 16px; font-size: 1.1rem; }
+.account-section h3 { font-size: 1rem; }
+.account-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; }
+.account-actions a, .account-link { color: var(--text); text-decoration: underline; }
+.account-notice { padding: 12px; border-left: 4px solid var(--primary); background: var(--superfice); }
+.account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+.account-grid dt { font-weight: 600; margin-bottom: 4px; }
+.account-grid dd { margin: 0; overflow-wrap: anywhere; }
+.account-hint { font-size: 0.9rem; line-height: 1.5; }
+.account-form { margin-top: 16px; }
+@media (min-width: 901px) { .account-workspace.authenticated { padding-left: 130px; } }

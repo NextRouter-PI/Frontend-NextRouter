@@ -105,6 +105,13 @@ export function createHttpClient({
     })
   }
 
+  // Somente após confirmação do servidor de troca de credencial ou revogação total.
+  // Não envia logout/replay; descarta requisições e notifica abas sem dados privados.
+  function confirmSessionRevocation() {
+    announce('changed')
+    events.dispatchEvent(new Event('expired'))
+  }
+
   async function refreshSession() {
     if (refreshing) return refreshing
     // Sem mutex entre abas, não disputar a rotação de um refresh de uso único.
@@ -174,7 +181,7 @@ export function createHttpClient({
   })
 
   return {
-    api, events, login, logout, bootstrapCsrf, refreshSession,
+    api, events, login, logout, bootstrapCsrf, refreshSession, confirmSessionRevocation,
     dispose() { requests.abort(); channel?.close() },
   }
 }
