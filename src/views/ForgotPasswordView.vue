@@ -1,113 +1,19 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import api from '@/api/client';
-import { formatApiError } from '@/utils/apiErrors';
-import { useValidator } from '@/composables/useValidation';
+import { useRouter } from 'vue-router'
+import { usePasswordReset } from '@/composables/usePasswordReset'
+import AuthBranding from '@/components/ui/AuthBranding.vue'
+import FloatingInput from '@/components/ui/FloatingInput.vue'
+import PasswordField from '@/components/ui/PasswordField.vue'
+import CodeInput from '@/components/ui/CodeInput.vue'
 
-import AuthBranding from "@/components/ui/AuthBranding.vue";
-import FloatingInput from "@/components/ui/FloatingInput.vue";
-import PasswordField from "@/components/ui/PasswordField.vue";
-import CodeInput from "@/components/ui/CodeInput.vue";
-
-const router = useRouter();
-const etapa = ref(1);
-const email = ref('');
-const codigo = ref(['', '', '', '', '', '']);
-const senhaEmail = ref('');
-const novaSenha = ref('');
-const confirmarSenha = ref('');
-const erro = ref('');
-const { isStrongPassword } = useValidator();
-
-async function enviarCodigo() {
-  erro.value = '';
-
-  if (!email.value) {
-    erro.value = 'Por favor, digite seu e-mail';
-    return;
-  }
-
-  const emailNormalizado = email.value.trim().toLowerCase();
-  try {
-    await api.post('/email-tokens/send-email/', {
-      email: emailNormalizado,
-      token_type: 'new-password',
-    });
-    senhaEmail.value = emailNormalizado;
-    etapa.value = 2;
-  } catch (error) {
-    erro.value = formatApiError(error, 'Não foi possível enviar o código. Verifique o e-mail informado.');
-  }
-}
-
-async function enviarNovoCodigo() {
-  erro.value = '';
-  try {
-    await api.post('/email-tokens/send-email/', {
-      email: senhaEmail.value,
-      token_type: 'new-password',
-    });
-  } catch (error) {
-    erro.value = formatApiError(error, 'Não foi possível reenviar o código.');
-  }
-}
-
-function confirmarCodigo() {
-  erro.value = '';
-  const codigoCompleto = codigo.value.join('');
-
-  if (codigoCompleto.length !== 6) {
-    erro.value = 'Por favor, digite o código completo';
-    return;
-  }
-
-  etapa.value = 3;
-}
-
-async function resetarSenha() {
-  erro.value = '';
-
-  if (!novaSenha.value) {
-    erro.value = 'Por favor, digite sua nova senha';
-    return;
-  }
-
-  if (!confirmarSenha.value) {
-    erro.value = 'Por favor, confirme sua senha';
-    return;
-  }
-
-  if (novaSenha.value !== confirmarSenha.value) {
-    erro.value = 'As senhas não coincidem';
-    return;
-  }
-
-  const erroSenha = isStrongPassword(novaSenha.value);
-  if (erroSenha) {
-    erro.value = erroSenha;
-    return;
-  }
-
-  try {
-    await api.post('/email-tokens/reset-password/', {
-      email: senhaEmail.value,
-      code: codigo.value.join(''),
-      password: novaSenha.value,
-    });
-
-    setTimeout(() => {
-      router.push('/login');
-    }, 1000);
-  } catch (error) {
-    erro.value = formatApiError(error, 'Código inválido ou expirado. Tente novamente.');
-    // Volta para a etapa do código só quando o problema é o código (e não a senha).
-    if (error.response?.data?.code) etapa.value = 2;
-  }
-}
+const router = useRouter()
+const {
+  etapa, email, emailCodigo, codigo, novaSenha, confirmarSenha, erro, ocupado, cooldown,
+  solicitarCodigo, verificarCodigo, redefinirSenha, voltarAoEmail, voltarAoCodigo,
+} = usePasswordReset()
 
 function voltarParaLogin() {
-  router.push('/login');
+  router.push('/login')
 }
 </script>
 
@@ -115,48 +21,54 @@ function voltarParaLogin() {
   <div class="forgot-password-container">
     <AuthBranding />
 
-    <div v-if="etapa === 1" class="etapa">
+    <form v-if="etapa === 1" class="etapa" @submit.prevent="solicitarCodigo">
       <p class="texto-principal">Digite seu e-mail para enviarmos um código de verificação</p>
 
-      <FloatingInput v-model="email" label="E-mail" type="email" />
+      <FloatingInput v-model="email" label="E-mail" type="email" autocomplete="email" :disabled="ocupado" />
 
-      <button @click="enviarCodigo">Enviar código</button>
-
-      <p v-if="erro" class="erro">{{ erro }}</p>
+      <button type="submit" :disabled="ocupado">{{ ocupado ? 'Solicitando...' : 'Enviar código' }}</button>
 
       <p class="voltar">
         <a href="#" @click.prevent="voltarParaLogin">Voltar para login</a>
       </p>
-    </div>
+    </form>
 
-    <div v-if="etapa === 2" class="etapa">
+    <form v-if="etapa === 2" class="etapa" @submit.prevent="verificarCodigo">
       <p class="texto-principal">
-        Digite o código de verificação que foi enviado para <strong>{{ senhaEmail }}</strong>
+        Se houver uma conta elegível para <strong>{{ emailCodigo }}</strong>,
+        você receberá um código. Digite os seis dígitos abaixo.
       </p>
 
-      <CodeInput v-model="codigo" />
+      <CodeInput v-model="codigo" :disabled="ocupado" />
 
       <p class="reenviar-texto">
-        Não recebeu?
-        <a href="#" @click.prevent="enviarNovoCodigo">Enviar novo código</a>
+        <template v-if="cooldown > 0">Reenviar código em {{ cooldown }}s</template>
+        <button v-else type="button" class="resend-code" :disabled="ocupado" @click="solicitarCodigo">
+          Enviar novo código
+        </button>
       </p>
 
-      <button @click="confirmarCodigo">Confirmar</button>
+      <button type="submit" :disabled="ocupado">{{ ocupado ? 'Verificando...' : 'Confirmar código' }}</button>
+      <button type="button" :disabled="ocupado" @click="voltarAoEmail">Usar outro e-mail</button>
+    </form>
 
-      <p v-if="erro" class="erro">{{ erro }}</p>
-    </div>
-
-    <div v-if="etapa === 3" class="etapa">
+    <form v-if="etapa === 3" class="etapa" @submit.prevent="redefinirSenha">
       <p class="texto-principal">Digite sua nova senha</p>
 
-      <PasswordField v-model="novaSenha" label="Nova senha" />
+      <PasswordField v-model="novaSenha" label="Nova senha" autocomplete="new-password" :disabled="ocupado" />
 
-      <PasswordField v-model="confirmarSenha" label="Confirme sua senha" />
+      <PasswordField v-model="confirmarSenha" label="Confirme sua senha" autocomplete="new-password" :disabled="ocupado" />
 
-      <button @click="resetarSenha">Redefinir Senha</button>
+      <button type="submit" :disabled="ocupado">{{ ocupado ? 'Enviando...' : 'Redefinir senha' }}</button>
+      <button type="button" :disabled="ocupado" @click="voltarAoCodigo">Corrigir ou reenviar código</button>
+    </form>
 
-      <p v-if="erro" class="erro">{{ erro }}</p>
-    </div>
+    <section v-if="etapa === 4" class="etapa" role="status">
+      <p class="texto-principal">Senha redefinida. Entre novamente com a nova senha; as sessões anteriores foram encerradas.</p>
+      <button type="button" @click="voltarParaLogin">Ir para login</button>
+    </section>
+
+    <p v-if="erro" class="erro" role="alert">{{ erro }}</p>
   </div>
 </template>
 
@@ -208,6 +120,11 @@ button:hover {
   background: var(--primary-hover);
 }
 
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .erro {
   color: #d32f2f;
   font-size: 12px;
@@ -238,13 +155,19 @@ button:hover {
   margin-bottom: 15px;
 }
 
-.reenviar-texto a {
+.reenviar-texto .resend-code {
+  display: inline;
+  width: auto;
+  padding: 0;
+  margin: 0;
+  background: none;
+  font-weight: normal;
   color: var(--primary);
   cursor: pointer;
   text-decoration: underline;
 }
 
-.reenviar-texto a:hover {
+.reenviar-texto .resend-code:hover {
   color: var(--primary-hover);
 }
 </style>

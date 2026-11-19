@@ -43,6 +43,7 @@ const {
   enviandoCodigo,
   erroCodigo,
   enviarCodigo,
+  emailCodigo,
   cooldown,
   enviandoDocumentos,
 } = useSignUpCompanyForm()
@@ -53,6 +54,9 @@ watch(
   () => registerState.state.success,
   (success, _previous, onCleanup) => {
     if (!success) return
+    page3Form.password = ''
+    page3Form.passwordConfirm = ''
+    codigo.value = ['', '', '', '', '', '']
     const timer = setTimeout(() => router.push({ name: 'login' }), 2000)
     onCleanup(() => clearTimeout(timer))
   },
@@ -76,8 +80,8 @@ const goBack = () => {
 
     <div v-if="registerState.state.success" class="success-message">
       <span class="mdi mdi-check-circle"></span>
-      <p class="success-title">Cadastro enviado com sucesso!</p>
-      <p>Sua empresa será verificada pela nossa equipe. Você receberá um email em breve com o resultado da análise.</p>
+      <p class="success-title">Conta empresarial criada!</p>
+      <p>O cadastro da empresa aguarda moderação. Criar a conta não significa aprovação nem cria vínculos.</p>
       <div class="loading-spinner">
         <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
       </div>
@@ -281,8 +285,7 @@ const goBack = () => {
         <div class="info-box">
           <span class="mdi mdi-information-outline"></span>
           <p>
-            Os documentos enviados serão analisados pela nossa equipe. O processo pode levar até 48
-            horas úteis.
+            Os documentos fazem parte da moderação cadastral da empresa. Não há prazo de análise garantido.
           </p>
         </div>
       </div>
@@ -436,16 +439,19 @@ const goBack = () => {
       <div v-if="currentPage === 5">
         <h2 class="page-title">Verificação de <span class="highlight-orange">E-mail</span></h2>
         <p class="texto-principal">
-          Digite o código de verificação enviado para <strong>{{ page3Form.loginEmail }}</strong>
+          Se o e-mail puder ser usado no cadastro, você receberá um código em
+          <strong>{{ emailCodigo }}</strong>. Digite os seis dígitos abaixo.
         </p>
 
-        <CodeInput v-model="codigo" />
+        <CodeInput v-model="codigo" :disabled="enviandoCodigo || registerState.state.loading" />
 
         <p class="reenviar-texto">
           <template v-if="cooldown > 0">Reenviar código em {{ cooldown }}s</template>
           <template v-else>
             Não recebeu?
-            <a href="#" @click.prevent="enviarCodigo(page3Form.loginEmail.trim().toLowerCase())">Enviar novo código</a>
+            <button type="button" class="resend-code"
+              :disabled="enviandoCodigo || registerState.state.loading"
+              @click="enviarCodigo(page3Form.loginEmail)">Enviar novo código</button>
           </template>
         </p>
       </div>
@@ -491,7 +497,7 @@ const goBack = () => {
           v-if="currentPage === 5"
           type="submit"
           class="btn-submit"
-          :disabled="registerState.state.loading"
+          :disabled="registerState.state.loading || enviandoCodigo"
         >
           <LoadingSpinner v-if="registerState.state.loading" />
           {{ registerState.state.loading ? 'Enviando cadastro...' : 'Confirmar e Enviar Cadastro' }}
@@ -732,7 +738,7 @@ const goBack = () => {
   margin-bottom: 15px;
 }
 
-.reenviar-texto a {
+.reenviar-texto .resend-code {
   color: var(--primary);
   cursor: pointer;
   text-decoration: underline;

@@ -3,7 +3,8 @@ defineProps({
   modelValue: String,
   label: String,
   type: { type: String, default: 'text' },
-  autocomplete: String
+  autocomplete: String,
+  disabled: { type: Boolean, default: false },
 })
 defineEmits(['update:modelValue'])
 </script>
@@ -15,6 +16,7 @@ defineEmits(['update:modelValue'])
       @input="$emit('update:modelValue', $event.target.value)"
       :type="type"
       :autocomplete="autocomplete"
+      :disabled="disabled"
       required
     />
     <label>{{ label }}</label>

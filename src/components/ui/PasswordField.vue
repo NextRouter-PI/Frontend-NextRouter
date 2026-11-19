@@ -4,7 +4,8 @@ import { ref } from 'vue'
 defineProps({
   modelValue: String,
   label: String,
-  autocomplete: String
+  autocomplete: String,
+  disabled: { type: Boolean, default: false },
 })
 defineEmits(['update:modelValue'])
 
@@ -18,6 +19,7 @@ const mostrar = ref(false)
       @input="$emit('update:modelValue', $event.target.value)"
       :type="mostrar ? 'text' : 'password'"
       :autocomplete="autocomplete"
+      :disabled="disabled"
       required
     />
     <label>{{ label }}</label>

@@ -48,3 +48,25 @@ Nos perfis, também ficam pendentes a verificação de loading/erro de upload is
 entre instâncias, de troca de foto ocupada até o PATCH terminar e sem continuação
 local após sair da tela, e de toasts sucessivos cujo timer anterior não apague a
 mensagem atual. Nenhum teste de perfil ou navegador foi executado nesta R1.
+
+## Validação focal pendente — R2
+
+Somente leitura do backend e análise estática do frontend, sem novos testes ou
+execução funcional. Antes do aceite, autorizar a demonstração com dados fictícios de:
+
+- Cadastro dos três perfis: `request` → `verify` → criação com JSON aninhado,
+  sem criar conta quando a verificação falhar; CNH ausente/presente e três PDFs
+  obrigatórios da empresa, com chaves de vínculo e falhas parciais.
+- E-mail alterado entre revisão/código, reentrada durante cooldown, reenvio e código
+  antigo, incorreto, expirado, bloqueado ou consumido. Colagem/autofill de seis
+  dígitos, foco, IDs e campos desabilitados nos controles compartilhados.
+- Recuperação de e-mail cadastrado/desconhecido com a mesma mensagem; verificação
+  real antes da nova senha, `new_password`, erros de força e expiração entre etapas.
+  Só resposta de confirmação bem-sucedida mostra sucesso e informa revogação.
+- Saída durante requisições, 401/403/429/5xx, falha de rede/resultado incerto e
+  cliques repetidos sem replay automático. Não declarar revogação de sessões ou
+  proteção contra enumeração comprovadas apenas por lint ou leitura do código.
+
+A confirmação pública antiga agora é informativa, sem afirmar análise/vínculo ou
+usar e-mail da URL; o `ForgotPasswordForm.vue` órfão foi retirado. Conferência visual
+das telas/estados alterados e integração no Vue servido pelo Django seguem pendentes.

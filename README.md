@@ -40,9 +40,16 @@ Nos três perfis, o estado de upload é local e a troca de foto permanece ocupad
 até a associação do arquivo ao perfil terminar. Toasts substituem o timer anterior
 e são descartados ao sair da tela, reutilizando a apresentação existente.
 
-Esta mudança não adapta ainda os endpoints de cadastro/recuperação. A consulta
-externa de CEP permanece inalterada e foi adiada por decisão do responsável.
-Conferência estática somente; validação funcional e visual continuam pendentes.
+## Cadastro e recuperação — R2
+
+O cadastro solicita e verifica código em `registration/request/` e `verify/`,
+depois cria o perfil em JSON com `user_data` aninhado; uploads continuam multipart.
+CNH é opcional. Criar conta não aprova empresa nem solicita vínculo.
+Recuperação usa `password-reset/request/`, `verify/` e `confirm/` com `new_password`:
+a tela de nova senha só abre após verificação no servidor, sem informar se há conta.
+
+CEP permanece inalterado e adiado. R1/R2 têm somente conferência estática;
+validação funcional, de segurança e visual continuam pendentes de autorização.
 
 ## Documentação
 

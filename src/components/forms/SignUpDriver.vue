@@ -8,7 +8,6 @@ import { uploadDocument } from '@/api/upload'
 import { formatApiError } from '@/utils/apiErrors'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
-import SelectField from '@/components/ui/SelectField.vue'
 import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
 import FileUploadField from '@/components/ui/FileUploadField.vue'
 import DateInput from '@/components/ui/DateInput.vue'
@@ -24,12 +23,18 @@ watch(
   () => registerState.state.success,
   (success, _previous, onCleanup) => {
     if (!success) return
+    form.password = ''
+    form.confirmPassword = ''
+    codigo.value = ['', '', '', '', '', '']
     const timer = setTimeout(() => router.push({ name: 'login' }), 2000)
     onCleanup(() => clearTimeout(timer))
   },
 )
 
-const { codigo, enviandoCodigo, erroCodigo, enviarCodigo, codigoCompleto, cooldown } = useEmailVerification()
+const {
+  codigo, enviandoCodigo, erroCodigo, enviarCodigo, prepararVerificacao,
+  codigoPara, cooldown, emailCodigo,
+} = useEmailVerification()
 const cnhAttachmentKey = ref('')
 const enviandoDocumento = ref(false)
 const controller = new AbortController()
@@ -77,7 +82,6 @@ const form = reactive({
   phone: '',
   password: '',
   confirmPassword: '',
-  genre: '',
   cep: '',
   street: '',
   number: '',
@@ -85,7 +89,6 @@ const form = reactive({
   neighborhood: '',
   city: '',
   state: '',
-  cnh: '',
 })
 
 const cnh = reactive({
@@ -106,13 +109,15 @@ const voltarPagina = () => {
 const avancarParaVerificacao = async () => {
   if (signal.aborted || enviandoDocumento.value || enviandoCodigo.value) return
   if (currentPage.value !== 2) return
-  if (!validateField(cnh.file, [(v) => requiredField(v, 'Arquivo CNH')], 'cnh')) return
 
   errorMessage.value = ''
   enviandoDocumento.value = true
   try {
     const arquivo = cnh.file
-    if (cnhArquivoEnviado !== arquivo) {
+    if (!arquivo) {
+      cnhAttachmentKey.value = ''
+      cnhArquivoEnviado = null
+    } else if (cnhArquivoEnviado !== arquivo) {
       const { data } = await uploadDocument(arquivo, `CNH de ${form.name.trim()}`, { signal })
       if (signal.aborted) return
       cnhAttachmentKey.value = data.attachment_key
@@ -127,7 +132,7 @@ const avancarParaVerificacao = async () => {
     if (!signal.aborted) enviandoDocumento.value = false
   }
 
-  const sucesso = await enviarCodigo(form.email.trim().toLowerCase())
+  const sucesso = await prepararVerificacao(form.email)
   if (sucesso && !signal.aborted) currentPage.value = 3
 }
 
@@ -135,33 +140,11 @@ const handleSubmit = async () => {
   if (signal.aborted || registerState.state.loading || currentPage.value !== 3) return
   if (!validarFormulario(form)) return
 
-  if (codigoCompleto().length !== 6) {
-    erroCodigo.value = 'Digite o código completo de 6 dígitos.'
-    return
-  }
-
-  let formData = new FormData()
-
-  formData.append('user_data.email', form.email.trim().toLowerCase())
-  formData.append('user_data.cpf', form.cpf.replace(/\D/g, ''))
-  formData.append('user_data.name', form.name.trim())
-  formData.append('user_data.phone', form.phone.replace(/\D/g, ''))
-  formData.append('user_data.cep', form.cep)
-  formData.append('user_data.street', form.street)
-  formData.append('user_data.number', form.number)
-  formData.append('user_data.complement', form.complement)
-  formData.append('user_data.neighborhood', form.neighborhood)
-  formData.append('user_data.city', form.city)
-  formData.append('user_data.state', form.state)
-  formData.append('user_data.password', form.password)
-  formData.append('user_data.code', codigoCompleto())
-  formData.append('cnh', cnhAttachmentKey.value)
-
-  const birthday = formatBirthday(form)
-
-  formData.append('user_data.birthday', birthday)
-
-  await registerState.registerDriver(formData)
+  const code = codigoPara(form.email)
+  if (!code || enviandoCodigo.value) return
+  await registerState.registerDriver({
+    ...form, code, birthday: formatBirthday(form), cnh: cnhAttachmentKey.value || null,
+  })
 }
 </script>
 
@@ -178,7 +161,8 @@ const handleSubmit = async () => {
 
     <div v-if="registerState.state.success" class="success-message">
       <span class="mdi mdi-check-circle"></span>
-      <p class="success-title">Cadastro enviado com sucesso!</p>
+      <p class="success-title">Conta criada com sucesso!</p>
+      <p>Seu perfil de motorista foi criado. O vínculo com uma empresa é solicitado separadamente.</p>
       <div class="loading-spinner">
         <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
       </div>
@@ -250,15 +234,6 @@ const handleSubmit = async () => {
           @input="clearFieldError('phone')"
           @blur="validateField(form.phone, [(v) => isPhone(v)], 'phone')"
         />
-        <SelectField
-          v-model="form.genre"
-          label="Gênero"
-          :options="[
-            { value: 'Masculino', label: 'Masculino' },
-            { value: 'Feminino', label: 'Feminino' },
-            { value: 'Outro', label: 'Outro' },
-          ]"
-        />
 
         <FormattedField
           v-model="form.cep"
@@ -324,16 +299,6 @@ const handleSubmit = async () => {
           />
         </div>
 
-        <FormField
-          v-model="form.cnh"
-          label="CNH"
-          required
-          placeholder="Número da CNH"
-          :disabled="registerState.state.loading"
-          :error="fieldErrors.cnh"
-          @input="clearFieldError('cnh')"
-          @blur="validateField(form.cnh, [(v) => requiredField(v, 'CNH')], 'cnh')"
-        />
         <PasswordFieldSignUp
           v-model="form.password"
           label="Senha"
@@ -374,10 +339,9 @@ const handleSubmit = async () => {
           v-model="cnh.file"
           :fileName="cnh.name"
           label="Arquivo CNH"
-          required
           accept=".pdf"
           :disabled="registerState.state.loading"
-          hint="Formato aceito: PDF"
+          hint="Opcional. Formato aceito: PDF, até 10 MB."
           :error="fieldErrors.cnh"
           @update:fileName="cnh.name = $event"
           @error="errorMessage = $event"
@@ -408,10 +372,6 @@ const handleSubmit = async () => {
             <span class="value">{{ form.name }}</span>
           </div>
 
-          <div class="review-item">
-            <span class="label">Gênero:</span>
-            <span class="value">{{ form.genre || 'Não informado' }}</span>
-          </div>
 
           <div class="review-item">
             <span class="label">CPF:</span>
@@ -442,16 +402,19 @@ const handleSubmit = async () => {
       <div v-if="currentPage === 3" class="page-container">
         <h2 class="page-title">Verificação de <span class="highlight-orange">E-mail</span></h2>
         <p class="texto-principal">
-          Digite o código de verificação enviado para <strong>{{ form.email }}</strong>
+          Se o e-mail puder ser usado no cadastro, você receberá um código em
+          <strong>{{ emailCodigo }}</strong>. Digite os seis dígitos abaixo.
         </p>
 
-        <CodeInput v-model="codigo" />
+        <CodeInput v-model="codigo" :disabled="enviandoCodigo || registerState.state.loading" />
 
         <p class="reenviar-texto">
           <template v-if="cooldown > 0">Reenviar código em {{ cooldown }}s</template>
           <template v-else>
             Não recebeu?
-            <a href="#" @click.prevent="enviarCodigo(form.email.trim().toLowerCase())">Enviar novo código</a>
+            <button type="button" class="resend-code"
+              :disabled="enviandoCodigo || registerState.state.loading"
+              @click="enviarCodigo(form.email)">Enviar novo código</button>
           </template>
         </p>
       </div>
@@ -476,7 +439,7 @@ const handleSubmit = async () => {
         v-if="currentPage === 3"
         type="submit"
         class="btn-submit"
-        :disabled="registerState.state.loading"
+        :disabled="registerState.state.loading || enviandoCodigo"
       >
         <LoadingSpinner v-if="registerState.state.loading" />
         {{ registerState.state.loading ? 'Enviando cadastro...' : 'Confirmar e Criar Conta' }}
@@ -680,7 +643,7 @@ const handleSubmit = async () => {
   margin-bottom: 15px;
 }
 
-.reenviar-texto a {
+.reenviar-texto .resend-code {
   color: var(--primary);
   cursor: pointer;
   text-decoration: underline;

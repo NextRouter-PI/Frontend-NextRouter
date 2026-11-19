@@ -1,15 +1,8 @@
 <script setup>
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import SignupConfirmation from "@/components/auth/SignupConfirmation.vue";
 
-const route = useRoute();
 const router = useRouter();
-
-const email = route.query.email || 'seuemail@gmail.com';
-
-const goToLogin = () => {
-  router.push('/login');
-};
 
 const goBack = () => {
   router.push('/signup');
@@ -21,7 +14,7 @@ const goBack = () => {
     <button class="btn-back-top" @click="goBack" aria-label="Voltar">
       <span class="mdi mdi-arrow-left"></span>
     </button>
-    <SignupConfirmation :email="email" @go-to-login="goToLogin" />
+    <SignupConfirmation @continue-signup="goBack" />
   </div>
 </template>
 

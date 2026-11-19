@@ -1,27 +1,24 @@
 <script setup>
-defineProps({
-  email: { type: String, default: 'seuemail@gmail.com' }
-})
-
-const emit = defineEmits(['goToLogin'])
+const emit = defineEmits(['continueSignup'])
 </script>
 
 <template>
   <div class="success-container">
     <div class="icon-success">
-      <span class="check-mark">✓</span>
+      <span class="check-mark">i</span>
     </div>
 
     <div class="success-message">
-      Seus dados foram para a análise da empresa
+      Confirme seu cadastro na etapa de código
     </div>
 
     <div class="sub-message">
-      Enviaremos um e-mail para <span class="highlight-email">{{ email }}</span> para você realizar o cadastro
+      Escolha seu perfil e conclua o formulário. A confirmação por e-mail ocorre durante
+      o cadastro; criar uma conta não solicita vínculo com empresa nem aprova seu cadastro empresarial.
     </div>
 
-    <button class="btn-ok" @click="emit('goToLogin')">
-      OK
+    <button class="btn-ok" @click="emit('continueSignup')">
+      Continuar cadastro
     </button>
   </div>
 </template>
@@ -71,10 +68,6 @@ const emit = defineEmits(['goToLogin'])
   color: #000;
   line-height: 1.4;
   margin-bottom: 50px;
-}
-
-.highlight-email {
-  color: #f48a1d;
 }
 
 .btn-ok {

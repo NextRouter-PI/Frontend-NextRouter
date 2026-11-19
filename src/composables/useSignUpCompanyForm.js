@@ -44,7 +44,10 @@ export function useSignUpCompanyForm() {
 
   const isPasswordVisible = ref(false)
 
-  const { codigo, enviandoCodigo, erroCodigo, enviarCodigo, codigoCompleto, cooldown } = useEmailVerification()
+  const {
+    codigo, enviandoCodigo, erroCodigo, enviarCodigo, prepararVerificacao,
+    codigoPara, cooldown, emailCodigo,
+  } = useEmailVerification()
   const enviandoDocumentos = ref(false)
   const documentKeys = reactive({
     articlesOfAssociation: '',
@@ -190,7 +193,7 @@ export function useSignUpCompanyForm() {
       if (!signal.aborted) enviandoDocumentos.value = false
     }
 
-    const sucesso = await enviarCodigo(page3Form.loginEmail.trim().toLowerCase())
+    const sucesso = await prepararVerificacao(page3Form.loginEmail)
     if (sucesso && !signal.aborted) currentPage.value = 5
   }
 
@@ -199,41 +202,19 @@ export function useSignUpCompanyForm() {
   */
   async function handleSubmit() {
     if (signal.aborted || registerState.state.loading || currentPage.value !== 5) return
-    if (codigoCompleto().length !== 6) {
-      erroCodigo.value = 'Digite o código completo de 6 dígitos.'
-      return
-    }
+    const code = codigoPara(page3Form.loginEmail)
+    if (!code || enviandoCodigo.value) return
 
     try {
 
-      // * Criação do objeto a ser enviado para api
-      const formData = new FormData()
-
-      formData.append('user_data.email', page3Form.loginEmail.trim().toLowerCase())
-      formData.append('user_data.password', page3Form.password)
-      formData.append('user_data.name', page3Form.ceoName)
-      formData.append('user_data.cpf', page3Form.ceoCpf.replace(/\D/g, ''))
-      formData.append('user_data.code', codigoCompleto())
-      formData.append('cnpj', page1Form.cnpj.replace(/[^\d]/g, ''))
-      formData.append('trade_name', page1Form.tradeName)
-      formData.append('legal_name', page1Form.legalName)
-      formData.append('state_registration', page1Form.stateRegistration)
-      formData.append('contact_phone', page1Form.contactPhone.replace(/\D/g, ''))
-      formData.append('contact_email', page1Form.contactEmail)
-      formData.append('cep', page1Form.cep)
-      formData.append('street', page1Form.street)
-      formData.append('number', page1Form.number)
-      formData.append('complement', page1Form.complement)
-      formData.append('neighborhood', page1Form.neighborhood)
-      formData.append('city', page1Form.city)
-      formData.append('state', page1Form.state)
-
-      formData.append('articles_of_association_document', documentKeys.articlesOfAssociation)
-      formData.append('state_operating_license_document', documentKeys.stateOperatingLicense)
-      formData.append('certificate_of_good_stading_document', documentKeys.certificateOfGoodStading)
-
-      // Requisição (os erros da API ficam em registerState.state.error, já formatados)
-      await registerState.registerCompany(formData)
+      await registerState.registerCompany({
+        responsible: {
+          email: page3Form.loginEmail, password: page3Form.password,
+          name: page3Form.ceoName, cpf: page3Form.ceoCpf, code,
+        },
+        company: page1Form,
+        documents: documentKeys,
+      })
     } catch (error) {
       if (!signal.aborted) errorMessage.value = formatApiError(error, 'Erro ao cadastrar')
     }
@@ -276,6 +257,7 @@ export function useSignUpCompanyForm() {
     enviandoCodigo,
     erroCodigo,
     enviarCodigo,
+    emailCodigo,
     cooldown,
     enviandoDocumentos,
   }

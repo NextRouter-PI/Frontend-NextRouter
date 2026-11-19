@@ -1,12 +1,11 @@
 import { onScopeDispose, reactive } from 'vue'
-import api from '@/api/client'
+import {
+  createPassengerAccount,
+  createDriverAccount,
+  createCompanyAccount,
+} from '@/api/registration'
 import { formatApiError } from '@/utils/apiErrors'
-
-const endpointsForEachUserType = {
-  passenger: '/passengers/',
-  driver: '/drivers/',
-  company: '/companies/',
-}
+import { sessionError } from '@/stores/session'
 
 export function useRegisterState() {
   const state = reactive({
@@ -25,20 +24,24 @@ export function useRegisterState() {
     state.user = null
   }
 
-  const register = async (userType, data) => {
+  const register = async (createAccount, data) => {
     if (signal.aborted || state.loading || state.success) return false
     reset()
     state.loading = true
 
     try {
-      const response = await api.post(endpointsForEachUserType[userType], data, { signal })
+      const response = await createAccount(data, { signal })
       if (signal.aborted) return false
       state.user = response.data
       state.success = true
       return true
     } catch (error) {
       if (!signal.aborted) {
-        state.error = formatApiError(error, 'Erro ao cadastrar. Verifique os dados e tente novamente.')
+        state.error = sessionError(error,
+          formatApiError(error, 'Erro ao cadastrar. Verifique os dados e tente novamente.'))
+        if (!error.response || error.response.status >= 500) {
+          state.error += ' A operação não foi repetida. Se o cadastro pode ter sido concluído, tente entrar ou recuperar a senha antes de enviar novamente.'
+        }
       }
       return false
     } finally {
@@ -52,8 +55,8 @@ export function useRegisterState() {
   return {
     state,
     reset,
-    registerPassenger: (data) => register('passenger', data),
-    registerDriver: (data) => register('driver', data),
-    registerCompany: (data) => register('company', data),
+    registerPassenger: (data) => register(createPassengerAccount, data),
+    registerDriver: (data) => register(createDriverAccount, data),
+    registerCompany: (data) => register(createCompanyAccount, data),
   }
 }

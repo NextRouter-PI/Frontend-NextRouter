@@ -44,6 +44,10 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
   - `src/api/client.js`: instância padrão do cliente HTTP com limpeza em HMR.
   - `src/api/upload.js`: envio `multipart/form-data` para `/uploads/images/` e
     `/uploads/documents/`.
+  - `src/api/registration.js`: normaliza e restringe os campos enviados no cadastro,
+    verifica o código sem consumi-lo e cria perfil em JSON com `user_data` aninhado.
+    O servidor revalida/consome o código na criação; não há login, aprovação ou vínculo
+    automático. Não enviar objetos de formulário como multipart com chaves pontuadas.
   - `src/legacyPwa.js`: remoção seletiva das chaves antigas (`access`, `user`,
     `manualLogout`) do storage, desregistro de `/sw.js` e `/dev-sw.js` da mesma
     origem e limpeza apenas dos caches conhecidos (`api-cache`, `google-fonts-cache`,
@@ -95,6 +99,10 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     `useInputFormat`, `useSignUpForm`, `useSignUpCompanyForm`, `useTransportQuestionnaire`,
     `useTravelTracking`, `useValidation`, `useToast`). `useToast` mantém mensagem e
     timer por escopo, substitui o timer anterior e ignora chamadas após descarte.
+  - `useEmailVerification` vincula o código ao e-mail solicitado; voltar à revisão
+    não reenvia código durante o cooldown. `usePasswordReset` mantém um fluxo próprio
+    de solicitação/verificação/confirmação, com mensagens antienumeração. Validade e
+    limites são do servidor; cooldown no cliente não é proteção autoritativa.
   - `src/utils/apiErrors.js`: `formatApiError` para traduzir respostas de erro aninhadas
     da API, erros de rede, `429` e `5xx` em mensagens legíveis em português.
   - `src/assets/css/`: variáveis de tema (`theme.css`) e estilos globais (`global.css`).
@@ -157,6 +165,9 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     `memberships/` (`approve/`, `reject/`, `withdraw/`, `end/`); a alocação em grupo
     e ponto operacional (`assign-group/`) e a autorização de serviços habituais
     (`authorize-services/`) são etapas posteriores ao vínculo ativo.
+    CNH no cadastro de motorista é um documento opcional identificado por
+    `attachment_key`, não um número de CNH obrigatório. Gênero não é campo da API
+    atual e não é coletado como se fosse persistido.
   - **Configuração habitual vs. operação datada:** grupos (`company-route-groups/`),
     políticas de resposta (`response-policies/`), pontos operacionais
     (`operational-points/`), frota (`vehicles/`) e serviços habituais
