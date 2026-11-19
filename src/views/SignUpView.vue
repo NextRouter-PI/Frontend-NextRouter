@@ -25,6 +25,7 @@ const { isMobile } = useDeviceLayout()
         <RoleSelector />
 
         <div class="signup-footer">
+          <p><RouterLink to="/empresas" class="login-button">Pesquisar empresas sem criar conta</RouterLink></p>
           <p class="login-link">
             Já possui uma conta?
             <RouterLink to="/login" class="login-button">Fazer login</RouterLink>

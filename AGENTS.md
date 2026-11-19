@@ -48,6 +48,12 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     verifica o código sem consumi-lo e cria perfil em JSON com `user_data` aninhado.
     O servidor revalida/consome o código na criação; não há login, aprovação ou vínculo
     automático. Não enviar objetos de formulário como multipart com chaves pontuadas.
+  - `src/api/companies.js`: descoberta com whitelist pública (`id`, `trade_name`,
+    `city`, `state`). Filtros de cidade/UF consultam destino atendido; os campos da
+    resposta são cadastrais, não uma lista de cidades atendidas ou pontos operacionais.
+  - `src/api/memberships.js`: listas com página explícita, pedido do próprio perfil e
+    transições `approve/reject/withdraw`. Consulta pessoal confere pending/active fora
+    da página do histórico e resolve somente o nome público do ciclo aberto (sem N+1).
   - `src/legacyPwa.js`: remoção seletiva das chaves antigas (`access`, `user`,
     `manualLogout`) do storage, desregistro de `/sw.js` e `/dev-sw.js` da mesma
     origem e limpeza apenas dos caches conhecidos (`api-cache`, `google-fonts-cache`,
@@ -71,21 +77,23 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
 - **Navegação (`src/router/index.js`):**
   - Rotas públicas (`meta: { requiresAuth: false }`): `/login`, `/signup`,
     `/signup/usuario`, `/signup/motorista`, `/signup/empresa`, `/signup/confirmacao`,
-    `/forgot-password` e `/logout`.
+    `/forgot-password`, `/logout` e `/empresas`. A descoberta usa
+    `allowAuthenticated: true` para também aceitar contas autenticadas.
   - Rotas autenticadas (`meta: { requiresAuth: true }`): `/`, `/usuario`, `/lista`,
     `/transporte`, `/cadastro-veiculo`, `/veiculos/editar/:id`, `/cadastro-rota`,
-    `/rotas/editar/:id`, `/usuarios`, `/usuarios/motorista/:id`, `/usuarios/passageiro/:id`.
+    `/rotas/editar/:id`, `/usuarios`, `/usuarios/motorista/:id`, `/usuarios/passageiro/:id`
+    e `/vinculos`.
   - O guard `beforeEach` executa `checkAuth()` na primeira navegação autenticada,
-    aplica o tema (`localStorage.getItem('theme')`) apenas em rotas privadas e
+    aplica o tema (`localStorage.getItem('theme')`) em rotas privadas e na descoberta e
     redireciona conforme `state.logged`.
 - **Componentes, views, composables e utilitários (`src/`):**
   - `src/views/`: views de página mapeadas pelo router (`HomeView`, `LoginView`,
     `SignUpView`, `ConfirmationView`, `ForgotPasswordView`, `LogoutView`, `UserView`,
-    `ListView`, `TransportView`, `CitySelectionView`, `CompanySelectionView`).
+    `ListView`, `TransportView`, `CompanyDirectoryView`, `MembershipsView`).
   - `src/components/layout/`: `RoleBasedView.vue` (seleciona a tela por papel ativo),
     `AppHeader.vue`, `AppSideBar.vue`, `AppBottomNavigationBar.vue`, `AvatarUpload.vue`.
-  - `src/components/auth/` e `src/components/forms/`: login, recuperação de senha,
-    confirmação de código, busca de cidade/empresa e formulários de cadastro por perfil
+  - `src/components/auth/` e `src/components/forms/`: login, confirmação de código
+    e formulários de cadastro por perfil
     (`SignUpPassenger.vue`, `SignUpDriver.vue`, `SignUpCompany.vue`, `AddressSection.vue`,
     `CnhSection.vue`).
   - `src/components/pages/`: telas segmentadas em `company/`, `driver/` e `passenger/`.
@@ -103,6 +111,14 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     não reenvia código durante o cooldown. `usePasswordReset` mantém um fluxo próprio
     de solicitação/verificação/confirmação, com mensagens antienumeração. Validade e
     limites são do servidor; cooldown no cliente não é proteção autoritativa.
+  - `useCompanyDirectory` mantém filtros aplicados, paginação e cancelamento de busca.
+    `useMemberships` mantém consulta/escrita por escopo e identidade, bloqueia ações
+    com leitura inválida ou escrita em andamento e exige releitura após falha. Uma
+    confirmação de POST não implica sucesso da consulta posterior. Não há replay.
+  - `src/components/memberships/`: apresentação mínima e confirmação com motivo
+    opcional. `CompanyUsuarios.vue` usa vínculos, não listas de identidade ou grupo.
+    Detalhes legados em `UsuarioDetalhe.vue` continuam fora dessa jornada, para revisão
+    em recorte de perfil. As quatro buscas antigas sem consumidores foram retiradas.
   - `src/utils/apiErrors.js`: `formatApiError` para traduzir respostas de erro aninhadas
     da API, erros de rede, `429` e `5xx` em mensagens legíveis em português.
   - `src/assets/css/`: variáveis de tema (`theme.css`) e estilos globais (`global.css`).
@@ -168,6 +184,10 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     CNH no cadastro de motorista é um documento opcional identificado por
     `attachment_key`, não um número de CNH obrigatório. Gênero não é campo da API
     atual e não é coletado como se fosse persistido.
+    A R3 só apresenta retirada de pedido pendente, não encerramento de vínculo ativo.
+    Não fabricar grupo/serviço ao aprovar. Cadastro empresarial pendente/recusado não
+    autoriza consultar ou decidir vínculos; o titular pessoal ainda pode retirar seu
+    pedido se a empresa deixar de ser pública/aprovada.
   - **Configuração habitual vs. operação datada:** grupos (`company-route-groups/`),
     políticas de resposta (`response-policies/`), pontos operacionais
     (`operational-points/`), frota (`vehicles/`) e serviços habituais

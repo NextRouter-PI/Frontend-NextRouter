@@ -48,7 +48,16 @@ CNH é opcional. Criar conta não aprova empresa nem solicita vínculo.
 Recuperação usa `password-reset/request/`, `verify/` e `confirm/` com `new_password`:
 a tela de nova senha só abre após verificação no servidor, sem informar se há conta.
 
-CEP permanece inalterado e adiado. R1/R2 têm somente conferência estática;
+## Descoberta e vínculo — R3
+
+`/empresas` permite busca pública por nome, cidade/UF atendidas e grupo/destino.
+O titular revisa e envia o pedido em `/vinculos`, acompanha o estado e retira pedidos
+pendentes. A empresa consulta e aprova/recusa em `/usuarios`; sua moderação cadastral
+continua separada no admin Django. Seleção/login não enviam pedidos automaticamente.
+As listas são paginadas no servidor. Após falha de escrita, atualizar antes de nova
+ação; não há replay automático. Grupo, serviços e encerramento ficam em recortes próprios.
+
+CEP permanece inalterado e adiado. R1–R3 têm somente conferência estática;
 validação funcional, de segurança e visual continuam pendentes de autorização.
 
 ## Documentação

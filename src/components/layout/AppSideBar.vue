@@ -49,6 +49,11 @@ async function handleLogout() {
         <small>Usuários</small>
       </router-link>
 
+      <router-link v-if="['passenger', 'driver'].includes(state.role)" to="/vinculos" class="nav-item" title="Vínculo empresarial">
+        <span class="mdi mdi-domain"></span>
+        <small>Vínculo</small>
+      </router-link>
+
     </nav>
 
     <button class="nav-item logout-btn" title="Sair" @click="handleLogout">

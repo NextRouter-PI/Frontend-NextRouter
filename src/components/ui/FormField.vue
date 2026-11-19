@@ -1,4 +1,6 @@
 <script setup>
+import { useId } from 'vue'
+
 defineProps({
   modelValue: [String, Number],
   label: String,
@@ -11,13 +13,15 @@ defineProps({
   maxlength: [String, Number],
 })
 
+const fieldId = useId()
 const emit = defineEmits(['update:modelValue', 'blur'])
 </script>
 
 <template>
   <div class="field-group" :class="{ 'has-error': error }">
-    <label v-if="label"> {{ label }} <span v-if="required" class="required">*</span> </label>
+    <label v-if="label" :for="fieldId"> {{ label }} <span v-if="required" class="required">*</span> </label>
     <input
+      :id="fieldId"
       :value="modelValue"
       @input="emit('update:modelValue', $event.target.value)"
       @blur="$emit('blur', $event)"
@@ -27,8 +31,10 @@ const emit = defineEmits(['update:modelValue', 'blur'])
       :placeholder="placeholder"
       :autocomplete="autocomplete"
       :maxlength="maxlength"
+      :aria-invalid="error ? true : undefined"
+      :aria-describedby="error ? `${fieldId}-error` : undefined"
     />
-    <p v-if="error" class="field-error">{{ error }}</p>
+    <p v-if="error" :id="`${fieldId}-error`" class="field-error">{{ error }}</p>
   </div>
 </template>
 

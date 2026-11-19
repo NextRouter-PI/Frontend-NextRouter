@@ -63,6 +63,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/empresas',
+      name: 'empresas',
+      component: () => import('../views/CompanyDirectoryView.vue'),
+      meta: { requiresAuth: false, allowAuthenticated: true },
+    },
+    {
+      path: '/vinculos',
+      name: 'vinculos',
+      component: () => import('../views/MembershipsView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/usuarios/motorista/:id",
       name: "usuario-motorista",
       component: () => import("../components/pages/company/UsuarioDetalhe.vue"),
@@ -128,7 +140,7 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const { checkAuth } = useLoginState()
 
-  if (to.meta.requiresAuth === false) {
+  if (to.meta.requiresAuth === false && !to.meta.allowAuthenticated) {
     document.documentElement.className = ""
   } else {
     const saved = localStorage.getItem("theme")
@@ -139,12 +151,15 @@ router.beforeEach(async (to) => {
     await checkAuth();
   }
 
-  if (state.logged && to.meta.requiresAuth === false && to.name !== 'logout' && to.name !== 'login') {
+  if (state.logged && to.meta.requiresAuth === false && !to.meta.allowAuthenticated && to.name !== 'logout' && to.name !== 'login') {
     return { name: "home" };
   }
 
   if (to.meta.requiresAuth && !state.logged) {
-    return { name: "login" };
+    return {
+      name: 'login',
+      query: to.name === 'vinculos' ? { company: to.query.company } : {},
+    };
   }
 
   return true;

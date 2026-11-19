@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useLoginState } from '@/stores/useLoginState'
 import { state } from '@/stores/state'
 import { useDeviceLayout } from '@/composables/useDeviceLayout'
@@ -10,6 +10,7 @@ import PasswordField from '@/components/ui/PasswordField.vue'
 
 const { isMobile } = useDeviceLayout()
 const router = useRouter()
+const route = useRoute()
 const erro = ref('')
 
 const { login } = useLoginState()
@@ -26,7 +27,12 @@ async function enviarLogin() {
 
   if (sucesso) {
     // Também descarta stores privados das telas ainda não consolidadas.
-    window.location.replace(router.resolve({ name: 'home' }).href)
+    const company = route.query.company
+    const validCompany = typeof company === 'string' && /^[1-9]\d*$/.test(company) && Number.isSafeInteger(Number(company))
+    const destination = validCompany && ['passenger', 'driver'].includes(state.role)
+      ? { name: 'vinculos', query: { company } } : { name: 'home' }
+    // Retorno fixo, sem aceitar URL externa nem enviar vínculo automaticamente.
+    window.location.replace(router.resolve(destination).href)
   } else {
     erro.value = state.error || 'Email ou senha inválidos.'
   }
@@ -84,6 +90,7 @@ async function enviarLogin() {
       </p>
 
       <RouterLink to="/signup" class="secondary"> Criar nova conta </RouterLink>
+      <RouterLink to="/empresas" class="secondary"> Pesquisar empresas sem entrar </RouterLink>
     </main>
   </div>
 </template>

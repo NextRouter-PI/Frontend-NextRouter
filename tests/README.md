@@ -70,3 +70,39 @@ execução funcional. Antes do aceite, autorizar a demonstração com dados fict
 A confirmação pública antiga agora é informativa, sem afirmar análise/vínculo ou
 usar e-mail da URL; o `ForgotPasswordForm.vue` órfão foi retirado. Conferência visual
 das telas/estados alterados e integração no Vue servido pelo Django seguem pendentes.
+
+## Validação focal pendente — R3 / Marco A
+
+Implementação com revisão estática somente. Nenhum teste foi criado/executado; não
+há evidência de navegação, proteção de acesso ou fidelidade visual nesta revisão.
+Antes do aceite, autorizar ambiente fictício com integrações externas desabilitadas e:
+
+- Em `/empresas`, buscar por `trade_name`, `city`, `state` e `destination`: só
+  empresas aprovadas/ativas, filtros no servidor, lista vazia distinta de erro,
+  paginação e busca sucessiva/saída sem resposta antiga. Cidade cadastral exibida
+  não deve ser interpretada como região atendida nem expor endereço operacional.
+- Consultar como visitante, passageiro, motorista, empresa e conta sem perfil único.
+  Selecionar empresa não deve escrever; login deve preservar descarte de memória,
+  aceitar somente retorno interno fixo e exigir confirmação explícita em `/vinculos`.
+- Demonstrar o Marco A completo: cadastrar/confirmar passageiro, pedir vínculo,
+  aprovar pela empresa em `/usuarios`, recarregar `/vinculos` e observar estado ativo,
+  sem atribuir grupo, ponto, serviços ou viagem. Repetir com motorista, recusa e retirada.
+- Com histórico de várias páginas, confirmar que pendência/vínculo ativo fora da
+  página bloqueia novo pedido. Conferir conflito de outro ciclo, decisão em outra aba,
+  retirada concorrente e preservação de conta/histórico. Atualizar retorna à página 1,
+  inclusive se a página anterior deixar de existir.
+- Testar empresa pendente/recusada na moderação, perda de aprovação após a listagem e
+  tentativa por outra empresa/staff/titular. Não basta esconder botões: conferir
+  respostas do servidor, ausência de dados de terceiros e negativa real de CSRF.
+- Cobrir 401/403/404/409/429/5xx, rede, resposta perdida, cliques repetidos, falha de
+  releitura após POST confirmado, saída/troca de identidade durante GET/POST e retorno
+  à tela. Não reapresentar dados da conta anterior nem repetir escrita; falha bloqueia
+  ações até nova consulta bem-sucedida. Cancelar a espera não significa rollback.
+- Conferir nomes mínimos dos solicitantes, motivo opcional com 500 caracteres,
+  teclado/foco/labels do `FormField`, confirmação, navegação/paginação, larguras
+  Mobile/Desktop e temas. Não reintroduzir CPF, endereço, documentos, fotos fictícias
+  de pessoas ou campos do protótipo que a resposta pública não fornece.
+
+ESLint focal e inspeção de imports/diffs não substituem essas demonstrações no Vue
+servido pelo Django. R1/R2 continuam sem aceite; CEP segue adiado. O smoke existente
+não foi ampliado e não comprova sozinho os cadastros ou vínculos da R2/R3.
