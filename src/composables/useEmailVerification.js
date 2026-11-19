@@ -1,4 +1,4 @@
-import { ref, onUnmounted } from 'vue'
+import { ref, onScopeDispose } from 'vue'
 import api from '@/api/client'
 import { formatApiError } from '@/utils/apiErrors'
 
@@ -9,6 +9,8 @@ export function useEmailVerification() {
   const enviandoCodigo = ref(false)
   const erroCodigo = ref('')
   const cooldown = ref(0)
+  const controller = new AbortController()
+  const { signal } = controller
   let intervalId = null
 
   function stopCooldownTimer() {
@@ -28,6 +30,7 @@ export function useEmailVerification() {
   }
 
   async function enviarCodigo(email) {
+    if (signal.aborted || enviandoCodigo.value) return false
     if (cooldown.value > 0) {
       erroCodigo.value = `Aguarde ${cooldown.value}s para reenviar o código.`
       return false
@@ -36,17 +39,20 @@ export function useEmailVerification() {
     erroCodigo.value = ''
     enviandoCodigo.value = true
     try {
-      await api.post('/email-tokens/send-email/', { email, token_type: 'new-user' })
+      await api.post('/email-tokens/send-email/', { email, token_type: 'new-user' }, { signal })
+      if (signal.aborted) return false
       startCooldown()
       return true
     } catch (error) {
-      erroCodigo.value = formatApiError(
-        error,
-        'Não foi possível enviar o código de verificação. Verifique o e-mail informado.',
-      )
+      if (!signal.aborted) {
+        erroCodigo.value = formatApiError(
+          error,
+          'Não foi possível enviar o código de verificação. Verifique o e-mail informado.',
+        )
+      }
       return false
     } finally {
-      enviandoCodigo.value = false
+      if (!signal.aborted) enviandoCodigo.value = false
     }
   }
 
@@ -58,7 +64,10 @@ export function useEmailVerification() {
     return codigo.value.join('')
   }
 
-  onUnmounted(stopCooldownTimer)
+  onScopeDispose(() => {
+    controller.abort()
+    stopCooldownTimer()
+  })
 
   return { codigo, enviandoCodigo, erroCodigo, enviarCodigo, resetCodigo, codigoCompleto, cooldown }
 }

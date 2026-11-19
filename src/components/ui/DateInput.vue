@@ -1,41 +1,87 @@
-<!-- TODO: Refatorar campo, faltando: required dinâmico e formatção no input -->
-
 <script setup>
-import { computed } from 'vue'
+import { useId } from 'vue'
 
-const props = defineProps({
+defineProps({
   days: { type: Array, required: true },
   months: { type: Array, required: true },
   years: { type: Array, required: true },
-  modelValue: { type: Object, required: true },
+  required: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
+  dayError: { type: String, default: '' },
+  monthError: { type: String, default: '' },
+  yearError: { type: String, default: '' },
 })
 
-const emit = defineEmits(['update:modelValue'])
-
-const formModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value),
-})
+const day = defineModel('day', { type: [String, Number], required: true })
+const month = defineModel('month', { type: [String, Number], required: true })
+const year = defineModel('year', { type: [String, Number], required: true })
+const dateInputId = useId()
 </script>
 
 <template>
-  <div class="field-group">
-    <label>Data de nascimento *</label>
+  <div class="field-group" role="group" :aria-labelledby="`${dateInputId}-label`">
+    <label :id="`${dateInputId}-label`">Data de nascimento<span v-if="required"> *</span></label>
     <div class="date-row">
-      <input v-model="formModel.day" list="days-date" placeholder="Dia" :disabled="disabled" />
-      <input v-model="formModel.month" list="months-date" placeholder="Mês" :disabled="disabled" />
-      <input v-model="formModel.year" list="years-date" placeholder="Ano" :disabled="disabled" />
+      <div class="date-field">
+        <input
+          v-model="day"
+          :list="`${dateInputId}-days`"
+          placeholder="Dia"
+          aria-label="Dia de nascimento"
+          inputmode="numeric"
+          :required="required"
+          :disabled="disabled"
+          :class="{ 'has-error': dayError }"
+          :aria-invalid="dayError ? true : undefined"
+          :aria-describedby="dayError ? `${dateInputId}-day-error` : undefined"
+        />
+        <p v-if="dayError" :id="`${dateInputId}-day-error`" class="field-error">{{ dayError }}</p>
+      </div>
+      <div class="date-field">
+        <input
+          v-model="month"
+          :list="`${dateInputId}-months`"
+          placeholder="Mês"
+          aria-label="Mês de nascimento"
+          :required="required"
+          :disabled="disabled"
+          :class="{ 'has-error': monthError }"
+          :aria-invalid="monthError ? true : undefined"
+          :aria-describedby="monthError ? `${dateInputId}-month-error` : undefined"
+        />
+        <p v-if="monthError" :id="`${dateInputId}-month-error`" class="field-error">
+          {{ monthError }}
+        </p>
+      </div>
+      <div class="date-field">
+        <input
+          v-model="year"
+          :list="`${dateInputId}-years`"
+          placeholder="Ano"
+          aria-label="Ano de nascimento"
+          inputmode="numeric"
+          :required="required"
+          :disabled="disabled"
+          :class="{ 'has-error': yearError }"
+          :aria-invalid="yearError ? true : undefined"
+          :aria-describedby="yearError ? `${dateInputId}-year-error` : undefined"
+        />
+        <p v-if="yearError" :id="`${dateInputId}-year-error`" class="field-error">{{ yearError }}</p>
+      </div>
     </div>
 
-    <datalist id="days-date">
-      <option v-for="day in days" :key="day" :value="String(day).padStart(2, '0')" />
+    <datalist :id="`${dateInputId}-days`">
+      <option
+        v-for="dayOption in days"
+        :key="dayOption"
+        :value="String(dayOption).padStart(2, '0')"
+      />
     </datalist>
-    <datalist id="months-date">
-      <option v-for="month in months" :key="month.value" :value="month.label" />
+    <datalist :id="`${dateInputId}-months`">
+      <option v-for="monthOption in months" :key="monthOption.value" :value="monthOption.label" />
     </datalist>
-    <datalist id="years-date">
-      <option v-for="year in years" :key="year" :value="year" />
+    <datalist :id="`${dateInputId}-years`">
+      <option v-for="yearOption in years" :key="yearOption" :value="yearOption" />
     </datalist>
   </div>
 </template>
@@ -61,6 +107,10 @@ const formModel = computed({
   gap: 12px;
 }
 
+.date-field {
+  min-width: 0;
+}
+
 .date-row input {
   width: 100%;
   padding: 12px 16px;
@@ -77,5 +127,15 @@ const formModel = computed({
   border-color: var(--primary);
   background: var(--bg);
   box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.1);
+}
+
+.date-row input.has-error {
+  border-color: var(--danger);
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 12px;
+  margin-top: 4px;
 }
 </style>

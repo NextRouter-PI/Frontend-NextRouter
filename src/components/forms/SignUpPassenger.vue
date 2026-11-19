@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, onMounted } from 'vue'
+import { reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/stores/useRegisterState'
 import { useSignUpPassengerDriverForm } from '@/composables/useSignUpForm'
@@ -16,8 +16,15 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 const router = useRouter()
 const registerState = useRegisterState()
 
-// Limpa o estado de um cadastro anterior (sucesso/erro) ao abrir a tela.
-onMounted(registerState.reset)
+watch(
+  () => registerState.state.success,
+  (success, _previous, onCleanup) => {
+    if (!success) return
+    const timer = setTimeout(() => router.push({ name: 'login' }), 2000)
+    onCleanup(() => clearTimeout(timer))
+  },
+)
+
 const { codigo, enviandoCodigo, erroCodigo, enviarCodigo, codigoCompleto, cooldown } = useEmailVerification()
 
 const goBack = () => {
@@ -30,6 +37,7 @@ const {
   years,
   fieldErrors,
   clearFieldError,
+  clearBirthdayErrors,
   validarFormulario,
   validateField,
   formatCPF,
@@ -70,6 +78,7 @@ const form = reactive({
 })
 
 const voltarPagina = () => {
+  if (enviandoCodigo.value || registerState.state.loading) return
   erroCodigo.value = ''
   registerState.reset()
   currentPage.value -= 1
@@ -80,8 +89,8 @@ const avancarParaVerificacao = async () => {
   if (sucesso) currentPage.value = 3
 }
 
-// TODO: Refatorar função (para usar try, catch e finally)
 const handleSubmit = async () => {
+  if (registerState.state.loading || currentPage.value !== 3) return
   if (!validarFormulario(form)) return
 
   if (codigoCompleto().length !== 6) {
@@ -110,9 +119,6 @@ const handleSubmit = async () => {
   formData.append('user_data.birthday', birthday)
 
   await registerState.registerPassenger(formData)
-  if (registerState.state.success) {
-    setTimeout(() => router.push({ name: 'login' }), 2000)
-  }
 }
 </script>
 
@@ -149,11 +155,20 @@ const handleSubmit = async () => {
           @blur="validateField(form.name, [(v) => requiredField(v, 'Nome completo')], 'name')"
         />
         <DateInput
+          v-model:day="form.day"
+          v-model:month="form.month"
+          v-model:year="form.year"
           :days="days"
           :months="months"
           :years="years"
-          v-model="form"
+          required
           :disabled="registerState.state.loading"
+          :day-error="fieldErrors.day"
+          :month-error="fieldErrors.month"
+          :year-error="fieldErrors.year"
+          @update:day="clearBirthdayErrors"
+          @update:month="clearBirthdayErrors"
+          @update:year="clearBirthdayErrors"
         />
         <FormattedField
           v-model="form.cpf"

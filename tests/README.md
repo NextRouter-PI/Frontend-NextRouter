@@ -26,3 +26,20 @@ foram retirados. Para desenvolver ou inspecionar o build manualmente, use os
 comandos do [README principal](../README.md), sem testes implícitos.
 
 Esta revisão foi estática: nenhum teste, build, servidor ou migration foi executado.
+
+## Validação focal pendente — R1 de cadastro
+
+Não foram criados nem executados testes para a R1. Antes de declarar o recorte
+confiável, autorizar a verificação de:
+
+- Erro, loading e sucesso isolados entre formulários/instâncias e após remontar.
+- Entrada de data por digitação e sugestão, erros por campo e IDs distintos.
+- Cliques repetidos sem duplicar cadastro, envio de código ou lote de documentos.
+- Saída da tela durante resposta pendente, cooldown ou redirecionamento, sem
+  callback tardio na tela nova; cancelamento local não comprova rollback no servidor.
+- Falha parcial de upload: aguardar o lote terminar e preservar os anexos já enviados
+  antes de nova tentativa explícita, sem replay automático de escrita.
+
+ESLint focal sem `--fix`/cache e `git diff --check` passaram na revisão estática.
+Isso não comprova renderização, interação, contrato de cadastro ou integração real.
+CEP não faz parte desta evidência: seu tratamento foi adiado pelo responsável.

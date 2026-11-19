@@ -1,13 +1,10 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, onScopeDispose } from 'vue'
 import { useRegisterState } from '@/stores/useRegisterState'
 import { useValidator } from '@/composables/useValidation'
 import { useInputFormat } from '@/composables/useInputFormat'
 import { useEmailVerification } from '@/composables/useEmailVerification'
 import { uploadDocument } from '@/api/upload'
 import { formatApiError } from '@/utils/apiErrors'
-
-const registerState = useRegisterState()
-
 
 const {
   formatCPF,
@@ -17,28 +14,30 @@ const {
 } = useInputFormat()
 
 
-const {
-  errorMessage,
-  fieldErrors,
-  clearErrors,
-  clearFieldError,
-  isCNPJ,
-  isCPF,
-  validatePassword,
-  validateForm,
-  validateField,
-  minLengthField,
-  isStrongPassword,
-  passwordMatch,
-  getCEP,
-  requiredField,
-  isCEP,
-  isEmail,
-  isPhone
-} = useValidator()
-
-
 export function useSignUpCompanyForm() {
+  const registerState = useRegisterState()
+  const {
+    errorMessage,
+    fieldErrors,
+    clearErrors,
+    clearFieldError,
+    isCNPJ,
+    isCPF,
+    validatePassword,
+    validateForm,
+    validateField,
+    minLengthField,
+    isStrongPassword,
+    passwordMatch,
+    getCEP,
+    requiredField,
+    isCEP,
+    isEmail,
+    isPhone,
+  } = useValidator()
+  const controller = new AbortController()
+  const { signal } = controller
+  onScopeDispose(() => controller.abort())
 
   const currentPage = ref(1)
 
@@ -141,6 +140,7 @@ export function useSignUpCompanyForm() {
 
 
   function goToPreviousPage() {
+    if (enviandoDocumentos.value || enviandoCodigo.value || registerState.state.loading) return
     erroCodigo.value = ''
     registerState.reset()
     if (currentPage.value > 1) currentPage.value--
@@ -152,7 +152,8 @@ export function useSignUpCompanyForm() {
   async function enviarDocumento(campo, descricao) {
     const arquivo = files[campo].file
     if (arquivosEnviados[campo] !== arquivo) {
-      const { data } = await uploadDocument(arquivo, descricao)
+      const { data } = await uploadDocument(arquivo, descricao, { signal })
+      if (signal.aborted) return
       documentKeys[campo] = data.attachment_key
       arquivosEnviados[campo] = arquivo
     }
@@ -163,6 +164,8 @@ export function useSignUpCompanyForm() {
     * Envia os 3 documentos e o código de verificação de e-mail antes da revisão final.
   */
   async function avancarParaVerificacao() {
+    if (signal.aborted || enviandoDocumentos.value || enviandoCodigo.value) return
+    if (currentPage.value !== 4) return
     clearErrors()
     if (!validatePage1()) return
     if (!validatePage2()) return
@@ -170,26 +173,32 @@ export function useSignUpCompanyForm() {
 
     enviandoDocumentos.value = true
     try {
-      await Promise.all([
+      const resultados = await Promise.allSettled([
         enviarDocumento('articlesOfAssociation', `Contrato social de ${page1Form.tradeName}`),
         enviarDocumento('stateOperatingLicense', `Licença de operação de ${page1Form.tradeName}`),
         enviarDocumento('certificateOfGoodStading', `Certidões negativas de ${page1Form.tradeName}`),
       ])
+      if (signal.aborted) return
+      const falha = resultados.find((resultado) => resultado.status === 'rejected')
+      if (falha) throw falha.reason
     } catch (error) {
-      errorMessage.value = formatApiError(error, 'Não foi possível enviar os documentos. Verifique se todos são PDFs válidos.')
-      enviandoDocumentos.value = false
+      if (!signal.aborted) {
+        errorMessage.value = formatApiError(error, 'Não foi possível enviar os documentos. Verifique se todos são PDFs válidos.')
+      }
       return
+    } finally {
+      if (!signal.aborted) enviandoDocumentos.value = false
     }
-    enviandoDocumentos.value = false
 
     const sucesso = await enviarCodigo(page3Form.loginEmail.trim().toLowerCase())
-    if (sucesso) currentPage.value = 5
+    if (sucesso && !signal.aborted) currentPage.value = 5
   }
 
   /*
     * Função que intecepta o submit do formulário html
   */
   async function handleSubmit() {
+    if (signal.aborted || registerState.state.loading || currentPage.value !== 5) return
     if (codigoCompleto().length !== 6) {
       erroCodigo.value = 'Digite o código completo de 6 dígitos.'
       return
@@ -226,8 +235,7 @@ export function useSignUpCompanyForm() {
       // Requisição (os erros da API ficam em registerState.state.error, já formatados)
       await registerState.registerCompany(formData)
     } catch (error) {
-      console.error(error)
-      errorMessage.value = formatApiError(error, 'Erro ao cadastrar')
+      if (!signal.aborted) errorMessage.value = formatApiError(error, 'Erro ao cadastrar')
     }
   }
 

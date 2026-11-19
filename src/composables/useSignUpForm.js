@@ -10,26 +10,25 @@ const {
 } = useInputFormat()
 
 
-const {
-  errorMessage,
-  fieldErrors,
-  getCEP,
-  clearErrors,
-  clearFieldError,
-  requiredField,
-  minLengthField,
-  isEmail,
-  passwordMatch,
-  validateForm,
-  validateField,
-  isCPF,
-  isCEP,
-  isPhone,
-  isStrongPassword
-} = useValidator()
-
-
 export function useSignUpPassengerDriverForm() {
+  const {
+    errorMessage,
+    fieldErrors,
+    getCEP,
+    clearErrors,
+    clearFieldError,
+    requiredField,
+    minLengthField,
+    isEmail,
+    passwordMatch,
+    validateForm,
+    validateField,
+    isCPF,
+    isCEP,
+    isPhone,
+    isStrongPassword,
+  } = useValidator()
+
   const isPasswordVisible = ref(false)
 
   const days = computed(() => Array.from({ length: 31 }, (_, i) => i + 1))
@@ -89,6 +88,10 @@ export function useSignUpPassengerDriverForm() {
     return `${form.year}-${resolveMonth(form.month)}-${day}`
   }
 
+  function clearBirthdayErrors() {
+    for (const field of ['day', 'month', 'year']) clearFieldError(field)
+  }
+
   function validarFormulario(form) {
     return validateForm([
 
@@ -127,6 +130,7 @@ export function useSignUpPassengerDriverForm() {
     formatPhone,
     formatCPF,
     clearFieldError,
+    clearBirthdayErrors,
     formatBirthday,
     validarFormulario,
     validateField,

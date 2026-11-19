@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, watch, onScopeDispose } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/stores/useRegisterState'
 import { useSignUpPassengerDriverForm } from '@/composables/useSignUpForm'
@@ -20,11 +20,21 @@ const router = useRouter()
 
 const registerState = useRegisterState()
 
-// Limpa o estado de um cadastro anterior (sucesso/erro) ao abrir a tela.
-onMounted(registerState.reset)
+watch(
+  () => registerState.state.success,
+  (success, _previous, onCleanup) => {
+    if (!success) return
+    const timer = setTimeout(() => router.push({ name: 'login' }), 2000)
+    onCleanup(() => clearTimeout(timer))
+  },
+)
+
 const { codigo, enviandoCodigo, erroCodigo, enviarCodigo, codigoCompleto, cooldown } = useEmailVerification()
 const cnhAttachmentKey = ref('')
 const enviandoDocumento = ref(false)
+const controller = new AbortController()
+const { signal } = controller
+onScopeDispose(() => controller.abort())
 
 const goBack = () => {
   router.push('/signup');
@@ -41,6 +51,7 @@ const {
   formatPhone,
   formatCEP,
   clearFieldError,
+  clearBirthdayErrors,
   showPassword,
   validarFormulario,
   validateField,
@@ -86,35 +97,42 @@ const cnh = reactive({
 let cnhArquivoEnviado = null
 
 const voltarPagina = () => {
+  if (enviandoDocumento.value || enviandoCodigo.value || registerState.state.loading) return
   erroCodigo.value = ''
   registerState.reset()
   currentPage.value -= 1
 }
 
 const avancarParaVerificacao = async () => {
+  if (signal.aborted || enviandoDocumento.value || enviandoCodigo.value) return
+  if (currentPage.value !== 2) return
   if (!validateField(cnh.file, [(v) => requiredField(v, 'Arquivo CNH')], 'cnh')) return
 
   errorMessage.value = ''
   enviandoDocumento.value = true
   try {
-    if (cnhArquivoEnviado !== cnh.file) {
-      const { data } = await uploadDocument(cnh.file, `CNH de ${form.name.trim()}`)
+    const arquivo = cnh.file
+    if (cnhArquivoEnviado !== arquivo) {
+      const { data } = await uploadDocument(arquivo, `CNH de ${form.name.trim()}`, { signal })
+      if (signal.aborted) return
       cnhAttachmentKey.value = data.attachment_key
-      cnhArquivoEnviado = cnh.file
+      cnhArquivoEnviado = arquivo
     }
   } catch (error) {
-    errorMessage.value = formatApiError(error, 'Não foi possível enviar o arquivo da CNH. Verifique se é um PDF válido.')
-    enviandoDocumento.value = false
+    if (!signal.aborted) {
+      errorMessage.value = formatApiError(error, 'Não foi possível enviar o arquivo da CNH. Verifique se é um PDF válido.')
+    }
     return
+  } finally {
+    if (!signal.aborted) enviandoDocumento.value = false
   }
-  enviandoDocumento.value = false
 
   const sucesso = await enviarCodigo(form.email.trim().toLowerCase())
-  if (sucesso) currentPage.value = 3
+  if (sucesso && !signal.aborted) currentPage.value = 3
 }
 
-// TODO: Refatorar função (para usar try, catch e finally)
 const handleSubmit = async () => {
+  if (signal.aborted || registerState.state.loading || currentPage.value !== 3) return
   if (!validarFormulario(form)) return
 
   if (codigoCompleto().length !== 6) {
@@ -144,9 +162,6 @@ const handleSubmit = async () => {
   formData.append('user_data.birthday', birthday)
 
   await registerState.registerDriver(formData)
-  if (registerState.state.success) {
-    setTimeout(() => router.push({ name: 'login' }), 2000)
-  }
 }
 </script>
 
@@ -182,11 +197,20 @@ const handleSubmit = async () => {
           @blur="validateField(form.name, [(v) => requiredField(v, 'Nome completo')], 'name')"
         />
         <DateInput
+          v-model:day="form.day"
+          v-model:month="form.month"
+          v-model:year="form.year"
           :days="days"
           :months="months"
           :years="years"
-          v-model="form"
+          required
           :disabled="registerState.state.loading"
+          :day-error="fieldErrors.day"
+          :month-error="fieldErrors.month"
+          :year-error="fieldErrors.year"
+          @update:day="clearBirthdayErrors"
+          @update:month="clearBirthdayErrors"
+          @update:year="clearBirthdayErrors"
         />
         <FormattedField
           v-model="form.cpf"
@@ -462,7 +486,7 @@ const handleSubmit = async () => {
         v-if="currentPage > 1"
         type="button"
         class="btn-back"
-        :disabled="enviandoCodigo || registerState.state.loading"
+        :disabled="enviandoDocumento || enviandoCodigo || registerState.state.loading"
         @click="voltarPagina"
       >
         Voltar e corrigir dados

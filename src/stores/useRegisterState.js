@@ -1,57 +1,59 @@
-import { reactive } from 'vue'
+import { onScopeDispose, reactive } from 'vue'
 import api from '@/api/client'
 import { formatApiError } from '@/utils/apiErrors'
 
-
-// Objeto de estado de registro
-const state = reactive({
-  loading: false,
-  success: false,
-  // Mensagem de erro (já formatada e legível) exibida na tela do usuário
-  error: null,
-  // Objeto contendo o usuário após o login
-  user: null
-})
-
-
-// Endpoints para API
 const endpointsForEachUserType = {
   passenger: '/passengers/',
   driver: '/drivers/',
-  company: '/companies/'
+  company: '/companies/',
 }
 
-
 export function useRegisterState() {
-  // Função de reset de estado
+  const state = reactive({
+    loading: false,
+    success: false,
+    error: null,
+    user: null,
+  })
+  const controller = new AbortController()
+  const { signal } = controller
+
   const reset = () => {
-    state.loading = false
+    if (signal.aborted || state.loading) return
     state.success = false
     state.error = null
     state.user = null
   }
 
   const register = async (userType, data) => {
-    reset() // Reset dos estados de registro
-    state.loading = true // Inicia tela de loading, antes da requisição
+    if (signal.aborted || state.loading || state.success) return false
+    reset()
+    state.loading = true
 
     try {
-      const response = await api.post(endpointsForEachUserType[userType], data) // Requisição de registro
-
-      state.success = true
+      const response = await api.post(endpointsForEachUserType[userType], data, { signal })
+      if (signal.aborted) return false
       state.user = response.data
+      state.success = true
+      return true
     } catch (error) {
-      state.error = formatApiError(error, 'Erro ao cadastrar. Verifique os dados e tente novamente.')
+      if (!signal.aborted) {
+        state.error = formatApiError(error, 'Erro ao cadastrar. Verifique os dados e tente novamente.')
+      }
+      return false
     } finally {
-      state.loading = false
+      if (!signal.aborted) state.loading = false
     }
   }
+
+  // Descartar a tela cancela a espera local; não desfaz uma escrita já aceita pelo servidor.
+  onScopeDispose(() => controller.abort())
 
   return {
     state,
     reset,
-    registerPassenger: data => register('passenger', data),
-    registerDriver: data => register('driver', data),
-    registerCompany: data => register('company', data)
+    registerPassenger: (data) => register('passenger', data),
+    registerDriver: (data) => register('driver', data),
+    registerCompany: (data) => register('company', data),
   }
 }

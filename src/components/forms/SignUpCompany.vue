@@ -1,6 +1,6 @@
 <script setup>
 import { useSignUpCompanyForm } from '@/composables/useSignUpCompanyForm'
-import { onMounted } from 'vue'
+import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
@@ -49,18 +49,17 @@ const {
 
 const router = useRouter()
 
-// Limpa o estado de um cadastro anterior (sucesso/erro) ao abrir a tela.
-onMounted(registerState.reset)
+watch(
+  () => registerState.state.success,
+  (success, _previous, onCleanup) => {
+    if (!success) return
+    const timer = setTimeout(() => router.push({ name: 'login' }), 2000)
+    onCleanup(() => clearTimeout(timer))
+  },
+)
 
 const goBack = () => {
   router.push('/signup');
-}
-
-const onSubmit = async () => {
-  await handleSubmit()
-  if (registerState.state.success) {
-    setTimeout(() => router.push({ name: 'login' }), 2000)
-  }
 }
 </script>
 
@@ -84,7 +83,7 @@ const onSubmit = async () => {
       </div>
     </div>
 
-    <form v-else class="signup-form" @submit.prevent="onSubmit">
+    <form v-else class="signup-form" @submit.prevent="handleSubmit">
       <div v-if="currentPage === 1">
         <h2 class="page-title">Informações da <span class="highlight-orange">Empresa</span></h2>
 
@@ -259,7 +258,7 @@ const onSubmit = async () => {
           label="Licença de Operação Estadual"
           required
           accept=".pdf"
-          :disabled="registerState.loading"
+          :disabled="registerState.state.loading"
           :error="fieldErrors.stateOperatingLicense"
           hint="Formato aceito: PDF"
           @update:fileName="files.stateOperatingLicense.name = $event"
@@ -462,7 +461,7 @@ const onSubmit = async () => {
           type="button"
           class="btn-back"
           @click="goToPreviousPage"
-          :disabled="registerState.state.loading"
+          :disabled="enviandoDocumentos || enviandoCodigo || registerState.state.loading"
         >
           <span class="mdi mdi-arrow-left"></span> Voltar
         </button>
