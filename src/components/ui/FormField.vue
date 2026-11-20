@@ -19,12 +19,12 @@ const emit = defineEmits(['update:modelValue', 'blur'])
 
 <template>
   <div class="field-group" :class="{ 'has-error': error }">
-    <label v-if="label" :for="fieldId"> {{ label }} <span v-if="required" class="required">*</span> </label>
+    <label v-if="label" :for="fieldId">
+      {{ label }}<span v-if="required" class="required">*</span>
+    </label>
     <input
       :id="fieldId"
       :value="modelValue"
-      @input="emit('update:modelValue', $event.target.value)"
-      @blur="$emit('blur', $event)"
       :type="type"
       :required="required"
       :disabled="disabled"
@@ -33,52 +33,59 @@ const emit = defineEmits(['update:modelValue', 'blur'])
       :maxlength="maxlength"
       :aria-invalid="error ? true : undefined"
       :aria-describedby="error ? `${fieldId}-error` : undefined"
+      @input="emit('update:modelValue', $event.target.value)"
+      @blur="emit('blur', $event)"
     />
-    <p v-if="error" :id="`${fieldId}-error`" class="field-error">{{ error }}</p>
+    <Transition name="fade-slide">
+      <p v-if="error" :id="`${fieldId}-error`" class="field-error">{{ error }}</p>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
 .field-group {
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .field-group label {
   display: block;
   color: var(--primary);
   font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 0.82rem;
   margin-bottom: 6px;
 }
 
 .required {
-  color: var(--danger);
+  color: var(--primary);
+  margin-left: 2px;
 }
 
 .field-group input {
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid var(--border-primary);
-  border-radius: 12px;
-  background: var(--bg);
-  font-size: 14px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--border-radius);
+  background: var(--superfice);
+  font-size: 0.92rem;
   color: var(--text);
-  transition: all 0.3s ease;
+  transition: border-color 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid),
+    background-color 0.2s var(--ease-fluid);
+}
+
+.field-group input::placeholder {
+  color: var(--text-muted);
 }
 
 .field-group input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.1);
+  box-shadow: 0 0 0 3px rgba(236, 131, 20, 0.14);
 }
 
 .field-group input:disabled {
-  background: var(--superfice);
+  background: var(--input-surface);
   color: var(--text-muted);
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .field-group.has-error input {
@@ -87,7 +94,7 @@ const emit = defineEmits(['update:modelValue', 'blur'])
 
 .field-error {
   color: var(--danger);
-  font-size: 12px;
+  font-size: 0.78rem;
   margin-top: 4px;
 }
 </style>

@@ -23,6 +23,7 @@ body {
   text-rendering: optimizeLegibility;
   background: var(--bg);
   color: var(--text);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -64,14 +65,18 @@ table {
   min-height: 100vh;
 }
 
+.main-content {
+  min-height: 100vh;
+}
+
 .main-content.logged {
-  padding-top: 80px;
-  padding-bottom: 80px;
+  padding-top: var(--header-height);
+  padding-bottom: calc(var(--bottom-nav-height) + 16px);
 }
 
 .main-content.logged-desktop {
-  margin-left: 100px;
-  padding-top: 80px;
+  margin-left: var(--sidebar-width);
+  padding-top: var(--header-height);
   padding-bottom: 24px;
 }
 
@@ -84,6 +89,55 @@ table {
 ::selection {
   background: var(--primary);
   color: white;
+}
+
+/* Transições nativas do Vue reutilizáveis */
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.22s var(--ease-fluid), transform 0.22s var(--ease-fluid);
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.2s var(--ease-fluid), transform 0.2s var(--ease-fluid);
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.sheet-up-enter-active,
+.sheet-up-leave-active {
+  transition: opacity 0.26s var(--ease-fluid), transform 0.28s var(--ease-fluid);
+}
+
+.sheet-up-enter-from,
+.sheet-up-leave-to {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: opacity 0.18s var(--ease-fluid), transform 0.18s var(--ease-fluid);
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
 }
 
 /* Scrollbar discreta, sobreposta e adaptada ao tema claro/escuro */
@@ -108,7 +162,7 @@ table {
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(223, 128, 26, 0.55);
+  background: rgba(236, 131, 20, 0.55);
 }
 
 *::-webkit-scrollbar-corner {
@@ -119,5 +173,16 @@ table {
   *::-webkit-scrollbar {
     width: 2px;
     height: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

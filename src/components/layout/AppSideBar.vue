@@ -11,21 +11,26 @@ const items = computed(() => navigationItems(state.role))
 
 <template>
   <aside class="sidebar">
-
-    <RouterLink :to="`/`" class="logo">
+    <RouterLink to="/" class="logo">
       <div class="logo-content">
-        <img :src="Logo" alt="Logo">
+        <img :src="Logo" alt="NextRouter" />
         <h1>NextRouter <small v-if="isCompany" class="admin-tag">ADMIN</small></h1>
       </div>
     </RouterLink>
 
-    <nav class="nav">
-
-      <router-link v-for="item in items" :key="item.to" :to="item.to" class="nav-item" :title="item.title">
-        <span class="mdi" :class="item.icon"></span>
+    <nav class="nav" aria-label="Navegação principal">
+      <router-link
+        v-for="item in items"
+        :key="item.to"
+        :to="item.to"
+        class="nav-item"
+        :title="item.title"
+      >
+        <span class="nav-icon-wrap">
+          <span class="mdi" :class="item.icon" aria-hidden="true"></span>
+        </span>
         <small>{{ item.title }}</small>
       </router-link>
-
     </nav>
   </aside>
 </template>
@@ -35,26 +40,23 @@ const items = computed(() => navigationItems(state.role))
   position: fixed;
   top: 0;
   left: 0;
-  width: 100px;
+  width: var(--sidebar-width);
   height: 100vh;
-  background: var(--superfice);
-  z-index: 99;
-
+  background: var(--chrome-bg);
+  border-right: 2px solid var(--primary);
+  z-index: 101;
   display: flex;
   flex-direction: column;
   align-items: center;
-
-  padding: 20px 0;
-  gap: 30px;
-
-  border-right: 1px solid var(--border-primary);
-
-  transition: width 0.4s ease;
+  padding: 12px 0 20px;
+  gap: 24px;
+  transition: width 0.3s var(--ease-fluid);
   overflow: hidden;
+  box-shadow: 4px 0 18px rgba(0, 0, 0, 0.22);
 }
 
 .sidebar:hover {
-  width: 230px;
+  width: 224px;
 }
 
 .logo {
@@ -66,21 +68,22 @@ const items = computed(() => navigationItems(state.role))
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 18px;
+  padding: 6px 18px;
 }
 
 .logo-content img {
-  width: 40px;
+  height: 36px;
+  width: auto;
+  flex-shrink: 0;
 }
 
 .logo-content h1 {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text);
-
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--chrome-text);
   opacity: 0;
-  transform: translateX(-10px);
-  transition: 0.3s;
+  transform: translateX(-8px);
+  transition: opacity 0.25s var(--ease-fluid), transform 0.25s var(--ease-fluid);
   white-space: nowrap;
 }
 
@@ -91,7 +94,7 @@ const items = computed(() => navigationItems(state.role))
 
 .admin-tag {
   font-size: 10px;
-  font-weight: 400;
+  font-weight: 600;
   color: var(--primary);
   margin-left: 2px;
 }
@@ -101,84 +104,58 @@ const items = computed(() => navigationItems(state.role))
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .nav-item {
   position: relative;
   text-decoration: none;
-  color: var(--text-muted);
-
+  color: var(--chrome-muted);
   display: flex;
   align-items: center;
   gap: 14px;
-
-  width: 90%;
-  padding: 10px 12px;
-
+  width: calc(100% - 16px);
+  padding: 6px 10px;
   border-radius: 12px;
-  transition: 0.25s;
+  transition: background-color 0.22s var(--ease-fluid), color 0.22s var(--ease-fluid),
+    transform 0.18s var(--ease-fluid);
 }
 
-.nav-item::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-
-  background: var(--gradient-primary-hover);
-
-  opacity: 0;
-  transition: 0.25s;
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--chrome-text);
 }
 
-.nav-item:hover::before {
-  opacity: 1;
+.nav-item:active {
+  transform: scale(0.96);
 }
 
-.nav-item::after {
-  content: "";
-  position: absolute;
-  left: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-
-  width: 4px;
-  height: 0%;
-
-  background: var(--gradient-primary);
-  border-radius: 10px;
-
-  transition: 0.3s;
-}
-
-.nav-item.router-link-active::after {
-  height: 60%;
-}
-
-.nav-item span {
+.nav-icon-wrap {
   width: 42px;
   height: 42px;
   min-width: 42px;
   min-height: 42px;
-
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  font-size: 20px;
-
-  border-radius: 50%;
+  font-size: 22px;
   background: transparent;
+  transition: background-color 0.25s var(--ease-fluid), color 0.25s var(--ease-fluid),
+    transform 0.25s var(--ease-fluid), box-shadow 0.25s var(--ease-fluid);
+}
 
-  transition: all 0.3s ease;
+.nav-item:hover .nav-icon-wrap {
+  color: var(--primary);
+  transform: scale(1.06);
 }
 
 .nav-item small {
+  font-size: 0.9rem;
+  font-weight: 600;
   opacity: 0;
-  transform: translateX(-10px);
-
-  transition: 0.25s;
+  transform: translateX(-8px);
+  transition: opacity 0.22s var(--ease-fluid), transform 0.22s var(--ease-fluid);
   white-space: nowrap;
 }
 
@@ -187,25 +164,13 @@ const items = computed(() => navigationItems(state.role))
   transform: translateX(0);
 }
 
-.nav-item:hover span {
-  color: var(--primary);
-  transform: scale(1.1);
-}
-
 .nav-item.router-link-active {
-  color: var(--text);
+  color: var(--chrome-text);
 }
 
-.nav-item.router-link-active span {
-  color: var(--superfice);
-  background: var(--gradient-primary);
-
+.nav-item.router-link-active .nav-icon-wrap {
+  color: #ffffff;
+  background: var(--primary);
   box-shadow: var(--shadow-primary);
-
-  transform: scale(1.1);
-}
-
-.nav-item:active {
-  transform: scale(0.95);
 }
 </style>

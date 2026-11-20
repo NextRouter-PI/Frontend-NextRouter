@@ -17,7 +17,7 @@ const emit = defineEmits(['update:modelValue'])
 <template>
   <div class="field-group">
     <label v-if="label" :for="fieldId">
-      {{ label }} <span v-if="required" class="required">*</span>
+      {{ label }}<span v-if="required" class="required">*</span>
     </label>
     <select
       :id="fieldId"
@@ -27,11 +27,7 @@ const emit = defineEmits(['update:modelValue'])
       @change="emit('update:modelValue', $event.target.value)"
     >
       <option value="">{{ placeholder }}</option>
-      <option
-        v-for="opt in options"
-        :key="opt.value"
-        :value="opt.value"
-      >
+      <option v-for="opt in options" :key="opt.value" :value="opt.value">
         {{ opt.label }}
       </option>
     </select>
@@ -42,28 +38,29 @@ const emit = defineEmits(['update:modelValue'])
 .field-group {
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .field-group label {
   color: var(--primary);
   font-weight: 600;
-  font-size: 0.85rem;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
 }
 
-.required { color: var(--danger); }
+.required {
+  color: var(--primary);
+  margin-left: 2px;
+}
 
 .field-group select {
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid var(--border-primary);
-  border-radius: 12px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-  background: var(--bg);
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--border-radius);
+  font-size: 0.92rem;
+  transition: border-color 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid);
+  background: var(--superfice);
   color: var(--text);
   appearance: auto;
 }
@@ -71,7 +68,6 @@ const emit = defineEmits(['update:modelValue'])
 .field-group select:focus {
   outline: none;
   border-color: var(--primary);
-  background: var(--bg);
-  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.1);
+  box-shadow: 0 0 0 3px rgba(236, 131, 20, 0.14);
 }
 </style>

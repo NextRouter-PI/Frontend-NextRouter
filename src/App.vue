@@ -12,43 +12,49 @@ const route = useRoute()
 const router = useRouter()
 
 const showNav = computed(() => state.logged && !route.meta?.hideNav)
+const transitionName = ref('page-fade')
 
-// Nome da transição aplicada na troca de rota (vazio = sem animação)
-const transitionName = ref('')
+const viewKey = computed(() => route.matched[0]?.path || route.path)
+const isAuthSlide = computed(() =>
+  transitionName.value === 'slide-forward' || transitionName.value === 'slide-back',
+)
 
 router.beforeEach((to, from) => {
-  if (isMobile.value) {
-    transitionName.value = ''
-  } else if (from.path === '/login' && to.path === '/signup') {
+  if (!isMobile.value && from.path === '/login' && to.path === '/signup') {
     transitionName.value = 'slide-forward'
-  } else if (from.path === '/signup' && to.path === '/login') {
+  } else if (!isMobile.value && from.path === '/signup' && to.path === '/login') {
     transitionName.value = 'slide-back'
   } else {
-    transitionName.value = ''
+    transitionName.value = 'page-fade'
   }
 })
 </script>
 
 <template>
   <div v-if="!state.checkingAuth" class="app-layout">
-    <AppHeader v-if="showNav" />
-    <Sidebar v-if="!isMobile && showNav" />
+    <Transition name="chrome-slide-down">
+      <AppHeader v-if="showNav" />
+    </Transition>
+
+    <Transition name="chrome-slide-left">
+      <Sidebar v-if="!isMobile && showNav" />
+    </Transition>
 
     <main :class="['main-content', { logged: showNav, 'logged-desktop': showNav && !isMobile }]">
       <router-view v-slot="{ Component }">
-        <Transition :name="transitionName">
-          <component :is="Component" />
+        <Transition :name="transitionName" :mode="isAuthSlide ? undefined : 'out-in'">
+          <component :is="Component" :key="viewKey" />
         </Transition>
       </router-view>
     </main>
 
-    <AppBottomNavigationBar
-      v-if="isMobile && showNav"
-    />
+    <Transition name="chrome-slide-up">
+      <AppBottomNavigationBar v-if="isMobile && showNav" />
+    </Transition>
   </div>
 </template>
 
-<!-- Sem scoped: as classes são aplicadas na raiz das páginas -->
+<!-- Sem scoped: as classes são aplicadas na raiz das páginas e chrome -->
 <style>
 .slide-forward-enter-active,
 .slide-forward-leave-active,
@@ -58,14 +64,39 @@ router.beforeEach((to, from) => {
   inset: 0;
   overflow: hidden;
   background: var(--bg);
-  transition: transform 0.6s cubic-bezier(0.77, 0, 0.18, 1);
+  transition: transform 0.55s cubic-bezier(0.77, 0, 0.18, 1);
 }
 
-/* login -> signup: a tela atual sai para a direita, a nova entra pela esquerda */
 .slide-forward-enter-from { transform: translateX(-100%); }
 .slide-forward-leave-to   { transform: translateX(100%); }
 
-/* signup -> login: caminho contrário */
 .slide-back-enter-from { transform: translateX(100%); }
 .slide-back-leave-to   { transform: translateX(-100%); }
+
+.chrome-slide-down-enter-active,
+.chrome-slide-down-leave-active,
+.chrome-slide-up-enter-active,
+.chrome-slide-up-leave-active,
+.chrome-slide-left-enter-active,
+.chrome-slide-left-leave-active {
+  transition: opacity 0.25s var(--ease-fluid), transform 0.28s var(--ease-fluid);
+}
+
+.chrome-slide-down-enter-from,
+.chrome-slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.chrome-slide-up-enter-from,
+.chrome-slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(100%);
+}
+
+.chrome-slide-left-enter-from,
+.chrome-slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-100%);
+}
 </style>
