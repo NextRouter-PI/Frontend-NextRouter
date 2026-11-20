@@ -45,19 +45,13 @@ const emit = defineEmits(['cep-input', 'cep-blur'])
 const mapEl = useTemplateRef('mapContainer')
 const loadingCep = shallowRef(false)
 const cepFeedback = shallowRef('')
+const isFullscreen = shallowRef(false)
 
 let map = null
 let tileLayer = null
 let marker = null
 let themeObserver = null
-let cepController = null
-
-const resolvedAddress = computed(() => {
-  const streetText = street.value?.trim()
-  const neighborhoodText = neighborhood.value?.trim()
-  const cityState = [city.value?.trim(), state.value?.trim()].filter(Boolean).join(' / ')
-  return [streetText, neighborhoodText, cityState].filter(Boolean).join(' · ')
-})
+let lastFetchedCep = ''
 
 const hasCoordinates = computed(
   () =>
@@ -126,44 +120,65 @@ function initMap() {
   }
 }
 
-async function lookupCep() {
-  const cleanCep = String(cep.value || '').replace(/\D/g, '')
-  if (cleanCep.length !== 8) {
+async function toggleFullscreen() {
+  isFullscreen.value = !isFullscreen.value
+  await nextTick()
+  if (map) map.invalidateSize()
+}
+
+function onKeydown(event) {
+  if (event.key === 'Escape' && isFullscreen.value) {
+    toggleFullscreen()
+  }
+}
+
+// Consulta automática ao digitar/alterar o CEP para 8 dígitos.
+watch(
+  () => String(cep.value || '').replace(/\D/g, ''),
+  async (cleanCep, _prev, onCleanup) => {
+    if (cleanCep.length !== 8) {
+      lastFetchedCep = ''
+      loadingCep.value = false
+      cepFeedback.value = ''
+      street.value = ''
+      neighborhood.value = ''
+      city.value = ''
+      state.value = ''
+      return
+    }
+    if (cleanCep === lastFetchedCep) return
+
+    const controller = new AbortController()
+    let current = true
+    onCleanup(() => {
+      current = false
+      controller.abort()
+    })
+
+    loadingCep.value = true
     cepFeedback.value = ''
-    return
-  }
-
-  cepController?.abort()
-  cepController = new AbortController()
-  loadingCep.value = true
-  cepFeedback.value = ''
-  try {
-    const { data } = await api.get(`/cep/${cleanCep}/`, { signal: cepController.signal })
-    if (cepController.signal.aborted) return
-    state.value = data.state || ''
-    city.value = data.city || ''
-    street.value = data.street || ''
-    neighborhood.value = data.neighborhood || ''
-    if (data.latitude != null && data.longitude != null) {
-      setPin(data.latitude, data.longitude, true)
-      cepFeedback.value = 'Endereço e posição aproximada carregados pelo CEP. Ajuste o pino no mapa se necessário.'
-    } else {
-      cepFeedback.value = 'Endereço carregado pelo CEP. Clique no mapa abaixo para marcar o ponto exato.'
+    try {
+      const { data } = await api.get(`/cep/${cleanCep}/`, { signal: controller.signal })
+      if (!current) return
+      lastFetchedCep = cleanCep
+      state.value = data.state || ''
+      city.value = data.city || ''
+      street.value = data.street || ''
+      neighborhood.value = data.neighborhood || ''
+      if (data.latitude != null && data.longitude != null) {
+        setPin(data.latitude, data.longitude, true)
+        cepFeedback.value = 'Endereço e posição aproximada preenchidos pelo CEP. Ajuste o pino no mapa se necessário.'
+      } else {
+        cepFeedback.value = 'Endereço preenchido pelo CEP. Clique no mapa abaixo para marcar o ponto exato.'
+      }
+    } catch {
+      if (!current || controller.signal.aborted) return
+      cepFeedback.value = 'Não foi possível consultar o CEP agora. Marque a localização diretamente no mapa.'
+    } finally {
+      if (current) loadingCep.value = false
     }
-  } catch {
-    if (!cepController.signal.aborted) {
-      cepFeedback.value = 'Não foi possível consultar o CEP agora. Clique no mapa para marcar o ponto do endereço.'
-    }
-  } finally {
-    if (!cepController.signal.aborted) loadingCep.value = false
   }
-}
-
-function onCepInput() {
-  emit('cep-input')
-  const digits = String(cep.value || '').replace(/\D/g, '')
-  if (digits.length === 8) lookupCep()
-}
+)
 
 watch(
   () => [latitude.value, longitude.value],
@@ -175,12 +190,13 @@ watch(
 )
 
 onMounted(async () => {
+  document.addEventListener('keydown', onKeydown)
   await nextTick()
   initMap()
 })
 
 onUnmounted(() => {
-  cepController?.abort()
+  document.removeEventListener('keydown', onKeydown)
   if (themeObserver) {
     themeObserver.disconnect()
     themeObserver = null
@@ -206,16 +222,43 @@ onUnmounted(() => {
       :disabled="disabled"
       :format="formatCep"
       :error="cepError"
-      @input="onCepInput"
+      @input="emit('cep-input')"
       @blur="emit('cep-blur')"
     />
 
-    <p v-if="loadingCep" class="cep-status" role="status">Consultando endereço pelo CEP...</p>
-    <div v-else-if="resolvedAddress" class="resolved-box" role="status">
-      <span class="mdi mdi-map-marker-outline resolved-icon" aria-hidden="true"></span>
-      <span>{{ resolvedAddress }}</span>
+    <p v-if="loadingCep" class="cep-status" role="status">Consultando Rua, Bairro e Cidade pelo CEP...</p>
+    <p v-else-if="cepFeedback" class="cep-feedback" role="status">{{ cepFeedback }}</p>
+
+    <FormField
+      v-model="street"
+      label="Rua"
+      placeholder="Preenchida automaticamente pelo CEP"
+      disabled
+    />
+
+    <FormField
+      v-model="neighborhood"
+      label="Bairro"
+      placeholder="Preenchido automaticamente pelo CEP"
+      disabled
+    />
+
+    <div class="city-state-row">
+      <FormField
+        v-model="city"
+        label="Cidade"
+        placeholder="Cidade do CEP"
+        disabled
+        class="field-cell"
+      />
+      <FormField
+        v-model="state"
+        label="UF"
+        placeholder="UF"
+        disabled
+        class="field-cell"
+      />
     </div>
-    <p v-if="cepFeedback" class="cep-feedback">{{ cepFeedback }}</p>
 
     <div class="address-row">
       <FormField
@@ -223,26 +266,60 @@ onUnmounted(() => {
         label="Número"
         placeholder="Nº"
         :disabled="disabled"
-        class="half-field"
+        class="field-cell"
       />
       <FormField
         v-model="complement"
         label="Complemento"
         :placeholder="complementPlaceholder"
         :disabled="disabled"
-        class="half-field"
+        class="field-cell"
       />
     </div>
 
-    <div class="map-section">
+    <div
+      :class="['map-section', { fullscreen: isFullscreen }]"
+      :role="isFullscreen ? 'dialog' : undefined"
+      :aria-modal="isFullscreen ? 'true' : undefined"
+      :aria-label="isFullscreen ? 'Localização do seu Endereço em tela cheia' : undefined"
+    >
       <div class="map-header">
-        <span class="map-label">Localização no mapa</span>
-        <span v-if="hasCoordinates" class="coords-badge">
-          {{ Number(latitude).toFixed(5) }}, {{ Number(longitude).toFixed(5) }}
-        </span>
+        <div class="map-title-group">
+          <span class="map-label">Localização do seu Endereço</span>
+          <span v-if="hasCoordinates" class="coords-badge">
+            {{ Number(latitude).toFixed(5) }}, {{ Number(longitude).toFixed(5) }}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          class="btn-fullscreen"
+          :aria-label="isFullscreen ? 'Sair da tela cheia' : 'Abrir mapa em tela cheia'"
+          @click="toggleFullscreen"
+        >
+          <span
+            class="mdi"
+            :class="isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
+            aria-hidden="true"
+          ></span>
+          <span>{{ isFullscreen ? 'Reduzir' : 'Tela cheia' }}</span>
+        </button>
       </div>
-      <p class="map-hint">Clique no mapa ou arraste o pino para salvar as coordenadas exatas do endereço.</p>
+
+      <p class="map-hint">
+        Clique no mapa ou arraste o pino para salvar as coordenadas exatas do endereço.
+      </p>
+
       <div ref="mapContainer" class="leaflet-canvas"></div>
+
+      <button
+        v-if="isFullscreen"
+        type="button"
+        class="btn-confirm-fullscreen"
+        @click="toggleFullscreen"
+      >
+        Confirmar localização no mapa
+      </button>
     </div>
   </div>
 </template>
@@ -251,35 +328,22 @@ onUnmounted(() => {
 .address-cep-map {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   margin-bottom: 14px;
 }
 
 .cep-status,
 .cep-feedback {
-  margin: -6px 0 4px;
+  margin: -6px 0 6px;
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.4;
 }
 
-.resolved-box {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border-primary);
-  background: rgba(223, 128, 26, 0.08);
-  font-size: 0.86rem;
-  color: var(--text);
-  line-height: 1.4;
-}
-
-.resolved-icon {
-  color: var(--primary);
-  font-size: 1.15rem;
-  flex-shrink: 0;
+.city-state-row {
+  display: grid;
+  grid-template-columns: 1fr 88px;
+  gap: 10px;
 }
 
 .address-row {
@@ -288,7 +352,7 @@ onUnmounted(() => {
   gap: 10px;
 }
 
-.half-field {
+.field-cell {
   min-width: 0;
 }
 
@@ -296,7 +360,17 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 2px;
+  margin-top: 4px;
+}
+
+.map-section.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  margin: 0;
+  padding: 14px;
+  background: var(--bg);
+  box-sizing: border-box;
 }
 
 .map-header {
@@ -304,12 +378,19 @@ onUnmounted(() => {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
+}
+
+.map-title-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
 }
 
 .map-label {
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: var(--primary);
 }
 
@@ -320,6 +401,25 @@ onUnmounted(() => {
   background: rgba(223, 128, 26, 0.14);
   color: var(--primary);
   font-weight: 600;
+}
+
+.btn-fullscreen {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-primary);
+  background: var(--superfice);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-fullscreen:hover {
+  background: rgba(223, 128, 26, 0.1);
 }
 
 .map-hint {
@@ -334,5 +434,24 @@ onUnmounted(() => {
   border-radius: 10px;
   border: 1.5px solid var(--border-primary);
   z-index: 1;
+}
+
+.map-section.fullscreen .leaflet-canvas {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.btn-confirm-fullscreen {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 12px;
+  background: var(--primary-orange);
+  color: #ffffff;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 </style>
