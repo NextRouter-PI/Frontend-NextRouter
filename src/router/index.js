@@ -176,10 +176,12 @@ router.beforeEach(async (to) => {
   }
 
   if (to.meta.requiresAuth && !state.logged) {
-    return {
-      name: 'login',
-      query: to.name === 'vinculos' ? { company: to.query.company } : {},
-    };
+    const query = {}
+    if (to.name === 'vinculos') {
+      if (to.query.company) query.company = to.query.company
+      if (to.query.group) query.group = to.query.group
+    }
+    return { name: 'login', query };
   }
 
   if (to.meta.requiresRole && state.logged && !to.meta.requiresRole.includes(state.role)) {

@@ -30,10 +30,12 @@ export async function loadMemberships(scope, { page, status, signal }) {
   return { ...history, openMembership, openCompany }
 }
 
-export async function requestMembership(companyId, profile, { signal }) {
-  const { data } = await api.post('/memberships/', {
-    company_id: companyId, profile,
-  }, { signal })
+export async function requestMembership(companyId, profile, { routeGroupId = null, signal } = {}) {
+  const payload = { company_id: companyId, profile }
+  if (profile === 'passenger' && routeGroupId) {
+    payload.route_group_id = Number(routeGroupId)
+  }
+  const { data } = await api.post('/memberships/', payload, { signal })
   return data
 }
 

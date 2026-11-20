@@ -21,6 +21,12 @@ const locationText = computed(() => {
   if (served.length) return served.join(' · ')
   return [props.company.city, props.company.state].filter(Boolean).join(' ')
 })
+
+const defaultGroupId = computed(() => props.company.route_groups?.[0]?.id ?? null)
+
+function linkQuery(groupId = defaultGroupId.value) {
+  return groupId ? { company: props.company.id, group: groupId } : { company: props.company.id }
+}
 </script>
 
 <template>
@@ -53,7 +59,7 @@ const locationText = computed(() => {
         <RouterLink
           v-if="logged && canRequestMembership"
           class="card-action"
-          :to="{ name: 'vinculos', query: { company: company.id } }"
+          :to="{ name: 'vinculos', query: linkQuery() }"
         >
           Solicitar vínculo
           <span class="mdi mdi-chevron-right" aria-hidden="true"></span>
@@ -61,7 +67,7 @@ const locationText = computed(() => {
         <RouterLink
           v-else-if="!logged"
           class="card-action"
-          :to="{ name: 'login', query: { company: company.id } }"
+          :to="{ name: 'login', query: linkQuery() }"
         >
           Entrar para solicitar
           <span class="mdi mdi-chevron-right" aria-hidden="true"></span>

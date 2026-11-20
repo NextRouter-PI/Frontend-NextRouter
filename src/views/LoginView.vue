@@ -24,13 +24,18 @@ async function enviarLogin() {
 
   if (sucesso) {
     const company = route.query.company
+    const group = route.query.group
     const validCompany =
       typeof company === 'string' &&
       /^[1-9]\d*$/.test(company) &&
       Number.isSafeInteger(Number(company))
+    const validGroup =
+      typeof group === 'string' &&
+      /^[1-9]\d*$/.test(group) &&
+      Number.isSafeInteger(Number(group))
     const destination =
       validCompany && ['passenger', 'driver'].includes(state.role)
-        ? { name: 'vinculos', query: { company } }
+        ? { name: 'vinculos', query: validGroup ? { company, group } : { company } }
         : { name: 'home' }
     // Recarrega para descartar estado em memória de sessões anteriores.
     window.location.replace(router.resolve(destination).href)

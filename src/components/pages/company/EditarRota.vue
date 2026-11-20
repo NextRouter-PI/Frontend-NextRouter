@@ -44,8 +44,8 @@ const paradaParaAdicionar = ref('')
 
 const atribuicaoForm = ref({
   membershipId: '',
-  transportPointId: '',
 })
+const destinoTrocaGrupo = ref({})
 const salvandoAtribuicao = ref(false)
 const erroAtribuicao = ref('')
 
@@ -267,6 +267,8 @@ async function salvarServico() {
   await carregarTudo()
 }
 
+const outrosGrupos = computed(() => store.grupos.filter((g) => g.id !== id))
+
 async function atribuirPassageiro() {
   if (!scope.current() || salvandoAtribuicao.value || !atribuicaoForm.value.membershipId) return
   erroAtribuicao.value = ''
@@ -275,17 +277,40 @@ async function atribuirPassageiro() {
     Number(atribuicaoForm.value.membershipId),
     {
       routeGroupId: id,
-      transportPointId: atribuicaoForm.value.transportPointId || null,
+      transportPointId: null,
     },
     { signal: scope.signal },
   )
   if (!scope.current()) return
   salvandoAtribuicao.value = false
   if (res) {
-    atribuicaoForm.value = { membershipId: '', transportPointId: '' }
+    atribuicaoForm.value = { membershipId: '' }
     await carregarTudo()
   } else {
-    erroAtribuicao.value = store.error || 'Não foi possível atribuir o passageiro ao grupo.'
+    erroAtribuicao.value = store.error || 'Não foi possível adicionar o passageiro ao grupo.'
+  }
+}
+
+async function moverPassageiro(member) {
+  const targetGroupId = Number(destinoTrocaGrupo.value[member.membership])
+  if (!scope.current() || salvandoAtribuicao.value || !targetGroupId || targetGroupId === id) return
+  erroAtribuicao.value = ''
+  salvandoAtribuicao.value = true
+  const res = await store.atribuirPassageiroGrupo(
+    Number(member.membership),
+    {
+      routeGroupId: targetGroupId,
+      transportPointId: null,
+    },
+    { signal: scope.signal },
+  )
+  if (!scope.current()) return
+  salvandoAtribuicao.value = false
+  if (res) {
+    delete destinoTrocaGrupo.value[member.membership]
+    await carregarTudo()
+  } else {
+    erroAtribuicao.value = store.error || 'Não foi possível trocar o passageiro de grupo.'
   }
 }
 
@@ -619,28 +644,22 @@ async function salvarAgenda() {
         </form>
       </section>
 
-      <!-- 4. Alunos do Grupo, Ponto Operacional e Serviços Autorizados -->
+      <!-- 4. Passageiros do Grupo e Serviços Autorizados -->
       <section class="panel-section">
-        <h2>4. Passageiros do Grupo, Ponto Operacional e Serviços Autorizados</h2>
+        <h2>4. Passageiros do Grupo</h2>
         <p class="hint">
-          Atribua passageiros com vínculo ativo neste grupo e escolha seu ponto operacional de embarque/desembarque. Depois, autorize explicitamente os serviços de ida/retorno e a ida habitual.
+          Passageiros aprovados a partir deste grupo entram aqui automaticamente. Você também pode adicionar um passageiro vinculado a este grupo ou transferi-lo para outro grupo. Os pontos de embarque são definidos na aba Rotas do Grupo.
         </p>
 
         <form class="inline-row" @submit.prevent="atribuirPassageiro">
           <select v-model="atribuicaoForm.membershipId" required :disabled="salvandoAtribuicao">
-            <option value="">Selecionar passageiro vinculado...</option>
+            <option value="">Selecionar passageiro vinculado para adicionar ao grupo...</option>
             <option v-for="m in passageirosAtivos" :key="m.id" :value="m.id">
               {{ m.applicant_name }} (vínculo #{{ m.id }})
             </option>
           </select>
-          <select v-model="atribuicaoForm.transportPointId" :disabled="salvandoAtribuicao">
-            <option value="">Sem ponto operacional</option>
-            <option v-for="p in store.pontosOperacionais" :key="p.id" :value="p.id">
-              {{ p.name }} ({{ p.city }}/{{ p.state }})
-            </option>
-          </select>
           <button type="submit" class="btn-primary-inline" :disabled="salvandoAtribuicao">
-            {{ salvandoAtribuicao ? 'Atribuindo...' : 'Atribuir / atualizar ponto' }}
+            {{ salvandoAtribuicao ? 'Salvando...' : 'Adicionar ao grupo' }}
           </button>
         </form>
         <p v-if="erroAtribuicao" class="erro" role="alert">{{ erroAtribuicao }}</p>
@@ -655,11 +674,30 @@ async function salvarAgenda() {
                 Configurar serviços autorizados
               </button>
             </div>
-            <p class="sub-meta">Ponto operacional: {{ m.pointName }}</p>
             <p class="sub-meta">
               Serviços autorizados: {{ m.service_ids?.length || 0 }} ·
               Ida habitual: {{ m.habitual_outbound_id ? `#${m.habitual_outbound_id}` : 'Não definida' }}
             </p>
+            <div v-if="outrosGrupos.length" class="inline-row" style="margin-top: 8px">
+              <select
+                v-model="destinoTrocaGrupo[m.membership]"
+                :disabled="salvandoAtribuicao"
+                aria-label="Trocar passageiro de grupo"
+              >
+                <option value="">Trocar para outro grupo...</option>
+                <option v-for="g in outrosGrupos" :key="g.id" :value="g.id">
+                  {{ g.name }}
+                </option>
+              </select>
+              <button
+                type="button"
+                class="btn-outline-inline"
+                :disabled="salvandoAtribuicao || !destinoTrocaGrupo[m.membership]"
+                @click="moverPassageiro(m)"
+              >
+                Mover de grupo
+              </button>
+            </div>
 
             <div v-if="autorizacaoSelecionada === m.id" class="auth-panel">
               <h4>Serviços autorizados para {{ m.applicantName }}</h4>

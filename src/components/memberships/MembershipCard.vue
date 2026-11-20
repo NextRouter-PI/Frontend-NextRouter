@@ -21,6 +21,9 @@ const createdLabel = computed(() => new Date(props.membership.created_at).toLoca
       {{ membership.driver ? 'Motorista' : 'Passageiro' }} · pedido nº {{ membership.id }}
       · <time :datetime="membership.created_at">{{ createdLabel }}</time>
     </p>
+    <p v-if="membership.requested_route_group_name" class="membership-group">
+      Grupo de rota solicitado: <strong>{{ membership.requested_route_group_name }}</strong>
+    </p>
     <slot />
   </article>
 </template>

@@ -25,6 +25,7 @@ const {
 } = useMemberships(scope)
 
 const selectedCompany = ref(null)
+const selectedGroupId = ref('')
 const selectionLoading = ref(false)
 const selectionError = ref('')
 const closingAction = ref('')
@@ -33,9 +34,15 @@ const selectedId = computed(() => {
   return typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))
     ? Number(value) : null
 })
+const requestedGroupQueryId = computed(() => {
+  const value = route.query.group
+  return typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))
+    ? Number(value) : null
+})
 
 watch([selectedId, scope], async ([id, identity], _previous, onCleanup) => {
   selectedCompany.value = null
+  selectedGroupId.value = ''
   selectionError.value = ''
   selectionLoading.value = false
   if (!id || !identity) return
@@ -44,7 +51,12 @@ watch([selectedId, scope], async ([id, identity], _previous, onCleanup) => {
   selectionLoading.value = true
   try {
     const company = await getPublicCompany(id, { signal: controller.signal })
-    if (!controller.signal.aborted) selectedCompany.value = company
+    if (!controller.signal.aborted) {
+      selectedCompany.value = company
+      const groups = company.route_groups || []
+      const matched = requestedGroupQueryId.value && groups.find((g) => g.id === requestedGroupQueryId.value)
+      selectedGroupId.value = matched ? String(matched.id) : groups.length === 1 ? String(groups[0].id) : ''
+    }
   } catch (cause) {
     if (!controller.signal.aborted) {
       selectionError.value = sessionError(cause, formatApiError(cause, 'A empresa não está disponível. Volte à busca.'))
@@ -110,8 +122,34 @@ async function closeMembership(reason) {
           <div role="alert"><ErrorMessage :message="selectionError" /></div>
           <template v-if="selectedCompany">
             <h3>{{ selectedCompany.trade_name }} · empresa nº {{ selectedCompany.id }}</h3>
-            <p>Enviar como {{ state.role === 'driver' ? 'motorista' : 'passageiro' }}. O pedido depende da decisão da empresa e não altera sua conta.</p>
-            <BaseButton type="button" :disabled="!canRequest || selectionLoading" :loading="busy" @click="request(selectedCompany.id)">Enviar pedido de vínculo</BaseButton>
+            <div v-if="state.role === 'passenger' && selectedCompany.route_groups?.length" class="membership-filters">
+              <label>
+                Grupo de rota desejado
+                <select v-model="selectedGroupId" class="membership-select" :disabled="busy">
+                  <option value="">Sem grupo específico</option>
+                  <option v-for="group in selectedCompany.route_groups" :key="group.id" :value="String(group.id)">
+                    {{ group.name }}{{ group.city ? ` (${group.city}/${group.state})` : '' }}
+                  </option>
+                </select>
+              </label>
+            </div>
+            <p>
+              Enviar como {{ state.role === 'driver' ? 'motorista' : 'passageiro' }}.
+              <template v-if="state.role === 'passenger' && selectedGroupId">
+                Ao ser aprovado pela empresa, você será adicionado automaticamente ao grupo de rota escolhido.
+              </template>
+              <template v-else>
+                O pedido depende da decisão da empresa e não altera sua conta.
+              </template>
+            </p>
+            <BaseButton
+              type="button"
+              :disabled="!canRequest || selectionLoading"
+              :loading="busy"
+              @click="request(selectedCompany.id, selectedGroupId ? Number(selectedGroupId) : null)"
+            >
+              Enviar pedido de vínculo
+            </BaseButton>
             <p v-if="ready && openMembership">Já existe um pedido pendente ou vínculo ativo. Nenhuma troca automática será realizada.</p>
           </template>
         </section>

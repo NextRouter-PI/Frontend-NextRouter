@@ -79,11 +79,14 @@ export function useMemberships(scope, status = ref('')) {
     }
   }
 
-  function request(companyId) {
+  function request(companyId, routeGroupId = null) {
     const profile = scope.value?.passenger ? 'passenger' : scope.value?.driver ? 'driver' : null
     if (!profile || !canRequest.value) return false
-    return write((signal) => requestMembership(companyId, profile, { signal }),
-      'Pedido enviado. Aguarde a decisão da empresa; nenhum grupo ou viagem foi atribuído.')
+    const message =
+      profile === 'passenger' && routeGroupId
+        ? 'Pedido enviado. Ao ser aprovado pela empresa, você será adicionado automaticamente ao grupo de rota selecionado.'
+        : 'Pedido enviado. Aguarde a decisão da empresa.'
+    return write((signal) => requestMembership(companyId, profile, { routeGroupId, signal }), message)
   }
 
   function transition(record, action, reason) {
