@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
+import AvatarCropModal from '@/components/layout/AvatarCropModal.vue'
 
 const props = defineProps({
   modelValue: { type: String, default: null },
@@ -7,6 +8,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['file-select', 'error'])
 const fileInput = ref(null)
+const pendingCropFile = shallowRef(null)
 
 function openSelector() {
   if (!props.disabled) fileInput.value?.click()
@@ -20,25 +22,38 @@ function handleFile(event) {
     emit('error', 'Selecione uma imagem JPG ou PNG de até 5 MB. O servidor também valida o conteúdo.')
     return
   }
+  pendingCropFile.value = file
+}
+
+function handleCropConfirm(croppedFile) {
+  pendingCropFile.value = null
+  if (croppedFile.size > 5 * 1024 * 1024) {
+    emit('error', 'A imagem recortada excedeu 5 MB. Tente outra foto.')
+    return
+  }
   // A foto exibida continua sendo a confirmada no servidor; sem preview falso ou URL vazada.
-  emit('file-select', file)
+  emit('file-select', croppedFile)
+}
+
+function handleCropCancel() {
+  pendingCropFile.value = null
 }
 </script>
 
 <template>
   <div class="avatar-edit-wrapper">
     <button type="button" class="avatar-button" :disabled="disabled" aria-label="Alterar foto de perfil" @click="openSelector">
-    <div class="avatar-circle">
-      <img
-        v-if="modelValue"
-        :src="modelValue"
-        alt="Foto de perfil"
-        class="avatar-image"
-      />
-      <div v-else class="avatar-placeholder">
-        <span class="mdi mdi-camera-plus-outline"></span>
+      <div class="avatar-circle">
+        <img
+          v-if="modelValue"
+          :src="modelValue"
+          alt="Foto de perfil"
+          class="avatar-image"
+        />
+        <div v-else class="avatar-placeholder">
+          <span class="mdi mdi-camera-plus-outline"></span>
+        </div>
       </div>
-    </div>
     </button>
     <input
       ref="fileInput"
@@ -47,6 +62,12 @@ function handleFile(event) {
       :disabled="disabled"
       class="file-input-hidden"
       @change="handleFile"
+    />
+    <AvatarCropModal
+      :file="pendingCropFile"
+      @confirm="handleCropConfirm"
+      @cancel="handleCropCancel"
+      @error="emit('error', $event)"
     />
   </div>
 </template>
@@ -70,7 +91,7 @@ function handleFile(event) {
   overflow: hidden;
   position: relative;
   background: #c4c4c4;
-  border: 4px solid #df801a;
+  border: 2px solid var(--primary);
   transition: filter 0.2s, transform 0.2s;
 }
 
