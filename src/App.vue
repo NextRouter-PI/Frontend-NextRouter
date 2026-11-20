@@ -1,6 +1,6 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useDeviceLayout } from '@/composables/useDeviceLayout'
 import { state } from './stores/state.js'
 import AppHeader from './components/layout/AppHeader.vue'
@@ -8,7 +8,10 @@ import Sidebar from './components/layout/AppSideBar.vue'
 import AppBottomNavigationBar from './components/layout/AppBottomNavigationBar.vue'
 
 const { isMobile } = useDeviceLayout()
+const route = useRoute()
 const router = useRouter()
+
+const showNav = computed(() => state.logged && !route.meta?.hideNav)
 
 // Nome da transição aplicada na troca de rota (vazio = sem animação)
 const transitionName = ref('')
@@ -28,10 +31,10 @@ router.beforeEach((to, from) => {
 
 <template>
   <div v-if="!state.checkingAuth" class="app-layout">
-    <AppHeader v-if="state.logged" />
-    <Sidebar v-if="!isMobile && state.logged" />
+    <AppHeader v-if="showNav" />
+    <Sidebar v-if="!isMobile && showNav" />
 
-    <main :class="['main-content', { logged: state.logged, 'logged-desktop': state.logged && !isMobile }]">
+    <main :class="['main-content', { logged: showNav, 'logged-desktop': showNav && !isMobile }]">
       <router-view v-slot="{ Component }">
         <Transition :name="transitionName">
           <component :is="Component" />
@@ -40,7 +43,7 @@ router.beforeEach((to, from) => {
     </main>
 
     <AppBottomNavigationBar
-      v-if="isMobile && state.logged"
+      v-if="isMobile && showNav"
     />
   </div>
 </template>

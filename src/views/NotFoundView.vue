@@ -35,7 +35,8 @@ const primaryLabel = computed(() => (state.logged ? 'Voltar ao início' : 'Ir pa
 
 <style scoped>
 .status-page {
-  min-height: calc(100vh - 80px);
+  min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;

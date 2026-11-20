@@ -122,61 +122,61 @@ const router = createRouter({
       path: "/login",
       name: "login",
       component: () => import("../views/LoginView.vue"),
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, hideNav: true }
     },
     {
       path: "/signup",
       name: "signup",
       component: () => import("../views/SignUpView.vue"),
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, hideNav: true }
     },
     {
       path: "/signup/usuario",
       name: "signup-usuario",
       component: () => import("../components/forms/SignUpPassenger.vue"),
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, hideNav: true }
     },
     {
       path: "/signup/motorista",
       name: "signup-motorista",
       component: () => import("../components/forms/SignUpDriver.vue"),
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, hideNav: true }
     },
     {
       path: "/signup/empresa",
       name: "signup-empresa",
       component: () => import("../components/forms/SignUpCompany.vue"),
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, hideNav: true }
     },
     {
       path: "/signup/confirmacao",
       name: "signup-confirmacao",
       component: () => import("../views/ConfirmationView.vue"),
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, hideNav: true }
     },
     {
       path: "/forgot-password",
       name: "forgot-password",
       component: () => import("../views/ForgotPasswordView.vue"),
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, hideNav: true }
     },
     {
       path: "/logout",
       name: "logout",
       component: () => import("../views/LogoutView.vue"),
-      meta: { requiresAuth: false }
+      meta: { requiresAuth: false, hideNav: true }
     },
     {
       path: "/403",
       name: "forbidden",
       component: () => import("../views/ForbiddenView.vue"),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, hideNav: true }
     },
     {
       path: "/:pathMatch(.*)*",
       name: "not-found",
       component: () => import("../views/NotFoundView.vue"),
-      meta: { requiresAuth: false, allowAuthenticated: true }
+      meta: { requiresAuth: false, allowAuthenticated: true, hideNav: true }
     }
   ],
 });
@@ -191,7 +191,7 @@ router.beforeEach(async (to) => {
     await checkAuth();
   }
 
-  if (state.logged && to.meta.requiresAuth === false && !to.meta.allowAuthenticated && to.name !== 'logout' && to.name !== 'login') {
+  if (state.logged && to.meta.requiresAuth === false && !to.meta.allowAuthenticated && to.name !== 'logout') {
     return { name: "home" };
   }
 
