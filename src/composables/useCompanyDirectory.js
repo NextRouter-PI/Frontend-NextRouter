@@ -1,19 +1,64 @@
-import { onScopeDispose, reactive, ref } from 'vue'
-import { searchCompanies } from '@/api/companies'
+import { computed, onScopeDispose, reactive, ref, shallowRef, watch } from 'vue'
+import { getServedCities, searchCompanies } from '@/api/companies'
 import { formatApiError } from '@/utils/apiErrors'
 import { sessionError } from '@/stores/session'
 
 export function useCompanyDirectory() {
-  const filters = reactive({ trade_name: '', city: '', state: '', destination: '' })
+  const filters = reactive({
+    destination: '',
+    state: '',
+    city: '',
+    ordering: 'trade_name',
+  })
   const results = ref([])
-  const loading = ref(false)
-  const searched = ref(false)
-  const error = ref('')
-  const page = ref(1)
-  const totalPages = ref(1)
+  const loading = shallowRef(false)
+  const searched = shallowRef(false)
+  const error = shallowRef('')
+  const validationError = shallowRef('')
+  const page = shallowRef(1)
+  const totalPages = shallowRef(1)
+
+  const servedCities = ref([])
+  const citiesLoading = shallowRef(false)
+  const citiesError = shallowRef('')
+
+  const hasSearchCriteria = computed(() =>
+    Boolean(filters.destination.trim() || filters.city.trim() || filters.state.trim())
+  )
+  const activeFilterCount = computed(() => (filters.state ? 1 : 0) + (filters.city ? 1 : 0))
+
   let appliedFilters = { ...filters }
   let controller = null
   let disposed = false
+
+  watch(
+    () => filters.state,
+    async (selectedState, _previous, onCleanup) => {
+      const request = new AbortController()
+      let current = true
+      onCleanup(() => {
+        current = false
+        request.abort()
+      })
+      citiesLoading.value = true
+      citiesError.value = ''
+      try {
+        const list = await getServedCities(selectedState, { signal: request.signal })
+        if (!current) return
+        servedCities.value = list
+        if (filters.city && !list.some((item) => item.city.toLowerCase() === filters.city.toLowerCase())) {
+          filters.city = ''
+        }
+      } catch (cause) {
+        if (!current || request.signal.aborted) return
+        servedCities.value = []
+        citiesError.value = formatApiError(cause, 'Não foi possível carregar as cidades atendidas.')
+      } finally {
+        if (current) citiesLoading.value = false
+      }
+    },
+    { immediate: true }
+  )
 
   async function load(targetPage) {
     if (disposed) return
@@ -23,6 +68,7 @@ export function useCompanyDirectory() {
     loading.value = true
     searched.value = true
     error.value = ''
+    validationError.value = ''
     results.value = []
     try {
       const data = await searchCompanies(appliedFilters, { page: targetPage, signal: request.signal })
@@ -40,8 +86,27 @@ export function useCompanyDirectory() {
   }
 
   function search() {
+    if (!hasSearchCriteria.value) {
+      validationError.value = 'Informe o nome do grupo de rota ou selecione estado/cidade nos filtros.'
+      return
+    }
+    validationError.value = ''
     appliedFilters = { ...filters }
     return load(1)
+  }
+
+  function clearFilters() {
+    filters.state = ''
+    filters.city = ''
+    filters.ordering = 'trade_name'
+    validationError.value = ''
+    if (filters.destination.trim()) {
+      appliedFilters = { ...filters }
+      return load(1)
+    }
+    searched.value = false
+    results.value = []
+    error.value = ''
   }
 
   function goToPage(target) {
@@ -53,5 +118,22 @@ export function useCompanyDirectory() {
     controller?.abort()
   })
 
-  return { filters, results, loading, searched, error, page, totalPages, search, goToPage }
+  return {
+    filters,
+    results,
+    loading,
+    searched,
+    error,
+    validationError,
+    page,
+    totalPages,
+    servedCities,
+    citiesLoading,
+    citiesError,
+    hasSearchCriteria,
+    activeFilterCount,
+    search,
+    clearFilters,
+    goToPage,
+  }
 }
