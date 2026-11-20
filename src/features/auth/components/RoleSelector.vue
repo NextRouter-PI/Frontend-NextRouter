@@ -34,7 +34,7 @@ const roles = [
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 /* Mobile-first: 3 botões laranja full-width (Login.png) */
 .role-select {
   display: flex;
@@ -50,7 +50,7 @@ const roles = [
   min-height: 74px;
   padding: 18px 24px;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   border: 1.5px solid var(--primary);
   border-radius: 12px;
   text-decoration: none;
@@ -72,12 +72,12 @@ const roles = [
 .role-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .role-icon {
   font-size: 2.3rem;
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 /* Desktop: 3 cards quadrados brancos com borda laranja (Login Desktop.png) */
@@ -95,14 +95,14 @@ const roles = [
     gap: 14px;
     min-height: 185px;
     padding: 26px 20px;
-    background: var(--superfice);
+    background: var(--color-surface);
     color: var(--primary);
     border: 1.5px solid var(--primary);
     box-shadow: var(--shadow);
   }
 
   .role-card:hover {
-    background: rgba(236, 131, 20, 0.06);
+    background: var(--color-primary-soft);
     transform: translateY(-4px);
     box-shadow: var(--shadow-primary);
   }

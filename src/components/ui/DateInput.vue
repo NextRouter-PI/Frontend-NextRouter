@@ -86,7 +86,7 @@ const dateInputId = useId()
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .field-group {
   margin-bottom: 16px;
 }

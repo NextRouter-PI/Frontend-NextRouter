@@ -450,7 +450,7 @@ onMounted(refresh)
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .history-panel {
   margin-top: 8px;
 }
@@ -477,7 +477,7 @@ onMounted(refresh)
 }
 
 .history-section {
-  background: var(--superfice);
+  background: var(--color-surface);
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-radius: 16px;
@@ -615,7 +615,7 @@ onMounted(refresh)
   padding: 10px 14px;
   border-radius: 10px;
   background: rgba(5, 150, 105, 0.12);
-  color: var(--success, #059669);
+  color: var(--success, var(--success));
   font-weight: 600;
   margin-bottom: 12px;
 }
@@ -624,7 +624,7 @@ onMounted(refresh)
   padding: 10px 14px;
   border-radius: 10px;
   background: rgba(220, 38, 38, 0.12);
-  color: var(--danger, #dc2626);
+  color: var(--danger, var(--danger));
   font-weight: 600;
   margin-bottom: 12px;
 }

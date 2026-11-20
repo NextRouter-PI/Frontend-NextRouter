@@ -33,7 +33,7 @@ const primaryLabel = computed(() => (state.logged ? 'Voltar ao início' : 'Ir pa
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .status-page {
   min-height: 100vh;
   width: 100%;
@@ -47,7 +47,7 @@ const primaryLabel = computed(() => (state.logged ? 'Voltar ao início' : 'Ir pa
 .status-card {
   width: 100%;
   max-width: 440px;
-  background: var(--superfice);
+  background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 36px 28px;
@@ -116,7 +116,7 @@ h1 {
 
 .btn-primary {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   border: 1px solid var(--primary);
 }
 

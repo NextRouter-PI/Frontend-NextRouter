@@ -11,7 +11,7 @@ defineProps({
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .error-message {
   display: flex;
   align-items: center;

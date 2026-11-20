@@ -13,7 +13,7 @@ defineProps({
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .loading-container {
   display: flex;
   flex-direction: column;

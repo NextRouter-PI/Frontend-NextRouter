@@ -22,10 +22,10 @@ const router = useRouter()
   </PublicShell>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .forgot-card {
   width: 100%;
-  background: var(--superfice);
+  background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 26px 20px;

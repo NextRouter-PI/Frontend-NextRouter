@@ -100,7 +100,7 @@ const salvar = async () => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .content {
   margin: 0 auto;
   max-width: 600px;
@@ -141,7 +141,7 @@ const salvar = async () => {
   padding: 20px;
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: var(--superfice);
+  background: var(--color-surface);
   text-align: center;
 }
 
@@ -190,7 +190,7 @@ const salvar = async () => {
 }
 
 .erro {
-  color: var(--danger, #d32f2f);
+  color: var(--danger, var(--danger));
   font-size: 13px;
   margin-bottom: 16px;
 }

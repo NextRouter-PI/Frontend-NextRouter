@@ -189,7 +189,7 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .home-page {
   position: relative;
   min-height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
@@ -246,7 +246,7 @@ onUnmounted(() => {
   gap: 6px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--color-on-primary);
   min-width: 0;
 }
 
@@ -302,7 +302,7 @@ onUnmounted(() => {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(236, 131, 20, 0.16);
+  background: var(--color-primary-tint);
   color: var(--primary);
   display: inline-flex;
   align-items: center;
@@ -314,7 +314,7 @@ onUnmounted(() => {
 .sheet-user-info h1 {
   margin: 0 0 3px;
   font-size: 1.12rem;
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .sheet-role-badge {
@@ -349,7 +349,7 @@ onUnmounted(() => {
   margin: 0;
   font-size: 0.94rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .panel-meta {
@@ -360,7 +360,7 @@ onUnmounted(() => {
 }
 
 .panel-meta strong {
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .panel-error {
@@ -417,7 +417,7 @@ onUnmounted(() => {
 
 .sheet-cta {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .sheet-cta:hover {
@@ -426,7 +426,7 @@ onUnmounted(() => {
 
 .sheet-cta-outline {
   background: transparent;
-  color: #ffffff;
+  color: var(--color-on-primary);
   border: 1.5px solid rgba(255, 255, 255, 0.25);
 }
 

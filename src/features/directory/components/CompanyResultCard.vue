@@ -80,15 +80,15 @@ function linkQuery(groupId = defaultGroupId.value) {
   </article>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .company-card {
   display: flex;
   align-items: stretch;
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  background: var(--primary-orange);
-  color: #ffffff;
+  background: var(--primary);
+  color: var(--color-on-primary);
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
 }
@@ -130,7 +130,7 @@ function linkQuery(groupId = defaultGroupId.value) {
   font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.25;
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .company-location {
@@ -165,7 +165,7 @@ function linkQuery(groupId = defaultGroupId.value) {
   padding: 3px 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 0.78rem;
   font-weight: 600;
 }

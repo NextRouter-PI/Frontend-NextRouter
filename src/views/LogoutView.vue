@@ -23,7 +23,7 @@ onMounted(leave)
   </section>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .logout-container {
   display: grid;
   justify-content: center;

@@ -47,14 +47,14 @@ watch(
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .account-tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   padding: 6px;
   margin-bottom: 18px;
-  background: var(--superfice);
+  background: var(--color-surface);
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-radius: 14px;
@@ -84,7 +84,7 @@ watch(
 
 .account-tab-link.router-link-active {
   background: var(--gradient-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   box-shadow: var(--shadow-primary);
 }
 

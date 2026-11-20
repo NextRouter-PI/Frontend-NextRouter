@@ -21,7 +21,7 @@ defineEmits(['change'])
   </nav>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .page-navigation {
   display: flex;
   justify-content: center;

@@ -168,7 +168,7 @@ async function confirmDecision(reason) {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .btn-profile-link {
   display: inline-flex;
   align-items: center;
@@ -178,7 +178,7 @@ async function confirmDecision(reason) {
   border-radius: 10px;
   border: 1px solid var(--primary);
   background: var(--gradient-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 0.92rem;
   font-weight: 600;
   text-decoration: none;

@@ -25,7 +25,7 @@ defineProps({
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .skeleton-stack {
   display: flex;
   flex-direction: column;
@@ -36,7 +36,7 @@ defineProps({
 .skeleton-card {
   padding: 16px 18px;
   border-radius: 14px;
-  background: var(--superfice);
+  background: var(--color-surface);
   outline: 1px solid var(--border);
   outline-offset: -1px;
 }

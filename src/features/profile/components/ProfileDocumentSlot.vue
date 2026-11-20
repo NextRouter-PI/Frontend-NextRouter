@@ -145,7 +145,7 @@ onScopeDispose(() => {
   </section>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .doc-bar {
   display: flex;
   align-items: center;

@@ -59,7 +59,7 @@ function handlePaste(index, event) {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .codigo-inputs {
   display: flex;
   justify-content: center;

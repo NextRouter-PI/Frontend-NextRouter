@@ -341,7 +341,7 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .address-cep-map {
   display: flex;
   flex-direction: column;
@@ -428,7 +428,7 @@ onUnmounted(() => {
   padding: 4px 10px;
   border-radius: 8px;
   border: 1.5px solid var(--border-primary);
-  background: var(--superfice);
+  background: var(--color-surface);
   color: var(--primary);
   font-size: 0.82rem;
   font-weight: 600;
@@ -465,8 +465,8 @@ onUnmounted(() => {
   margin-top: 6px;
   border: none;
   border-radius: 12px;
-  background: var(--primary-orange);
-  color: #ffffff;
+  background: var(--primary);
+  color: var(--color-on-primary);
   font-size: 0.98rem;
   font-weight: 700;
   cursor: pointer;

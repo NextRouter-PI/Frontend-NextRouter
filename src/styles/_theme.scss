@@ -50,11 +50,6 @@
   --bottom-nav-height: #{$bottom-nav-height};
   --sidebar-width: #{$sidebar-width};
   --ease-fluid: #{$ease-fluid};
-
-  // Aliases de compatibilidade legada
-  --superfice: var(--color-surface);
-  --primary-orange: var(--primary);
-  --input-border: var(--primary);
 }
 
 .dark {

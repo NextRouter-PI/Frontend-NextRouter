@@ -101,7 +101,7 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .usuarios-list-container {
   padding: 20px 20px 140px;
   min-height: 100vh;
@@ -110,7 +110,7 @@ onMounted(() => {
 }
 
 .questionario-header-block {
-  background: var(--superfice);
+  background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
@@ -136,7 +136,7 @@ onMounted(() => {
   padding: 10px 14px;
   border-radius: 10px;
   background: rgba(5, 150, 105, 0.12);
-  color: var(--success, #059669);
+  color: var(--success, var(--success));
   font-weight: 600;
   margin-bottom: 12px;
 }
@@ -145,7 +145,7 @@ onMounted(() => {
   padding: 10px 14px;
   border-radius: 10px;
   background: rgba(220, 38, 38, 0.12);
-  color: var(--danger, #dc2626);
+  color: var(--danger, var(--danger));
   font-weight: 600;
   margin-bottom: 12px;
 }
@@ -161,7 +161,7 @@ onMounted(() => {
   padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: var(--superfice);
+  background: var(--color-surface);
   color: var(--text-muted);
   font-size: 0.8rem;
   font-weight: 600;
@@ -175,7 +175,7 @@ onMounted(() => {
 }
 
 .list-container {
-  background: var(--superfice);
+  background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
@@ -241,7 +241,7 @@ onMounted(() => {
 
 .btn-action.outline {
   border: 1px solid var(--border);
-  background: var(--superfice);
+  background: var(--color-surface);
   color: var(--text);
 }
 

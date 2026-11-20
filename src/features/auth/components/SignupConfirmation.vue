@@ -17,13 +17,13 @@ const emit = defineEmits(['continueSignup'])
       o cadastro; criar uma conta não solicita vínculo com empresa nem aprova seu cadastro empresarial.
     </div>
 
-    <button class="btn-ok" @click="emit('continueSignup')">
+    <button type="button" class="btn-ok" @click="emit('continueSignup')">
       Continuar cadastro
     </button>
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .success-container {
   display: flex;
   flex-direction: column;

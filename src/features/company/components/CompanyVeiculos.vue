@@ -320,7 +320,7 @@ async function salvarPonto() {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .content {
   margin: 0 auto;
   max-width: 680px;
@@ -345,7 +345,7 @@ async function salvarPonto() {
   padding: 10px 10px 10px 44px;
   border-radius: 10px;
   border: 1px solid var(--border-primary);
-  background: var(--superfice);
+  background: var(--color-surface);
   outline: none;
   color: var(--text);
 }
@@ -361,7 +361,7 @@ async function salvarPonto() {
   padding: 8px 16px;
   border-radius: 20px;
   border: 1px solid var(--border);
-  background: var(--superfice);
+  background: var(--color-surface);
   font-size: 0.85rem;
   color: var(--text-muted);
   cursor: pointer;
@@ -375,7 +375,7 @@ async function salvarPonto() {
 }
 
 .transport-card {
-  background: var(--superfice);
+  background: var(--color-surface);
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 14px;
@@ -594,7 +594,7 @@ async function salvarPonto() {
   height: 56px;
   border-radius: 50%;
   background: var(--chrome-bg);
-  color: #ffffff;
+  color: var(--color-on-primary);
   border: 2px solid var(--primary);
   font-size: 30px;
   display: flex;

@@ -8,7 +8,7 @@ import TransportHistoryNotifications from '@/features/transport/components/Trans
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .history-container {
   padding: 20px 20px 140px;
   background: var(--bg);

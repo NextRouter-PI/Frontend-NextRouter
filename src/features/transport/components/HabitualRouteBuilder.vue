@@ -414,7 +414,7 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .routes-builder {
   display: flex;
   flex-direction: column;
@@ -422,7 +422,7 @@ onUnmounted(() => {
 }
 
 .panel-section {
-  background: var(--superfice);
+  background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 18px;
@@ -610,7 +610,7 @@ onUnmounted(() => {
   border-radius: 10px;
   border: none;
   background: var(--gradient-primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;

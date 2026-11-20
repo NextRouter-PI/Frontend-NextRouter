@@ -27,7 +27,7 @@ import RoleSelector from '@/features/auth/components/RoleSelector.vue'
   </PublicShell>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .signup-choice {
   padding: 20px 6px 12px;
 }

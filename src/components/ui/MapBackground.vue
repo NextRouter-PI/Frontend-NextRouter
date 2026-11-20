@@ -137,7 +137,7 @@ onUnmounted(() => {
   <div ref="mapContainer" class="map-background"></div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .map-background {
   position: fixed;
   inset: 0;

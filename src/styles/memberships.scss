@@ -7,7 +7,7 @@
 .membership-heading { margin: 0 0 12px; color: var(--primary); }
 .membership-section { margin: 24px 0; }
 .membership-panel {
-  background: var(--superfice);
+  background: var(--color-surface);
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-radius: 14px;
@@ -18,7 +18,7 @@
 .membership-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
 .membership-actions a, .membership-link { color: var(--text); text-decoration: none; }
 .membership-list { display: grid; gap: 14px; margin: 16px 0; }
-.membership-notice { border-left: 4px solid var(--primary); padding: 12px 16px; background: var(--superfice); }
+.membership-notice { border-left: 4px solid var(--primary); padding: 12px 16px; background: var(--color-surface); }
 .membership-confirm { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 8px; }
 .membership-filters { display: flex; flex-wrap: wrap; gap: 16px; margin: 20px 0; }
 .membership-filters label { display: flex; flex-direction: column; gap: 6px; }
@@ -28,7 +28,7 @@
   outline-offset: -1.5px;
   border-radius: 10px;
   color: var(--text);
-  background: var(--superfice);
+  background: var(--color-surface);
   transition: outline-color 0.2s var(--ease-fluid);
 }
 

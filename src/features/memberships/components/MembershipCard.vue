@@ -57,14 +57,14 @@ const formattedPhone = computed(() =>
   </article>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .membership-card {
   padding: 16px 18px;
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-left: 4px solid var(--primary);
   border-radius: 14px;
-  background: var(--superfice);
+  background: var(--color-surface);
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
   transition: outline-color 0.2s var(--ease-fluid), transform 0.2s var(--ease-fluid),
@@ -126,7 +126,7 @@ const formattedPhone = computed(() =>
   border-radius: 999px;
   font-weight: 700;
   font-size: 0.74rem;
-  background: rgba(236, 131, 20, 0.14);
+  background: var(--color-primary-tint);
   color: var(--primary);
 }
 

@@ -11,14 +11,14 @@ const goBack = () => {
 
 <template>
   <div class="confirmation-wrapper">
-    <button class="btn-back-top" @click="goBack" aria-label="Voltar">
+    <button type="button" class="btn-back-top" @click="goBack" aria-label="Voltar">
       <span class="mdi mdi-arrow-left"></span>
     </button>
     <SignupConfirmation @continue-signup="goBack" />
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .confirmation-wrapper {
   position: relative;
   min-height: 100vh;

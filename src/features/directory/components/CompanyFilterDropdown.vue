@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .filter-dropdown {
   position: relative;
   flex-shrink: 0;
@@ -161,7 +161,7 @@ onBeforeUnmount(() => {
   padding: 0 12px;
   border: none;
   border-radius: 10px;
-  background: var(--primary-orange);
+  background: var(--primary);
   color: #1c1917;
   font-size: 0.92rem;
   font-weight: 600;
@@ -172,7 +172,7 @@ onBeforeUnmount(() => {
 
 .filter-trigger:hover:not(:disabled) {
   background: var(--primary-hover);
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .filter-trigger:disabled {
@@ -189,7 +189,7 @@ onBeforeUnmount(() => {
   padding: 0 5px;
   border-radius: 999px;
   background: #1c1917;
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
   padding: 16px;
   border: 1px solid var(--border-primary);
   border-radius: 12px;
-  background: var(--superfice);
+  background: var(--color-surface);
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
@@ -284,12 +284,12 @@ onBeforeUnmount(() => {
 
 .btn-apply {
   border: none;
-  background: var(--primary-orange);
+  background: var(--primary);
   color: #1c1917;
 }
 
 .btn-apply:hover:not(:disabled) {
   background: var(--primary-hover);
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 </style>

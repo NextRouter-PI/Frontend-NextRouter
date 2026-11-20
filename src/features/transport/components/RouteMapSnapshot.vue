@@ -231,7 +231,7 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .route-snapshot-box {
   margin-top: 12px;
   padding: 12px;

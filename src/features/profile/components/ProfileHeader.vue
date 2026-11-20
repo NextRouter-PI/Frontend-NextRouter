@@ -88,7 +88,7 @@ async function selectPhoto(file) {
   </header>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .profile-banner {
   text-align: left;
 }
@@ -124,7 +124,7 @@ async function selectPhoto(file) {
   padding: 2px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -152,12 +152,12 @@ async function selectPhoto(file) {
 
 .banner-status {
   background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .banner-error {
   background: rgba(0, 0, 0, 0.28);
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .banner-pending {

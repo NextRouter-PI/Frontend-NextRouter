@@ -36,6 +36,11 @@ const statsLoading = ref(false)
 const companyData = ref(null)
 const companyLoading = ref(false)
 
+function readCssVar(name, fallback) {
+  if (typeof window === 'undefined') return fallback
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+}
+
 const chartData = computed(() => ({
   labels: serviceSlots.value.map((slot) => {
     const dir = slot.service__direction === 'outbound' ? 'Ida' : 'Volta'
@@ -45,11 +50,11 @@ const chartData = computed(() => ({
   datasets: [
     {
       data: serviceSlots.value.map((slot) => (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0)),
-      backgroundColor: '#ec8314',
+      backgroundColor: readCssVar('--primary', '#ec8314'),
       borderRadius: 6,
-      barThickness: 36
-    }
-  ]
+      barThickness: 36,
+    },
+  ],
 }))
 
 const chartMax = computed(() => {
@@ -60,27 +65,31 @@ const chartMax = computed(() => {
   return Math.ceil(max / 2) * 2
 })
 
-const chartOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false }
-  },
-  scales: {
-    x: {
-      grid: { display: false },
-      ticks: { color: '#666', font: { size: 16, weight: '600' } },
-      border: { color: '#666' }
+const chartOptions = computed(() => {
+  const tickColor = readCssVar('--text-muted', '#71717a')
+  const gridColor = readCssVar('--border', '#e4e4e7')
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
     },
-    y: {
-      min: 0,
-      max: chartMax.value,
-      ticks: { stepSize: Math.max(1, Math.round(chartMax.value / 10)), color: '#666' },
-      grid: { color: '#bbb', lineWidth: 1 },
-      border: { display: false }
-    }
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: tickColor, font: { size: 16, weight: '600' } },
+        border: { color: tickColor },
+      },
+      y: {
+        min: 0,
+        max: chartMax.value,
+        ticks: { stepSize: Math.max(1, Math.round(chartMax.value / 10)), color: tickColor },
+        grid: { color: gridColor, lineWidth: 1 },
+        border: { display: false },
+      },
+    },
   }
-}))
+})
 
 const store = useTransporteStore()
 
@@ -245,7 +254,7 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .content {
   margin: 0 auto;
   max-width: 600px;
@@ -290,7 +299,7 @@ onMounted(async () => {
   padding: 8px 14px;
   border-radius: 8px;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 0.88rem;
   font-weight: 600;
   text-decoration: none;
@@ -318,7 +327,7 @@ onMounted(async () => {
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-radius: 14px;
-  background: var(--superfice);
+  background: var(--color-surface);
   box-shadow: var(--shadow);
 }
 
@@ -390,7 +399,7 @@ onMounted(async () => {
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-radius: 14px;
-  background: var(--superfice);
+  background: var(--color-surface);
   box-shadow: var(--shadow);
   transition: outline-color 0.2s var(--ease-fluid);
 }
@@ -429,7 +438,7 @@ onMounted(async () => {
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-radius: 14px;
-  background: var(--superfice);
+  background: var(--color-surface);
   box-shadow: var(--shadow);
 }
 
@@ -464,7 +473,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   border: none;
   padding: 10px 20px;
   border-radius: 10px;

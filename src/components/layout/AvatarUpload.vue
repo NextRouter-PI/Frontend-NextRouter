@@ -51,7 +51,7 @@ function handleFile(event) {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .avatar-edit-wrapper {
   display: flex;
   flex-direction: column;

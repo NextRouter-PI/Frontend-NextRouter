@@ -10,7 +10,7 @@
 
 .account-cover {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   border-radius: 18px;
   padding: 22px 20px;
   margin-bottom: 18px;
@@ -18,14 +18,14 @@
 }
 
 .account-cover h1 {
-  color: #ffffff;
+  color: var(--color-on-primary);
   margin: 0 0 4px;
   font-size: 1.45rem;
   font-weight: 800;
 }
 
 .account-section {
-  background: var(--superfice);
+  background: var(--color-surface);
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-radius: 16px;
@@ -74,7 +74,7 @@
   padding: 12px 14px;
   border-left: 4px solid var(--primary);
   border-radius: 10px;
-  background: var(--superfice);
+  background: var(--color-surface);
   border-top: 1px solid var(--border);
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);

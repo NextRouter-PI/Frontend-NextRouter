@@ -87,7 +87,7 @@ onMounted(refresh)
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .logout-section {
   border-color: rgba(239, 68, 68, 0.35);
 }
@@ -99,9 +99,9 @@ onMounted(refresh)
   gap: 8px;
   padding: 10px 18px;
   border-radius: 10px;
-  border: 1px solid var(--danger, #dc2626);
+  border: 1px solid var(--danger, var(--danger));
   background: transparent;
-  color: var(--danger, #dc2626);
+  color: var(--danger, var(--danger));
   font-size: 0.94rem;
   font-weight: 600;
   cursor: pointer;
@@ -110,8 +110,8 @@ onMounted(refresh)
 }
 
 .logout-action-btn:hover:not(:disabled) {
-  background: var(--danger, #dc2626);
-  color: #ffffff;
+  background: var(--danger, var(--danger));
+  color: var(--color-on-primary);
 }
 
 .logout-action-btn:disabled {

@@ -204,7 +204,7 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .points-page {
   max-width: 760px;
   margin: 0 auto;
@@ -251,7 +251,7 @@ onMounted(async () => {
 }
 
 .panel {
-  background: var(--superfice);
+  background: var(--color-surface);
   outline: 1px solid var(--border);
   outline-offset: -1px;
   border-radius: 16px;
@@ -295,7 +295,7 @@ onMounted(async () => {
 
 .btn-primary {
   background: var(--primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   border: 1.5px solid var(--primary);
 }
 

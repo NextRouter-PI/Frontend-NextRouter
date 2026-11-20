@@ -68,9 +68,9 @@ onMounted(async () => {
   </section>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .routes-card {
-  background: var(--superfice);
+  background: var(--color-surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
@@ -106,7 +106,7 @@ onMounted(async () => {
   padding: 2px 8px;
   border-radius: 999px;
   background: var(--primary);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 0.75rem;
   font-weight: 700;
 }

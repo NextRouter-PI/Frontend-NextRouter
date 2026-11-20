@@ -161,7 +161,7 @@ function removeCityFilter() {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .directory-page {
   min-height: 100vh;
   background: var(--bg);
@@ -256,7 +256,7 @@ function removeCityFilter() {
   padding: 0 10px 0 4px;
   border: 1.5px solid var(--border-primary);
   border-radius: 10px;
-  background: var(--superfice);
+  background: var(--color-surface);
   transition: box-shadow 0.2s ease;
 }
 
@@ -314,7 +314,7 @@ function removeCityFilter() {
   padding: 5px 10px;
   border: 1px solid var(--border-primary);
   border-radius: 999px;
-  background: var(--superfice);
+  background: var(--color-surface);
   color: var(--text);
   font-size: 0.82rem;
   font-weight: 600;
@@ -326,7 +326,7 @@ function removeCityFilter() {
   padding: 10px 12px;
   border-left: 3px solid var(--primary);
   border-radius: 6px;
-  background: var(--superfice);
+  background: var(--color-surface);
   font-size: 0.88rem;
   color: var(--text);
 }
@@ -350,7 +350,7 @@ function removeCityFilter() {
   padding: 24px 16px;
   border: 1px dashed var(--border);
   border-radius: 12px;
-  background: var(--superfice);
+  background: var(--color-surface);
   text-align: center;
 }
 

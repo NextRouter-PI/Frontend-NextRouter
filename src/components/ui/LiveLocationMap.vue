@@ -125,7 +125,7 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .live-map-wrap {
   position: relative;
   border-radius: 12px;
@@ -150,7 +150,7 @@ onUnmounted(() => {
   text-align: center;
   font-size: 0.82rem;
   color: var(--text-muted);
-  background: var(--superfice);
+  background: var(--color-surface);
 }
 
 .live-map-status {
@@ -158,11 +158,11 @@ onUnmounted(() => {
   padding: 8px 12px;
   font-size: 0.78rem;
   color: var(--text-muted);
-  background: var(--superfice);
+  background: var(--color-surface);
   border-top: 1px solid var(--border, rgba(223, 128, 26, 0.12));
 }
 
 .live-map-status.error {
-  color: var(--danger, #dc2626);
+  color: var(--danger, var(--danger));
 }
 </style>

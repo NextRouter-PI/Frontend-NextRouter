@@ -278,7 +278,7 @@ onUnmounted(destroyMap)
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .profile-topbar {
   display: flex;
   flex-wrap: wrap;
@@ -300,7 +300,7 @@ onUnmounted(destroyMap)
   padding: 8px 14px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: var(--superfice);
+  background: var(--color-surface);
   color: var(--text);
   font-size: 0.88rem;
   font-weight: 600;
@@ -335,7 +335,7 @@ onUnmounted(destroyMap)
   align-items: center;
   justify-content: center;
   background: var(--chrome-bg);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-weight: 700;
   font-size: 1.4rem;
 }
@@ -343,7 +343,7 @@ onUnmounted(destroyMap)
 .identity-banner h2 {
   margin: 0 0 6px;
   font-size: 1.35rem;
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .identity-role {
@@ -362,7 +362,7 @@ onUnmounted(destroyMap)
   padding: 2px 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
+  color: var(--color-on-primary);
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -373,7 +373,7 @@ onUnmounted(destroyMap)
   gap: 6px;
   margin: 0;
   font-size: 0.9rem;
-  color: #ffffff;
+  color: var(--color-on-primary);
 }
 
 .coords-hint {

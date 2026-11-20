@@ -72,7 +72,7 @@ function handleFile(event) {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .upload-field {
   margin-bottom: 16px;
 }
