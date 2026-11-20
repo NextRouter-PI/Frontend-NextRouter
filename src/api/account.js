@@ -21,3 +21,6 @@ export function revokeOtherSession(id, { signal }) {
 export function revokeAllSessions({ signal }) {
   return api.post('/me/revoke-sessions/', undefined, { signal })
 }
+export function deactivateAccount({ signal }) {
+  return api.post('/me/deactivate/', undefined, { signal })
+}
