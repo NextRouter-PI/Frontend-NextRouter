@@ -1,7 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useTransportQuestionnaire } from '@/composables/useTransportQuestionnaire'
 import PassengerRoutesCard from '@/components/transport/PassengerRoutesCard.vue'
+
+const editingAnswer = ref(false)
 
 const {
   loading,
@@ -73,7 +75,23 @@ function serviceLabel(elig, serviceId) {
   if (!serviceId) return 'Não vou neste trecho'
   const all = [...(elig?.outboundServices || []), ...(elig?.returnServices || [])]
   const found = all.find((s) => s.id === serviceId)
-  return found ? `${found.name} (${found.targetTimeLabel})` : `Serviço #${serviceId}`
+  if (!found) return `Serviço #${serviceId}`
+  const tipo = found.is_shared ? 'Compartilhado' : 'Habitual'
+  return `${found.name} (${found.targetTimeLabel} · ${tipo})`
+}
+
+const alreadyAnswered = computed(() => Boolean(selectedEligibility.value?.response?.answered_at))
+
+watch(
+  () => selectedEligibility.value?.id,
+  () => {
+    editingAnswer.value = false
+  }
+)
+
+async function handleSendNormalAnswer() {
+  const ok = await sendNormalAnswer()
+  if (ok) editingAnswer.value = false
 }
 </script>
 
@@ -118,6 +136,7 @@ function serviceLabel(elig, serviceId) {
           @click="selectEligibility(item.id)"
         >
           {{ formatDateChip(item.dayData.date) }} · {{ WINDOW_SHORT_LABELS[item.dayData.window] || item.dayData.window }}
+          <span v-if="item.response?.answered_at"> · ✓ Respondido</span>
         </button>
       </div>
 
@@ -222,13 +241,32 @@ function serviceLabel(elig, serviceId) {
           </div>
         </div>
 
-        <!-- JANELA NORMAL: Resposta direta com ida e retorno independentes (4.2) -->
-        <form
-          v-if="selectedEligibility.dayData.window === 'normal'"
-          class="normal-form"
-          @submit.prevent="sendNormalAnswer"
+        <!-- JANELA NORMAL: Resposta já registrada com opção de alterar, ou formulário aberto -->
+        <div
+          v-if="selectedEligibility.dayData.window === 'normal' && alreadyAnswered && !editingAnswer"
+          class="answered-box"
         >
-          <h4>Responder na Janela Normal (Revisão esperada: {{ selectedEligibility.response?.revision ?? 0 }})</h4>
+          <p class="answered-title">
+            <span class="mdi mdi-check-circle-outline" aria-hidden="true"></span>
+            Você já respondeu este atendimento.
+          </p>
+          <p class="sub-info">
+            Para evitar conflitos, sua resposta atual está salva acima. Caso precise mudar sua ida ou retorno antes do fechamento da janela, clique abaixo.
+          </p>
+          <button type="button" class="btn-voltar" :disabled="busy" @click="editingAnswer = true">
+            Alterar minha resposta
+          </button>
+        </div>
+
+        <form
+          v-else-if="selectedEligibility.dayData.window === 'normal'"
+          class="normal-form"
+          @submit.prevent="handleSendNormalAnswer"
+        >
+          <h4>
+            {{ alreadyAnswered ? 'Alterar resposta na Janela Normal' : 'Responder na Janela Normal' }}
+            (Revisão esperada: {{ selectedEligibility.response?.revision ?? 0 }})
+          </h4>
 
           <div class="pergunta-container">
             <div class="pergunta-titulo">
@@ -264,7 +302,7 @@ function serviceLabel(elig, serviceId) {
                 <div class="horario-info">
                   <span class="hora">{{ srv.targetTimeLabel }}</span>
                   <span class="periodo">
-                    {{ srv.name }}<template v-if="srv.is_shared"> · Compartilhado</template>
+                    {{ srv.name }} · {{ srv.is_shared ? 'Compartilhado' : 'Habitual' }}
                   </span>
                 </div>
               </button>
@@ -305,17 +343,28 @@ function serviceLabel(elig, serviceId) {
                 <div class="horario-info">
                   <span class="hora">{{ srv.targetTimeLabel }}</span>
                   <span class="periodo">
-                    {{ srv.name }}<template v-if="srv.is_shared"> · Compartilhado</template>
+                    {{ srv.name }} · {{ srv.is_shared ? 'Compartilhado' : 'Habitual' }}
                   </span>
                 </div>
               </button>
             </div>
           </div>
 
-          <button type="submit" class="btn-enviar" :disabled="busy">
-            <span class="mdi mdi-check"></span>
-            {{ busy ? 'Enviando...' : 'Salvar Resposta de Ida e Retorno' }}
-          </button>
+          <div class="inline-actions-row">
+            <button type="submit" class="btn-enviar" :disabled="busy">
+              <span class="mdi mdi-check"></span>
+              {{ busy ? 'Enviando...' : 'Salvar Resposta de Ida e Retorno' }}
+            </button>
+            <button
+              v-if="alreadyAnswered"
+              type="button"
+              class="btn-voltar"
+              :disabled="busy"
+              @click="editingAnswer = false"
+            >
+              Cancelar alteração
+            </button>
+          </div>
         </form>
 
         <!-- PRORROGAÇÃO: Solicitar inclusão ou troca por trecho (6.1) -->
@@ -360,7 +409,7 @@ function serviceLabel(elig, serviceId) {
               <span class="mdi mdi-clock-edit-outline"></span>
               <div class="horario-info">
                 <span class="hora">{{ srv.targetTimeLabel }}</span>
-                <span class="periodo">{{ srv.name }}</span>
+                <span class="periodo">{{ srv.name }} · {{ srv.is_shared ? 'Compartilhado' : 'Habitual' }}</span>
               </div>
             </button>
             <p v-if="!extensionServices.length" class="sub-info">Nenhum serviço autorizado neste sentido.</p>

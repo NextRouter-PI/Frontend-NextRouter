@@ -50,7 +50,8 @@ onMounted(async () => {
         </p>
         <div v-if="habitualRoute.services?.length" class="schedule-chips">
           <span v-for="srv in habitualRoute.services" :key="srv.id" class="schedule-chip">
-            {{ srv.direction === 'outbound' ? 'Ida' : 'Retorno' }} · {{ srv.target_time }} ({{ srv.name }})
+            {{ srv.direction === 'outbound' ? 'Ida' : 'Retorno' }} · {{ srv.target_time }}
+            ({{ srv.is_shared ? 'Compartilhado' : 'Habitual' }} — {{ srv.name }})
           </span>
         </div>
       </div>

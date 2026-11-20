@@ -619,6 +619,7 @@ async function salvarAgenda() {
             <div>
               <label>Horário-alvo<span>*</span></label>
               <input v-model="servicoForm.target_time" type="time" required :disabled="salvandoServico" />
+              <p class="field-explain">Na ida é o horário de chegada ao destino; no retorno é o horário de saída.</p>
             </div>
             <div>
               <label>Motorista habitual (vínculo ativo)</label>
@@ -752,6 +753,7 @@ async function salvarAgenda() {
             <div>
               <label>Horário-alvo<span>*</span></label>
               <input v-model="compartilhadoForm.target_time" type="time" required :disabled="salvandoCompartilhado" />
+              <p class="field-explain">Na ida é o horário de chegada ao destino; no retorno é o horário de saída.</p>
             </div>
             <div>
               <label>Motorista habitual (vínculo ativo)</label>
@@ -887,7 +889,7 @@ async function salvarAgenda() {
                   :disabled="salvandoAutorizacao"
                   @click="toggleServicoAutorizado(s.id)"
                 >
-                  {{ s.name }} ({{ s.direction === 'outbound' ? 'Ida' : 'Retorno' }} {{ s.targetTimeLabel }})
+                  {{ s.name }} ({{ s.direction === 'outbound' ? 'Ida' : 'Retorno' }} {{ s.targetTimeLabel }} · {{ s.is_shared ? 'Compartilhado' : 'Habitual' }})
                 </button>
               </div>
               <div class="form-group-compact">
@@ -1143,6 +1145,13 @@ async function salvarAgenda() {
   color: var(--primary);
   cursor: pointer;
   font-weight: 700;
+}
+
+.field-explain {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.35;
 }
 
 .inline-row {

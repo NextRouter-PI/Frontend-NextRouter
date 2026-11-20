@@ -18,6 +18,16 @@ const busy = ref(false)
 
 const filtroGrupoId = ref('')
 const filtroData = ref('')
+const filtroStatusDia = ref('em_andamento') // 'em_andamento' | 'encerradas' | 'canceladas' | 'todas'
+
+const tomorrowIso = computed(() => {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+})
 
 const gerarForm = ref({
   groupId: '',
@@ -91,8 +101,23 @@ function nomeGrupo(groupId) {
 function nomeServico(serviceId) {
   const s = store.servicos.find((item) => item.id === serviceId)
   if (!s) return `Serviço #${serviceId}`
-  return `${s.name} (${s.direction === 'outbound' ? 'Ida' : 'Retorno'} ${String(s.target_time || '').slice(0, 5)})`
+  const tipo = s.is_shared ? 'Compartilhado' : 'Habitual'
+  return `${s.name} (${s.direction === 'outbound' ? 'Ida' : 'Retorno'} ${String(s.target_time || '').slice(0, 5)} · ${tipo})`
 }
+
+function categoriaDia(day) {
+  if (day.canceled_at) return 'canceladas'
+  const travels = viagensDoDia(day.id)
+  const todasFinalizadas = travels.length > 0 && travels.every((t) => t.status === 'finished' || t.status === 'canceled')
+  if (day.window === 'closed' || todasFinalizadas) return 'encerradas'
+  return 'em_andamento'
+}
+
+const diasAtendimentoFiltrados = computed(() => {
+  const lista = store.diasAtendimento || []
+  if (filtroStatusDia.value === 'todas') return lista
+  return lista.filter((day) => categoriaDia(day) === filtroStatusDia.value)
+})
 
 function viagensDoDia(dayId) {
   return store.viagensDia.filter((t) => t.service_day === dayId)
@@ -156,6 +181,10 @@ async function gerarHorizonte() {
   const { groupId, start_date, horizon_days, batch_size } = gerarForm.value
   if (!groupId || !start_date || !horizon_days || !batch_size) {
     showToast('Preencha grupo, data inicial, horizonte (1–31) e lote (1–31).', 'error')
+    return
+  }
+  if (start_date < tomorrowIso.value) {
+    showToast('Não é permitido aplicar atendimentos no dia atual nem em datas passadas. Escolha a partir de amanhã.', 'error')
     return
   }
   const validExcluded = datasExcluidas.value.filter((iso) => datasPrevistasLote.value.some((d) => d.iso === iso))
@@ -474,7 +503,14 @@ async function aplicarPedido(req) {
             <option value="">Grupo para aplicar atendimentos...</option>
             <option v-for="g in store.grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
           </select>
-          <input v-model="gerarForm.start_date" type="date" required :disabled="busy" aria-label="Data inicial" />
+          <input
+            v-model="gerarForm.start_date"
+            type="date"
+            :min="tomorrowIso"
+            required
+            :disabled="busy"
+            aria-label="Data inicial (a partir de amanhã)"
+          />
           <input v-model="gerarForm.horizon_days" type="number" min="1" max="31" placeholder="Dias posteriores (1-31)" required :disabled="busy" />
           <input v-model="gerarForm.batch_size" type="number" min="1" max="31" placeholder="Lote (1-31)" required :disabled="busy" />
           <button type="submit" class="btn-primary-inline" :disabled="busy">Aplicar atendimentos</button>
@@ -522,6 +558,36 @@ async function aplicarPedido(req) {
             Atualizar consulta
           </button>
         </div>
+        <div class="filter-chips" style="margin-top: 12px; margin-bottom: 0" role="tablist" aria-label="Filtrar atendimentos por situação">
+          <button
+            type="button"
+            :class="['chip', { active: filtroStatusDia === 'em_andamento' }]"
+            @click="filtroStatusDia = 'em_andamento'"
+          >
+            Em andamento
+          </button>
+          <button
+            type="button"
+            :class="['chip', { active: filtroStatusDia === 'encerradas' }]"
+            @click="filtroStatusDia = 'encerradas'"
+          >
+            Encerradas
+          </button>
+          <button
+            type="button"
+            :class="['chip', { active: filtroStatusDia === 'canceladas' }]"
+            @click="filtroStatusDia = 'canceladas'"
+          >
+            Canceladas
+          </button>
+          <button
+            type="button"
+            :class="['chip', { active: filtroStatusDia === 'todas' }]"
+            @click="filtroStatusDia = 'todas'"
+          >
+            Todas ({{ store.diasAtendimento.length }})
+          </button>
+        </div>
       </section>
 
       <!-- Pedidos de alteração na prorrogação (6.1) -->
@@ -560,11 +626,11 @@ async function aplicarPedido(req) {
       </section>
 
       <p v-if="store.dayLoading" class="status-message">Carregando atendimentos e viagens...</p>
-      <p v-else-if="!store.diasAtendimento.length" class="status-message">
+      <p v-else-if="!diasAtendimentoFiltrados.length" class="status-message">
         Nenhum dia de atendimento encontrado para os filtros informados.
       </p>
 
-      <div v-for="day in store.diasAtendimento" :key="day.id" class="card-rota">
+      <div v-for="day in diasAtendimentoFiltrados" :key="day.id" class="card-rota">
         <div class="card-header">
           <div>
             <h3>{{ day.date }} · {{ nomeGrupo(day.route_group) }} (Dia #{{ day.id }})</h3>
@@ -574,11 +640,17 @@ async function aplicarPedido(req) {
             </p>
           </div>
           <div class="inline-actions" v-if="!day.canceled_at">
-            <button type="button" class="btn-primary-inline" :disabled="busy" @click="fecharJanelaDia(day)">
-              Fechar janela normal e alocar (`close`)
+            <button
+              v-if="day.window === 'closed' || day.window === 'extension'"
+              type="button"
+              class="btn-primary-inline"
+              :disabled="busy"
+              @click="fecharJanelaDia(day)"
+            >
+              Consolidar respostas e alocar
             </button>
             <button type="button" class="btn-outline" :disabled="busy" @click="revisarDia(day)">
-              Revisar atendimento (`revise`)
+              Revisar atendimento
             </button>
           </div>
         </div>
