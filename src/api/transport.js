@@ -247,11 +247,14 @@ export async function authorizeGroupMemberServices(groupMembershipId, { service_
   return data
 }
 
-export async function generateGroupHorizon(groupId, { start_date, horizon_days, batch_size }, { signal } = {}) {
+export async function generateGroupHorizon(groupId, { start_date, horizon_days, batch_size, excluded_dates = [] }, { signal } = {}) {
   const payload = {
     start_date: trimString(start_date),
     horizon_days: Number(horizon_days),
     batch_size: Number(batch_size),
+  }
+  if (Array.isArray(excluded_dates) && excluded_dates.length) {
+    payload.excluded_dates = excluded_dates
   }
   const { data } = await api.post(`/company-route-groups/${encodeURIComponent(groupId)}/generate/`, payload, { signal })
   return asList(data)

@@ -25,6 +25,32 @@ const gerarForm = ref({
   horizon_days: '',
   batch_size: '',
 })
+const datasExcluidas = ref([])
+
+const datasPrevistasLote = computed(() => {
+  const { start_date, horizon_days, batch_size } = gerarForm.value
+  const total = Math.min(Number(horizon_days) || 0, Number(batch_size) || 0, 31)
+  if (!start_date || total < 1) return []
+  const base = new Date(`${start_date}T12:00:00`)
+  if (Number.isNaN(base.getTime())) return []
+  const dias = []
+  for (let i = 0; i < total; i++) {
+    const d = new Date(base)
+    d.setDate(base.getDate() + i)
+    const iso = d.toISOString().slice(0, 10)
+    const label = d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+    dias.push({ iso, label })
+  }
+  return dias
+})
+
+function toggleExcluirData(iso) {
+  if (datasExcluidas.value.includes(iso)) {
+    datasExcluidas.value = datasExcluidas.value.filter((d) => d !== iso)
+  } else {
+    datasExcluidas.value = [...datasExcluidas.value, iso]
+  }
+}
 const cancelarDataForm = ref({
   groupId: '',
   date: '',
@@ -132,19 +158,26 @@ async function gerarHorizonte() {
     showToast('Preencha grupo, data inicial, horizonte (1–31) e lote (1–31).', 'error')
     return
   }
+  const validExcluded = datasExcluidas.value.filter((iso) => datasPrevistasLote.value.some((d) => d.iso === iso))
   busy.value = true
   const dias = await store.gerarHorizonte(
     Number(groupId),
-    { start_date, horizon_days: Number(horizon_days), batch_size: Number(batch_size) },
+    {
+      start_date,
+      horizon_days: Number(horizon_days),
+      batch_size: Number(batch_size),
+      excluded_dates: validExcluded,
+    },
     { signal: scope.signal },
   )
   if (!scope.current()) return
   busy.value = false
   if (dias) {
-    showToast(`Horizonte gerado (${dias.length} atendimento(s)).`)
+    datasExcluidas.value = []
+    showToast(`Atendimentos aplicados (${dias.length} dia(s) gerado(s)).`)
     await consultarOperacao()
   } else {
-    showToast(store.error || 'Erro ao gerar horizonte.', 'error')
+    showToast(store.error || 'Erro ao aplicar atendimentos.', 'error')
   }
 }
 
@@ -431,21 +464,40 @@ async function aplicarPedido(req) {
     <!-- ABA 2: ATENDIMENTO POR DATA, RESPOSTAS, CÁLCULO E PUBLICAÇÃO -->
     <template v-else-if="aba === 'operacao'">
       <section class="card-rota">
-        <h3>Gerar Horizonte ou Cancelar Data</h3>
+        <h3>Aplicar Atendimentos em Lote ou Cancelar Data</h3>
         <p class="card-subtitle">
-          Gere atendimentos por data (máximo 31 dias e lote até 31 por requisição HTTP) ou registre o cancelamento de uma data específica mesmo antes de gerar viagens.
+          Aplique atendimentos para dias futuros (até 31 dias por lote). Clique nas datas previstas abaixo para excluir feriados ou folgas antes de aplicar, ou cancele uma data específica.
         </p>
 
         <form class="op-grid" @submit.prevent="gerarHorizonte">
           <select v-model="gerarForm.groupId" required :disabled="busy">
-            <option value="">Grupo para gerar horizonte...</option>
+            <option value="">Grupo para aplicar atendimentos...</option>
             <option v-for="g in store.grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
           </select>
           <input v-model="gerarForm.start_date" type="date" required :disabled="busy" aria-label="Data inicial" />
-          <input v-model="gerarForm.horizon_days" type="number" min="1" max="31" placeholder="Horizonte (1-31)" required :disabled="busy" />
+          <input v-model="gerarForm.horizon_days" type="number" min="1" max="31" placeholder="Dias posteriores (1-31)" required :disabled="busy" />
           <input v-model="gerarForm.batch_size" type="number" min="1" max="31" placeholder="Lote (1-31)" required :disabled="busy" />
-          <button type="submit" class="btn-primary-inline" :disabled="busy">Gerar horizonte</button>
+          <button type="submit" class="btn-primary-inline" :disabled="busy">Aplicar atendimentos</button>
         </form>
+
+        <div v-if="datasPrevistasLote.length" class="exclude-dates-box">
+          <p class="exclude-hint">
+            Clique em uma data para <strong>excluir</strong> da aplicação (ex.: feriados):
+            <span v-if="datasExcluidas.length">({{ datasExcluidas.length }} excluída(s))</span>
+          </p>
+          <div class="exclude-chips">
+            <button
+              v-for="item in datasPrevistasLote"
+              :key="item.iso"
+              type="button"
+              :class="['exclude-chip', { excluded: datasExcluidas.includes(item.iso) }]"
+              :disabled="busy"
+              @click="toggleExcluirData(item.iso)"
+            >
+              {{ item.label }}
+            </button>
+          </div>
+        </div>
 
         <form class="op-grid" @submit.prevent="cancelarDataAntesDeGerar">
           <select v-model="cancelarDataForm.groupId" required :disabled="busy">
@@ -1014,5 +1066,43 @@ async function aplicarPedido(req) {
 .toast.error {
   background: rgba(220, 38, 38, 0.95);
   color: #fff;
+}
+
+.exclude-dates-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: var(--bg);
+}
+
+.exclude-hint {
+  margin: 0 0 8px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.exclude-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.exclude-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-primary);
+  background: var(--superfice);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.exclude-chip.excluded {
+  border-color: var(--danger);
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger);
+  text-decoration: line-through;
 }
 </style>

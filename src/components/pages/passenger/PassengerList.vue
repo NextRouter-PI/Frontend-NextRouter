@@ -22,11 +22,32 @@ const {
   withdrawLeg,
 } = useTransportQuestionnaire()
 
+const WINDOW_SHORT_LABELS = {
+  not_open: 'Aguardando abertura',
+  normal: 'Janela aberta',
+  extension: 'Prorrogação',
+  closed: 'Encerrada',
+  canceled: 'Cancelada',
+}
+
+function formatDateChip(isoDate) {
+  if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return isoDate || 'Data'
+  const d = new Date(`${isoDate}T12:00:00`)
+  return d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
+}
+
+function formatDateTimeBr(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return String(iso)
+  return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
 const windowLabel = computed(() => {
   const w = selectedEligibility.value?.dayData?.window
   return {
     not_open: 'Janela ainda não aberta',
-    normal: 'Janela normal aberta (resposta direta)',
+    normal: 'Janela aberta (confirme ida e volta)',
     extension: 'Em prorrogação (pedidos de inclusão/troca)',
     closed: 'Janela encerrada',
     canceled: 'Atendimento cancelado pela empresa',
@@ -96,15 +117,29 @@ function serviceLabel(elig, serviceId) {
           :disabled="busy"
           @click="selectEligibility(item.id)"
         >
-          {{ item.dayData.date }} · {{ item.dayData.window }}
+          {{ formatDateChip(item.dayData.date) }} · {{ WINDOW_SHORT_LABELS[item.dayData.window] || item.dayData.window }}
         </button>
       </div>
 
       <div class="questionario-card">
         <div class="section-head">
-          <h3>Atendimento de {{ selectedEligibility.dayData.date }}</h3>
+          <h3>Atendimento de {{ formatDateChip(selectedEligibility.dayData.date) }}</h3>
           <span class="tag-data">{{ windowLabel }}</span>
         </div>
+
+        <p v-if="selectedEligibility.dayData.opens_at && selectedEligibility.dayData.normal_deadline" class="sub-info">
+          Janela de confirmação:
+          <strong>abre em {{ formatDateTimeBr(selectedEligibility.dayData.opens_at) }}</strong> ·
+          <strong>fecha em {{ formatDateTimeBr(selectedEligibility.dayData.normal_deadline) }}</strong>
+          <template v-if="selectedEligibility.dayData.extension_deadline">
+            · prorrogação até {{ formatDateTimeBr(selectedEligibility.dayData.extension_deadline) }}
+          </template>
+        </p>
+
+        <p v-if="selectedEligibility.dayData.window === 'not_open'" class="sub-info">
+          Esta janela ainda não abriu. Você poderá selecionar e confirmar ida e volta a partir de
+          <strong>{{ formatDateTimeBr(selectedEligibility.dayData.opens_at) }}</strong>.
+        </p>
 
         <p v-if="selectedEligibility.point_snapshot?.name" class="sub-info">
           Ponto operacional congelado: <strong>{{ selectedEligibility.point_snapshot.name }}</strong>
