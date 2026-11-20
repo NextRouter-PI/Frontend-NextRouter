@@ -40,6 +40,10 @@ defineProps({
   display: flex;
   flex-direction: column;
   gap: $space-3;
+  transition:
+    background-color $duration-normal $ease-fluid,
+    outline-color $duration-normal $ease-fluid,
+    box-shadow $duration-normal $ease-fluid;
 
   &.pad-sm {
     padding: $space-3 $space-4;

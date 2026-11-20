@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted, shallowRef } from 'vue'
+import { computed, onMounted, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
 import { useTransporteStore } from '@/stores/useTransporteStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import BaseTabs from '@/components/ui/BaseTabs.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
@@ -16,9 +17,20 @@ const scope = useAccountScope()
 const router = useRouter()
 
 const abaAtiva = shallowRef('frota')
+const tabTransition = shallowRef('tab-slide-left')
 const busca = shallowRef('')
 const filtroAtivo = shallowRef('Todas')
 const menuAberto = shallowRef(null)
+
+const vehicleTabs = computed(() => [
+  { value: 'frota', label: 'Frota', icon: 'mdi-bus', badge: store.veiculos.length },
+  { value: 'garagens', label: 'Garagens', icon: 'mdi-garage', badge: store.garagens.length },
+])
+
+watch(abaAtiva, (next, prev) => {
+  const order = { frota: 0, garagens: 1 }
+  tabTransition.value = (order[next] ?? 0) >= (order[prev] ?? 0) ? 'tab-slide-left' : 'tab-slide-right'
+})
 
 onMounted(async () => {
   await store.fetchVeiculos({ signal: scope.signal })
@@ -49,72 +61,61 @@ async function alterarStatus(id) {
   <div class="company-vehicles-page">
     <PageHeader title="Frota e Garagens" accent />
 
-    <div class="filter-chips" role="tablist" aria-label="Configuração de frota e garagens">
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="abaAtiva === 'frota'"
-        :class="['chip', { active: abaAtiva === 'frota' }]"
-        @click="abaAtiva = 'frota'"
-      >
-        Frota ({{ store.veiculos.length }})
-      </button>
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="abaAtiva === 'garagens'"
-        :class="['chip', { active: abaAtiva === 'garagens' }]"
-        @click="abaAtiva = 'garagens'"
-      >
-        Garagens ({{ store.garagens.length }})
-      </button>
+    <BaseTabs
+      v-model="abaAtiva"
+      :items="vehicleTabs"
+      aria-label="Configuração de frota e garagens"
+    />
+
+    <div class="tab-stage">
+      <Transition :name="tabTransition" mode="out-in">
+        <div v-if="abaAtiva === 'frota'" key="frota" class="tab-pane-stack">
+          <div class="search-container">
+            <span class="mdi mdi-magnify search-icon" aria-hidden="true"></span>
+            <input v-model="busca" type="text" placeholder="Busque por placa, modelo..." aria-label="Buscar veículo" />
+          </div>
+
+          <div class="filter-chips">
+            <button
+              v-for="f in ['Todas', 'Ativas', 'Manutenção']"
+              :key="f"
+              type="button"
+              :class="['chip', { active: filtroAtivo === f }]"
+              @click="filtroAtivo = f"
+            >
+              {{ f }}
+            </button>
+          </div>
+
+          <SkeletonCard v-if="store.loading" :count="3" />
+          <StatusBanner v-else-if="store.error" variant="danger" :message="store.error" />
+          <EmptyState v-else-if="!veiculosFiltrados.length" icon="mdi-bus-alert" description="Nenhum veículo encontrado." />
+
+          <TransitionGroup v-else name="list-stagger" tag="div" class="list-container">
+            <CompanyVehicleCard
+              v-for="veiculo in veiculosFiltrados"
+              :key="veiculo.id"
+              :veiculo="veiculo"
+              :menu-open="menuAberto === veiculo.id"
+              @toggle-menu="toggleMenu"
+              @edit="(id) => router.push(`/veiculos/editar/${id}`)"
+              @toggle-status="alterarStatus"
+            />
+          </TransitionGroup>
+
+          <button
+            type="button"
+            class="fab-add"
+            aria-label="Cadastrar veículo"
+            @click="router.push(ROUTE_PATHS.REGISTER_VEHICLE)"
+          >
+            <span class="mdi mdi-plus" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <CompanyGaragesTab v-else key="garagens" />
+      </Transition>
     </div>
-
-    <template v-if="abaAtiva === 'frota'">
-      <div class="search-container">
-        <span class="mdi mdi-magnify search-icon" aria-hidden="true"></span>
-        <input v-model="busca" type="text" placeholder="Busque por placa, modelo..." aria-label="Buscar veículo" />
-      </div>
-
-      <div class="filter-chips">
-        <button
-          v-for="f in ['Todas', 'Ativas', 'Manutenção']"
-          :key="f"
-          type="button"
-          :class="['chip', { active: filtroAtivo === f }]"
-          @click="filtroAtivo = f"
-        >
-          {{ f }}
-        </button>
-      </div>
-
-      <SkeletonCard v-if="store.loading" :count="3" />
-      <StatusBanner v-else-if="store.error" variant="danger" :message="store.error" />
-      <EmptyState v-else-if="!veiculosFiltrados.length" icon="mdi-bus-alert" description="Nenhum veículo encontrado." />
-
-      <TransitionGroup v-else name="list-stagger" tag="div" class="list-container">
-        <CompanyVehicleCard
-          v-for="veiculo in veiculosFiltrados"
-          :key="veiculo.id"
-          :veiculo="veiculo"
-          :menu-open="menuAberto === veiculo.id"
-          @toggle-menu="toggleMenu"
-          @edit="(id) => router.push(`/veiculos/editar/${id}`)"
-          @toggle-status="alterarStatus"
-        />
-      </TransitionGroup>
-
-      <button
-        type="button"
-        class="fab-add"
-        aria-label="Cadastrar veículo"
-        @click="router.push(ROUTE_PATHS.REGISTER_VEHICLE)"
-      >
-        <span class="mdi mdi-plus" aria-hidden="true"></span>
-      </button>
-    </template>
-
-    <CompanyGaragesTab v-else />
   </div>
 </template>
 
@@ -123,6 +124,16 @@ async function alterarStatus(id) {
   margin: 0 auto;
   max-width: 680px;
   padding: $space-5 18px 120px;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.tab-stage {
+  overflow-x: hidden;
+}
+
+.tab-pane-stack {
   display: flex;
   flex-direction: column;
   gap: $space-4;

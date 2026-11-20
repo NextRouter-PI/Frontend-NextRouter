@@ -120,13 +120,15 @@ onMounted(async () => {
         </span>
       </template>
 
-      <SkeletonCard v-if="companyLoading" :count="1" :lines="3" />
-      <dl v-else class="info-grid">
-        <div v-for="item in companyInfoItems" :key="item.label" class="info-item">
-          <dt class="info-label">{{ item.label }}</dt>
-          <dd class="info-value">{{ item.value }}</dd>
-        </div>
-      </dl>
+      <Transition name="fade-slide" mode="out-in">
+        <SkeletonCard v-if="companyLoading" key="loading" :count="1" :lines="3" />
+        <dl v-else key="content" class="info-grid">
+          <div v-for="item in companyInfoItems" :key="item.label" class="info-item">
+            <dt class="info-label">{{ item.label }}</dt>
+            <dd class="info-value">{{ item.value }}</dd>
+          </div>
+        </dl>
+      </Transition>
     </BaseCard>
 
     <template v-if="!companyData || companyData.is_approved">
@@ -248,6 +250,15 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: $space-3;
+  transition:
+    transform $duration-normal $ease-fluid,
+    box-shadow $duration-normal $ease-fluid,
+    outline-color $duration-normal $ease-fluid;
+
+  &:hover {
+    transform: translateY(-2px);
+    outline-color: var(--border-primary);
+  }
 
   &.stat-wide {
     grid-column: 1 / -1;

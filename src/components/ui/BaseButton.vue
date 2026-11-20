@@ -125,8 +125,9 @@ const emit = defineEmits(['click'])
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: var(--color-on-primary);
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
   border-radius: $radius-round;
   animation: spin 0.6s linear infinite;
 }

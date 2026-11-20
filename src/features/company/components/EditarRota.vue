@@ -1,11 +1,12 @@
 <script setup>
-import { computed, onMounted, shallowRef } from 'vue'
+import { computed, onMounted, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseTabs from '@/components/ui/BaseTabs.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import HabitualRouteBuilder from '@/features/transport/components/HabitualRouteBuilder.vue'
@@ -22,6 +23,7 @@ const scope = useAccountScope()
 
 const id = Number(route.params.id)
 const secaoAtiva = shallowRef('config')
+const tabTransition = shallowRef('tab-slide-left')
 const carregando = shallowRef(true)
 const erro = shallowRef('')
 const agendaStatus = shallowRef(null)
@@ -31,6 +33,21 @@ const servicosHabituais = computed(() => (grupoAtual.value?.services || []).filt
 const servicosCompartilhados = computed(() =>
   (grupoAtual.value?.services || []).filter((s) => Boolean(s.is_shared)),
 )
+
+const sectionTabs = computed(() => [
+  { value: 'config', label: '1. Configurações do Grupo', icon: 'mdi-cog-outline' },
+  {
+    value: 'rotas',
+    label: '2. Rotas do Grupo',
+    icon: 'mdi-map-marker-path',
+    badge: (grupoAtual.value?.habitualRoutes?.length || 0) + (grupoAtual.value?.sharedRoutes?.length || 0),
+  },
+])
+
+watch(secaoAtiva, (next, prev) => {
+  const order = { config: 0, rotas: 1 }
+  tabTransition.value = (order[next] ?? 0) >= (order[prev] ?? 0) ? 'tab-slide-left' : 'tab-slide-right'
+})
 
 async function carregarTudo() {
   carregando.value = true
@@ -65,54 +82,43 @@ onMounted(carregarTudo)
     <StatusBanner v-else-if="erro" variant="danger" :message="erro" />
 
     <template v-else-if="grupoAtual">
-      <div class="section-tabs" role="tablist" aria-label="Seções do grupo">
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="secaoAtiva === 'config'"
-          :class="['section-tab', { active: secaoAtiva === 'config' }]"
-          @click="secaoAtiva = 'config'"
-        >
-          1. Configurações do Grupo
-        </button>
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="secaoAtiva === 'rotas'"
-          :class="['section-tab', { active: secaoAtiva === 'rotas' }]"
-          @click="secaoAtiva = 'rotas'"
-        >
-          2. Rotas do Grupo
-          ({{ (grupoAtual.habitualRoutes?.length || 0) + (grupoAtual.sharedRoutes?.length || 0) }})
-        </button>
-      </div>
-
-      <div v-if="secaoAtiva === 'config'" class="sections-stack">
-        <RouteGroupBasicForm :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
-        <ResponsePolicyForm :group-id="id" :policy="grupoAtual.policy" @updated="carregarTudo" />
-        <RecurringServicesSection
-          :group-id="id"
-          :services="servicosHabituais"
-          @updated="carregarTudo"
-        />
-        <RecurringServicesSection
-          :group-id="id"
-          :services="servicosCompartilhados"
-          is-shared
-          @updated="carregarTudo"
-        />
-        <GroupMembersSection :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
-        <AutomationScheduleSection :group-id="id" :status="agendaStatus" @updated="carregarTudo" />
-      </div>
-
-      <HabitualRouteBuilder
-        v-else
-        :group-id="id"
-        :destination-coords="grupoAtual.destinationCoords"
-        :habitual-routes="grupoAtual.habitualRoutes || []"
-        :shared-routes="grupoAtual.sharedRoutes || []"
-        @updated="carregarTudo"
+      <BaseTabs
+        v-model="secaoAtiva"
+        :items="sectionTabs"
+        aria-label="Seções do grupo"
       />
+
+      <div class="tab-stage">
+        <Transition :name="tabTransition" mode="out-in">
+          <div v-if="secaoAtiva === 'config'" key="config" class="sections-stack">
+            <RouteGroupBasicForm :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
+            <ResponsePolicyForm :group-id="id" :policy="grupoAtual.policy" @updated="carregarTudo" />
+            <RecurringServicesSection
+              :group-id="id"
+              :services="servicosHabituais"
+              @updated="carregarTudo"
+            />
+            <RecurringServicesSection
+              :group-id="id"
+              :services="servicosCompartilhados"
+              is-shared
+              @updated="carregarTudo"
+            />
+            <GroupMembersSection :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
+            <AutomationScheduleSection :group-id="id" :status="agendaStatus" @updated="carregarTudo" />
+          </div>
+
+          <HabitualRouteBuilder
+            v-else
+            key="rotas"
+            :group-id="id"
+            :destination-coords="grupoAtual.destinationCoords"
+            :habitual-routes="grupoAtual.habitualRoutes || []"
+            :shared-routes="grupoAtual.sharedRoutes || []"
+            @updated="carregarTudo"
+          />
+        </Transition>
+      </div>
     </template>
   </div>
 </template>
@@ -127,34 +133,8 @@ onMounted(carregarTudo)
   gap: $space-4;
 }
 
-.section-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $space-2;
-}
-
-.section-tab {
-  flex: 1 1 220px;
-  padding: $space-3 $space-4;
-  border-radius: $radius-md;
-  background: var(--color-surface);
-  color: var(--text-muted);
-  outline: 1.5px solid var(--border);
-  outline-offset: -1.5px;
-  font-size: $text-sm;
-  font-weight: $font-semibold;
-  transition: all $duration-normal $ease-fluid;
-
-  &:hover {
-    color: var(--text);
-    outline-color: var(--primary);
-  }
-
-  &.active {
-    background: var(--primary);
-    color: var(--color-on-primary);
-    outline-color: var(--primary);
-  }
+.tab-stage {
+  overflow-x: hidden;
 }
 
 .sections-stack {

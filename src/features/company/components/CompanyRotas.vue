@@ -1,19 +1,31 @@
 <script setup>
-import { onMounted, shallowRef } from 'vue'
+import { computed, onMounted, shallowRef, watch } from 'vue'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useToast } from '@/composables/useToast'
 import PageHeader from '@/components/ui/PageHeader.vue'
-import StatusBanner from '@/components/ui/StatusBanner.vue'
+import BaseTabs from '@/components/ui/BaseTabs.vue'
 import CompanyRouteGroupsTab from '@/features/company/components/routes/CompanyRouteGroupsTab.vue'
 import CompanyDatedOperationTab from '@/features/company/components/routes/CompanyDatedOperationTab.vue'
 import TransportHistoryNotifications from '@/features/transport/components/TransportHistoryNotifications.vue'
 
 const store = useRotasStore()
 const scope = useAccountScope()
-const { toast, showToast } = useToast()
+const { showToast } = useToast()
 
 const aba = shallowRef('grupos')
+const tabTransition = shallowRef('tab-slide-left')
+const tabOrder = { grupos: 0, operacao: 1, historico: 2 }
+
+const routeTabs = computed(() => [
+  { value: 'grupos', label: 'Grupos e Programação', icon: 'mdi-routes', badge: store.grupos.length },
+  { value: 'operacao', label: 'Operação por Data', icon: 'mdi-calendar-clock', badge: store.diasAtendimento.length },
+  { value: 'historico', label: 'Avisos e Histórico', icon: 'mdi-history' },
+])
+
+watch(aba, (next, prev) => {
+  tabTransition.value = (tabOrder[next] ?? 0) >= (tabOrder[prev] ?? 0) ? 'tab-slide-left' : 'tab-slide-right'
+})
 
 onMounted(async () => {
   await store.fetchRotas({ signal: scope.signal })
@@ -30,48 +42,19 @@ function handleToast({ message, type }) {
   <div class="company-routes-page">
     <PageHeader title="Grupos e Operação de Rotas" accent />
 
-    <Transition name="fade-slide">
-      <StatusBanner
-        v-if="toast"
-        :variant="toast.type === 'error' ? 'danger' : 'success'"
-        :icon="toast.type === 'error' ? 'mdi-alert-circle-outline' : 'mdi-check-circle-outline'"
-        :message="toast.message"
-      />
-    </Transition>
+    <BaseTabs
+      v-model="aba"
+      :items="routeTabs"
+      aria-label="Programação habitual, operação por data e histórico"
+    />
 
-    <div class="tab-bar" role="tablist" aria-label="Programação habitual, operação por data e histórico">
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="aba === 'grupos'"
-        :class="['tab-btn', { active: aba === 'grupos' }]"
-        @click="aba = 'grupos'"
-      >
-        Grupos e Programação Habitual ({{ store.grupos.length }})
-      </button>
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="aba === 'operacao'"
-        :class="['tab-btn', { active: aba === 'operacao' }]"
-        @click="aba = 'operacao'"
-      >
-        Atendimentos, Respostas e Viagens por Data ({{ store.diasAtendimento.length }})
-      </button>
-      <button
-        type="button"
-        role="tab"
-        :aria-selected="aba === 'historico'"
-        :class="['tab-btn', { active: aba === 'historico' }]"
-        @click="aba = 'historico'"
-      >
-        Avisos, Avaliações e Objetos Perdidos
-      </button>
+    <div class="tab-stage">
+      <Transition :name="tabTransition" mode="out-in">
+        <CompanyRouteGroupsTab v-if="aba === 'grupos'" key="grupos" />
+        <CompanyDatedOperationTab v-else-if="aba === 'operacao'" key="operacao" @toast="handleToast" />
+        <TransportHistoryNotifications v-else key="historico" />
+      </Transition>
     </div>
-
-    <CompanyRouteGroupsTab v-if="aba === 'grupos'" />
-    <CompanyDatedOperationTab v-else-if="aba === 'operacao'" @toast="handleToast" />
-    <TransportHistoryNotifications v-else />
   </div>
 </template>
 
@@ -85,33 +68,7 @@ function handleToast({ message, type }) {
   gap: $space-4;
 }
 
-.tab-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $space-2;
-}
-
-.tab-btn {
-  flex: 1 1 220px;
-  padding: $space-3 $space-4;
-  border-radius: $radius-md;
-  background: var(--color-surface);
-  color: var(--text-muted);
-  outline: 1.5px solid var(--border);
-  outline-offset: -1.5px;
-  font-size: $text-sm;
-  font-weight: $font-semibold;
-  transition: all $duration-normal $ease-fluid;
-
-  &:hover {
-    color: var(--text);
-    outline-color: var(--primary);
-  }
-
-  &.active {
-    background: var(--primary);
-    color: var(--color-on-primary);
-    outline-color: var(--primary);
-  }
+.tab-stage {
+  overflow-x: hidden;
 }
 </style>

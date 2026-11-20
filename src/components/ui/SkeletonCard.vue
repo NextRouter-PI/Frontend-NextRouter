@@ -76,7 +76,7 @@ defineProps({
   background: linear-gradient(
     90deg,
     var(--input-surface) 25%,
-    var(--altbg) 50%,
+    var(--border) 50%,
     var(--input-surface) 75%
   );
   background-size: 200% 100%;
