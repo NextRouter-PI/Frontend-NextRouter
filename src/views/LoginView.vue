@@ -132,8 +132,8 @@ async function enviarLogin() {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: var(--chrome-bg);
-  color: var(--chrome-text);
+  background: var(--bg);
+  color: var(--text);
   padding: 28px 22px 36px;
 }
 
@@ -171,7 +171,7 @@ async function enviarLogin() {
   font-size: 1.7rem;
   font-weight: 800;
   line-height: 1.15;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .brand-name {
@@ -187,7 +187,7 @@ async function enviarLogin() {
 }
 
 .brand-rest {
-  color: #ffffff;
+  color: var(--text);
 }
 
 .form-panel {
@@ -207,7 +207,7 @@ async function enviarLogin() {
 .login-hint {
   margin: 0 0 22px;
   font-size: 0.96rem;
-  color: var(--chrome-text);
+  color: var(--text);
   opacity: 0.9;
 }
 
@@ -223,7 +223,7 @@ async function enviarLogin() {
   border-bottom: 1.5px solid var(--primary);
   border-radius: 0;
   background: transparent;
-  color: #ffffff;
+  color: var(--text);
   font-size: 0.98rem;
   box-sizing: border-box;
   transition: border-color 0.2s var(--ease-fluid);
@@ -240,7 +240,7 @@ async function enviarLogin() {
 
 .underline-input:focus {
   outline: none;
-  border-bottom-color: var(--primary-light);
+  border-bottom-color: var(--primary-hover);
 }
 
 .toggle-password {
@@ -275,13 +275,11 @@ async function enviarLogin() {
   font-size: 0.98rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid),
-    box-shadow 0.2s var(--ease-fluid);
+  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid);
 }
 
 .btn-enter:hover:not(:disabled) {
   background: var(--primary-hover);
-  box-shadow: var(--shadow-primary);
 }
 
 .btn-enter:active:not(:disabled) {
@@ -297,7 +295,7 @@ async function enviarLogin() {
   margin: 18px 0 0;
   text-align: center;
   font-size: 0.92rem;
-  color: var(--chrome-text);
+  color: var(--text);
 }
 
 .forgot-link {
@@ -314,7 +312,7 @@ async function enviarLogin() {
 .bottom-actions {
   margin-top: 38px;
   padding-top: 22px;
-  border-top: 1px solid rgba(236, 131, 20, 0.35);
+  border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -330,7 +328,7 @@ async function enviarLogin() {
   border: 1.5px solid var(--primary);
   border-radius: 999px;
   background: transparent;
-  color: var(--chrome-text);
+  color: var(--primary);
   font-size: 0.96rem;
   font-weight: 600;
   text-decoration: none;
@@ -350,7 +348,7 @@ async function enviarLogin() {
 .discover-link {
   font-size: 0.86rem;
   font-weight: 600;
-  color: var(--chrome-muted);
+  color: var(--text-muted);
   text-decoration: none;
   transition: color 0.2s ease;
 }
@@ -359,7 +357,7 @@ async function enviarLogin() {
   color: var(--primary);
 }
 
-/* Desktop split-screen fiel ao Login Desktop.png */
+/* Desktop split-screen respeitando modo claro e modo escuro */
 @media (min-width: 900px) {
   .login-split {
     flex-direction: row;
@@ -411,7 +409,7 @@ async function enviarLogin() {
 
   .form-panel {
     flex: 1;
-    background: var(--chrome-bg);
+    background: var(--bg);
     padding: 48px 40px;
   }
 }

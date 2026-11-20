@@ -268,7 +268,7 @@ function removeCityFilter() {
 }
 
 .search-input-wrap:focus-within {
-  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.15);
+  border-color: var(--primary);
 }
 
 .search-icon-btn {

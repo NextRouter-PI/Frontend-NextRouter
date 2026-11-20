@@ -247,7 +247,6 @@ onBeforeUnmount(() => {
 .filter-select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.15);
 }
 
 .filter-select:disabled {

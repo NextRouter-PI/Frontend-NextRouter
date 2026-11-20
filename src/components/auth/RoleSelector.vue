@@ -54,7 +54,7 @@ const roles = [
   border: 1.5px solid var(--primary);
   border-radius: 12px;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(236, 131, 20, 0.26);
+  box-shadow: var(--shadow);
   transition: transform 0.22s var(--ease-fluid), background-color 0.22s var(--ease-fluid),
     box-shadow 0.22s var(--ease-fluid), border-color 0.22s var(--ease-fluid);
 }

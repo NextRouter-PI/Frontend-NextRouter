@@ -498,7 +498,7 @@ const handleSubmit = async () => {
 }
 .btn-submit:hover:not(:disabled) {
   background: var(--primary-hover);
-  box-shadow: 0 4px 12px rgba(223, 128, 26, 0.3);
+  box-shadow: var(--shadow);
 }
 .btn-submit:disabled {
   opacity: 0.7;

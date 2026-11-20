@@ -38,6 +38,7 @@ const props = defineProps({
   cepError: { type: String, default: '' },
   formatCep: { type: Function, required: true },
   complementPlaceholder: { type: String, default: 'Bloco, condomínio, apto...' },
+  mapLabel: { type: String, default: 'Localização do seu Endereço' },
 })
 
 const emit = defineEmits(['cep-input', 'cep-blur'])
@@ -302,7 +303,7 @@ onUnmounted(() => {
     >
       <div class="map-header">
         <div class="map-title-group">
-          <span class="map-label">Localização do seu Endereço</span>
+          <span class="map-label">{{ mapLabel }}</span>
           <span v-if="hasCoordinates" class="coords-badge">
             {{ Number(latitude).toFixed(5) }}, {{ Number(longitude).toFixed(5) }}
           </span>

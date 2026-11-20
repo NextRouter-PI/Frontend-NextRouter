@@ -126,7 +126,6 @@ const dateInputId = useId()
   outline: none;
   border-color: var(--primary);
   background: var(--bg);
-  box-shadow: 0 0 0 3px rgba(223, 128, 26, 0.1);
 }
 
 .date-row input.has-error {

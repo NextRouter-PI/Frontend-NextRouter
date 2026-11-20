@@ -148,7 +148,7 @@ function handleFile(event) {
 .btn-upload:hover:not(:disabled) {
   background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(223, 128, 26, 0.3);
+  box-shadow: var(--shadow);
 }
 
 .btn-upload:disabled {

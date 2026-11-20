@@ -12,9 +12,6 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
-  overflow-y: auto;
-  overflow-y: overlay;
-  scrollbar-gutter: auto;
 }
 
 body {
@@ -140,40 +137,18 @@ table {
   transform: scale(0.95);
 }
 
-/* Scrollbar discreta, sobreposta e adaptada ao tema claro/escuro */
+/* Scrollbar oculta para não ocupar espaço no layout (rolagem preservada) */
+html,
+body,
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 148, 139, 0.2) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 *::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-  background: transparent;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: rgba(156, 148, 139, 0.22);
-  border-radius: 999px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: rgba(236, 131, 20, 0.55);
-}
-
-*::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-@media (pointer: coarse) {
-  *::-webkit-scrollbar {
-    width: 2px;
-    height: 2px;
-  }
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

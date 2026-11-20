@@ -94,7 +94,6 @@ function handleInput(event) {
 .field-group input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(236, 131, 20, 0.14);
 }
 
 .field-group input:disabled {

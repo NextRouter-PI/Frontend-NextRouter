@@ -1,12 +1,18 @@
 <script setup>
-import Logo from '@/assets/images/logo.png'
-import { RouterLink } from 'vue-router'
 import { computed } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
+import Logo from '@/assets/images/logo.png'
 import { state } from '@/stores/state'
 import { navigationItems } from '@/navigation'
 
+const route = useRoute()
 const isCompany = computed(() => state.role === 'company')
 const items = computed(() => navigationItems(state.role))
+
+function isActive(to) {
+  if (to === '/') return route.path === '/'
+  return route.path === to || route.path.startsWith(`${to}/`)
+}
 </script>
 
 <template>
@@ -19,18 +25,20 @@ const items = computed(() => navigationItems(state.role))
     </RouterLink>
 
     <nav class="nav" aria-label="Navegação principal">
-      <router-link
+      <RouterLink
         v-for="item in items"
         :key="item.to"
         :to="item.to"
         class="nav-item"
+        :class="{ active: isActive(item.to) }"
         :title="item.title"
+        :aria-current="isActive(item.to) ? 'page' : undefined"
       >
         <span class="nav-icon-wrap">
           <span class="mdi" :class="item.icon" aria-hidden="true"></span>
         </span>
         <small>{{ item.title }}</small>
-      </router-link>
+      </RouterLink>
     </nav>
   </aside>
 </template>
@@ -52,7 +60,7 @@ const items = computed(() => navigationItems(state.role))
   gap: 24px;
   transition: width 0.3s var(--ease-fluid);
   overflow: hidden;
-  box-shadow: 4px 0 18px rgba(0, 0, 0, 0.22);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.22);
 }
 
 .sidebar:hover {
@@ -62,6 +70,7 @@ const items = computed(() => navigationItems(state.role))
 .logo {
   width: 100%;
   text-decoration: none;
+  border: none;
 }
 
 .logo-content {
@@ -110,6 +119,7 @@ const items = computed(() => navigationItems(state.role))
 .nav-item {
   position: relative;
   text-decoration: none;
+  border: none;
   color: var(--chrome-muted);
   display: flex;
   align-items: center;
@@ -142,7 +152,7 @@ const items = computed(() => navigationItems(state.role))
   font-size: 22px;
   background: transparent;
   transition: background-color 0.25s var(--ease-fluid), color 0.25s var(--ease-fluid),
-    transform 0.25s var(--ease-fluid), box-shadow 0.25s var(--ease-fluid);
+    transform 0.25s var(--ease-fluid);
 }
 
 .nav-item:hover .nav-icon-wrap {
@@ -164,13 +174,12 @@ const items = computed(() => navigationItems(state.role))
   transform: translateX(0);
 }
 
-.nav-item.router-link-active {
+.nav-item.active {
   color: var(--chrome-text);
 }
 
-.nav-item.router-link-active .nav-icon-wrap {
+.nav-item.active .nav-icon-wrap {
   color: #ffffff;
   background: var(--primary);
-  box-shadow: var(--shadow-primary);
 }
 </style>

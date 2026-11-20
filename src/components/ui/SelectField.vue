@@ -68,6 +68,5 @@ const emit = defineEmits(['update:modelValue'])
 .field-group select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(236, 131, 20, 0.14);
 }
 </style>
