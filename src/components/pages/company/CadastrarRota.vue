@@ -67,7 +67,7 @@ const salvar = async () => {
     </div>
 
     <p class="hint-lead">
-      Um grupo de atendimento exige um ponto operacional de destino. Após criar o grupo, você será direcionado à tela de configuração para definir a política de respostas, os serviços habituais (ida e retorno separados) e os passageiros atribuídos.
+      Primeiro defina as configurações básicas do grupo (nome e ponto de destino). Em seguida, você poderá configurar a programação habitual (idas e retornos), políticas de confirmação e criar as rotas habituais (com passageiros no mapa) e compartilhadas.
     </p>
 
     <div v-if="!carregando && !store.pontosDestino.length" class="empty-points">

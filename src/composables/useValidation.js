@@ -1,4 +1,5 @@
 import { ref, reactive } from 'vue'
+import api from '@/api/client'
 
 export function useValidator() {
   const errorMessage = ref('') // String de erro que aparece lá embaixo do formulário
@@ -185,40 +186,16 @@ export function useValidator() {
 
 
   async function getCEP(data) {
-    const cleanCEP = data.cep.replace(/\D/g, '');
-    if (cleanCEP.length === 8) {
-      //mensagem.value = 'Buscando CEP...';
-      //tipoMensagem.value = 'sucesso';
-      try {
-        const response = await fetch(`https://brasilapi.com.br/api/cep/v1/${cleanCEP}`); //!Mudar url para variável de ambiente e abandonar o hadcoded
-
-        if (!response.ok) {
-          throw new Error('CEP não encontrado ou inválido.');
-        }
-
-        const body = await response.json();
-
-        data.state = body.state
-        data.city = body.city
-        if (body.street) data.street = body.street
-        if (body.neighborhood) data.neighborhood = body.neighborhood
-
-        // ? As mensagens de erro da api do brasilapi devem aparecer para o usuário? Descomentar se sim!
-        /*
-        mensagem.value = `
-        <strong>CEP Válido!</strong><br>
-        Rua: ${dados.street || 'Não informada'}<br>
-        Bairro: ${dados.neighborhood || 'Não informado'}<br>
-        Cidade: ${dados.city} - ${dados.state}`;
-        tipoMensagem.value = 'sucesso';
-        */
-      } catch (error) {
-        //mensagem.value = error.message;
-        //tipoMensagem.value = 'erro';
-      }
-    } else {
-      // Limpa a mensagem se o usuário apagar o CEP e ele ficar incompleto
-      //mensagem.value = '';
+    const cleanCEP = String(data.cep || '').replace(/\D/g, '')
+    if (cleanCEP.length !== 8) return
+    try {
+      const { data: body } = await api.get(`/cep/${cleanCEP}/`)
+      if (body.state) data.state = body.state
+      if (body.city) data.city = body.city
+      if (body.street) data.street = body.street
+      if (body.neighborhood) data.neighborhood = body.neighborhood
+    } catch {
+      // Falha silenciosa: o usuário pode preencher o endereço manualmente
     }
   }
 

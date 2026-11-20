@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTransportState } from '@/stores/useTransportState'
 import LiveLocationMap from '@/components/ui/LiveLocationMap.vue'
+import PassengerRoutesCard from '@/components/transport/PassengerRoutesCard.vue'
 import RouteMapSnapshot from '@/components/transport/RouteMapSnapshot.vue'
 import TransportHistoryNotifications from '@/components/transport/TransportHistoryNotifications.vue'
 
@@ -59,6 +60,8 @@ onMounted(() => {
     </div>
 
     <template v-else-if="transport">
+      <PassengerRoutesCard />
+
       <!-- Seletor de participações em viagens -->
       <div v-if="transport.participations.length" class="travel-chips" role="tablist" aria-label="Suas participações em viagens">
         <button

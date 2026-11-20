@@ -8,6 +8,10 @@ import {
   listRouteGroups,
   createRouteGroup,
   updateRouteGroup,
+  listHabitualRoutes,
+  createHabitualRoute,
+  updateHabitualRoute,
+  listUnassignedGroupPassengers,
   listOperationalPoints,
   listResponsePolicies,
   saveResponsePolicy,
@@ -115,7 +119,7 @@ export const useRotasStore = defineStore('rotas', {
       this.loading = true
       this.error = null
       try {
-        const [groups, points, policies, services, vehicles, membershipsRes, groupMemberships] = await Promise.all([
+        const [groups, points, policies, services, vehicles, membershipsRes, groupMemberships, habitualRoutes] = await Promise.all([
           listRouteGroups({}, { signal }),
           listOperationalPoints({}, { signal }),
           listResponsePolicies({}, { signal }),
@@ -123,6 +127,7 @@ export const useRotasStore = defineStore('rotas', {
           listVehicles({}, { signal }),
           api.get('/memberships/', { params: { status: 'active' }, signal }).then((r) => asList(r.data)),
           listGroupMemberships({}, { signal }),
+          listHabitualRoutes({}, { signal }).catch(() => []),
         ])
         if (signal?.aborted) return false
 
@@ -170,15 +175,22 @@ export const useRotasStore = defineStore('rotas', {
               }
             })
 
+          const groupRoutes = habitualRoutes.filter((r) => r.route_group === group.id)
           return {
             id: group.id,
             company: group.company,
             name: group.name,
             destinationId: group.destination,
             destinationName: dest ? `${dest.name} (${dest.city}/${dest.state})` : `Ponto #${group.destination}`,
+            destinationCoords:
+              dest && Number.isFinite(Number(dest.latitude)) && Number.isFinite(Number(dest.longitude))
+                ? [Number(dest.latitude), Number(dest.longitude)]
+                : null,
             policy,
             services: groupServices,
             members: activeMembers,
+            habitualRoutes: groupRoutes.filter((r) => r.kind === 'habitual'),
+            sharedRoutes: groupRoutes.filter((r) => r.kind === 'shared'),
           }
         })
         return true
@@ -211,6 +223,32 @@ export const useRotasStore = defineStore('rotas', {
       } catch (error) {
         if (!signal?.aborted) {
           this.error = sessionError(error, formatApiError(error, 'Erro ao atualizar grupo de atendimento.'))
+        }
+        return null
+      }
+    },
+
+    async carregarPassageirosSemRota(groupId, { signal } = {}) {
+      try {
+        return await listUnassignedGroupPassengers(groupId, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao carregar passageiros disponíveis no mapa.'))
+        }
+        return []
+      }
+    },
+
+    async salvarRotaHabitual(groupId, payload, routeId = null, { signal } = {}) {
+      this.error = null
+      try {
+        if (routeId) {
+          return await updateHabitualRoute(routeId, payload, { signal })
+        }
+        return await createHabitualRoute({ ...payload, route_group_id: groupId }, { signal })
+      } catch (error) {
+        if (!signal?.aborted) {
+          this.error = sessionError(error, formatApiError(error, 'Erro ao salvar rota do grupo.'))
         }
         return null
       }

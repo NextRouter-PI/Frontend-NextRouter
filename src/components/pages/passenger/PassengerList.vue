@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useTransportQuestionnaire } from '@/composables/useTransportQuestionnaire'
+import PassengerRoutesCard from '@/components/transport/PassengerRoutesCard.vue'
 
 const {
   loading,
@@ -70,6 +71,8 @@ function serviceLabel(elig, serviceId) {
 
     <p v-if="notice" class="notice-banner" role="status">{{ notice }}</p>
     <p v-if="error" class="error-banner" role="alert">{{ error }}</p>
+
+    <PassengerRoutesCard />
 
     <div v-if="loading" class="status-card">
       <div class="spinner"></div>

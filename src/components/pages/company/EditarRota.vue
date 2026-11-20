@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRotasStore, WEEKDAY_OPTIONS } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useRouter, useRoute } from 'vue-router'
+import HabitualRouteBuilder from '@/components/transport/HabitualRouteBuilder.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -10,6 +11,7 @@ const store = useRotasStore()
 const scope = useAccountScope()
 
 const id = Number(route.params.id)
+const secaoAtiva = ref('config') // 'config' | 'rotas'
 const carregando = ref(true)
 const salvando = ref(false)
 const erro = ref('')
@@ -372,9 +374,31 @@ async function salvarAgenda() {
     <p v-if="carregando" class="status-message">Carregando configuração do grupo...</p>
 
     <template v-else-if="grupoAtual">
+      <div class="section-tabs" role="tablist" aria-label="Seções do grupo">
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="secaoAtiva === 'config'"
+          :class="['section-tab', { active: secaoAtiva === 'config' }]"
+          @click="secaoAtiva = 'config'"
+        >
+          1. Configurações do Grupo
+        </button>
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="secaoAtiva === 'rotas'"
+          :class="['section-tab', { active: secaoAtiva === 'rotas' }]"
+          @click="secaoAtiva = 'rotas'"
+        >
+          2. Rotas do Grupo ({{ (grupoAtual.habitualRoutes?.length || 0) + (grupoAtual.sharedRoutes?.length || 0) }})
+        </button>
+      </div>
+
+      <template v-if="secaoAtiva === 'config'">
       <!-- 1. Dados do Grupo -->
       <section class="panel-section">
-        <h2>1. Grupo de Atendimento e Destino</h2>
+        <h2>Nome e Ponto de Destino</h2>
         <form @submit.prevent="salvarGrupo">
           <div class="grid-2">
             <div>
@@ -731,6 +755,16 @@ async function salvarAgenda() {
           </button>
         </form>
       </section>
+      </template>
+
+      <HabitualRouteBuilder
+        v-else
+        :group-id="id"
+        :destination-coords="grupoAtual.destinationCoords"
+        :habitual-routes="grupoAtual.habitualRoutes || []"
+        :shared-routes="grupoAtual.sharedRoutes || []"
+        @updated="carregarTudo"
+      />
     </template>
   </div>
 </template>
@@ -752,6 +786,32 @@ async function salvarAgenda() {
   background: none;
   border: none;
   cursor: pointer;
+}
+
+.section-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.section-tab {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--superfice);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.section-tab.active {
+  border-color: var(--primary);
+  background: rgba(223, 128, 26, 0.12);
+  color: var(--primary);
 }
 
 .top-bar .mdi {

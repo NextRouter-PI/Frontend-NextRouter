@@ -212,7 +212,7 @@ const handleSubmit = async () => {
           />
           <FormField
             v-model="form.number"
-            label="Número"
+            label="Número da casa / edifício"
             placeholder="Nº"
             class="half"
           />
@@ -226,8 +226,8 @@ const handleSubmit = async () => {
           />
           <FormField
             v-model="form.complement"
-            label="Complemento"
-            placeholder="Apto, bloco... (opcional)"
+            label="Complemento (Bloco / Condomínio)"
+            placeholder="Bloco, condomínio, apto..."
             class="half"
           />
         </div>
