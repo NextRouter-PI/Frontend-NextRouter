@@ -1,189 +1,18 @@
 <script setup>
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { useTemplateRef } from 'vue'
+import { DEFAULT_EMPTY_LABEL, ROUTE_PATHS, USER_ROLES } from '@/constants'
 import { state } from '@/stores/state'
-import api from '@/api/client'
-import { sessionError } from '@/stores/session'
-import { formatApiError } from '@/utils/apiErrors'
 import { useInputFormat } from '@/composables/useInputFormat'
+import { useLinkedProfile } from '@/features/profile/composables/useLinkedProfile'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import '@/styles/profile.scss'
 
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-})
-
-const TILE_URLS = {
-  light: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-  dark: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-}
-const TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
-
-function currentTheme() {
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-}
-
-const route = useRoute()
+const mapContainer = useTemplateRef('mapEl')
 const { formatPhone, formatCEP } = useInputFormat()
-const driver = computed(() => route.name === 'usuario-motorista')
-const profile = ref(null)
-const loading = ref(false)
-const error = ref('')
-const reload = ref(0)
-const mapContainer = ref(null)
-
-let map = null
-let tileLayer = null
-let themeObserver = null
-
-const hasCoordinates = computed(() => {
-  const lat = Number(profile.value?.latitude)
-  const lng = Number(profile.value?.longitude)
-  return (
-    profile.value?.latitude != null &&
-    profile.value?.longitude != null &&
-    Number.isFinite(lat) &&
-    Number.isFinite(lng)
-  )
-})
-
-const formattedAddress = computed(() => {
-  if (!profile.value) return ''
-  const parts = [
-    [profile.value.street, profile.value.number].filter(Boolean).join(', '),
-    profile.value.complement,
-    profile.value.neighborhood,
-    [profile.value.city, profile.value.state].filter(Boolean).join('/'),
-  ].filter(Boolean)
-  return parts.join(' — ')
-})
-
-const avatarUrl = computed(() => profile.value?.profile_picture_url || '')
-const initials = computed(() =>
-  (profile.value?.name || 'U')
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join(''),
-)
-
-function destroyMap() {
-  if (themeObserver) {
-    themeObserver.disconnect()
-    themeObserver = null
-  }
-  if (map) {
-    map.remove()
-    map = null
-    tileLayer = null
-  }
-}
-
-function applyTileLayer(theme) {
-  if (!map) return
-  if (tileLayer) map.removeLayer(tileLayer)
-  tileLayer = L.tileLayer(TILE_URLS[theme], {
-    maxZoom: 18,
-    maxNativeZoom: 16,
-    attribution: TILE_ATTRIBUTION,
-  }).addTo(map)
-}
-
-async function renderMap() {
-  destroyMap()
-  if (driver.value || !hasCoordinates.value) return
-  await nextTick()
-  if (!mapContainer.value) return
-
-  const lat = Number(profile.value.latitude)
-  const lng = Number(profile.value.longitude)
-  map = L.map(mapContainer.value, {
-    zoomControl: true,
-    attributionControl: true,
-  }).setView([lat, lng], 15)
-
-  applyTileLayer(currentTheme())
-
-  const popupText = [
-    `<strong>${profile.value.name || 'Passageiro'}</strong>`,
-    formattedAddress.value,
-  ]
-    .filter(Boolean)
-    .join('<br>')
-
-  L.marker([lat, lng]).addTo(map).bindPopup(popupText).openPopup()
-
-  themeObserver = new MutationObserver(() => applyTileLayer(currentTheme()))
-  themeObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['class'],
-  })
-}
-
-watch(
-  [() => route.params.id, driver, () => `${state.logged}:${state.role}:${state.user?.id}`, reload],
-  async (_value, _old, onCleanup) => {
-    destroyMap()
-    profile.value = null
-    error.value = ''
-    loading.value = false
-    if (!state.logged || state.role !== 'company') return
-    const id = String(route.params.id)
-    if (!/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))) {
-      error.value = 'Identificador de perfil inválido.'
-      return
-    }
-    const controller = new AbortController()
-    onCleanup(() => controller.abort())
-    loading.value = true
-    try {
-      const { data } = await api.get(`/${driver.value ? 'drivers' : 'passengers'}/${id}/`, {
-        signal: controller.signal,
-      })
-      if (!controller.signal.aborted) {
-        const userData = data.user_data || {}
-        profile.value = {
-          id: data.id,
-          name: userData.name || '',
-          phone: userData.phone || '',
-          profile_picture_url: userData.profile_picture_data?.url || '',
-          cep: userData.cep || '',
-          street: userData.street || '',
-          number: userData.number || '',
-          complement: userData.complement || '',
-          neighborhood: userData.neighborhood || '',
-          city: userData.city || '',
-          state: userData.state || '',
-          latitude: userData.latitude ?? null,
-          longitude: userData.longitude ?? null,
-          average: data.average_rating,
-          ratings: data.ratings_count,
-        }
-        await renderMap()
-      }
-    } catch (cause) {
-      if (!controller.signal.aborted) {
-        error.value = sessionError(cause, formatApiError(cause, 'O perfil não está disponível para esta empresa.'))
-      }
-    } finally {
-      if (!controller.signal.aborted) loading.value = false
-    }
-  },
-  { immediate: true, flush: 'sync' },
-)
-
-onUnmounted(destroyMap)
+const { driver, profile, loading, error, hasCoordinates, avatarUrl, initials, reload } =
+  useLinkedProfile(mapContainer)
 </script>
 
 <template>
@@ -191,7 +20,7 @@ onUnmounted(destroyMap)
     <div class="account-content">
       <div class="profile-topbar">
         <h1>Perfil do titular vinculado</h1>
-        <RouterLink to="/usuarios" class="back-btn">
+        <RouterLink :to="ROUTE_PATHS.USERS" class="back-btn">
           <span class="mdi mdi-arrow-left" aria-hidden="true"></span>
           <span>Voltar aos vínculos</span>
         </RouterLink>
@@ -203,7 +32,12 @@ onUnmounted(destroyMap)
       <template v-if="profile">
         <header class="account-cover identity-banner">
           <div class="identity-header">
-            <img v-if="avatarUrl" :src="avatarUrl" :alt="`Foto de ${profile.name || 'usuário'}`" class="identity-avatar" />
+            <img
+              v-if="avatarUrl"
+              :src="avatarUrl"
+              :alt="`Foto de ${profile.name || 'usuário'}`"
+              class="identity-avatar"
+            />
             <div v-else class="identity-avatar identity-fallback" aria-hidden="true">{{ initials }}</div>
             <div>
               <h2>{{ profile.name || 'Nome não disponível' }}</h2>
@@ -225,34 +59,13 @@ onUnmounted(destroyMap)
         <section v-if="!driver" class="account-section">
           <h2>Endereço do passageiro</h2>
           <dl class="account-grid">
-            <div>
-              <dt>Rua / Logradouro</dt>
-              <dd>{{ profile.street || 'Não informado' }}</dd>
-            </div>
-            <div>
-              <dt>Número</dt>
-              <dd>{{ profile.number || 'Não informado' }}</dd>
-            </div>
-            <div>
-              <dt>Complemento</dt>
-              <dd>{{ profile.complement || '—' }}</dd>
-            </div>
-            <div>
-              <dt>Bairro</dt>
-              <dd>{{ profile.neighborhood || 'Não informado' }}</dd>
-            </div>
-            <div>
-              <dt>Cidade</dt>
-              <dd>{{ profile.city || 'Não informada' }}</dd>
-            </div>
-            <div>
-              <dt>Estado (UF)</dt>
-              <dd>{{ profile.state || 'Não informado' }}</dd>
-            </div>
-            <div>
-              <dt>CEP</dt>
-              <dd>{{ profile.cep ? formatCEP(profile.cep) : 'Não informado' }}</dd>
-            </div>
+            <div><dt>Rua / Logradouro</dt><dd>{{ profile.street || DEFAULT_EMPTY_LABEL }}</dd></div>
+            <div><dt>Número</dt><dd>{{ profile.number || DEFAULT_EMPTY_LABEL }}</dd></div>
+            <div><dt>Complemento</dt><dd>{{ profile.complement || '—' }}</dd></div>
+            <div><dt>Bairro</dt><dd>{{ profile.neighborhood || DEFAULT_EMPTY_LABEL }}</dd></div>
+            <div><dt>Cidade</dt><dd>{{ profile.city || DEFAULT_EMPTY_LABEL }}</dd></div>
+            <div><dt>Estado (UF)</dt><dd>{{ profile.state || DEFAULT_EMPTY_LABEL }}</dd></div>
+            <div><dt>CEP</dt><dd>{{ profile.cep ? formatCEP(profile.cep) : DEFAULT_EMPTY_LABEL }}</dd></div>
           </dl>
         </section>
 
@@ -260,20 +73,26 @@ onUnmounted(destroyMap)
           <h2>Localização no mapa</h2>
           <template v-if="hasCoordinates">
             <p class="coords-hint">
-              Latitude {{ Number(profile.latitude).toFixed(6) }} · Longitude {{ Number(profile.longitude).toFixed(6) }}
+              Latitude {{ Number(profile.latitude).toFixed(6) }} · Longitude
+              {{ Number(profile.longitude).toFixed(6) }}
             </p>
-            <div ref="mapContainer" class="profile-map"></div>
+            <div ref="mapEl" class="profile-map"></div>
           </template>
           <p v-else class="account-hint">Coordenadas de localização não cadastradas para este passageiro.</p>
         </section>
       </template>
 
       <div class="account-actions">
-        <BaseButton v-if="state.role === 'company'" type="button" variant="outline" :disabled="loading" @click="reload++">
+        <BaseButton
+          v-if="state.role === USER_ROLES.COMPANY"
+          variant="outline"
+          :disabled="loading"
+          @click="reload"
+        >
           Atualizar consulta
         </BaseButton>
       </div>
-      <p v-if="state.role !== 'company'">Somente uma empresa autorizada pode consultar esta tela.</p>
+      <p v-if="state.role !== USER_ROLES.COMPANY">Somente uma empresa autorizada pode consultar esta tela.</p>
     </div>
   </div>
 </template>
@@ -284,109 +103,74 @@ onUnmounted(destroyMap)
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
+  gap: $space-3;
+  margin-bottom: $space-4;
 
-.profile-topbar h1 {
-  margin: 0;
-  font-size: 1.5rem;
+  h1 {
+    font-size: $text-xl;
+  }
 }
 
 .back-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--color-surface);
-  color: var(--text);
-  font-size: 0.88rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: border-color 0.2s ease, color 0.2s ease;
-}
-
-.back-btn:hover {
-  border-color: var(--primary);
+  gap: $space-1;
   color: var(--primary);
+  font-weight: $font-semibold;
+  font-size: $text-md;
 }
 
 .identity-header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: $space-4;
   flex-wrap: wrap;
 }
 
 .identity-avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  border-radius: $radius-round;
   object-fit: cover;
-  border: 3px solid #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 2px solid var(--color-on-primary);
   flex-shrink: 0;
 }
 
 .identity-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--chrome-bg);
+  @include flex-center;
+  background: rgba(255, 255, 255, 0.2);
   color: var(--color-on-primary);
-  font-weight: 700;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
+  font-weight: $font-bold;
 }
 
-.identity-banner h2 {
-  margin: 0 0 6px;
-  font-size: 1.35rem;
-  color: var(--color-on-primary);
-}
-
-.identity-role {
+.identity-role,
+.identity-meta {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 6px;
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 0.88rem;
+  gap: $space-2;
+  font-size: $text-sm;
+  margin-top: $space-1;
 }
 
 .role-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: 999px;
+  padding: 2px $space-2;
+  border-radius: $radius-pill;
   background: rgba(255, 255, 255, 0.22);
-  color: var(--color-on-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.identity-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--color-on-primary);
+  font-weight: $font-bold;
 }
 
 .coords-hint {
-  margin: 0 0 10px;
-  font-size: 0.84rem;
+  font-size: $text-xs;
   color: var(--text-muted);
+  margin-bottom: $space-2;
 }
 
 .profile-map {
   width: 100%;
-  height: 320px;
-  border-radius: 12px;
+  height: 260px;
+  border-radius: $radius-md;
   border: 1px solid var(--border);
-  z-index: 1;
+  z-index: $z-base;
 }
 </style>
