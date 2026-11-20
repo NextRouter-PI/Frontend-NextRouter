@@ -1,26 +1,11 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { computed, nextTick, onMounted, ref, shallowRef, useTemplateRef, watch } from 'vue'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
-
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-})
-
-const DEFAULT_CENTER = [-26.3044, -48.8455]
-const TILE_URLS = {
-  light: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-  dark: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-}
-const TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+import { useRouteBuilderMap } from '@/features/transport/composables/useRouteBuilderMap'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import StatusBanner from '@/components/ui/StatusBanner.vue'
 
 const props = defineProps({
   groupId: { type: Number, required: true },
@@ -41,143 +26,25 @@ const savingHabitual = shallowRef(false)
 const habitualError = shallowRef('')
 const habitualNotice = shallowRef('')
 const loadingCandidates = shallowRef(false)
-
-// Candidatos no mapa: { group_membership_id, passenger_name, street, number, complement, neighborhood, city, state, cep, latitude, longitude, selected }
 const candidates = ref([])
-
-let map = null
-let tileLayer = null
-let themeObserver = null
-let markersLayer = null
 
 const selectedCandidates = computed(() => candidates.value.filter((c) => c.selected))
 
-function currentTheme() {
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-}
-
-function initialCenter() {
-  if (Array.isArray(props.destinationCoords) && props.destinationCoords.length === 2) {
-    return props.destinationCoords
-  }
-  return DEFAULT_CENTER
-}
-
-function applyTileLayer(theme) {
-  if (!map) return
-  if (tileLayer) map.removeLayer(tileLayer)
-  tileLayer = L.tileLayer(TILE_URLS[theme], {
-    maxZoom: 18,
-    maxNativeZoom: 16,
-    attribution: TILE_ATTRIBUTION,
-  }).addTo(map)
-}
-
-function formatAddress(item) {
-  const streetLine = [item.street, item.number].filter(Boolean).join(', ')
-  const extra = [item.complement, item.neighborhood].filter(Boolean).join(' · ')
-  const cityLine = [item.city, item.state].filter(Boolean).join('/')
-  return [streetLine, extra, cityLine].filter(Boolean).join(' — ') || 'Endereço não informado'
-}
-
-function escapeHtml(text) {
-  return String(text ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function passengerTooltipHtml(item) {
-  const safeName = escapeHtml(item.passenger_name || 'Passageiro')
-  const avatar = item.profile_picture_url
-    ? `<img src="${escapeHtml(item.profile_picture_url)}" alt="${safeName}" class="pmap-tip-avatar" />`
-    : `<span class="pmap-tip-fallback">${escapeHtml((item.passenger_name || 'P').trim().charAt(0).toUpperCase())}</span>`
-  return `<div class="pmap-tip">${avatar}<span class="pmap-tip-name">${safeName}</span></div>`
-}
-
-function renderMarkers() {
-  if (!map) return
-  if (markersLayer) {
-    markersLayer.clearLayers()
-  } else {
-    markersLayer = L.layerGroup().addTo(map)
-  }
-
-  const bounds = []
-  for (const item of candidates.value) {
-    const lat = Number(item.latitude)
-    const lng = Number(item.longitude)
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
-    bounds.push([lat, lng])
-
-    const tooltipHtml = passengerTooltipHtml(item)
-
-    if (item.selected) {
-      const marker = L.marker([lat, lng], { draggable: true })
-        .bindTooltip(tooltipHtml, { direction: 'top', offset: [0, -14], opacity: 0.98, className: 'passenger-map-tooltip' })
-        .bindPopup(
-          `<strong>${escapeHtml(item.passenger_name)}</strong> (selecionado)<br>${escapeHtml(formatAddress(item))}<br><small>Arraste o pino para ajustar o ponto exato.</small>`
-        )
-        .addTo(markersLayer)
-
-      marker.on('dragend', () => {
-        const pos = marker.getLatLng()
-        item.latitude = Number(pos.lat.toFixed(6))
-        item.longitude = Number(pos.lng.toFixed(6))
-      })
-    } else {
-      const circle = L.circleMarker([lat, lng], {
-        radius: 8,
-        color: '#df801a',
-        fillColor: '#f48a1d',
-        fillOpacity: 0.75,
-        weight: 2,
-      })
-        .bindTooltip(tooltipHtml, { direction: 'top', offset: [0, -10], opacity: 0.98, className: 'passenger-map-tooltip' })
-        .bindPopup(
-          `<strong>${escapeHtml(item.passenger_name)}</strong><br>${escapeHtml(formatAddress(item))}<br><small>Clique na lista para incluir na rota.</small>`
-        )
-        .addTo(markersLayer)
-
-      circle.on('click', () => {
-        togglePassenger(item)
-      })
-    }
-  }
-
-  if (bounds.length) {
-    map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
-  }
-}
-
-function initMap() {
-  if (map || !mapContainer.value) return
-  map = L.map(mapContainer.value, { zoomControl: true, attributionControl: true }).setView(initialCenter(), 13)
-  applyTileLayer(currentTheme())
-  themeObserver = new MutationObserver(() => applyTileLayer(currentTheme()))
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-  renderMarkers()
-}
+const { formatAddress, renderMarkers, focusPassenger, getCenterCoords, invalidateSize } = useRouteBuilderMap({
+  mapContainer,
+  candidates,
+  getDestinationCoords: () => props.destinationCoords,
+  onTogglePassenger: togglePassenger,
+})
 
 function togglePassenger(item) {
   item.selected = !item.selected
   if (item.selected && (!Number.isFinite(Number(item.latitude)) || !Number.isFinite(Number(item.longitude)))) {
-    const center = map ? map.getCenter() : { lat: initialCenter()[0], lng: initialCenter()[1] }
-    item.latitude = Number(center.lat.toFixed(6))
-    item.longitude = Number(center.lng.toFixed(6))
+    const center = getCenterCoords()
+    item.latitude = center.lat
+    item.longitude = center.lng
   }
   renderMarkers()
-}
-
-function focusPassenger(item) {
-  if (!map) return
-  const lat = Number(item.latitude)
-  const lng = Number(item.longitude)
-  if (Number.isFinite(lat) && Number.isFinite(lng)) {
-    map.setView([lat, lng], 16)
-  }
 }
 
 async function loadUnassigned(extraSelected = []) {
@@ -196,7 +63,7 @@ async function loadUnassigned(extraSelected = []) {
   candidates.value = Array.from(byId.values())
   loadingCandidates.value = false
   await nextTick()
-  if (map) map.invalidateSize()
+  invalidateSize()
   renderMarkers()
 }
 
@@ -251,7 +118,7 @@ async function saveHabitualRoute() {
       })),
     },
     editingRouteId.value,
-    { signal: scope.signal }
+    { signal: scope.signal },
   )
   if (!scope.current()) return
   savingHabitual.value = false
@@ -276,38 +143,18 @@ watch(
     editingRouteId.value = null
     routeName.value = ''
     loadUnassigned([])
-  }
+  },
 )
 
-onMounted(async () => {
-  await nextTick()
-  initMap()
-  await loadUnassigned([])
-})
-
-onUnmounted(() => {
-  if (themeObserver) {
-    themeObserver.disconnect()
-    themeObserver = null
-  }
-  if (map) {
-    map.remove()
-    map = null
-    tileLayer = null
-    markersLayer = null
-  }
-})
+onMounted(() => loadUnassigned([]))
 </script>
 
 <template>
   <div class="routes-builder">
-    <!-- 2A. Rotas Habituais com Mapa -->
-    <section class="panel-section">
-      <h2>Rotas Habituais (com pontos dos passageiros)</h2>
-      <p class="hint">
-        Cada passageiro do grupo pode estar vinculado a apenas uma rota habitual. Os passageiros ainda sem rota aparecem no mapa com base no CEP cadastrado — selecione-os e arraste os pinos para ajuste fino (número/bloco) antes de confirmar.
-      </p>
-
+    <BaseCard
+      title="Rotas Habituais (com pontos dos passageiros)"
+      subtitle="Cada passageiro do grupo pode estar vinculado a apenas uma rota habitual. Selecione-os no mapa ou na lista e arraste os pinos para ajuste fino antes de confirmar."
+    >
       <div v-if="habitualRoutes.length" class="route-list">
         <article v-for="route in habitualRoutes" :key="route.id" class="route-card">
           <div class="route-card-head">
@@ -315,9 +162,7 @@ onUnmounted(() => {
               <strong>{{ route.name }}</strong>
               <span class="route-badge">{{ route.passengers?.length || 0 }} passageiro(s)</span>
             </div>
-            <button type="button" class="btn-outline-sm" @click="startEditRoute(route)">
-              Editar rota
-            </button>
+            <BaseButton variant="outline" size="sm" @click="startEditRoute(route)">Editar rota</BaseButton>
           </div>
           <ul v-if="route.passengers?.length" class="passenger-summary">
             <li v-for="p in route.passengers" :key="p.group_membership_id">
@@ -349,8 +194,11 @@ onUnmounted(() => {
         </div>
 
         <div class="candidates-box">
-          <h4>Passageiros disponíveis no grupo ({{ candidates.length }}) · Selecionados ({{ selectedCandidates.length }})</h4>
-          <p v-if="loadingCandidates" class="hint">Carregando passageiros sem rota...</p>
+          <h4>
+            Passageiros disponíveis no grupo ({{ candidates.length }}) · Selecionados
+            ({{ selectedCandidates.length }})
+          </h4>
+          <p v-if="loadingCandidates" class="empty-hint">Carregando passageiros sem rota...</p>
           <p v-else-if="!candidates.length" class="empty-hint">
             Todos os passageiros deste grupo já possuem rota habitual (ou nenhum passageiro foi atribuído ao grupo ainda).
           </p>
@@ -378,295 +226,191 @@ onUnmounted(() => {
                   </span>
                 </div>
               </label>
-              <button
+              <BaseButton
                 v-if="item.latitude != null && item.longitude != null"
-                type="button"
-                class="btn-locate"
+                variant="outline"
+                size="sm"
                 @click="focusPassenger(item)"
               >
                 Ver no mapa
-              </button>
+              </BaseButton>
             </li>
           </ul>
         </div>
 
-        <p v-if="habitualError" class="erro" role="alert">{{ habitualError }}</p>
-        <p v-if="habitualNotice" class="aviso" role="status">{{ habitualNotice }}</p>
+        <StatusBanner variant="danger" :message="habitualError" />
+        <StatusBanner variant="success" :message="habitualNotice" />
 
         <div class="action-row">
-          <button type="button" class="btn-primary-inline" :disabled="savingHabitual" @click="saveHabitualRoute">
-            {{ savingHabitual ? 'Confirmando...' : editingRouteId ? 'Salvar alterações da rota' : 'Confirmar criação da rota' }}
-          </button>
-          <button v-if="editingRouteId" type="button" class="btn-outline-sm" :disabled="savingHabitual" @click="cancelEditRoute">
+          <BaseButton size="sm" :loading="savingHabitual" @click="saveHabitualRoute">
+            {{
+              savingHabitual
+                ? 'Confirmando...'
+                : editingRouteId
+                  ? 'Salvar alterações da rota'
+                  : 'Confirmar criação da rota'
+            }}
+          </BaseButton>
+          <BaseButton
+            v-if="editingRouteId"
+            variant="outline"
+            size="sm"
+            :disabled="savingHabitual"
+            @click="cancelEditRoute"
+          >
             Cancelar edição
-          </button>
+          </BaseButton>
         </div>
       </div>
-    </section>
+    </BaseCard>
 
-    <!-- Nota sobre Serviços Compartilhados -->
-    <section class="panel-section">
-      <h2>Serviços Compartilhados</h2>
-      <p class="hint">
-        Viagens intermediárias compartilhadas são configuradas na aba <strong>1. Configurações do Grupo → Serviços Compartilhados</strong> e não possuem rotas fixas, pois os passageiros variam a cada atendimento.
-      </p>
-    </section>
+    <BaseCard
+      title="Serviços Compartilhados"
+      subtitle="Viagens intermediárias compartilhadas são configuradas na aba 1. Configurações do Grupo → Serviços Compartilhados e não possuem rotas fixas, pois os passageiros variam a cada atendimento."
+    />
   </div>
 </template>
 
 <style lang="scss" scoped>
-.routes-builder {
+.routes-builder,
+.route-list,
+.builder-box,
+.candidates-box,
+.candidate-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.panel-section {
-  background: var(--color-surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 18px;
-}
-
-.panel-section h2 {
-  margin: 0 0 8px;
-  font-size: 1.1rem;
-  color: var(--text);
-}
-
-.hint,
-.empty-hint,
-.map-caption {
-  margin: 0 0 12px;
-  font-size: 0.86rem;
-  color: var(--text-muted);
-  line-height: 1.45;
-}
-
-.route-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: $space-3;
 }
 
 .route-card {
-  padding: 12px;
-  border-radius: 12px;
+  padding: $space-3;
+  border-radius: $radius-md;
+  background: var(--altbg);
   border: 1px solid var(--border);
-  background: var(--bg);
-}
-
-.route-card-head {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: $space-2;
+
+  &-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: $space-2;
+  }
 }
 
 .route-badge {
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(223, 128, 26, 0.14);
+  margin-left: $space-2;
+  padding: 2px $space-2;
+  border-radius: $radius-pill;
+  background: var(--color-primary-soft);
   color: var(--primary);
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: $text-xs;
+  font-weight: $font-bold;
 }
 
 .passenger-summary {
-  margin: 8px 0 0;
-  padding-left: 18px;
-  font-size: 0.84rem;
-  color: var(--text);
+  font-size: $text-xs;
+  color: var(--text-muted);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: $space-1;
 }
 
 .builder-box {
+  padding-top: $space-3;
   border-top: 1px solid var(--border);
-  padding-top: 14px;
-  margin-top: 10px;
-}
-
-.builder-box h3 {
-  margin: 0 0 10px;
-  font-size: 1rem;
 }
 
 .field-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: $space-1;
+
+  label {
+    font-size: $text-sm;
+    font-weight: $font-semibold;
+    color: var(--primary);
+  }
+
+  input {
+    padding: 10px $space-3;
+    border-radius: $radius-sm;
+    background: var(--color-surface);
+    outline: 1.5px solid var(--border);
+    outline-offset: -1.5px;
+    color: var(--text);
+    font-size: $text-sm;
+
+    &:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
+  }
 }
 
-.field-block label {
-  font-size: 0.84rem;
-  font-weight: 600;
-}
-
-.field-block label span {
-  color: var(--primary);
-}
-
-.field-block input,
-.shared-form input {
-  width: 100%;
-  height: 42px;
-  padding: 0 12px;
-  border-radius: 10px;
-  border: 1.5px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  box-sizing: border-box;
+.map-caption,
+.empty-hint {
+  font-size: $text-xs;
+  color: var(--text-muted);
+  margin-bottom: $space-2;
 }
 
 .leaflet-canvas {
   width: 100%;
   height: 320px;
-  border-radius: 12px;
+  border-radius: $radius-md;
   border: 1px solid var(--border);
-  margin-bottom: 14px;
-  z-index: 1;
-}
-
-.candidates-box h4 {
-  margin: 0 0 8px;
-  font-size: 0.9rem;
-}
-
-.candidate-list {
-  list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  z-index: $z-base;
 }
 
 .candidate-item {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-2;
+  padding: $space-3;
+  border-radius: $radius-md;
+  background: var(--altbg);
   border: 1px solid var(--border);
-  background: var(--bg);
-}
 
-.candidate-item.selected {
-  border-color: var(--primary);
-  background: rgba(223, 128, 26, 0.08);
+  &.selected {
+    border-color: var(--primary);
+    background: var(--color-primary-soft);
+  }
 }
 
 .candidate-check {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: $space-2;
+  cursor: pointer;
   flex: 1;
   min-width: 200px;
-  cursor: pointer;
 }
 
 .candidate-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  font-size: $text-sm;
 }
 
-.candidate-addr {
-  font-size: 0.82rem;
-  color: var(--text);
-}
-
+.candidate-addr,
 .candidate-coords {
-  font-size: 0.76rem;
+  font-size: $text-xs;
   color: var(--text-muted);
-}
 
-.candidate-coords.missing {
-  color: var(--primary);
-}
-
-.btn-locate,
-.btn-outline-sm {
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--primary);
-  background: transparent;
-  color: var(--primary);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-primary-inline {
-  padding: 10px 16px;
-  border-radius: 10px;
-  border: none;
-  background: var(--gradient-primary);
-  color: var(--color-on-primary);
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-primary-inline:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
+  &.missing {
+    color: var(--danger);
+  }
 }
 
 .action-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.shared-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.shared-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(223, 128, 26, 0.12);
-  color: var(--primary);
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.shared-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.shared-form input {
-  flex: 1;
-  min-width: 200px;
-}
-
-.erro {
-  color: var(--danger);
-  font-size: 0.85rem;
-  margin: 8px 0;
-}
-
-.aviso {
-  color: var(--success);
-  font-size: 0.85rem;
-  margin: 8px 0;
+  gap: $space-2;
 }
 </style>
