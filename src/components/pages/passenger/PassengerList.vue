@@ -198,11 +198,13 @@ function serviceLabel(elig, serviceId) {
           <div class="pergunta-container">
             <div class="pergunta-titulo">
               <span class="pergunta-numero">1</span>
-              <span>Trecho de Ida (serviços autorizados)</span>
+              <span>Trecho de Ida (escolha apenas uma opção)</span>
             </div>
-            <div class="opcoes-horario">
+            <div class="opcoes-horario" role="radiogroup" aria-label="Opções de ida">
               <button
                 type="button"
+                role="radio"
+                :aria-checked="outboundChoice === ''"
                 :class="['opcao-horario', { selecionado: outboundChoice === '' }]"
                 :disabled="busy"
                 @click="outboundChoice = ''"
@@ -217,6 +219,8 @@ function serviceLabel(elig, serviceId) {
                 v-for="srv in selectedEligibility.outboundServices"
                 :key="srv.id"
                 type="button"
+                role="radio"
+                :aria-checked="outboundChoice === String(srv.id)"
                 :class="['opcao-horario', { selecionado: outboundChoice === String(srv.id) }]"
                 :disabled="busy"
                 @click="outboundChoice = String(srv.id)"
@@ -224,7 +228,9 @@ function serviceLabel(elig, serviceId) {
                 <span class="mdi mdi-bus-clock"></span>
                 <div class="horario-info">
                   <span class="hora">{{ srv.targetTimeLabel }}</span>
-                  <span class="periodo">{{ srv.name }}</span>
+                  <span class="periodo">
+                    {{ srv.name }}<template v-if="srv.is_shared"> · Compartilhado</template>
+                  </span>
                 </div>
               </button>
             </div>
@@ -233,11 +239,13 @@ function serviceLabel(elig, serviceId) {
           <div class="pergunta-container">
             <div class="pergunta-titulo">
               <span class="pergunta-numero">2</span>
-              <span>Trecho de Retorno (serviços autorizados)</span>
+              <span>Trecho de Retorno (escolha apenas um horário, ex.: 12:00 ou 17:00)</span>
             </div>
-            <div class="opcoes-horario">
+            <div class="opcoes-horario" role="radiogroup" aria-label="Opções de retorno">
               <button
                 type="button"
+                role="radio"
+                :aria-checked="returnChoice === ''"
                 :class="['opcao-horario', { selecionado: returnChoice === '' }]"
                 :disabled="busy"
                 @click="returnChoice = ''"
@@ -252,6 +260,8 @@ function serviceLabel(elig, serviceId) {
                 v-for="srv in selectedEligibility.returnServices"
                 :key="srv.id"
                 type="button"
+                role="radio"
+                :aria-checked="returnChoice === String(srv.id)"
                 :class="['opcao-horario', { selecionado: returnChoice === String(srv.id) }]"
                 :disabled="busy"
                 @click="returnChoice = String(srv.id)"
@@ -259,7 +269,9 @@ function serviceLabel(elig, serviceId) {
                 <span class="mdi mdi-bus-clock"></span>
                 <div class="horario-info">
                   <span class="hora">{{ srv.targetTimeLabel }}</span>
-                  <span class="periodo">{{ srv.name }}</span>
+                  <span class="periodo">
+                    {{ srv.name }}<template v-if="srv.is_shared"> · Compartilhado</template>
+                  </span>
                 </div>
               </button>
             </div>

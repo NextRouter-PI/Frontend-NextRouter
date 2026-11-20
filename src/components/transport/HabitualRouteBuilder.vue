@@ -45,11 +45,6 @@ const loadingCandidates = shallowRef(false)
 // Candidatos no mapa: { group_membership_id, passenger_name, street, number, complement, neighborhood, city, state, cep, latitude, longitude, selected }
 const candidates = ref([])
 
-const sharedName = shallowRef('')
-const savingShared = shallowRef(false)
-const sharedError = shallowRef('')
-const sharedNotice = shallowRef('')
-
 let map = null
 let tileLayer = null
 let themeObserver = null
@@ -254,36 +249,6 @@ async function saveHabitualRoute() {
   await loadUnassigned([])
 }
 
-async function saveSharedRoute() {
-  if (!scope.current() || savingShared.value) return
-  sharedError.value = ''
-  sharedNotice.value = ''
-
-  if (!sharedName.value.trim()) {
-    sharedError.value = 'Informe o nome da rota compartilhada.'
-    return
-  }
-
-  savingShared.value = true
-  const result = await store.salvarRotaHabitual(
-    props.groupId,
-    { name: sharedName.value, kind: 'shared' },
-    null,
-    { signal: scope.signal }
-  )
-  if (!scope.current()) return
-  savingShared.value = false
-
-  if (!result) {
-    sharedError.value = store.error || 'Não foi possível criar a rota compartilhada.'
-    return
-  }
-
-  sharedNotice.value = 'Rota compartilhada cadastrada.'
-  sharedName.value = ''
-  emit('updated')
-}
-
 watch(
   () => props.groupId,
   () => {
@@ -418,34 +383,12 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <!-- 2B. Rotas Compartilhadas (apenas nome) -->
+    <!-- Nota sobre Serviços Compartilhados -->
     <section class="panel-section">
-      <h2>Rotas Compartilhadas (apenas nome)</h2>
+      <h2>Serviços Compartilhados</h2>
       <p class="hint">
-        Usadas para voltas intermediárias (ex.: retorno das 12:00) que podem reunir passageiros de diferentes rotas habituais na mesma viagem.
+        Viagens intermediárias compartilhadas são configuradas na aba <strong>1. Configurações do Grupo → Serviços Compartilhados</strong> e não possuem rotas fixas, pois os passageiros variam a cada atendimento.
       </p>
-
-      <div v-if="sharedRoutes.length" class="shared-list">
-        <span v-for="route in sharedRoutes" :key="route.id" class="shared-chip">
-          <span class="mdi mdi-share-variant-outline" aria-hidden="true"></span>
-          {{ route.name }}
-        </span>
-      </div>
-      <p v-else class="empty-hint">Nenhuma rota compartilhada cadastrada neste grupo.</p>
-
-      <form class="shared-form" @submit.prevent="saveSharedRoute">
-        <input
-          v-model="sharedName"
-          placeholder="Ex.: Volta Intermediária 12:00"
-          :disabled="savingShared"
-          aria-label="Nome da rota compartilhada"
-        />
-        <button type="submit" class="btn-primary-inline" :disabled="savingShared">
-          {{ savingShared ? 'Salvando...' : 'Adicionar rota compartilhada' }}
-        </button>
-      </form>
-      <p v-if="sharedError" class="erro" role="alert">{{ sharedError }}</p>
-      <p v-if="sharedNotice" class="aviso" role="status">{{ sharedNotice }}</p>
     </section>
   </div>
 </template>

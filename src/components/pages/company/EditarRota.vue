@@ -38,9 +38,15 @@ const editandoServicoId = ref(null)
 const salvandoServico = ref(false)
 const erroServico = ref('')
 const avisoServico = ref('')
-const servicoForm = ref(emptyService())
+const servicoForm = ref(emptyService(false))
 const paradasSelecionadas = ref([])
 const paradaParaAdicionar = ref('')
+
+const editandoCompartilhadoId = ref(null)
+const salvandoCompartilhado = ref(false)
+const erroCompartilhado = ref('')
+const avisoCompartilhado = ref('')
+const compartilhadoForm = ref(emptyService(true))
 
 const atribuicaoForm = ref({
   membershipId: '',
@@ -67,20 +73,17 @@ const salvandoAgenda = ref(false)
 const erroAgenda = ref('')
 const avisoAgenda = ref('')
 
-function emptyService() {
+function emptyService(isShared = false) {
   return {
     name: '',
-    direction: 'outbound',
+    direction: isShared ? 'return' : 'outbound',
+    is_shared: isShared,
     weekdays: 0,
     target_time: '',
-    valid_from: '',
-    valid_until: '',
     driver_membership_id: '',
     vehicle_id: '',
     origin_id: '',
     destination_id: '',
-    planned_duration: '',
-    turnaround_duration: '',
   }
 }
 
@@ -88,6 +91,16 @@ const grupoAtual = computed(() => store.grupos.find((g) => g.id === id) || null)
 const motoristasAtivos = computed(() => store.vinculosAtivos.filter((m) => m.driver != null))
 const passageirosAtivos = computed(() => store.vinculosAtivos.filter((m) => m.passenger != null))
 const veiculosAtivos = computed(() => store.todosVeiculos.filter((v) => v.status === 'active'))
+const pontosOrigemDestino = computed(() =>
+  store.pontosOperacionais.filter((p) => p.point_type === 'garage' || p.point_type === 'destination')
+)
+const servicosHabituais = computed(() => (grupoAtual.value?.services || []).filter((s) => !s.is_shared))
+const servicosCompartilhados = computed(() => (grupoAtual.value?.services || []).filter((s) => Boolean(s.is_shared)))
+
+function labelPontoOrigemDestino(p) {
+  const tipo = p.point_type === 'garage' ? 'Garagem' : 'Destino'
+  return `[${tipo}] ${p.name} (${p.city}/${p.state})`
+}
 
 async function carregarTudo() {
   carregando.value = true
@@ -181,6 +194,10 @@ function toggleWeekday(bit) {
   servicoForm.value.weekdays ^= bit
 }
 
+function toggleCompartilhadoWeekday(bit) {
+  compartilhadoForm.value.weekdays ^= bit
+}
+
 function iniciarEdicaoServico(s) {
   editandoServicoId.value = s.id
   erroServico.value = ''
@@ -188,16 +205,13 @@ function iniciarEdicaoServico(s) {
   servicoForm.value = {
     name: s.name || '',
     direction: s.direction || 'outbound',
+    is_shared: false,
     weekdays: Number(s.weekdays) || 0,
     target_time: String(s.target_time || '').slice(0, 5),
-    valid_from: s.valid_from || '',
-    valid_until: s.valid_until || '',
     driver_membership_id: s.driver_membership ?? '',
     vehicle_id: s.vehicle ?? '',
     origin_id: s.origin ?? '',
     destination_id: s.destination ?? '',
-    planned_duration: s.planned_duration || '',
-    turnaround_duration: s.turnaround_duration || '',
   }
   paradasSelecionadas.value = Array.isArray(s.point_ids) ? [...s.point_ids] : []
 }
@@ -205,8 +219,31 @@ function iniciarEdicaoServico(s) {
 function cancelarEdicaoServico() {
   editandoServicoId.value = null
   erroServico.value = ''
-  servicoForm.value = emptyService()
+  servicoForm.value = emptyService(false)
   paradasSelecionadas.value = []
+}
+
+function iniciarEdicaoCompartilhado(s) {
+  editandoCompartilhadoId.value = s.id
+  erroCompartilhado.value = ''
+  avisoCompartilhado.value = ''
+  compartilhadoForm.value = {
+    name: s.name || '',
+    direction: s.direction || 'return',
+    is_shared: true,
+    weekdays: Number(s.weekdays) || 0,
+    target_time: String(s.target_time || '').slice(0, 5),
+    driver_membership_id: s.driver_membership ?? '',
+    vehicle_id: s.vehicle ?? '',
+    origin_id: s.origin ?? '',
+    destination_id: s.destination ?? '',
+  }
+}
+
+function cancelarEdicaoCompartilhado() {
+  editandoCompartilhadoId.value = null
+  erroCompartilhado.value = ''
+  compartilhadoForm.value = emptyService(true)
 }
 
 function adicionarParada() {
@@ -231,14 +268,21 @@ async function salvarServico() {
   erroServico.value = ''
   avisoServico.value = ''
 
-  if (!servicoForm.value.name.trim() || !servicoForm.value.weekdays || !servicoForm.value.target_time || !servicoForm.value.valid_from) {
-    erroServico.value = 'Informe nome, dias da semana, horário-alvo e início de vigência.'
+  if (
+    !servicoForm.value.name.trim() ||
+    !servicoForm.value.weekdays ||
+    !servicoForm.value.target_time ||
+    !servicoForm.value.origin_id ||
+    !servicoForm.value.destination_id
+  ) {
+    erroServico.value = 'Informe nome, dias da semana, horário-alvo, ponto de origem e ponto de destino.'
     return
   }
 
   salvandoServico.value = true
   const payload = {
     ...servicoForm.value,
+    is_shared: false,
     route_group_id: id,
   }
   const saved = editandoServicoId.value
@@ -264,6 +308,47 @@ async function salvarServico() {
 
   avisoServico.value = editandoServicoId.value ? 'Serviço habitual atualizado.' : 'Serviço habitual cadastrado.'
   cancelarEdicaoServico()
+  await carregarTudo()
+}
+
+async function salvarCompartilhado() {
+  if (!scope.current() || salvandoCompartilhado.value) return
+  erroCompartilhado.value = ''
+  avisoCompartilhado.value = ''
+
+  if (
+    !compartilhadoForm.value.name.trim() ||
+    !compartilhadoForm.value.weekdays ||
+    !compartilhadoForm.value.target_time ||
+    !compartilhadoForm.value.origin_id ||
+    !compartilhadoForm.value.destination_id
+  ) {
+    erroCompartilhado.value = 'Informe nome, dias da semana, horário-alvo, ponto de origem e ponto de destino.'
+    return
+  }
+
+  salvandoCompartilhado.value = true
+  const payload = {
+    ...compartilhadoForm.value,
+    is_shared: true,
+    route_group_id: id,
+  }
+  const saved = editandoCompartilhadoId.value
+    ? await store.atualizarServico(editandoCompartilhadoId.value, payload, { signal: scope.signal })
+    : await store.criarServico(payload, { signal: scope.signal })
+
+  if (!scope.current()) return
+  salvandoCompartilhado.value = false
+
+  if (!saved) {
+    erroCompartilhado.value = store.error || 'Erro ao salvar serviço compartilhado.'
+    return
+  }
+
+  avisoCompartilhado.value = editandoCompartilhadoId.value
+    ? 'Serviço compartilhado atualizado.'
+    : 'Serviço compartilhado cadastrado.'
+  cancelarEdicaoCompartilhado()
   await carregarTudo()
 }
 
@@ -492,11 +577,11 @@ async function salvarAgenda() {
       <section class="panel-section">
         <h2>3. Serviços Habituais (Ida e Retorno separados)</h2>
         <p class="hint">
-          Designe explicitamente o motorista habitual (vínculo ativo) e o veículo habitual (ativo), bem como vigência, duração planejada (`HH:MM:SS`) e margem de agenda (`HH:MM:SS`). O sentido não pode ser alterado após criar o serviço.
+          Defina o sentido, horário, dias da semana, motorista/veículo habituais e os pontos obrigatórios de origem e destino (garagens e destinos). A aplicação em datas acontece na tela de geração de atendimentos em lote.
         </p>
 
-        <div v-if="grupoAtual.services.length" class="item-list">
-          <div v-for="s in grupoAtual.services" :key="s.id" class="sub-card">
+        <div v-if="servicosHabituais.length" class="item-list">
+          <div v-for="s in servicosHabituais" :key="s.id" class="sub-card">
             <div class="sub-card-header">
               <div>
                 <strong>{{ s.name }} (#{{ s.id }})</strong> ·
@@ -505,10 +590,6 @@ async function salvarAgenda() {
               </div>
               <button type="button" class="btn-outline-inline" @click="iniciarEdicaoServico(s)">Editar</button>
             </div>
-            <p class="sub-meta">
-              Vigência: {{ s.valid_from }} até {{ s.valid_until || 'indeterminado' }} ·
-              Duração: {{ s.planned_duration || 'pendente' }} · Margem: {{ s.turnaround_duration || 'pendente' }}
-            </p>
             <p class="sub-meta">
               Motorista: {{ s.driverName }} · Veículo: {{ s.vehiclePlate }} ·
               Origem: {{ s.originName }} → Destino: {{ s.destinationName }}
@@ -540,22 +621,6 @@ async function salvarAgenda() {
               <input v-model="servicoForm.target_time" type="time" required :disabled="salvandoServico" />
             </div>
             <div>
-              <label>Início de vigência<span>*</span></label>
-              <input v-model="servicoForm.valid_from" type="date" required :disabled="salvandoServico" />
-            </div>
-            <div>
-              <label>Fim de vigência (opcional)</label>
-              <input v-model="servicoForm.valid_until" type="date" :disabled="salvandoServico" />
-            </div>
-            <div>
-              <label>Duração planejada (HH:MM:SS)</label>
-              <input v-model="servicoForm.planned_duration" placeholder="00:45:00" :disabled="salvandoServico" />
-            </div>
-            <div>
-              <label>Margem / turnaround (HH:MM:SS)</label>
-              <input v-model="servicoForm.turnaround_duration" placeholder="00:15:00" :disabled="salvandoServico" />
-            </div>
-            <div>
               <label>Motorista habitual (vínculo ativo)</label>
               <select v-model="servicoForm.driver_membership_id" :disabled="salvandoServico">
                 <option value="">Sem motorista designado</option>
@@ -574,20 +639,20 @@ async function salvarAgenda() {
               </select>
             </div>
             <div>
-              <label>Ponto de origem (opcional)</label>
-              <select v-model="servicoForm.origin_id" :disabled="salvandoServico">
-                <option value="">Usar garagem do veículo / destino</option>
-                <option v-for="p in store.pontosOperacionais" :key="p.id" :value="p.id">
-                  {{ p.name }} ({{ p.city }}/{{ p.state }})
+              <label>Ponto de origem<span>*</span></label>
+              <select v-model="servicoForm.origin_id" required :disabled="salvandoServico">
+                <option value="" disabled>Selecione uma garagem ou destino...</option>
+                <option v-for="p in pontosOrigemDestino" :key="p.id" :value="p.id">
+                  {{ labelPontoOrigemDestino(p) }}
                 </option>
               </select>
             </div>
             <div>
-              <label>Ponto de destino (opcional)</label>
-              <select v-model="servicoForm.destination_id" :disabled="salvandoServico">
-                <option value="">Usar destino do grupo / garagem</option>
-                <option v-for="p in store.pontosOperacionais" :key="p.id" :value="p.id">
-                  {{ p.name }} ({{ p.city }}/{{ p.state }})
+              <label>Ponto de destino<span>*</span></label>
+              <select v-model="servicoForm.destination_id" required :disabled="salvandoServico">
+                <option value="" disabled>Selecione uma garagem ou destino...</option>
+                <option v-for="p in pontosOrigemDestino" :key="p.id" :value="p.id">
+                  {{ labelPontoOrigemDestino(p) }}
                 </option>
               </select>
             </div>
@@ -638,6 +703,118 @@ async function salvarAgenda() {
               {{ salvandoServico ? 'Salvando...' : editandoServicoId ? 'Atualizar serviço' : 'Criar serviço habitual' }}
             </button>
             <button v-if="editandoServicoId" type="button" class="btn-outline-inline" :disabled="salvandoServico" @click="cancelarEdicaoServico">
+              Cancelar edição
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 3B. Serviços Compartilhados (viagens intermediárias sem rotas fixas) -->
+      <section class="panel-section">
+        <h2>Serviços Compartilhados (viagens intermediárias)</h2>
+        <p class="hint">
+          Usados para retornos ou deslocamentos intermediários (ex.: volta das 12:00) onde passageiros de diferentes rotas podem viajar juntos. Por variarem a cada dia, não possuem rotas ou paradas fixas configuradas.
+        </p>
+
+        <div v-if="servicosCompartilhados.length" class="item-list">
+          <div v-for="s in servicosCompartilhados" :key="s.id" class="sub-card">
+            <div class="sub-card-header">
+              <div>
+                <strong>{{ s.name }} (#{{ s.id }})</strong> ·
+                <span class="badge-dir">{{ s.direction === 'outbound' ? 'Ida' : 'Retorno' }}</span> ·
+                <span class="badge-dir">Compartilhado</span> ·
+                {{ s.targetTimeLabel }} · {{ s.weekdaysLabel }}
+              </div>
+              <button type="button" class="btn-outline-inline" @click="iniciarEdicaoCompartilhado(s)">Editar</button>
+            </div>
+            <p class="sub-meta">
+              Motorista: {{ s.driverName }} · Veículo: {{ s.vehiclePlate }} ·
+              Origem: {{ s.originName }} → Destino: {{ s.destinationName }}
+            </p>
+          </div>
+        </div>
+        <p v-else class="status-message">Nenhum serviço compartilhado cadastrado neste grupo.</p>
+
+        <form class="service-form" @submit.prevent="salvarCompartilhado">
+          <h3>{{ editandoCompartilhadoId ? `Editar serviço compartilhado #${editandoCompartilhadoId}` : 'Novo serviço compartilhado' }}</h3>
+          <div class="grid-2">
+            <div>
+              <label>Nome do serviço compartilhado<span>*</span></label>
+              <input v-model="compartilhadoForm.name" placeholder="Ex.: Volta Intermediária 12:00" required :disabled="salvandoCompartilhado" />
+            </div>
+            <div>
+              <label>Sentido<span>*</span></label>
+              <select v-model="compartilhadoForm.direction" :disabled="salvandoCompartilhado || Boolean(editandoCompartilhadoId)">
+                <option value="return">Retorno (return)</option>
+                <option value="outbound">Ida (outbound)</option>
+              </select>
+            </div>
+            <div>
+              <label>Horário-alvo<span>*</span></label>
+              <input v-model="compartilhadoForm.target_time" type="time" required :disabled="salvandoCompartilhado" />
+            </div>
+            <div>
+              <label>Motorista habitual (vínculo ativo)</label>
+              <select v-model="compartilhadoForm.driver_membership_id" :disabled="salvandoCompartilhado">
+                <option value="">Sem motorista designado</option>
+                <option v-for="m in motoristasAtivos" :key="m.id" :value="m.id">
+                  {{ m.applicant_name }} (vínculo #{{ m.id }})
+                </option>
+              </select>
+            </div>
+            <div>
+              <label>Veículo habitual (ativo)</label>
+              <select v-model="compartilhadoForm.vehicle_id" :disabled="salvandoCompartilhado">
+                <option value="">Sem veículo designado</option>
+                <option v-for="v in veiculosAtivos" :key="v.id" :value="v.id">
+                  {{ v.plate }} — {{ v.model || 'Veículo' }} ({{ v.capacity }} lug.)
+                </option>
+              </select>
+            </div>
+            <div>
+              <label>Ponto de origem<span>*</span></label>
+              <select v-model="compartilhadoForm.origin_id" required :disabled="salvandoCompartilhado">
+                <option value="" disabled>Selecione uma garagem ou destino...</option>
+                <option v-for="p in pontosOrigemDestino" :key="p.id" :value="p.id">
+                  {{ labelPontoOrigemDestino(p) }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label>Ponto de destino<span>*</span></label>
+              <select v-model="compartilhadoForm.destination_id" required :disabled="salvandoCompartilhado">
+                <option value="" disabled>Selecione uma garagem ou destino...</option>
+                <option v-for="p in pontosOrigemDestino" :key="p.id" :value="p.id">
+                  {{ labelPontoOrigemDestino(p) }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="weekdays-box">
+            <label>Dias da semana<span>*</span></label>
+            <div class="weekday-chips">
+              <button
+                v-for="w in WEEKDAY_OPTIONS"
+                :key="w.bit"
+                type="button"
+                :class="['chip', { active: (compartilhadoForm.weekdays & w.bit) !== 0 }]"
+                :disabled="salvandoCompartilhado"
+                @click="toggleCompartilhadoWeekday(w.bit)"
+              >
+                {{ w.label }}
+              </button>
+            </div>
+          </div>
+
+          <p v-if="erroCompartilhado" class="erro" role="alert">{{ erroCompartilhado }}</p>
+          <p v-if="avisoCompartilhado" class="aviso" role="status">{{ avisoCompartilhado }}</p>
+
+          <div class="inline-row">
+            <button type="submit" class="btn-primary-inline" :disabled="salvandoCompartilhado">
+              {{ salvandoCompartilhado ? 'Salvando...' : editandoCompartilhadoId ? 'Atualizar serviço compartilhado' : 'Criar serviço compartilhado' }}
+            </button>
+            <button v-if="editandoCompartilhadoId" type="button" class="btn-outline-inline" :disabled="salvandoCompartilhado" @click="cancelarEdicaoCompartilhado">
               Cancelar edição
             </button>
           </div>

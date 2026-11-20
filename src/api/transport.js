@@ -196,17 +196,18 @@ function normalizeServiceInput(input, partial = false) {
   if (!partial || 'route_group_id' in input) payload.route_group_id = Number(input.route_group_id)
   if (!partial || 'name' in input) payload.name = trimString(input.name)
   if (!partial || 'direction' in input) payload.direction = input.direction
+  if (!partial || 'is_shared' in input) payload.is_shared = Boolean(input.is_shared)
   if (!partial || 'weekdays' in input) payload.weekdays = Number(input.weekdays)
   if (!partial || 'target_time' in input) payload.target_time = trimString(input.target_time)
-  if (!partial || 'valid_from' in input) payload.valid_from = trimString(input.valid_from)
-  if (!partial || 'valid_until' in input) payload.valid_until = trimString(input.valid_until) || null
+  if ('valid_from' in input) payload.valid_from = trimString(input.valid_from) || null
+  if ('valid_until' in input) payload.valid_until = trimString(input.valid_until) || null
   for (const fk of ['driver_membership_id', 'vehicle_id', 'origin_id', 'destination_id']) {
     if (!partial || fk in input) {
       payload[fk] = input[fk] === '' || input[fk] == null ? null : Number(input[fk])
     }
   }
   for (const dur of ['planned_duration', 'turnaround_duration']) {
-    if (!partial || dur in input) {
+    if (dur in input) {
       payload[dur] = trimString(input[dur]) || null
     }
   }
