@@ -25,7 +25,7 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
 ## 2. Stack e mapa do repositório
 
 - **Stack:** Vue 3 (JavaScript, ES Modules), Vite 7, Vue Router 5, Pinia 3, Axios,
-  Leaflet (mapas), Chart.js / `vue-chartjs` (gráficos) e `@mdi/font` (ícones).
+  SCSS (`sass-embedded`), Leaflet (mapas), Chart.js / `vue-chartjs` (gráficos) e `@mdi/font` (ícones).
   Qualidade com ESLint, Oxlint e Prettier; testes nativos com `node --test`.
 - **Entradas e configuração na raiz:**
   - `index.html` e `src/main.js`: bootstrap da aplicação, limpeza seletiva de
@@ -108,67 +108,31 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
   - O guard `beforeEach` executa `checkAuth()` na primeira navegação autenticada,
     aplica o tema (`localStorage.getItem('theme')`) em rotas privadas e na descoberta e
     redireciona conforme `state.logged`.
-- **Componentes, views, composables e utilitários (`src/`):**
+- **Componentes, views, features, estilos, constantes e utilitários (`src/`):**
   - `src/views/`: views de página mapeadas pelo router (`HomeView`, `LoginView`,
     `SignUpView`, `ConfirmationView`, `ForgotPasswordView`, `LogoutView`, `UserView`,
-    `AccountSecurityView`, `LinkedProfileView`, `ListView`, `TransportView`,
-    `CompanyDirectoryView`, `MembershipsView`).
-  - `src/components/layout/`: `AppHeader.vue`, `AppSideBar.vue`,
-    `AppBottomNavigationBar.vue`, `AvatarUpload.vue`.
-  - `src/components/auth/` e `src/components/forms/`: login, redefinição de senha
-    (`PasswordResetForm.vue`), confirmação de código e formulários de cadastro por perfil
-    (`SignUpPassenger.vue`, `SignUpDriver.vue`, `SignUpCompany.vue`). Os componentes
-    órfãos `RoleBasedView.vue`, `AddressSection.vue` e `CnhSection.vue` foram retirados na R6.
-  - `src/components/transport/`: `TransportHistoryNotifications.vue` consolida avisos
-    persistentes (`notifications/` e `read/`), avaliações de viagens finalizadas
-    (`driver-ratings/`) e relato/transição de custódia de objetos perdidos (`lost-items/`
-    e `transition/`).
-  - `src/components/profile/` e `src/components/account/`: cabeçalho/foto (`ProfileHeader.vue`),
-    edição por seção (`ProfileFieldsSection.vue`), upload/download de documentos
-    (`ProfileDocumentSlot.vue`), troca de e-mail (`EmailChangeForm.vue`) e sessões ativas
-    (`AccountSessions.vue`), com metadados em `src/profileFields.js`. As views antigas de
-    perfil por papel (`PassengerUser.vue`, `DriverUser.vue`, `CompanyUser.vue`) e o detalhe
-    legado (`UsuarioDetalhe.vue`) foram substituídos por `UserView.vue`,
-    `AccountSecurityView.vue` e `LinkedProfileView.vue`.
-  - `src/components/pages/`: telas segmentadas em `company/`, `driver/` e `passenger/`.
-  - `src/components/ui/`: componentes visuais reutilizáveis (`BaseButton`, `FloatingInput`,
-    `FormField`, `FormattedField`, `PasswordField`, `SelectField`, `CodeInput`, `DateInput`,
-    `FileUploadField`, `ErrorMessage`, `SuccessDisplay`, `LoadingSpinner`, `LiveLocationMap`,
-    `MapBackground`).
-  - `DateInput.vue` usa `v-model:day`, `v-model:month` e `v-model:year`, com erros
-    separados e IDs por instância; não recebe nem altera o formulário inteiro.
-  - `src/composables/`: lógica reutilizável (`useDeviceLayout`, `useEmailVerification`,
-    `useInputFormat`, `useSignUpForm`, `useSignUpCompanyForm`, `useTransportQuestionnaire`,
-    `useTravelTracking`, `useValidation`, `useToast`, `useOwnProfile`, `useAccountScope`,
-    `useEmailChange`, `usePullToRefresh`). `useToast` mantém mensagem e
-    timer por escopo, substitui o timer anterior e ignora chamadas após descarte.
-    `useOwnProfile` coordena leitura `/me/`, edição por seção, substituição de foto/documentos
-    e publicação/invalidação do snapshot de perfil, preservando o rascunho em caso de falha.
-    `useAccountScope` vincula requisições autenticadas à identidade atual.
-    `useTransportQuestionnaire` gerencia elegibilidades por data, respostas de ida/retorno
-    independentes na janela normal, pedidos de alteração na prorrogação (`request-change/`)
-    e desistência por trecho (`withdraw-leg/`), sem usar relógio local nem horários fixos.
-    `useTravelTracking` sincroniza a posição inicial via `GET /travels/{id}/location/` e
-    mantém o WebSocket na mesma origem com `recorded_at`, `stale`, tratamento dos códigos
-    `4001/4003/4009/1009/1000` e reconexão após `refresh`.
-  - `useEmailVerification` vincula o código ao e-mail solicitado; voltar à revisão
-    não reenvia código durante o cooldown. `usePasswordReset` e `useEmailChange` mantêm
-    fluxos próprios de solicitação/verificação/confirmação, com mensagens antienumeração
-    e revogação de sessões apenas após confirmação do servidor. Validade e
-    limites são do servidor; cooldown no cliente não é proteção autoritativa.
-  - `useCompanyDirectory` mantém filtros aplicados, paginação e cancelamento de busca.
-    `useMemberships` mantém consulta/escrita por escopo e identidade, bloqueia ações
-    com leitura inválida ou escrita em andamento e exige releitura após falha. Uma
-    confirmação de POST não implica sucesso da consulta posterior. Não há replay.
-  - `src/components/memberships/`: apresentação mínima e confirmação com motivo
-    opcional (`approve`, `reject`, `withdraw`, `end`). `CompanyUsuarios.vue` usa vínculos,
-    permite encerrar vínculos ativos e abre `LinkedProfileView.vue` para consulta da
-    identidade mínima autorizada de titulares vinculados. As quatro buscas antigas sem
-    consumidores foram retiradas.
-  - `src/utils/apiErrors.js`: `formatApiError` para traduzir respostas de erro aninhadas
-    da API, erros de rede, `429` e `5xx` em mensagens legíveis em português.
-  - `src/assets/css/`: variáveis de tema (`theme.css`), estilos globais (`global.css`),
-    vínculos (`memberships.css`) e perfil/segurança (`profile.css`).
+    `UserProfileView`, `AccountSecurityView`, `LinkedProfileView`, `ListView`, `TransportView`,
+    `CompanyDirectoryView`, `MembershipsView`, `OperationalPointsView`, `ForbiddenView`, `NotFoundView`).
+  - `src/components/layout/`: `AppTopBar.vue` (barra superior persistente orientada a slots,
+    oculta apenas em `/403` e `/404`), `AppNavigation.vue` (sidebar desktop / bottom bar mobile
+    unificada com scoped slot por papel), `PublicShell.vue` e `AvatarUpload.vue`.
+  - `src/components/ui/`: primitivos visuais reutilizáveis (`BaseButton`, `BaseInput`,
+    `BaseCard`, `PageHeader`, `StatusBanner`, `EmptyState`, `ThemeButton`, `CodeInput`,
+    `DateInput`, `FileUploadField`, `AddressCepMapField`, `ErrorMessage`, `LoadingSpinner`,
+    `SkeletonCard`, `PageNavigation`, `LiveLocationMap`, `MapBackground`).
+  - `src/features/`: módulos organizados por domínio (`auth/`, `company/`, `directory/`,
+    `driver/`, `memberships/`, `passenger/`, `profile/`, `transport/`), cada um agrupando
+    seus componentes (incluindo subpastas `route-editor/`, `routes/`, `attendance/`, `transport/`)
+    e composables específicos.
+  - `src/composables/`: composables transversais (`useAccountScope`, `useDeviceLayout` via
+    `matchMedia` compartilhado, `useInputFormat`, `usePullToRefresh`, `useToast`, `useValidation`).
+  - `src/constants/`: constantes globais em `CAIXA_ALTA` (`roles.js`, `routes.js`, `storage.js`,
+    `ui.js`, `domain.js`, `brazilStates.js`, agregadas em `index.js`).
+  - `src/styles/`: arquitetura SCSS (`_variables.scss`, `_mixins.scss`, `_abstracts.scss`
+    injetado via `vite.config.js`, `_theme.scss`, `_base.scss`, `_transitions.scss`,
+    `_leaflet.scss`, `main.scss`, `profile.scss`, `memberships.scss`).
+  - `src/utils/`: `apiErrors.js` (`formatApiError`) e `formatters.js` (formatadores puros
+    de datas, horas, dias da semana, CNPJ e endereços).
 - **Scripts e testes (`scripts/`, `tests/`):**
   - `tests/http.test.js`, `tests/session.test.js`, `tests/legacyPwa.test.js` e
     `tests/smokeHarness.test.js`: suíte unitária executada via `npm test`.
