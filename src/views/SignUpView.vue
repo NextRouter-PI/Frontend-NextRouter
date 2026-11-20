@@ -5,9 +5,12 @@ import RoleSelector from '@/components/auth/RoleSelector.vue'
 </script>
 
 <template>
-  <PublicShell>
+  <PublicShell wide>
     <section class="signup-choice">
-      <h1 class="choice-heading">Escolha sua forma<br />de cadastro</h1>
+      <div class="choice-header">
+        <h1 class="choice-heading">Escolha sua forma de cadastro</h1>
+        <span class="choice-bar" aria-hidden="true"></span>
+      </div>
 
       <RoleSelector />
 
@@ -29,18 +32,29 @@ import RoleSelector from '@/components/auth/RoleSelector.vue'
   padding: 20px 6px 12px;
 }
 
+.choice-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 34px;
+}
+
 .choice-heading {
-  margin: 0 0 36px;
-  font-size: 1.9rem;
+  margin: 0;
+  font-size: 1.75rem;
   line-height: 1.2;
   font-weight: 800;
   color: var(--text);
   text-align: center;
 }
 
+.choice-bar {
+  display: none;
+}
+
 .signup-footer {
   text-align: center;
-  padding-top: 18px;
+  padding-top: 20px;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -61,5 +75,25 @@ import RoleSelector from '@/components/auth/RoleSelector.vue'
 
 .footer-link:hover {
   opacity: 0.85;
+}
+
+@media (min-width: 768px) {
+  .signup-choice {
+    padding: 36px 8px 20px;
+  }
+
+  .choice-heading {
+    color: var(--primary);
+    font-size: 1.85rem;
+  }
+
+  .choice-bar {
+    display: block;
+    width: 180px;
+    height: 2px;
+    margin-top: 10px;
+    border-radius: 999px;
+    background: var(--primary);
+  }
 }
 </style>

@@ -7,6 +7,8 @@ defineProps({
   titlePrefix: { type: String, default: '' },
   titleHighlight: { type: String, default: '' },
   showDivider: { type: Boolean, default: false },
+  fullBleed: { type: Boolean, default: false },
+  wide: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['back'])
@@ -21,7 +23,7 @@ const emit = defineEmits(['back'])
       <ThemeButton />
     </header>
 
-    <main class="shell-main">
+    <main :class="['shell-main', { 'is-full-bleed': fullBleed, 'is-wide': wide }]">
       <div v-if="showBack || titlePrefix || titleHighlight" class="shell-title-bar">
         <button
           v-if="showBack"
@@ -68,16 +70,23 @@ const emit = defineEmits(['back'])
   position: sticky;
   top: 0;
   z-index: 40;
+  height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
-  background: #191716;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 0 20px;
+  background: var(--chrome-bg);
+  border-bottom: 2px solid var(--primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
+}
+
+.shell-logo {
+  display: inline-flex;
+  align-items: center;
 }
 
 .shell-logo img {
-  height: 44px;
+  height: 36px;
   width: auto;
   display: block;
 }
@@ -87,8 +96,15 @@ const emit = defineEmits(['back'])
   width: 100%;
   max-width: 520px;
   margin: 0 auto;
-  padding: 18px 18px 36px;
+  padding: 20px 18px 36px;
   box-sizing: border-box;
+}
+
+.shell-main.is-full-bleed {
+  max-width: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .shell-title-bar {
@@ -110,10 +126,15 @@ const emit = defineEmits(['back'])
   color: var(--text);
   font-size: 1.9rem;
   cursor: pointer;
+  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid);
 }
 
 .shell-back-btn:hover {
   background: var(--altbg);
+}
+
+.shell-back-btn:active {
+  transform: scale(0.94);
 }
 
 .shell-spacer {
@@ -130,43 +151,52 @@ const emit = defineEmits(['back'])
 }
 
 .shell-heading-accent {
-  color: var(--primary-orange);
+  color: var(--primary);
 }
 
 .shell-divider {
-  height: 3px;
+  height: 2px;
   width: 100%;
   border-radius: 999px;
-  background: var(--primary-orange);
+  background: var(--primary);
   margin: 6px 0 20px;
 }
 
 .shell-footer {
   margin-top: auto;
-  background: #191716;
-  border-top: 3px solid var(--primary-orange);
-  color: #ffffff;
-  padding: 20px 22px 28px;
+  background: var(--chrome-bg);
+  border-top: 2px solid var(--primary);
+  color: var(--chrome-text);
+  padding: 16px 22px 22px;
 }
 
 .footer-inner {
-  max-width: 520px;
+  max-width: 1120px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
 .footer-icon {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
 }
 
 @media (min-width: 768px) {
   .shell-main {
-    max-width: 560px;
-    padding: 28px 24px 48px;
+    max-width: 580px;
+    padding: 32px 24px 48px;
+  }
+
+  .shell-main.is-wide {
+    max-width: 820px;
+  }
+
+  .shell-main.is-full-bleed {
+    max-width: none;
+    padding: 0;
   }
 
   .shell-heading {

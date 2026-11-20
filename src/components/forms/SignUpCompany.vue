@@ -109,7 +109,8 @@ const goBack = () => {
       </div>
 
       <form v-else class="signup-form" @submit.prevent="handleSubmit">
-      <div v-if="currentPage === 1">
+      <Transition name="fade-slide" mode="out-in">
+      <div v-if="currentPage === 1" key="step-1">
         <h2 class="page-title">Informações da <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
@@ -203,7 +204,7 @@ const goBack = () => {
         />
       </div>
 
-      <div v-if="currentPage === 2">
+      <div v-else-if="currentPage === 2" key="step-2">
         <h2 class="page-title">Documentação da <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
@@ -264,7 +265,7 @@ const goBack = () => {
         </div>
       </div>
 
-      <div v-if="currentPage === 3">
+      <div v-else-if="currentPage === 3" key="step-3">
         <h2 class="page-title">Responsável pela <span class="highlight-orange">Empresa</span></h2>
 
         <FormField
@@ -344,7 +345,7 @@ const goBack = () => {
         />
       </div>
 
-      <div v-if="currentPage === 4">
+      <div v-else-if="currentPage === 4" key="step-4">
         <h2 class="page-title">Revisão do <span class="highlight-orange">Cadastro</span></h2>
 
         <div class="review-section">
@@ -410,7 +411,7 @@ const goBack = () => {
         </div>
       </div>
 
-      <div v-if="currentPage === 5">
+      <div v-else-if="currentPage === 5" key="step-5">
         <h2 class="page-title">Verificação de <span class="highlight-orange">E-mail</span></h2>
         <p class="texto-principal">
           Se o e-mail puder ser usado no cadastro, você receberá um código em
@@ -429,6 +430,7 @@ const goBack = () => {
           </template>
         </p>
       </div>
+      </Transition>
 
       <!-- Fora das etapas: o erro ao enviar o código acontece na etapa de revisão e precisa aparecer nela -->
       <ErrorMessage v-if="erroCodigo" :message="erroCodigo" />

@@ -1,32 +1,59 @@
 <script setup>
-import AuthBranding from '@/components/ui/AuthBranding.vue'
+import { useRouter } from 'vue-router'
+import PublicShell from '@/components/layout/PublicShell.vue'
 import PasswordResetForm from '@/components/auth/PasswordResetForm.vue'
+
+const router = useRouter()
 </script>
 
 <template>
-  <div class="forgot-password-container">
-    <AuthBranding />
-
-    <PasswordResetForm />
-    <RouterLink to="/login" class="back-link">Voltar para login</RouterLink>
-  </div>
+  <PublicShell
+    show-back
+    title-prefix="Recuperar "
+    title-highlight="Senha"
+    @back="router.push('/login')"
+  >
+    <div class="forgot-card">
+      <PasswordResetForm />
+      <div class="forgot-footer">
+        <RouterLink to="/login" class="back-link">Voltar para login</RouterLink>
+      </div>
+    </div>
+  </PublicShell>
 </template>
 
 <style scoped>
-.forgot-password-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg);
-  min-height: 100vh;
-  padding: 20px;
-}
-
-.forgot-password-container > * {
+.forgot-card {
   width: 100%;
-  max-width: 350px;
+  background: var(--superfice);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 26px 20px;
+  box-shadow: var(--shadow);
 }
 
-.back-link { color: var(--text); margin-top: 20px; text-align: center; }
+.forgot-footer {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.back-link {
+  color: var(--primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  opacity: 0.85;
+}
+
+@media (min-width: 768px) {
+  .forgot-card {
+    padding: 36px 32px;
+    margin-top: 18px;
+  }
+}
 </style>
