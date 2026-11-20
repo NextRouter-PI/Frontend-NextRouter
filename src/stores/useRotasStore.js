@@ -46,28 +46,13 @@ import {
   listOptimizationJobs,
 } from '@/api/transport'
 
-function formatHour(value) {
-  if (!value) return ''
-  return String(value).slice(0, 5)
-}
+import { POINT_TYPES, WEEKDAY_OPTIONS } from '@/constants'
+import { formatHour, formatWeekdays } from '@/utils/formatters'
+
+export { WEEKDAY_OPTIONS, formatWeekdays }
 
 function asList(data) {
   return Array.isArray(data) ? data : data?.results || []
-}
-
-export const WEEKDAY_OPTIONS = [
-  { bit: 1, label: 'Seg' },
-  { bit: 2, label: 'Ter' },
-  { bit: 4, label: 'Qua' },
-  { bit: 8, label: 'Qui' },
-  { bit: 16, label: 'Sex' },
-  { bit: 32, label: 'Sáb' },
-  { bit: 64, label: 'Dom' },
-]
-
-export function formatWeekdays(mask) {
-  const num = Number(mask) || 0
-  return WEEKDAY_OPTIONS.filter((w) => (num & w.bit) !== 0).map((w) => w.label).join(', ') || 'Nenhum dia'
 }
 
 export const useRotasStore = defineStore('rotas', {
@@ -91,8 +76,8 @@ export const useRotasStore = defineStore('rotas', {
     error: null,
   }),
   getters: {
-    pontosDestino: (state) => state.pontosOperacionais.filter((p) => p.point_type === 'destination'),
-    garagens: (state) => state.pontosOperacionais.filter((p) => p.point_type === 'garage'),
+    pontosDestino: (state) => state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.DESTINATION),
+    garagens: (state) => state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.GARAGE),
   },
   actions: {
     $reset() {

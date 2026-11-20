@@ -30,12 +30,7 @@ const state = reactive({
 
 let activeController = null
 
-function formatTime(value) {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-}
+import { formatTimeBr as formatTime } from '@/utils/formatters'
 
 function pointLabel(point) {
   if (!point || typeof point !== 'object') return '—'

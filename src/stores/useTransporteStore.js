@@ -12,17 +12,7 @@ import {
   updateOperationalPoint,
 } from '@/api/transport'
 
-const STATUS_TO_API = {
-  Ativo: 'active',
-  Manutenção: 'maintenance',
-  active: 'active',
-  maintenance: 'maintenance',
-}
-
-const STATUS_FROM_API = {
-  active: 'Ativo',
-  maintenance: 'Manutenção',
-}
+import { POINT_TYPES, VEHICLE_STATUS_FROM_API, VEHICLE_STATUS_TO_API } from '@/constants'
 
 function mapVehicleFromApi(vehicle, pointsMap = new Map()) {
   const garagePoint = pointsMap.get(vehicle.garage_point) || null
@@ -33,7 +23,7 @@ function mapVehicleFromApi(vehicle, pointsMap = new Map()) {
     modelo: vehicle.model || '',
     ano: vehicle.year ?? '',
     capacidade: vehicle.capacity ?? '',
-    status: STATUS_FROM_API[vehicle.status] || vehicle.status,
+    status: VEHICLE_STATUS_FROM_API[vehicle.status] || vehicle.status,
     rawStatus: vehicle.status,
     garagePointId: vehicle.garage_point ?? null,
     garagePointName: garagePoint ? `${garagePoint.name} (${garagePoint.city}/${garagePoint.state})` : null,
@@ -48,7 +38,7 @@ function mapVehicleToApi(vehicle) {
   if (vehicle.modelo !== undefined) payload.model = vehicle.modelo
   if (vehicle.ano !== undefined) payload.year = vehicle.ano
   if (vehicle.capacidade !== undefined) payload.capacity = vehicle.capacidade
-  if (vehicle.status !== undefined) payload.status = STATUS_TO_API[vehicle.status] || vehicle.status
+  if (vehicle.status !== undefined) payload.status = VEHICLE_STATUS_TO_API[vehicle.status] || vehicle.status
   if (vehicle.garagePointId !== undefined) payload.garage_point_id = vehicle.garagePointId
   if (vehicle.cor !== undefined) payload.color = vehicle.cor
   if (vehicle.caracteristicas !== undefined) payload.features = vehicle.caracteristicas
@@ -64,8 +54,8 @@ export const useTransporteStore = defineStore('transporte', {
     error: null,
   }),
   getters: {
-    garagens: (state) => state.pontosOperacionais.filter((p) => p.point_type === 'garage'),
-    pontosDestino: (state) => state.pontosOperacionais.filter((p) => p.point_type === 'destination'),
+    garagens: (state) => state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.GARAGE),
+    pontosDestino: (state) => state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.DESTINATION),
   },
   actions: {
     $reset() {
@@ -171,7 +161,7 @@ export const useTransporteStore = defineStore('transporte', {
       const novoStatus = veiculo.status === 'Ativo' ? 'Manutenção' : 'Ativo'
       this.error = null
       try {
-        const data = await updateVehicle(id, { status: STATUS_TO_API[novoStatus] }, { signal })
+        const data = await updateVehicle(id, { status: VEHICLE_STATUS_TO_API[novoStatus] }, { signal })
         const pointsMap = new Map(this.pontosOperacionais.map((p) => [p.id, p]))
         Object.assign(veiculo, mapVehicleFromApi(data, pointsMap))
         return true
