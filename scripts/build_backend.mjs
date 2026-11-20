@@ -23,6 +23,14 @@ async function statOrMissing(path) {
   }
 }
 
+function hasControlOrBackslash(name) {
+  for (let index = 0; index < name.length; index += 1) {
+    const code = name.charCodeAt(index)
+    if (code <= 0x1f || name[index] === '\\') return true
+  }
+  return false
+}
+
 // Recusar conteúdo inesperado em vez de apagar uma pasta arbitrária ou seguir links.
 async function assertArtifact(root, allowEmpty = false) {
   const stat = await lstat(root)
@@ -33,7 +41,7 @@ async function assertArtifact(root, allowEmpty = false) {
   async function visit(directory, insideAssets = false) {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name)
-      if (entry.name.startsWith('.') || /[\\\x00-\x1f]/.test(entry.name)) {
+      if (entry.name.startsWith('.') || hasControlOrBackslash(entry.name)) {
         throw new Error(`Caminho não autorizado no artefato: ${path}`)
       }
       if (entry.isDirectory() && (insideAssets || entry.name === 'assets')) {

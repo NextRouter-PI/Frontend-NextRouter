@@ -212,17 +212,17 @@ print(json.dumps({'company_user_id':str(company_user.pk)}))
     const navigate = async (context, path) => {
       await command('browsingContext.navigate', { context, url: `${origin}${path}`, wait: 'complete' })
     }
-    const logged = (context) => waitFor(() => evaluate(context, 'Boolean(document.querySelector("header.header"))'), 'Vue autenticado')
+    const logged = (context) => waitFor(() => evaluate(context, 'Boolean(document.querySelector(".top-bar-user-btn"))'), 'Vue autenticado')
     const login = async (role) => {
       const { userContext } = await command('browser.createUserContext', {})
       const { context } = await command('browsingContext.create', { type: 'tab', userContext })
       await navigate(context, '/login')
-      await waitFor(() => evaluate(context, 'Boolean(document.querySelector(".btn-login"))'), 'formulário Vue')
+      await waitFor(() => evaluate(context, 'Boolean(document.querySelector(".login-submit"))'), 'formulário Vue')
       await evaluate(context, `(() => {
         for (const [selector, value] of [['input[type=email]', ${JSON.stringify(`${role}@fixture.example.invalid`)}], ['input[type=password]', ${JSON.stringify(password)}]]) {
           const input = document.querySelector(selector); input.value = value; input.dispatchEvent(new Event('input', {bubbles:true}));
         }
-        document.querySelector('.btn-login').click(); return true;
+        document.querySelector('.login-submit').click(); return true;
       })()`)
       await logged(context)
       return { context, userContext }
@@ -264,9 +264,11 @@ print(json.dumps({'company_user_id':str(company_user.pk)}))
     assert.equal(responses.some((response) => response.path === '/api/refresh/' && response.method === 'POST' && response.status === 200), true)
 
     stage = 'logout real e revogação entre abas'
-    await evaluate(passenger.context, 'document.querySelector(".logout-btn").click()')
+    await navigate(passenger.context, '/seguranca')
+    await waitFor(() => evaluate(passenger.context, 'Boolean(document.querySelector(".logout-action-btn"))'), 'botão de logout')
+    await evaluate(passenger.context, 'document.querySelector(".logout-action-btn").click()')
     for (const context of [passenger.context, otherTab]) {
-      await waitFor(() => evaluate(context, 'Boolean(document.querySelector(".btn-login"))'), 'logout no Vue e outra aba')
+      await waitFor(() => evaluate(context, 'Boolean(document.querySelector(".login-submit"))'), 'logout no Vue e outra aba')
       assert.equal(await evaluate(context, `fetch('/api/users/me/').then(r => r.status)`), 401)
     }
     assert.equal(await evaluate(company.context, `fetch('/api/users/me/').then(r => r.json()).then(u => u.email === 'company@fixture.example.invalid')`), true)
