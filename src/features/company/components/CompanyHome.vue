@@ -1,118 +1,49 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, shallowRef } from 'vue'
+import { ROUTE_PATHS } from '@/constants'
 import { useTransporteStore } from '@/stores/useTransporteStore'
-import { Bar } from 'vue-chartjs'
 import { state } from '@/stores/state'
 import api from '@/api/client'
-import SkeletonCard from '@/components/ui/SkeletonCard.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import {
   formatAddress,
   formatCnpjDisplay as formatCNPJDisplay,
   formatOrEmpty as orNotInDb,
 } from '@/utils/formatters'
-
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-  Legend
-} from 'chart.js'
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
-  Legend
-)
-
-const routesToday = ref(null)
-const statsDate = ref('')
-const serviceSlots = ref([])
-const statsLoading = ref(false)
-const companyData = ref(null)
-const companyLoading = ref(false)
-
-function readCssVar(name, fallback) {
-  if (typeof window === 'undefined') return fallback
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
-}
-
-const chartData = computed(() => ({
-  labels: serviceSlots.value.map((slot) => {
-    const dir = slot.service__direction === 'outbound' ? 'Ida' : 'Volta'
-    const hr = String(slot.service__target_time || '').slice(0, 5)
-    return `${dir} ${hr || `#${slot.service}`}`
-  }),
-  datasets: [
-    {
-      data: serviceSlots.value.map((slot) => (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0)),
-      backgroundColor: readCssVar('--primary', '#ec8314'),
-      borderRadius: 6,
-      barThickness: 36,
-    },
-  ],
-}))
-
-const chartMax = computed(() => {
-  const max = Math.max(
-    2,
-    ...serviceSlots.value.map((slot) => (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0)),
-  )
-  return Math.ceil(max / 2) * 2
-})
-
-const chartOptions = computed(() => {
-  const tickColor = readCssVar('--text-muted', '#71717a')
-  const gridColor = readCssVar('--border', '#e4e4e7')
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: tickColor, font: { size: 16, weight: '600' } },
-        border: { color: tickColor },
-      },
-      y: {
-        min: 0,
-        max: chartMax.value,
-        ticks: { stepSize: Math.max(1, Math.round(chartMax.value / 10)), color: tickColor },
-        grid: { color: gridColor, lineWidth: 1 },
-        border: { display: false },
-      },
-    },
-  }
-})
+import PageHeader from '@/components/ui/PageHeader.vue'
+import BaseCard from '@/components/ui/BaseCard.vue'
+import StatusBanner from '@/components/ui/StatusBanner.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
+import CompanyStatsChart from '@/features/company/components/CompanyStatsChart.vue'
 
 const store = useTransporteStore()
 
-const data = computed(() => {
-  const hoje = new Date()
-  return hoje.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit'
-  })
-})
+const routesToday = shallowRef(null)
+const statsDate = shallowRef('')
+const serviceSlots = ref([])
+const statsLoading = shallowRef(false)
+const companyData = shallowRef(null)
+const companyLoading = shallowRef(false)
 
-const passageirosHoje = computed(() => {
-  return serviceSlots.value.reduce(
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+)
+
+const passageirosHoje = computed(() =>
+  serviceSlots.value.reduce(
     (acc, slot) => acc + (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0),
     0,
-  )
-})
+  ),
+)
 
-const ativos = computed(() => {
-  return store.veiculos.filter(v => v.status === 'Ativo').length
-})
-
+const ativos = computed(() => store.veiculos.filter((v) => v.status === 'Ativo').length)
 const total = computed(() => store.veiculos.length)
+
+const companyInfoItems = computed(() => [
+  { label: 'Nome Fantasia', value: orNotInDb(companyData.value?.trade_name) },
+  { label: 'Razão Social', value: orNotInDb(companyData.value?.legal_name) },
+  { label: 'CNPJ', value: formatCNPJDisplay(companyData.value?.cnpj) },
+  { label: 'Endereço', value: formatAddress(companyData.value) },
+])
 
 async function fetchStats() {
   statsLoading.value = true
@@ -152,355 +83,191 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="content">
+  <div class="company-home-page">
+    <PageHeader :title="`Gerenciamento: ${companyData?.trade_name || state.user?.name || ''}`" accent>
+      <template #actions>
+        <span class="date-pill">{{ todayLabel }}</span>
+      </template>
+    </PageHeader>
 
-    <div class="titulo">
-      <h2>Gerenciamento: {{ companyData?.trade_name || state.user.name }}</h2>
-      <span>{{ data }}</span>
-    </div>
-
-    <div v-if="companyData && !companyData.is_approved" class="moderation-banner" role="status">
-      <div class="moderation-header">
-        <span class="mdi mdi-clock-outline" aria-hidden="true"></span>
-        <h3>
-          {{ companyData.registration_status === 'rejected' ? 'Cadastro empresarial recusado' : 'Cadastro empresarial em análise' }}
-        </h3>
-      </div>
-      <p>
+    <StatusBanner
+      v-if="companyData && !companyData.is_approved"
+      :variant="companyData.registration_status === 'rejected' ? 'danger' : 'warning'"
+      icon="mdi-clock-outline"
+    >
+      <strong>
+        {{
+          companyData.registration_status === 'rejected'
+            ? 'Cadastro empresarial recusado'
+            : 'Cadastro empresarial em análise'
+        }}
+      </strong>
+      <p class="moderation-copy">
         <template v-if="companyData.registration_status === 'rejected'">
           A moderação da plataforma não aprovou o cadastro da empresa. Revise seus dados e documentos no perfil ou contate o suporte.
         </template>
         <template v-else>
-          Sua conta empresarial está ativa, mas aguarda aprovação da moderação da plataforma. Enquanto o cadastro estiver pendente, a empresa não aparece na busca pública e o gerenciamento de frota, rotas e vínculos permanece bloqueado.
+          Sua conta empresarial está ativa, mas aguarda aprovação da moderação. Enquanto estiver pendente, a empresa não aparece na busca pública e o gerenciamento permanece bloqueado.
         </template>
       </p>
-      <RouterLink to="/usuario" class="btn-moderation">Revisar dados e documentos</RouterLink>
-    </div>
+      <RouterLink :to="ROUTE_PATHS.USER" class="moderation-link">Revisar dados e documentos</RouterLink>
+    </StatusBanner>
 
-    <div class="profile-card">
-      <div class="profile-card-header">
-        <span class="mdi mdi-domain card-icon"></span>
-        <h3>Dados da Empresa</h3>
-        <span
-          v-if="companyData"
-          class="approval-badge"
-          :class="{ approved: companyData.is_approved }"
-        >
+    <BaseCard title="Dados da Empresa">
+      <template v-if="companyData" #actions>
+        <span class="approval-badge" :class="{ approved: companyData.is_approved }">
           {{ companyData.is_approved ? 'Aprovada' : 'Pendente' }}
         </span>
-      </div>
+      </template>
+
       <SkeletonCard v-if="companyLoading" :count="1" :lines="3" />
-      <div v-else class="profile-info-grid">
-        <div
-          v-for="item in [
-            { label: 'Nome Fantasia', value: orNotInDb(companyData?.trade_name) },
-            { label: 'Razão Social', value: orNotInDb(companyData?.legal_name) },
-            { label: 'CNPJ', value: companyData?.cnpj ? formatCNPJDisplay(companyData.cnpj) : NOT_IN_DB },
-            { label: 'Endereço', value: formatAddress(companyData) },
-          ]"
-          :key="item.label"
-          class="profile-info-item"
-        >
-          <span class="profile-info-label">{{ item.label }}</span>
-          <span class="profile-info-value">{{ item.value }}</span>
+      <dl v-else class="info-grid">
+        <div v-for="item in companyInfoItems" :key="item.label" class="info-item">
+          <dt class="info-label">{{ item.label }}</dt>
+          <dd class="info-value">{{ item.value }}</dd>
         </div>
-      </div>
-    </div>
+      </dl>
+    </BaseCard>
 
     <template v-if="!companyData || companyData.is_approved">
-      <div class="cards-row">
-        <div class="info-card">
-          <span class="mdi mdi-account-group card-icon"></span>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="mdi mdi-account-group stat-icon" aria-hidden="true"></span>
           <div>
-            <h4>Passageiros Hoje:</h4>
-            <p>{{ passageirosHoje }}</p>
+            <span class="stat-label">Passageiros Hoje</span>
+            <p class="stat-value">{{ passageirosHoje }}</p>
           </div>
         </div>
 
-        <div class="info-card">
-          <span class="mdi mdi-map-marker-path card-icon"></span>
+        <div class="stat-card">
+          <span class="mdi mdi-map-marker-path stat-icon" aria-hidden="true"></span>
           <div>
-            <h4>Rotas Hoje:</h4>
-            <p>{{ routesToday ?? '—' }}</p>
+            <span class="stat-label">Rotas Hoje</span>
+            <p class="stat-value">{{ routesToday ?? '—' }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card stat-wide">
+          <span class="mdi mdi-van-passenger stat-icon" aria-hidden="true"></span>
+          <div>
+            <span class="stat-label">Transportes Ativos</span>
+            <p class="stat-value">{{ ativos }} / {{ total }}</p>
           </div>
         </div>
       </div>
 
-      <div class="info-card grande">
-        <span class="mdi mdi-van-passenger card-icon"></span>
-        <div>
-          <h4>Transportes Ativos:</h4>
-          <p>{{ ativos }} / {{ total }}</p>
-        </div>
-      </div>
-
-      <div class="grafico-card">
-        <h2>Atendimento por Serviço {{ statsDate || data }}</h2>
-        <div class="chart-container">
-          <Transition name="fade-slide" mode="out-in">
-            <LoadingSpinner v-if="statsLoading" key="loading" text="Carregando estatísticas..." />
-            <p v-else-if="!serviceSlots.length" key="empty" class="chart-empty">Nenhuma viagem datada registrada para a data consultada.</p>
-            <Bar v-else key="chart" :data="chartData" :options="chartOptions" />
-          </Transition>
-        </div>
-        <div class="grafico-footer">
-          <RouterLink to="/lista" class="btn-detalhes">
-            VER DETALHES
-          </RouterLink>
-        </div>
-      </div>
+      <CompanyStatsChart
+        :service-slots="serviceSlots"
+        :date-label="statsDate || todayLabel"
+        :loading="statsLoading"
+      />
     </template>
-
   </div>
 </template>
 
 <style lang="scss" scoped>
-.content {
+.company-home-page {
   margin: 0 auto;
   max-width: 600px;
-  padding: 18px 18px 120px;
-}
-
-.moderation-banner {
-  margin: 16px 0;
-  padding: 18px;
-  border-radius: 16px;
-  background: rgba(234, 179, 8, 0.12);
-  border: 1px solid rgba(234, 179, 8, 0.45);
-  color: var(--text);
-}
-
-.moderation-header {
+  padding: $space-5 18px 120px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  flex-direction: column;
+  gap: $space-4;
 }
 
-.moderation-header .mdi {
-  font-size: 1.4rem;
-  color: var(--warning);
+.date-pill {
+  padding: $space-1 $space-3;
+  border-radius: $radius-pill;
+  background: var(--color-primary-soft);
+  color: var(--primary);
+  font-size: $text-sm;
+  font-weight: $font-bold;
 }
 
-.moderation-header h3 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.moderation-banner p {
-  margin: 0 0 12px;
-  font-size: 0.92rem;
-  line-height: 1.45;
-  color: var(--text);
-}
-
-.btn-moderation {
-  display: inline-block;
-  padding: 8px 14px;
-  border-radius: 8px;
-  background: var(--primary);
-  color: var(--color-on-primary);
-  font-size: 0.88rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.btn-moderation:hover {
-  background: var(--primary-hover);
-}
-
-.titulo h2 {
-  margin: 0;
-  font-size: 1.55rem;
-  font-weight: 800;
-}
-
-.titulo span {
-  font-size: 0.95rem;
+.moderation-copy {
+  margin: $space-1 0 $space-2;
+  font-size: $text-sm;
   color: var(--text-muted);
-  font-weight: 600;
 }
 
-.profile-card {
-  margin-top: 20px;
-  padding: 20px;
-  outline: 1px solid var(--border);
-  outline-offset: -1px;
-  border-radius: 14px;
-  background: var(--color-surface);
-  box-shadow: var(--shadow);
-}
+.moderation-link {
+  color: var(--primary);
+  font-weight: $font-semibold;
+  font-size: $text-sm;
 
-.profile-card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.profile-card-header h3 {
-  margin: 0;
-  font-size: 18px;
-  flex: 1;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .approval-badge {
-  padding: 3px 12px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  background: rgba(220, 38, 38, 0.1);
-  color: var(--danger);
+  padding: $space-1 $space-3;
+  border-radius: $radius-pill;
+  font-size: $text-xs;
+  font-weight: $font-bold;
+  background: var(--warning-soft);
+  color: var(--warning);
+
+  &.approved {
+    background: var(--success-soft);
+    color: var(--success);
+  }
 }
 
-.approval-badge.approved {
-  background: rgba(5, 150, 105, 0.1);
-  color: var(--success);
-}
-
-.profile-info-grid {
+.info-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $space-3;
 }
 
-.profile-info-item {
+.info-item {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
 }
 
-.profile-info-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
-}
-
-.profile-info-value {
-  font-size: 0.92rem;
-  color: var(--text);
-  font-weight: 500;
-}
-
-.cards-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 18px;
-}
-
-.info-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  outline: 1px solid var(--border);
-  outline-offset: -1px;
-  border-radius: 14px;
-  background: var(--color-surface);
-  box-shadow: var(--shadow);
-  transition: outline-color 0.2s var(--ease-fluid);
-}
-
-.info-card:hover {
-  outline-color: var(--primary);
-}
-
-.grande {
-  margin-top: 12px;
-}
-
-.card-icon {
+.info-label {
+  font-size: $text-xs;
+  font-weight: $font-semibold;
   color: var(--primary);
-  font-size: 36px;
-  flex-shrink: 0;
 }
 
-.info-card h4 {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.info-card p {
-  margin: 4px 0 0;
-  font-size: 1.4rem;
-  font-weight: 800;
+.info-value {
+  font-size: $text-md;
   color: var(--text);
 }
 
-.grafico-card {
-  margin-top: 18px;
-  padding: 20px;
-  outline: 1px solid var(--border);
-  outline-offset: -1px;
-  border-radius: 14px;
-  background: var(--color-surface);
-  box-shadow: var(--shadow);
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $space-3;
 }
 
-.chart-container {
-  height: 260px;
-  margin: 18px 0;
+.stat-card {
+  @include surface-card($space-4, $radius-lg);
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: $space-3;
+
+  &.stat-wide {
+    grid-column: 1 / -1;
+  }
 }
 
-.chart-empty {
-  margin: 0;
+.stat-icon {
+  font-size: 2rem;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: $text-xs;
+  font-weight: $font-semibold;
   color: var(--text-muted);
-  font-size: 0.9rem;
-  text-align: center;
 }
 
-.grafico-card h2 {
-  margin: 0 0 12px;
-  font-size: 1.15rem;
-}
-
-.grafico-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 12px;
-}
-
-.btn-detalhes {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary);
-  color: var(--color-on-primary);
-  border: none;
-  padding: 10px 20px;
-  border-radius: 10px;
-  font-size: 0.84rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid),
-    box-shadow 0.2s var(--ease-fluid);
-}
-
-.btn-detalhes:hover {
-  background: var(--primary-hover);
-  box-shadow: var(--shadow-primary);
-}
-
-.btn-detalhes:active {
-  transform: scale(0.98);
-}
-
-@media (min-width: 900px) {
-  .info-card {
-    flex: 1 1 160px;
-    min-width: 140px;
-  }
-
-  .profile-info-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: $font-extrabold;
+  color: var(--text);
 }
 </style>
