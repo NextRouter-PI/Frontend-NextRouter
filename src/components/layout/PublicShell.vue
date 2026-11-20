@@ -1,7 +1,4 @@
 <script setup>
-import ThemeButton from '@/components/buttons/ThemeButton.vue'
-import Logo from '@/assets/images/logo.png'
-
 defineProps({
   showBack: { type: Boolean, default: false },
   titlePrefix: { type: String, default: '' },
@@ -16,14 +13,7 @@ const emit = defineEmits(['back'])
 
 <template>
   <div class="public-shell">
-    <header class="shell-header">
-      <RouterLink to="/login" class="shell-logo" aria-label="NextRouter">
-        <img :src="Logo" alt="NextRouter" />
-      </RouterLink>
-      <ThemeButton />
-    </header>
-
-    <main :class="['shell-main', { 'is-full-bleed': fullBleed, 'is-wide': wide }]">
+    <div :class="['shell-main', { 'is-full-bleed': fullBleed, 'is-wide': wide }]">
       <div v-if="showBack || titlePrefix || titleHighlight" class="shell-title-bar">
         <button
           v-if="showBack"
@@ -46,7 +36,7 @@ const emit = defineEmits(['back'])
       <div v-if="showDivider" class="shell-divider" aria-hidden="true"></div>
 
       <slot />
-    </main>
+    </div>
 
     <footer class="shell-footer">
       <div class="footer-inner">
@@ -57,84 +47,70 @@ const emit = defineEmits(['back'])
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .public-shell {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--header-height));
   display: flex;
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
 }
 
-.shell-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  background: var(--chrome-bg);
-  border-bottom: 2px solid var(--primary);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
-}
-
-.shell-logo {
-  display: inline-flex;
-  align-items: center;
-}
-
-.shell-logo img {
-  height: 36px;
-  width: auto;
-  display: block;
-}
-
 .shell-main {
   flex: 1;
   width: 100%;
-  max-width: 520px;
+  max-width: $container-sm;
   margin: 0 auto;
-  padding: 20px 18px 36px;
-  box-sizing: border-box;
-}
+  padding: $space-5 18px 36px;
 
-.shell-main.is-full-bleed {
-  max-width: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
+  &.is-full-bleed {
+    max-width: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  @include from($bp-md) {
+    max-width: 580px;
+    padding: $space-8 $space-6 $space-12;
+
+    &.is-wide {
+      max-width: 820px;
+    }
+
+    &.is-full-bleed {
+      max-width: none;
+      padding: 0;
+    }
+  }
 }
 
 .shell-title-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: $space-4;
 }
 
 .shell-back-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
   width: 40px;
   height: 40px;
-  border: none;
-  border-radius: 10px;
+  border-radius: $radius-md;
   background: transparent;
   color: var(--text);
   font-size: 1.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid);
-}
+  transition:
+    background-color $duration-normal $ease-fluid,
+    transform $duration-fast $ease-fluid;
 
-.shell-back-btn:hover {
-  background: var(--altbg);
-}
+  &:hover {
+    background: var(--altbg);
+  }
 
-.shell-back-btn:active {
-  transform: scale(0.94);
+  &:active {
+    transform: scale(0.94);
+  }
 }
 
 .shell-spacer {
@@ -143,23 +119,26 @@ const emit = defineEmits(['back'])
 }
 
 .shell-heading {
-  margin: 0;
-  font-size: 1.35rem;
-  font-weight: 800;
+  font-size: $text-xl;
+  font-weight: $font-extrabold;
   color: var(--text);
   text-align: center;
-}
 
-.shell-heading-accent {
-  color: var(--primary);
+  @include from($bp-md) {
+    font-size: 1.55rem;
+  }
+
+  &-accent {
+    color: var(--primary);
+  }
 }
 
 .shell-divider {
   height: 2px;
   width: 100%;
-  border-radius: 999px;
+  border-radius: $radius-pill;
   background: var(--primary);
-  margin: 6px 0 20px;
+  margin: 6px 0 $space-5;
 }
 
 .shell-footer {
@@ -167,40 +146,20 @@ const emit = defineEmits(['back'])
   background: var(--chrome-bg);
   border-top: 2px solid var(--primary);
   color: var(--chrome-text);
-  padding: 16px 22px 22px;
+  padding: $space-4 22px 22px;
 }
 
 .footer-inner {
-  max-width: 1120px;
+  max-width: $container-xl;
   margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  gap: $space-2;
+  font-size: $text-md;
+  font-weight: $font-medium;
 }
 
 .footer-icon {
   font-size: 1.15rem;
-}
-
-@media (min-width: 768px) {
-  .shell-main {
-    max-width: 580px;
-    padding: 32px 24px 48px;
-  }
-
-  .shell-main.is-wide {
-    max-width: 820px;
-  }
-
-  .shell-main.is-full-bleed {
-    max-width: none;
-    padding: 0;
-  }
-
-  .shell-heading {
-    font-size: 1.55rem;
-  }
 }
 </style>

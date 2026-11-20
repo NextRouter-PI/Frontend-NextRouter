@@ -1,13 +1,27 @@
+import { PERSONAL_ROLES, ROUTE_PATHS, USER_ROLES } from '@/constants'
+
 export function navigationItems(role) {
-  const company = role === 'company'
+  const isCompany = role === USER_ROLES.COMPANY
   return [
-    { to: '/', title: 'Home', icon: 'mdi-home' },
-    { to: company ? '/transporte' : '/historico', title: company ? 'Veículos' : 'Histórico', icon: company ? 'mdi-bus' : 'mdi-history' },
-    { to: '/lista', title: company ? 'Rotas' : 'Lista', icon: company ? 'mdi-map-outline' : 'mdi-format-list-bulleted' },
-    ...(company ? [
-      { to: '/pontos-operacionais', title: 'Pontos', icon: 'mdi-map-marker-radius' },
-      { to: '/usuarios', title: 'Usuários', icon: 'mdi-account-group' },
-    ] : []),
-    ...(['passenger', 'driver'].includes(role) ? [{ to: '/vinculos', title: 'Vínculo', icon: 'mdi-domain' }] : []),
+    { to: ROUTE_PATHS.HOME, title: 'Home', icon: 'mdi-home' },
+    {
+      to: isCompany ? ROUTE_PATHS.TRANSPORT : ROUTE_PATHS.HISTORY,
+      title: isCompany ? 'Veículos' : 'Histórico',
+      icon: isCompany ? 'mdi-bus' : 'mdi-history',
+    },
+    {
+      to: ROUTE_PATHS.LIST,
+      title: isCompany ? 'Rotas' : 'Lista',
+      icon: isCompany ? 'mdi-map-outline' : 'mdi-format-list-bulleted',
+    },
+    ...(isCompany
+      ? [
+          { to: ROUTE_PATHS.OPERATIONAL_POINTS, title: 'Pontos', icon: 'mdi-map-marker-radius' },
+          { to: ROUTE_PATHS.USERS, title: 'Usuários', icon: 'mdi-account-group' },
+        ]
+      : []),
+    ...(PERSONAL_ROLES.includes(role)
+      ? [{ to: ROUTE_PATHS.MEMBERSHIPS, title: 'Vínculo', icon: 'mdi-domain' }]
+      : []),
   ]
 }
