@@ -150,7 +150,7 @@ const salvar = async () => {
   margin-top: 12px;
   color: var(--primary);
   font-weight: 700;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .form-group {

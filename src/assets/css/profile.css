@@ -6,7 +6,7 @@
 .account-section h2 { margin: 0 0 16px; font-size: 1.1rem; }
 .account-section h3 { font-size: 1rem; }
 .account-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; }
-.account-actions a, .account-link { color: var(--text); text-decoration: underline; }
+.account-actions a, .account-link { color: var(--text); text-decoration: none; }
 .account-notice { padding: 12px; border-left: 4px solid var(--primary); background: var(--superfice); }
 .account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
 .account-grid dt { font-weight: 600; margin-bottom: 4px; }

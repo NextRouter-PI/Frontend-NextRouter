@@ -268,7 +268,7 @@ async function enviarLogin() {
 }
 
 .forgot-link:hover {
-  text-decoration: underline;
+  opacity: 0.85;
 }
 
 .bottom-actions {
@@ -304,7 +304,7 @@ async function enviarLogin() {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-muted);
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .discover-link:hover {

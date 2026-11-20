@@ -255,10 +255,6 @@ onUnmounted(() => {
           As garagens ficam na seção de Veículos.
         </p>
       </div>
-      <div class="header-links">
-        <RouterLink to="/transporte" class="btn-outline">Frota e Garagens</RouterLink>
-        <RouterLink to="/lista" class="btn-outline">Grupos e Rotas</RouterLink>
-      </div>
     </div>
 
     <p v-if="notice" class="notice-banner" role="status">{{ notice }}</p>
@@ -408,11 +404,6 @@ onUnmounted(() => {
   margin: 0;
   color: var(--text-muted);
   font-size: 0.92rem;
-}
-
-.header-links {
-  display: flex;
-  gap: 8px;
 }
 
 .notice-banner,

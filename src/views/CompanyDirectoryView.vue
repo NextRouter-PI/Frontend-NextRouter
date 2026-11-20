@@ -390,7 +390,7 @@ function removeCityFilter() {
   color: var(--primary);
   font-size: 0.9rem;
   font-weight: 600;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 @media (min-width: 768px) {

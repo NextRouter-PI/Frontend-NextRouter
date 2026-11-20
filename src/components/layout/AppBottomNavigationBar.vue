@@ -1,15 +1,9 @@
 <script setup>
-import { useRouter } from 'vue-router'
 import { computed } from 'vue'
 import { state } from '@/stores/state'
 import { navigationItems } from '@/navigation'
 
-const router = useRouter()
 const items = computed(() => navigationItems(state.role))
-
-async function handleLogout() {
-  await router.push({ name: 'logout' })
-}
 </script>
 
 <template>
@@ -18,11 +12,6 @@ async function handleLogout() {
       <span class="mdi" :class="item.icon"></span>
       <small>{{ item.title }}</small>
     </router-link>
-
-    <button class="nav-item logout-btn" title="Sair" @click="handleLogout">
-      <span class="mdi mdi-logout"></span>
-      <small>Sair</small>
-    </button>
   </footer>
 </template>
 
@@ -82,15 +71,5 @@ async function handleLogout() {
 .nav-item.router-link-active small {
   color: var(--primary);
   transform: translateY(-4px);
-}
-
-.logout-btn {
-  cursor: pointer;
-  background: none;
-  border: none;
-  font-family: inherit;
-  font-size: inherit;
-  padding: 0;
-  color: var(--text-muted);
 }
 </style>

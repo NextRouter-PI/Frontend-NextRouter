@@ -2,7 +2,6 @@ export function navigationItems(role) {
   const company = role === 'company'
   return [
     { to: '/', title: 'Home', icon: 'mdi-home' },
-    { to: '/usuario', title: 'Usuário', icon: 'mdi-account' },
     { to: '/transporte', title: company ? 'Veículos' : 'Transporte', icon: company ? 'mdi-bus' : 'mdi-car' },
     { to: '/lista', title: company ? 'Rotas' : 'Lista', icon: company ? 'mdi-map-outline' : 'mdi-format-list-bulleted' },
     ...(company ? [

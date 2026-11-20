@@ -268,7 +268,7 @@ a {
 }
 
 a:hover {
-  text-decoration: underline;
+  opacity: 0.85;
 }
 
 .erro {

@@ -60,6 +60,6 @@ import RoleSelector from '@/components/auth/RoleSelector.vue'
 }
 
 .footer-link:hover {
-  text-decoration: underline;
+  opacity: 0.85;
 }
 </style>

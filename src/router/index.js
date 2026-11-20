@@ -16,9 +16,23 @@ const router = createRouter({
     },
     {
       path: "/usuario",
-      name: "usuario",
       component: () => import("../views/UserView.vue"),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true },
+      redirect: "/usuario/profile",
+      children: [
+        {
+          path: "profile",
+          name: "usuario-profile",
+          component: () => import("../views/UserProfileView.vue"),
+          meta: { requiresAuth: true }
+        },
+        {
+          path: "security",
+          name: "usuario-security",
+          component: () => import("../views/AccountSecurityView.vue"),
+          meta: { requiresAuth: true }
+        }
+      ]
     },
     {
       path: "/lista",
@@ -83,7 +97,7 @@ const router = createRouter({
     {
       path: '/seguranca',
       name: 'seguranca',
-      component: () => import('../views/AccountSecurityView.vue'),
+      redirect: '/usuario/security',
       meta: { requiresAuth: true },
     },
     {

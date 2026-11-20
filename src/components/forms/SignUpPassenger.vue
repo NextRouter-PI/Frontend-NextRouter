@@ -544,7 +544,8 @@ const handleSubmit = async () => {
 .reenviar-texto .resend-code {
   color: var(--primary);
   cursor: pointer;
-  text-decoration: underline;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .btn-back {

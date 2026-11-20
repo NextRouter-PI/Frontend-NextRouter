@@ -168,7 +168,6 @@ onMounted(() => {
           <p class="sub-text">
             Responda aos atendimentos abertos na aba Lista e aguarde o fechamento da janela, o cálculo e a publicação da viagem pela empresa.
           </p>
-          <RouterLink to="/lista" class="link-action">Responder atendimentos por data</RouterLink>
         </div>
       </div>
 
@@ -264,7 +263,7 @@ onMounted(() => {
   margin-top: 8px;
   color: var(--primary);
   font-weight: 700;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .vehicle-header {

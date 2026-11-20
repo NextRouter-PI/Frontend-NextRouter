@@ -1,17 +1,12 @@
 <script setup>
-import Logo from "@/assets/images/logo.png"
-import { RouterLink, useRouter } from "vue-router";
+import Logo from '@/assets/images/logo.png'
+import { RouterLink } from 'vue-router'
 import { computed } from 'vue'
 import { state } from '@/stores/state'
 import { navigationItems } from '@/navigation'
 
-const router = useRouter()
 const isCompany = computed(() => state.role === 'company')
 const items = computed(() => navigationItems(state.role))
-
-async function handleLogout() {
-  await router.push({ name: 'logout' })
-}
 </script>
 
 <template>
@@ -32,11 +27,6 @@ async function handleLogout() {
       </router-link>
 
     </nav>
-
-    <button class="nav-item logout-btn" title="Sair" @click="handleLogout">
-      <span class="mdi mdi-logout"></span>
-      <small>Sair</small>
-    </button>
   </aside>
 </template>
 
@@ -217,22 +207,5 @@ async function handleLogout() {
 
 .nav-item:active {
   transform: scale(0.95);
-}
-
-.logout-btn {
-  margin-top: auto;
-  cursor: pointer;
-  background: none;
-  border: none;
-  font-family: inherit;
-  font-size: inherit;
-}
-
-.logout-btn:hover span {
-  color: var(--danger);
-}
-
-.logout-btn:hover small {
-  color: var(--danger);
 }
 </style>
