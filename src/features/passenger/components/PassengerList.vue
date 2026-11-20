@@ -3,10 +3,10 @@ import { computed, shallowRef, watch } from 'vue'
 import { WINDOW_FULL_LABELS, WINDOW_STATES } from '@/constants'
 import { formatDateChip, formatDateTimeBr } from '@/utils/formatters'
 import { useTransportQuestionnaire } from '@/features/transport/composables/useTransportQuestionnaire'
+import { useToast } from '@/composables/useToast'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import StatusBanner from '@/components/ui/StatusBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import PassengerRoutesCard from '@/features/transport/components/PassengerRoutesCard.vue'
 import AttendanceDayTabs from '@/features/passenger/components/attendance/AttendanceDayTabs.vue'
@@ -14,6 +14,7 @@ import AttendanceSummaryAxes from '@/features/passenger/components/attendance/At
 import AttendanceResponseForms from '@/features/passenger/components/attendance/AttendanceResponseForms.vue'
 
 const editingAnswer = shallowRef(false)
+const { showToast } = useToast()
 
 const {
   loading,
@@ -34,18 +35,16 @@ const {
   withdrawLeg,
 } = useTransportQuestionnaire()
 
+watch(notice, (msg) => {
+  if (msg) showToast(msg, 'success')
+})
+watch(error, (msg) => {
+  if (msg) showToast(msg, 'error')
+})
+
 const windowLabel = computed(() => {
   const w = selectedEligibility.value?.dayData?.window
   return WINDOW_FULL_LABELS[w] || 'Estado da janela não informado'
-})
-
-const responseStateLabel = computed(() => {
-  const r = selectedEligibility.value?.response
-  if (!r || !r.answered_at) return 'Sem resposta enviada (ausência de resposta)'
-  const ida = r.outbound_service && !r.outbound_withdrawn_at
-  const volta = r.return_service && !r.return_withdrawn_at
-  if (!ida && !volta) return 'Negativa explícita registrada (não utilizará o transporte neste atendimento)'
-  return `Intenção enviada (revisão ${r.revision})`
 })
 
 const alreadyAnswered = computed(() => Boolean(selectedEligibility.value?.response?.answered_at))
@@ -84,6 +83,7 @@ async function handleSendNormalAnswer() {
           variant="outline"
           size="sm"
           icon="mdi-refresh"
+          :loading="loading"
           :disabled="loading || busy"
           @click="refresh"
         >
@@ -91,9 +91,6 @@ async function handleSendNormalAnswer() {
         </BaseButton>
       </template>
     </PageHeader>
-
-    <StatusBanner variant="success" :message="notice" />
-    <StatusBanner variant="danger" :message="error" />
 
     <PassengerRoutesCard />
 
@@ -147,8 +144,6 @@ async function handleSendNormalAnswer() {
 
         <AttendanceSummaryAxes
           :eligibility="selectedEligibility"
-          :response-state-label="responseStateLabel"
-          :service-label="serviceLabel"
           :busy="busy"
           @withdraw-leg="withdrawLeg"
         />

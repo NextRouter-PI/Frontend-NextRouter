@@ -2,6 +2,7 @@
 import PassengerList from '@/features/passenger/components/PassengerList.vue'
 import DriverList from '@/features/driver/components/DriverList.vue'
 import CompanyRotas from '@/features/company/components/CompanyRotas.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { USER_ROLES } from '@/constants'
 import { state } from '@/stores/state'
 </script>
@@ -12,7 +13,5 @@ import { state } from '@/stores/state'
     <DriverList v-else-if="state.role === USER_ROLES.DRIVER" />
     <CompanyRotas v-else-if="state.role === USER_ROLES.COMPANY" />
   </div>
-  <div v-else>
-    <p>Carregando...</p>
-  </div>
+  <LoadingSpinner v-else size="lg" />
 </template>

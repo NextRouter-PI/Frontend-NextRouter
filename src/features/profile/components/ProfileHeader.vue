@@ -1,12 +1,13 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useOwnProfile } from '@/features/profile/composables/useOwnProfile'
+import { useToast } from '@/composables/useToast'
 import AvatarUpload from '@/components/layout/AvatarUpload.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
 const context = useOwnProfile()
+const { showToast } = useToast()
 const { user, profile, role, ready, busy, loading, editing } = context
-const photoError = ref('')
 const pendingPhoto = ref(null)
 
 const roleLabel = computed(() => ({ passenger: 'Passageiro', driver: 'Motorista', company: 'Empresa' })[role.value])
@@ -27,9 +28,12 @@ const memberSince = computed(() =>
 )
 
 async function selectPhoto(file) {
-  photoError.value = ''
   pendingPhoto.value = file
   if (await context.replaceAsset('photo', file)) pendingPhoto.value = null
+}
+
+function handlePhotoError(message) {
+  if (message) showToast(message, 'error')
 }
 </script>
 
@@ -41,8 +45,13 @@ async function selectPhoto(file) {
           :model-value="user?.profile_picture_data?.url"
           :disabled="!ready || busy || loading || Boolean(editing)"
           @file-select="selectPhoto"
-          @error="photoError = $event"
+          @error="handlePhotoError"
         />
+        <Transition name="fade-scale">
+          <div v-if="busy" class="avatar-busy-overlay" role="status" aria-label="Salvando perfil">
+            <span class="avatar-busy-spinner" aria-hidden="true"></span>
+          </div>
+        </Transition>
       </div>
 
       <div class="banner-info">
@@ -60,13 +69,6 @@ async function selectPhoto(file) {
         </p>
       </div>
     </div>
-
-    <Transition name="fade-slide">
-      <p v-if="busy" class="banner-status" role="status">Salvando e consultando o perfil...</p>
-    </Transition>
-    <Transition name="fade-slide">
-      <p v-if="photoError" class="banner-error" role="alert">{{ photoError }}</p>
-    </Transition>
 
     <div v-if="pendingPhoto && !busy" class="banner-pending">
       <span>Arquivo pendente: {{ pendingPhoto.name }}</span>
@@ -101,7 +103,32 @@ async function selectPhoto(file) {
 }
 
 .banner-avatar-wrap {
+  position: relative;
   flex-shrink: 0;
+}
+
+.avatar-busy-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: $radius-round;
+  background: rgba(0, 0, 0, 0.48);
+  @include flex-center;
+  pointer-events: none;
+}
+
+.avatar-busy-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: $radius-round;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--color-on-primary);
+  animation: avatar-spin 0.65s linear infinite;
+}
+
+@keyframes avatar-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .banner-info {

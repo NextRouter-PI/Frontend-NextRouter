@@ -1,10 +1,26 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { useTransportState } from '@/stores/useTransportState'
+import { useToast } from '@/composables/useToast'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 const { state, loadDriverData, registrarPresencaParticipante } = useTransportState()
+const { showToast } = useToast()
 const transport = computed(() => state.driver)
 const isInProgress = computed(() => transport.value?.travelStatus === 'in_progress')
+
+watch(
+  () => state.notice,
+  (msg) => {
+    if (msg) showToast(msg, 'success')
+  },
+)
+watch(
+  () => state.error,
+  (msg) => {
+    if (msg) showToast(msg, 'error')
+  },
+)
 
 const statusLabel = {
   allocated: 'Alocado (aguardando embarque)',
@@ -28,10 +44,7 @@ onMounted(() => {
       </p>
     </div>
 
-    <p v-if="state.notice" class="notice-banner" role="status">{{ state.notice }}</p>
-    <p v-if="state.error" class="error-banner" role="alert">{{ state.error }}</p>
-
-    <div v-if="state.loading" class="no-passengers">Carregando lista operacional...</div>
+    <LoadingSpinner v-if="state.loading" />
 
     <template v-else-if="transport">
       <div v-if="transport.travels.length" class="schedule-selector">
