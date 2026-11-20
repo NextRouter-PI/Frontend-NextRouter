@@ -12,11 +12,13 @@ const { state: transportState, loadPassengerData } = useTransportState()
 const { state: tracking, startViewerTracking, stopTracking } = useTravelTracking()
 const scope = useAccountScope()
 
+const sheetExpanded = ref(true)
 const membershipLoaded = ref(false)
 const openMembership = ref(null)
 const openCompany = ref(null)
 
 const isSharing = computed(() => tracking.tracking && tracking.role === 'viewer')
+const activeTravel = computed(() => transportState.passenger?.travel || null)
 const mapsUrl = computed(() => {
   if (tracking.latitude == null || tracking.longitude == null) return null
   return `https://www.google.com/maps?q=${tracking.latitude},${tracking.longitude}`
@@ -24,6 +26,18 @@ const mapsUrl = computed(() => {
 const updatedAtLabel = computed(() => {
   if (!tracking.updatedAt) return ''
   return new Date(tracking.updatedAt).toLocaleTimeString('pt-BR')
+})
+const locationSummary = computed(() => {
+  const parts = [userLogged.value?.city, userLogged.value?.neighborhood].filter(Boolean)
+  if (parts.length) return parts.join(', ')
+  if (openCompany.value?.trade_name) return openCompany.value.trade_name
+  return 'Sua localização'
+})
+const statusDotClass = computed(() => {
+  if (isSharing.value) return 'live'
+  if (openMembership.value?.status === 'active') return 'active'
+  if (openMembership.value?.status === 'pending') return 'pending'
+  return 'idle'
 })
 
 async function fetchMembershipStatus() {
@@ -72,148 +86,287 @@ onUnmounted(() => {
 
 <template>
   <div class="home-page">
-    <MapBackground self-marker-label="Você" tracking-marker-label="Motorista" tracking-marker-icon="mdi-bus" />
-    <div class="welcome-card">
-      <div class="icon-wrap">
-        <span class="mdi mdi-account-circle-outline"></span>
-      </div>
-      <h1>Olá, {{ userLogged.name }}</h1>
-      <p class="subtitle">Bem-vindo ao NextRouter</p>
-      <div class="badge">
-        <span class="mdi mdi-account-check"></span>
-        Passageiro
-      </div>
+    <MapBackground
+      self-marker-label="Você"
+      tracking-marker-label="Motorista"
+      tracking-marker-icon="mdi-bus"
+    />
 
-      <div v-if="membershipLoaded && !openMembership" class="onboarding-card">
-        <p class="onboarding-title">Você ainda não possui vínculo com uma empresa</p>
-        <p class="onboarding-desc">
-          Pesquise uma empresa de transporte aprovada e envie seu pedido de vínculo para ter acesso aos atendimentos e rotas.
-        </p>
-        <div class="onboarding-actions">
-          <RouterLink to="/empresas" class="btn-primary">Buscar empresas</RouterLink>
-          <RouterLink to="/vinculos" class="btn-outline">Meus vínculos</RouterLink>
+    <section class="map-sheet" :class="{ collapsed: !sheetExpanded }" aria-label="Resumo da viagem e vínculo">
+      <button
+        type="button"
+        class="sheet-handle-btn"
+        :aria-expanded="sheetExpanded"
+        @click="sheetExpanded = !sheetExpanded"
+      >
+        <span class="sheet-pill" aria-hidden="true"></span>
+        <div class="sheet-summary-row">
+          <div class="sheet-location">
+            <span class="mdi mdi-map-marker-outline" aria-hidden="true"></span>
+            <span>{{ locationSummary }}</span>
+          </div>
+          <div class="sheet-status-right">
+            <span class="status-dot" :class="statusDotClass" aria-hidden="true"></span>
+            <span
+              class="mdi chevron-icon"
+              :class="sheetExpanded ? 'mdi-chevron-down' : 'mdi-chevron-up'"
+              aria-hidden="true"
+            ></span>
+          </div>
         </div>
-      </div>
+      </button>
 
-      <div v-else-if="membershipLoaded && openMembership?.status === 'pending'" class="onboarding-card pending">
-        <p class="onboarding-title">Solicitação de vínculo pendente</p>
-        <p class="onboarding-desc">
-          Aguardando aprovação de <strong>{{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}</strong>.
-        </p>
-        <div class="onboarding-actions">
-          <RouterLink to="/vinculos" class="btn-outline">Acompanhar pedido</RouterLink>
-        </div>
-      </div>
+      <Transition name="fade-slide">
+        <div v-if="sheetExpanded" class="sheet-body">
+          <div class="sheet-user-row">
+            <div class="sheet-avatar">
+              <span class="mdi mdi-account" aria-hidden="true"></span>
+            </div>
+            <div class="sheet-user-info">
+              <h1>Olá, {{ userLogged?.name }}</h1>
+              <span class="sheet-role-badge">
+                <span class="mdi mdi-seat-passenger" aria-hidden="true"></span>
+                Passageiro
+              </span>
+            </div>
+          </div>
 
-      <div v-else-if="membershipLoaded && openMembership?.status === 'active'" class="onboarding-card active">
-        <p class="onboarding-title">
-          Vinculado a {{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}
-        </p>
-        <div class="onboarding-actions">
-          <RouterLink to="/lista" class="btn-primary">Responder atendimentos</RouterLink>
-          <RouterLink to="/historico" class="btn-outline">Histórico</RouterLink>
-        </div>
-      </div>
+          <div v-if="isSharing" class="sheet-panel live-panel">
+            <div class="tracking-header">
+              <span class="pulse-dot"></span>
+              Motorista em rota (ao vivo)
+            </div>
+            <p v-if="tracking.latitude != null" class="panel-meta">
+              {{ tracking.latitude.toFixed(6) }}, {{ tracking.longitude.toFixed(6) }}
+              <span v-if="updatedAtLabel"> · {{ updatedAtLabel }}</span>
+              <span v-if="tracking.stale"> (desatualizado)</span>
+            </p>
+            <p v-else class="panel-meta">Aguardando localização do motorista...</p>
+            <p v-if="tracking.error" class="panel-error" role="alert">{{ tracking.error }}</p>
+            <a v-if="mapsUrl" :href="mapsUrl" target="_blank" rel="noopener noreferrer" class="sheet-cta">
+              Abrir no Google Maps <span class="mdi mdi-open-in-new" aria-hidden="true"></span>
+            </a>
+          </div>
 
-      <div v-if="isSharing" class="tracking-card">
-        <div class="tracking-header">
-          <span class="pulse-dot"></span>
-          Localização do motorista em tempo real
+          <div v-if="membershipLoaded && !openMembership" class="sheet-panel">
+            <p class="panel-title">Sem vínculo empresarial</p>
+            <p class="panel-meta">
+              Pesquise uma empresa aprovada e envie seu pedido de vínculo para acessar atendimentos e rotas.
+            </p>
+            <div class="sheet-actions">
+              <RouterLink to="/empresas" class="sheet-cta">Buscar empresas</RouterLink>
+              <RouterLink to="/vinculos" class="sheet-cta-outline">Meus vínculos</RouterLink>
+            </div>
+          </div>
+
+          <div v-else-if="membershipLoaded && openMembership?.status === 'pending'" class="sheet-panel pending">
+            <p class="panel-title">Solicitação pendente</p>
+            <p class="panel-meta">
+              Aguardando aprovação de <strong>{{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}</strong>.
+            </p>
+            <div class="sheet-actions">
+              <RouterLink to="/vinculos" class="sheet-cta-outline">Acompanhar pedido</RouterLink>
+            </div>
+          </div>
+
+          <div v-else-if="membershipLoaded && openMembership?.status === 'active'" class="sheet-panel active">
+            <p class="panel-title">
+              {{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}
+            </p>
+            <p v-if="activeTravel" class="panel-meta">
+              Próxima viagem #{{ activeTravel.id }} · {{ activeTravel.date }}
+              ({{ activeTravel.direction === 'outbound' ? 'Ida' : 'Retorno' }})
+            </p>
+            <p v-else class="panel-meta">Vínculo ativo. Responda aos atendimentos abertos na aba Lista.</p>
+            <div class="sheet-actions">
+              <RouterLink to="/lista" class="sheet-cta">Responder atendimentos</RouterLink>
+              <RouterLink to="/historico" class="sheet-cta-outline">Histórico</RouterLink>
+            </div>
+          </div>
         </div>
-        <p v-if="tracking.latitude != null" class="tracking-coords">
-          {{ tracking.latitude.toFixed(6) }}, {{ tracking.longitude.toFixed(6) }}
-          <span v-if="updatedAtLabel" class="tracking-time">· atualizado às {{ updatedAtLabel }}</span>
-          <span v-if="tracking.stale" class="tracking-time"> (posição desatualizada)</span>
-        </p>
-        <p v-else class="tracking-coords">Aguardando localização do motorista...</p>
-        <p v-if="tracking.error" class="tracking-time" role="alert">{{ tracking.error }}</p>
-        <a v-if="mapsUrl" :href="mapsUrl" target="_blank" rel="noopener noreferrer" class="tracking-link">
-          Ver no mapa <span class="mdi mdi-open-in-new"></span>
-        </a>
-      </div>
-    </div>
+      </Transition>
+    </section>
   </div>
 </template>
 
 <style scoped>
 .home-page {
   position: relative;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
   background: var(--bg);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 0 20px;
+  justify-content: flex-end;
   overflow: hidden;
 }
 
-.welcome-card {
+.map-sheet {
   position: relative;
-  z-index: 1;
-  text-align: center;
-  max-width: 360px;
+  z-index: 2;
   width: 100%;
-  padding: 40px 24px;
-  background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
-  border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(6px);
+  background: var(--chrome-bg);
+  color: var(--chrome-text);
+  border-top: 2px solid var(--primary);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.35);
+  transition: transform 0.28s var(--ease-fluid);
 }
 
-.dark .welcome-card {
-  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
-}
-
-.icon-wrap {
-  display: inline-flex;
+.sheet-handle-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: rgba(223,128,26,0.1);
-  margin-bottom: 20px;
+  gap: 8px;
+  padding: 10px 18px 12px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
 }
 
-.icon-wrap .mdi {
-  font-size: 2.5rem;
-  color: var(--primary);
+.sheet-pill {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
 }
 
-h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0 0 6px;
+.sheet-summary-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.subtitle {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin: 0 0 16px;
-}
-
-.badge {
+.sheet-location {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 16px;
-  background: rgba(223,128,26,0.1);
-  color: var(--primary);
-  border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   font-weight: 600;
+  color: #ffffff;
+  min-width: 0;
 }
 
-.tracking-card {
-  margin-top: 20px;
-  padding: 16px;
+.sheet-location .mdi {
+  color: var(--primary);
+  font-size: 1.15rem;
+}
+
+.sheet-status-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.status-dot.live,
+.status-dot.active {
+  background: var(--success);
+}
+
+.status-dot.pending {
+  background: var(--warning);
+}
+
+.status-dot.idle {
+  background: var(--chrome-muted);
+}
+
+.chevron-icon {
+  font-size: 1.25rem;
+  color: var(--chrome-muted);
+}
+
+.sheet-body {
+  padding: 2px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sheet-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sheet-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(236, 131, 20, 0.16);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.sheet-user-info h1 {
+  margin: 0 0 3px;
+  font-size: 1.12rem;
+  color: #ffffff;
+}
+
+.sheet-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.sheet-panel {
+  padding: 14px;
   border-radius: 14px;
-  background: var(--bg);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  text-align: left;
+  background: var(--chrome-surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sheet-panel.pending {
+  border-color: rgba(234, 179, 8, 0.4);
+}
+
+.sheet-panel.active,
+.sheet-panel.live-panel {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.panel-meta {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--chrome-muted);
+}
+
+.panel-meta strong {
+  color: #ffffff;
+}
+
+.panel-error {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--danger);
 }
 
 .tracking-header {
@@ -222,15 +375,14 @@ h1 {
   gap: 8px;
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--success, #22c55e);
-  margin-bottom: 8px;
+  color: var(--success);
 }
 
 .pulse-dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--success, #22c55e);
+  background: var(--success);
   animation: pulse 1.5s infinite;
   flex-shrink: 0;
 }
@@ -241,93 +393,61 @@ h1 {
   100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
-.tracking-coords {
-  font-size: 0.85rem;
-  color: var(--text);
-  margin: 0 0 8px;
-}
-
-.tracking-time {
-  color: var(--text-muted);
-  font-weight: 400;
-}
-
-.tracking-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--primary);
-  text-decoration: none;
-}
-
-.onboarding-card {
-  margin-top: 20px;
-  padding: 16px;
-  border-radius: 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  text-align: left;
-}
-
-.onboarding-card.pending {
-  border-color: rgba(234, 179, 8, 0.45);
-}
-
-.onboarding-card.active {
-  border-color: rgba(34, 197, 94, 0.35);
-}
-
-.onboarding-title {
-  margin: 0 0 6px;
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.onboarding-desc {
-  margin: 0 0 12px;
-  font-size: 0.84rem;
-  line-height: 1.45;
-  color: var(--text-muted);
-}
-
-.onboarding-actions {
+.sheet-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-top: 4px;
 }
 
-.btn-primary,
-.btn-outline {
+.sheet-cta,
+.sheet-cta-outline {
+  flex: 1 1 130px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 0.84rem;
-  font-weight: 600;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
   text-decoration: none;
+  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid);
 }
 
-.btn-primary {
+.sheet-cta {
   background: var(--primary);
   color: #ffffff;
-  border: 1px solid var(--primary);
 }
 
-.btn-primary:hover {
+.sheet-cta:hover {
   background: var(--primary-hover);
 }
 
-.btn-outline {
+.sheet-cta-outline {
   background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: #ffffff;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
 }
 
-.btn-outline:hover {
-  background: var(--altbg);
+.sheet-cta-outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Desktop: card flutuante no canto inferior direito sobre o mapa (Passageiro Desktop.png) */
+@media (min-width: 901px) {
+  .home-page {
+    min-height: calc(100vh - var(--header-height));
+    align-items: flex-end;
+    padding: 24px;
+  }
+
+  .map-sheet {
+    max-width: 390px;
+    border: 1.5px solid rgba(236, 131, 20, 0.45);
+    border-radius: 20px;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42);
+  }
 }
 </style>

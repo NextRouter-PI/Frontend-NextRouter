@@ -252,8 +252,12 @@ onMounted(refresh)
       </button>
     </div>
 
-    <p v-if="notice" class="notice-msg" role="status">{{ notice }}</p>
-    <p v-if="error" class="error-msg" role="alert">{{ error }}</p>
+    <Transition name="fade-slide">
+      <p v-if="notice" class="notice-msg" role="status">{{ notice }}</p>
+    </Transition>
+    <Transition name="fade-slide">
+      <p v-if="error" class="error-msg" role="alert">{{ error }}</p>
+    </Transition>
     <p v-if="loading" class="status-msg">Consultando histórico...</p>
 
     <!-- 1. Viagens passadas -->

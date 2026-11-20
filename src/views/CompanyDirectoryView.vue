@@ -122,33 +122,35 @@ function removeCityFilter() {
       <p v-if="validationError" class="validation-hint" role="alert">{{ validationError }}</p>
       <div role="alert"><ErrorMessage :message="error" /></div>
 
-      <p v-if="loading" class="status-text" role="status">Pesquisando empresas...</p>
+      <Transition name="fade-slide" mode="out-in">
+        <p v-if="loading" key="loading" class="status-text" role="status">Pesquisando empresas...</p>
 
-      <section v-else-if="searched && !error" aria-label="Resultados da busca">
-        <div v-if="!results.length" class="empty-state" role="status">
-          <span class="mdi mdi-map-search-outline empty-icon" aria-hidden="true"></span>
-          <p class="empty-title">Nenhuma empresa encontrada para este grupo.</p>
-          <p class="empty-hint">Verifique o nome do grupo de rota ou ajuste o filtro de estado e cidade.</p>
-        </div>
-        <div v-else class="results-list">
-          <CompanyResultCard
-            v-for="company in results"
-            :key="company.id"
-            :company="company"
-            :logged="state.logged"
-            :can-request-membership="personal"
-          />
-        </div>
-        <PageNavigation :page="page" :total-pages="totalPages" :disabled="loading" @change="goToPage" />
-      </section>
+        <section v-else-if="searched && !error" key="results" aria-label="Resultados da busca">
+          <div v-if="!results.length" class="empty-state" role="status">
+            <span class="mdi mdi-map-search-outline empty-icon" aria-hidden="true"></span>
+            <p class="empty-title">Nenhuma empresa encontrada para este grupo.</p>
+            <p class="empty-hint">Verifique o nome do grupo de rota ou ajuste o filtro de estado e cidade.</p>
+          </div>
+          <div v-else class="results-list">
+            <CompanyResultCard
+              v-for="company in results"
+              :key="company.id"
+              :company="company"
+              :logged="state.logged"
+              :can-request-membership="personal"
+            />
+          </div>
+          <PageNavigation :page="page" :total-pages="totalPages" :disabled="loading" @change="goToPage" />
+        </section>
 
-      <div v-else-if="!searched" class="empty-state">
-        <span class="mdi mdi-routes empty-icon" aria-hidden="true"></span>
-        <p class="empty-title">Procure pelo nome do grupo de rota</p>
-        <p class="empty-hint">
-          Digite o nome do grupo de rota que você precisa ou filtre por estado e cidade na caixa de seleção ao lado.
-        </p>
-      </div>
+        <div v-else-if="!searched" key="idle" class="empty-state">
+          <span class="mdi mdi-routes empty-icon" aria-hidden="true"></span>
+          <p class="empty-title">Procure pelo nome do grupo de rota</p>
+          <p class="empty-hint">
+            Digite o nome do grupo de rota que você precisa ou filtre por estado e cidade na caixa de seleção ao lado.
+          </p>
+        </div>
+      </Transition>
 
       <nav class="context-links" aria-label="Atalhos da conta">
         <RouterLink v-if="state.logged && personal" to="/vinculos" class="context-link">
@@ -178,16 +180,18 @@ function removeCityFilter() {
   position: sticky;
   top: 0;
   z-index: 40;
+  height: var(--header-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
-  background: #191716;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 0 20px;
+  background: var(--chrome-bg);
+  border-bottom: 2px solid var(--primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
 }
 
 .public-logo img {
-  height: 44px;
+  height: 36px;
   width: auto;
   display: block;
 }

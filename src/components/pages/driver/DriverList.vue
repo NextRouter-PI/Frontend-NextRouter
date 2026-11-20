@@ -47,54 +47,56 @@ onMounted(() => {
         </button>
       </div>
 
-      <div class="list-container">
-        <h3 class="list-title">
-          Passageiros da Viagem ({{ transport.participations.length }})
-        </h3>
+      <Transition name="fade-slide" mode="out-in">
+        <div :key="transport.travelId || 'empty'" class="list-container">
+          <h3 class="list-title">
+            Passageiros da Viagem ({{ transport.participations.length }})
+          </h3>
 
-        <div v-if="transport.participations.length">
-          <div v-for="part in transport.participations" :key="part.id" class="passenger-card">
-            <div class="passenger-name">{{ part.name || `Participante #${part.id}` }}</div>
-            <div class="passenger-status" :class="part.status === 'on_board' || part.status === 'dropped_off' ? 'confirmed' : 'pending'">
-              Estado: {{ statusLabel[part.status] || part.status }}
-            </div>
+          <div v-if="transport.participations.length">
+            <div v-for="part in transport.participations" :key="part.id" class="passenger-card">
+              <div class="passenger-name">{{ part.name || `Participante #${part.id}` }}</div>
+              <div class="passenger-status" :class="part.status === 'on_board' || part.status === 'dropped_off' ? 'confirmed' : 'pending'">
+                Estado: {{ statusLabel[part.status] || part.status }}
+              </div>
 
-            <div v-if="isInProgress" class="action-buttons">
-              <button
-                v-if="part.status === 'allocated'"
-                type="button"
-                class="btn-action primary"
-                :disabled="state.busy"
-                @click="registrarPresencaParticipante(part.id, 'boarded')"
-              >
-                Registrar Embarque
-              </button>
-              <button
-                v-if="part.status === 'allocated'"
-                type="button"
-                class="btn-action outline"
-                :disabled="state.busy"
-                @click="registrarPresencaParticipante(part.id, 'no_show')"
-              >
-                Registrar Ausência
-              </button>
-              <button
-                v-if="part.status === 'on_board'"
-                type="button"
-                class="btn-action primary"
-                :disabled="state.busy"
-                @click="registrarPresencaParticipante(part.id, 'dropped_off')"
-              >
-                Registrar Desembarque
-              </button>
+              <div v-if="isInProgress" class="action-buttons">
+                <button
+                  v-if="part.status === 'allocated'"
+                  type="button"
+                  class="btn-action primary"
+                  :disabled="state.busy"
+                  @click="registrarPresencaParticipante(part.id, 'boarded')"
+                >
+                  Registrar Embarque
+                </button>
+                <button
+                  v-if="part.status === 'allocated'"
+                  type="button"
+                  class="btn-action outline"
+                  :disabled="state.busy"
+                  @click="registrarPresencaParticipante(part.id, 'no_show')"
+                >
+                  Registrar Ausência
+                </button>
+                <button
+                  v-if="part.status === 'on_board'"
+                  type="button"
+                  class="btn-action primary"
+                  :disabled="state.busy"
+                  @click="registrarPresencaParticipante(part.id, 'dropped_off')"
+                >
+                  Registrar Desembarque
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div v-else class="no-passengers">
-          Nenhum participante alocado para a viagem selecionada.
+          <div v-else class="no-passengers">
+            Nenhum participante alocado para a viagem selecionada.
+          </div>
         </div>
-      </div>
+      </Transition>
     </template>
   </div>
 </template>
