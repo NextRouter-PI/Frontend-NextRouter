@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/composables/useTravelTracking'
 import LiveLocationMap from '@/components/ui/LiveLocationMap.vue'
+import RouteMapSnapshot from '@/components/transport/RouteMapSnapshot.vue'
 import TransportHistoryNotifications from '@/components/transport/TransportHistoryNotifications.vue'
 
 const {
@@ -196,6 +197,12 @@ onMounted(async () => {
           <p v-if="transport.rota.distanciaKm" class="sub-text">
             Distância estimada: {{ transport.rota.distanciaKm }} km · Duração: {{ transport.rota.duracaoMin }} min
           </p>
+          <RouteMapSnapshot
+            v-if="transport.snapshot"
+            :snapshot="transport.snapshot"
+            :stops="transport.stops"
+            title="Mapa do Percurso e Paradas"
+          />
         </div>
 
         <!-- Paradas do snapshot (5.2) -->

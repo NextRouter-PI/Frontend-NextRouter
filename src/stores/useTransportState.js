@@ -207,6 +207,24 @@ async function loadPassengerData(selectedTravelId = null) {
       ? eligibilities.find((e) => e.id === currentParticipation.eligibility) || null
       : eligibilities[0] || null
 
+    let snapshot = null
+    let stops = []
+    const snapshotId = currentTravel?.published_snapshot || currentTravel?.current_snapshot
+    if (currentTravel && snapshotId) {
+      try {
+        const [snapsRes, stopsRes] = await Promise.all([
+          listRouteSnapshots({ travel: currentTravel.id }, { signal }),
+          listRouteStops({ snapshot: snapshotId }, { signal }),
+        ])
+        if (!signal.aborted && authState.user?.id === ownerId) {
+          snapshot = snapsRes.find((s) => s.id === snapshotId) || snapsRes[0] || null
+          stops = stopsRes
+        }
+      } catch {
+        // Snapshot/paradas podem estar indisponíveis conforme permissão ou estado da publicação
+      }
+    }
+
     state.passenger = {
       attached: activeGroups.length > 0,
       activeGroups,
@@ -218,6 +236,8 @@ async function loadPassengerData(selectedTravelId = null) {
       travelStatus: currentTravel?.status || null,
       publicationCurrent: Boolean(currentTravel?.publication_current),
       publishedRevision: currentTravel?.published_revision ?? null,
+      snapshot,
+      stops,
       pointLabel: pointLabel(currentEligibility?.point_snapshot),
       rota: {
         ponto_origem: currentTravel?.direction === 'outbound' ? pointLabel(currentEligibility?.point_snapshot) : 'Destino do grupo',

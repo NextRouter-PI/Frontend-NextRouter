@@ -3,6 +3,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTransportState } from '@/stores/useTransportState'
 import LiveLocationMap from '@/components/ui/LiveLocationMap.vue'
+import RouteMapSnapshot from '@/components/transport/RouteMapSnapshot.vue'
 import TransportHistoryNotifications from '@/components/transport/TransportHistoryNotifications.vue'
 
 const router = useRouter()
@@ -149,6 +150,12 @@ onMounted(() => {
               </div>
             </div>
           </div>
+          <RouteMapSnapshot
+            v-if="transport.snapshot"
+            :snapshot="transport.snapshot"
+            :stops="transport.stops"
+            title="Traçado Publicado da Viagem"
+          />
         </div>
       </template>
 

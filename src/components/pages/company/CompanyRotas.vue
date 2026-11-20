@@ -4,6 +4,7 @@ import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useToast } from '@/composables/useToast'
 import { useRouter } from 'vue-router'
+import RouteMapSnapshot from '@/components/transport/RouteMapSnapshot.vue'
 import TransportHistoryNotifications from '@/components/transport/TransportHistoryNotifications.vue'
 
 const store = useRotasStore()
@@ -33,6 +34,11 @@ const motivoCancelamentoDia = ref({})
 const motivoDecisaoPedido = ref({})
 const veiculoSubstituto = ref({})
 const conviteMotorista = ref({})
+const mapaAberto = ref({})
+
+function toggleMapa(travelId) {
+  mapaAberto.value[travelId] = !mapaAberto.value[travelId]
+}
 
 onMounted(async () => {
   await store.fetchRotas({ signal: scope.signal })
@@ -606,6 +612,21 @@ async function aplicarPedido(req) {
                   · erro: {{ jobDoSnapshot(travel.current_snapshot).error }}
                 </strong>
               </span>
+              <button
+                v-if="snapshotDaViagem(travel.current_snapshot)"
+                type="button"
+                class="btn-outline"
+                style="margin-left: 8px; padding: 3px 10px; font-size: 0.8rem;"
+                @click="toggleMapa(travel.id)"
+              >
+                {{ mapaAberto[travel.id] ? 'Ocultar mapa' : 'Ver traçado no mapa' }}
+              </button>
+              <RouteMapSnapshot
+                v-if="mapaAberto[travel.id] && snapshotDaViagem(travel.current_snapshot)"
+                :snapshot="snapshotDaViagem(travel.current_snapshot)"
+                title="Prévia do Traçado Calculado"
+                height="240px"
+              />
             </div>
 
             <!-- Substituição de veículo e convite de motorista substituto (6.3) -->
