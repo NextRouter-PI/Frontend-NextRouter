@@ -10,6 +10,12 @@ function addressData(form) {
   }
   if (data.cep !== undefined) data.cep = digits(data.cep)
   if (data.state !== undefined) data.state = data.state.toUpperCase()
+  const lat = Number(form.latitude)
+  const lng = Number(form.longitude)
+  if (form.latitude !== null && form.latitude !== '' && form.longitude !== null && form.longitude !== '' && Number.isFinite(lat) && Number.isFinite(lng)) {
+    data.latitude = lat
+    data.longitude = lng
+  }
   return data
 }
 

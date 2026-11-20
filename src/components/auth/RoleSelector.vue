@@ -1,26 +1,23 @@
 <script setup>
-import { RouterLink } from 'vue-router';
+import { RouterLink } from 'vue-router'
 
 const roles = [
   {
     to: '/signup/usuario/',
     icon: 'mdi-seat-passenger',
     title: 'Passageiro',
-    desc: 'Encontre motoristas parceiros e empresas para suas viagens'
   },
   {
     to: '/signup/motorista/',
-    icon: 'mdi-bus',
+    icon: 'mdi-account-tie-hat',
     title: 'Motorista',
-    desc: 'Ofereça seus serviços de transporte e ganhe dinheiro'
   },
   {
     to: '/signup/empresa/',
-    icon: 'mdi-domain',
+    icon: 'mdi-office-building-outline',
     title: 'Empresa',
-    desc: 'Gerencie uma frota de veículos e motoristas'
-  }
-];
+  },
+]
 </script>
 
 <template>
@@ -31,12 +28,8 @@ const roles = [
       :to="role.to"
       class="role-card"
     >
-      <span class="mdi" :class="role.icon"></span>
-      <div class="card-content">
-        <h3>{{ role.title }}</h3>
-        <p>{{ role.desc }}</p>
-      </div>
-      <div class="card-arrow">→</div>
+      <span class="role-title">{{ role.title }}</span>
+      <span class="mdi role-icon" :class="role.icon" aria-hidden="true"></span>
     </RouterLink>
   </div>
 </template>
@@ -45,64 +38,37 @@ const roles = [
 .role-select {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2.5rem;
+  gap: 20px;
+  margin-bottom: 32px;
 }
 
 .role-card {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  padding: 1.5rem;
-  background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
-  border-radius: 16px;
+  justify-content: space-between;
+  min-height: 76px;
+  padding: 18px 24px;
+  background: var(--primary-orange);
+  color: #ffffff;
+  border-radius: 12px;
   text-decoration: none;
-  transition: all 0.3s ease;
-  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(223, 128, 26, 0.28);
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
 .role-card:hover {
-  border-color: var(--primary);
-  transform: translateX(8px);
-  box-shadow: 0 4px 12px rgba(223, 128, 26, 0.15);
+  background: var(--primary-hover);
+  transform: translateY(-2px);
 }
 
-.mdi {
-  font-size: 2.5rem;
-  min-width: 60px;
-  text-align: center;
-  color: var(--primary);
+.role-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
-.card-content {
-  flex: 1;
-}
-
-.card-content h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 0.5rem;
-}
-
-.card-content p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-  margin: 0;
-}
-
-.card-arrow {
-  font-size: 1.5rem;
-  color: var(--primary);
-  opacity: 0;
-  transform: translateX(-10px);
-  transition: all 0.3s ease;
-}
-
-.role-card:hover .card-arrow {
-  opacity: 1;
-  transform: translateX(0);
+.role-icon {
+  font-size: 2.4rem;
+  color: #ffffff;
 }
 </style>

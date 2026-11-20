@@ -2,6 +2,8 @@
 import { useSignUpCompanyForm } from '@/composables/useSignUpCompanyForm'
 import { watch } from 'vue'
 import { useRouter } from 'vue-router'
+import PublicShell from '@/components/layout/PublicShell.vue'
+import AddressCepMapField from '@/components/ui/AddressCepMapField.vue'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 import FileUploadField from '@/components/ui/FileUploadField.vue'
@@ -32,7 +34,6 @@ const {
   isCNPJ,
   isCPF,
   passwordMatch,
-  getCEP,
   isPasswordVisible,
   isStrongPassword,
   requiredField,
@@ -68,26 +69,46 @@ const goBack = () => {
 </script>
 
 <template>
-  <section class="form-container">
-    <button class="btn-back-top" @click="goBack" aria-label="Voltar">
-      <span class="mdi mdi-arrow-left"></span>
-    </button>
-    <div class="header">
-      <span class="mdi mdi-domain"></span>
-      <h2>Bem vindo</h2>
-      <h1><span>EMPRESA</span></h1>
-    </div>
-
-    <div v-if="registerState.state.success" class="success-message">
-      <span class="mdi mdi-check-circle"></span>
-      <p class="success-title">Conta empresarial criada!</p>
-      <p>O cadastro da empresa aguarda moderação. Criar a conta não significa aprovação nem cria vínculos.</p>
-      <div class="loading-spinner">
-        <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
+  <PublicShell
+    show-back
+    title-prefix="Cadastro de "
+    title-highlight="Empresa"
+    @back="goBack"
+  >
+    <div v-if="!registerState.state.success" class="company-stepper" aria-label="Etapas do cadastro">
+      <div class="stepper-step">
+        <span :class="['step-circle', { active: currentPage === 1, done: currentPage > 1 }]">
+          <span v-if="currentPage > 1" class="mdi mdi-check" aria-hidden="true"></span>
+          <template v-else>1</template>
+        </span>
+      </div>
+      <div :class="['step-line', { done: currentPage > 1 }]"></div>
+      <div class="stepper-step">
+        <span :class="['step-circle', { active: currentPage === 2, done: currentPage > 2 }]">
+          <span v-if="currentPage > 2" class="mdi mdi-check" aria-hidden="true"></span>
+          <template v-else>2</template>
+        </span>
+      </div>
+      <div :class="['step-line', { done: currentPage > 2 }]"></div>
+      <div class="stepper-step">
+        <span :class="['step-circle', { active: currentPage >= 3 && currentPage <= 4, done: currentPage > 4 }]">
+          <span v-if="currentPage > 4" class="mdi mdi-check" aria-hidden="true"></span>
+          <template v-else>3</template>
+        </span>
       </div>
     </div>
 
-    <form v-else class="signup-form" @submit.prevent="handleSubmit">
+    <section class="form-container">
+      <div v-if="registerState.state.success" class="success-message">
+        <span class="mdi mdi-check-circle"></span>
+        <p class="success-title">Conta empresarial criada!</p>
+        <p>O cadastro da empresa aguarda moderação. Criar a conta não significa aprovação nem cria vínculos.</p>
+        <div class="loading-spinner">
+          <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
+        </div>
+      </div>
+
+      <form v-else class="signup-form" @submit.prevent="handleSubmit">
       <div v-if="currentPage === 1">
         <h2 class="page-title">Informações da <span class="highlight-orange">Empresa</span></h2>
 
@@ -163,70 +184,23 @@ const goBack = () => {
           @blur="validateField(page1Form.contactEmail, [(v) => isEmail(v)], 'contactEmail')"
         />
 
-        <FormattedField
-          v-model="page1Form.cep"
-          label="CEP"
-          required
-          :error="fieldErrors.cep"
-          :only-numbers="true"
-          placeholder="00000-000"
+        <AddressCepMapField
+          v-model:cep="page1Form.cep"
+          v-model:street="page1Form.street"
+          v-model:number="page1Form.number"
+          v-model:complement="page1Form.complement"
+          v-model:neighborhood="page1Form.neighborhood"
+          v-model:city="page1Form.city"
+          v-model:state="page1Form.state"
+          v-model:latitude="page1Form.latitude"
+          v-model:longitude="page1Form.longitude"
           :disabled="registerState.state.loading"
-          maxlength="9"
-          :format="formatCEP"
-          @input="
-            () => {
-              clearFieldError('cep')
-              if (page1Form.cep.length === 9) {
-                getCEP(page1Form)
-              }
-            }
-          "
-          @blur="validateField(page1Form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
+          :cep-error="fieldErrors.cep"
+          :format-cep="formatCEP"
+          complement-placeholder="Sala, andar, galpão..."
+          @cep-input="clearFieldError('cep')"
+          @cep-blur="validateField(page1Form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
         />
-        <div class="row-fields">
-          <FormField
-            v-model="page1Form.street"
-            label="Rua"
-            placeholder="Nome da rua"
-            class="half"
-          />
-          <FormField
-            v-model="page1Form.number"
-            label="Número"
-            placeholder="Nº"
-            class="half"
-          />
-        </div>
-        <div class="row-fields">
-          <FormField
-            v-model="page1Form.neighborhood"
-            label="Bairro"
-            placeholder="Bairro"
-            class="half"
-          />
-          <FormField
-            v-model="page1Form.complement"
-            label="Complemento"
-            placeholder="Sala, andar... (opcional)"
-            class="half"
-          />
-        </div>
-        <div class="row-fields">
-          <FormField
-            v-model="page1Form.city"
-            label="Cidade"
-            placeholder="Cidade do CEP"
-            disabled
-            class="half"
-          />
-          <FormField
-            v-model="page1Form.state"
-            label="Estado"
-            placeholder="UF do CEP"
-            disabled
-            class="half"
-          />
-        </div>
       </div>
 
       <div v-if="currentPage === 2">
@@ -503,19 +477,73 @@ const goBack = () => {
           {{ registerState.state.loading ? 'Enviando cadastro...' : 'Confirmar e Enviar Cadastro' }}
         </button>
       </div>
-    </form>
-  </section>
+      </form>
+    </section>
+  </PublicShell>
 </template>
 
 <style scoped>
-.form-container {
-  max-width: 560px;
-  margin: 2rem auto;
-  padding: 2rem;
+.company-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 12px 0 22px;
+  padding: 0 8px;
+}
+
+.stepper-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: var(--altbg);
+  color: var(--text);
+  border: 2px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.step-circle.active {
   background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
-  border-radius: 20px;
-  position: relative;
+  border-color: var(--primary-orange);
+  color: var(--text);
+}
+
+.step-circle.done {
+  background: var(--primary-orange);
+  border-color: var(--primary-orange);
+  color: #ffffff;
+}
+
+.step-line {
+  flex: 1;
+  height: 3px;
+  background: var(--border);
+  margin: 0 6px;
+  border-radius: 999px;
+}
+
+.step-line.done {
+  background: var(--primary-orange);
+}
+
+.form-container {
+  width: 100%;
+  padding: 20px 18px;
+  background: var(--superfice);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 
 .btn-back-top {

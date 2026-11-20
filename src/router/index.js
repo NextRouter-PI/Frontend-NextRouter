@@ -164,12 +164,8 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const { checkAuth } = useLoginState()
 
-  if (to.meta.requiresAuth === false && !to.meta.allowAuthenticated) {
-    document.documentElement.className = ""
-  } else {
-    const saved = localStorage.getItem("theme")
-    document.documentElement.className = saved === "dark" ? "dark" : ""
-  }
+  const saved = localStorage.getItem("theme")
+  document.documentElement.className = saved === "dark" ? "dark" : ""
 
   if (!state.initialized && to.name !== 'logout') {
     await checkAuth();

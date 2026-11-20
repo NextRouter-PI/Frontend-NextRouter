@@ -69,6 +69,8 @@ export function useSignUpCompanyForm() {
     neighborhood: '',
     city: '',
     state: '',
+    latitude: null,
+    longitude: null,
     stateRegistration: '' // * Essa propriedade é tratada como se fosse parte da página 1, mas consta de fato na página 2
   })
 

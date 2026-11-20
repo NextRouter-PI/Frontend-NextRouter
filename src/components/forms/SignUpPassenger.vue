@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { useRegisterState } from '@/stores/useRegisterState'
 import { useSignUpPassengerDriverForm } from '@/composables/useSignUpForm'
 import { useEmailVerification } from '@/composables/useEmailVerification'
+import PublicShell from '@/components/layout/PublicShell.vue'
+import AddressCepMapField from '@/components/ui/AddressCepMapField.vue'
 import FormField from '@/components/ui/FormField.vue'
 import FormattedField from '@/components/ui/FormattedField.vue'
 import PasswordFieldSignUp from '@/components/ui/PasswordFieldSignUp.vue'
@@ -50,7 +52,6 @@ const {
   formatPhone,
   formatCEP,
   formatBirthday,
-  getCEP,
   isCEP,
   isEmail,
   isCPF,
@@ -79,6 +80,8 @@ const form = reactive({
   neighborhood: '',
   city: '',
   state: '',
+  latitude: null,
+  longitude: null,
 })
 
 const voltarPagina = () => {
@@ -104,26 +107,24 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <section class="form-container">
-    <button class="btn-back-top" @click="goBack" aria-label="Voltar">
-      <span class="mdi mdi-arrow-left"></span>
-    </button>
-    <div class="header">
-      <span class="mdi mdi-account"></span>
-      <h2>Bem vindo</h2>
-      <h1><span>PASSAGEIRO</span></h1>
-    </div>
-
-    <div v-if="registerState.state.success" class="success-message">
-      <span class="mdi mdi-check-circle"></span>
-      <p class="success-title">Conta criada com sucesso!</p>
-      <p>Sua conta foi criada. O vínculo com uma empresa é solicitado separadamente.</p>
-      <div class="loading-spinner">
-        <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
+  <PublicShell
+    show-back
+    title-prefix="Cadastro "
+    title-highlight="Passageiro"
+    show-divider
+    @back="goBack"
+  >
+    <section class="form-container">
+      <div v-if="registerState.state.success" class="success-message">
+        <span class="mdi mdi-check-circle"></span>
+        <p class="success-title">Conta criada com sucesso!</p>
+        <p>Sua conta foi criada. O vínculo com uma empresa é solicitado separadamente.</p>
+        <div class="loading-spinner">
+          <span class="mdi mdi-loading mdi-spin"></span> Redirecionando...
+        </div>
       </div>
-    </div>
 
-    <form v-else class="signup-form" @submit.prevent="handleSubmit">
+      <form v-else class="signup-form" @submit.prevent="handleSubmit">
       <div v-if="currentPage === 1">
         <FormField
           v-model="form.name"
@@ -186,67 +187,23 @@ const handleSubmit = async () => {
           @input="clearFieldError('phone')"
           @blur="validateField(form.phone, [(v) => isPhone(v)], 'phone')"
         />
-        <FormattedField
-          v-model="form.cep"
-          label="CEP"
-          placeholder="00000-000"
-          maxlength="9"
-          :format="formatCEP"
-          @input="
-            () => {
-              clearFieldError('cep')
-              if (form.cep.length === 9) {
-                getCEP(form)
-              }
-            }
-          "
-          @blur="validateField(form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
-          required
+        <AddressCepMapField
+          v-model:cep="form.cep"
+          v-model:street="form.street"
+          v-model:number="form.number"
+          v-model:complement="form.complement"
+          v-model:neighborhood="form.neighborhood"
+          v-model:city="form.city"
+          v-model:state="form.state"
+          v-model:latitude="form.latitude"
+          v-model:longitude="form.longitude"
+          :disabled="registerState.state.loading"
+          :cep-error="fieldErrors.cep"
+          :format-cep="formatCEP"
+          complement-placeholder="Bloco, condomínio, apto..."
+          @cep-input="clearFieldError('cep')"
+          @cep-blur="validateField(form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
         />
-        <div class="row-fields">
-          <FormField
-            v-model="form.street"
-            label="Rua"
-            placeholder="Nome da rua"
-            class="half"
-          />
-          <FormField
-            v-model="form.number"
-            label="Número da casa / edifício"
-            placeholder="Nº"
-            class="half"
-          />
-        </div>
-        <div class="row-fields">
-          <FormField
-            v-model="form.neighborhood"
-            label="Bairro"
-            placeholder="Bairro"
-            class="half"
-          />
-          <FormField
-            v-model="form.complement"
-            label="Complemento (Bloco / Condomínio)"
-            placeholder="Bloco, condomínio, apto..."
-            class="half"
-          />
-        </div>
-        <div class="row-fields">
-          <FormField
-            v-model="form.city"
-            disabled
-            label="Cidade"
-            placeholder="Cidade do CEP"
-            class="half"
-          />
-          <FormField
-            v-model="form.state"
-            disabled
-            label="Estado"
-            placeholder="Estado do CEP"
-            class="half"
-          />
-        </div>
 
         <PasswordFieldSignUp
           v-model="form.password"
@@ -392,19 +349,20 @@ const handleSubmit = async () => {
       >
         Voltar e corrigir dados
       </button>
-    </form>
-  </section>
+      </form>
+    </section>
+  </PublicShell>
 </template>
 
 <style scoped>
 .form-container {
-  max-width: 560px;
-  margin: 2rem auto;
-  padding: 2rem;
+  width: 100%;
+  padding: 20px 18px;
   background: var(--superfice);
-  border: 1px solid rgba(223, 128, 26, 0.12);
-  border-radius: 20px;
-  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
 }
 
 .btn-back-top {
