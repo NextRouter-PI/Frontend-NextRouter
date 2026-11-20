@@ -62,9 +62,9 @@ const chartData = computed(() => ({
   datasets: [
     {
       data: serviceSlots.value.map((slot) => (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0)),
-      backgroundColor: '#df801a',
-      borderRadius: 0,
-      barThickness: 38
+      backgroundColor: '#ec8314',
+      borderRadius: 6,
+      barThickness: 36
     }
   ]
 }))
@@ -245,13 +245,17 @@ onMounted(async () => {
       <div class="grafico-card">
         <h2>Atendimento por Serviço {{ statsDate || data }}</h2>
         <div class="chart-container">
-          <p v-if="statsLoading">Carregando...</p>
-          <p v-else-if="!serviceSlots.length">Nenhuma viagem datada registrada para a data consultada.</p>
-          <Bar v-else :data="chartData" :options="chartOptions" />
+          <Transition name="fade-slide" mode="out-in">
+            <p v-if="statsLoading" key="loading" class="chart-empty">Carregando...</p>
+            <p v-else-if="!serviceSlots.length" key="empty" class="chart-empty">Nenhuma viagem datada registrada para a data consultada.</p>
+            <Bar v-else key="chart" :data="chartData" :options="chartOptions" />
+          </Transition>
         </div>
-        <RouterLink to="/lista" class="btn-detalhes">
-          VER DETALHES
-        </RouterLink>
+        <div class="grafico-footer">
+          <RouterLink to="/lista" class="btn-detalhes">
+            VER DETALHES
+          </RouterLink>
+        </div>
       </div>
     </template>
 
@@ -315,12 +319,14 @@ onMounted(async () => {
 
 .titulo h2 {
   margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.55rem;
+  font-weight: 800;
 }
 
 .titulo span {
-  font-size: 1.3rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .profile-card {
@@ -433,29 +439,54 @@ onMounted(async () => {
 }
 
 .chart-container {
-  height: 280px;
-  margin: 25px 0;
+  height: 260px;
+  margin: 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 .grafico-card h2 {
-  margin: 30px 0 30px 0;
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+}
+
+.grafico-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 
 .btn-detalhes {
-  margin-top: 40px;
-  float: right;
-  background: var(--gradient-primary);
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: #ffffff;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.3s ease;
+  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid),
+    box-shadow 0.2s var(--ease-fluid);
 }
 
 .btn-detalhes:hover {
-  opacity: 0.9;
+  background: var(--primary-hover);
+  box-shadow: var(--shadow-primary);
+}
+
+.btn-detalhes:active {
+  transform: scale(0.98);
 }
 
 @media (min-width: 900px) {

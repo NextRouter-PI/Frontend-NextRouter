@@ -114,7 +114,9 @@ async function confirmDecision(reason) {
           </div>
           <FormField v-model="nameFilter" label="Filtrar por nome somente nesta página" />
           <p>Solicitantes são identificados pelo nome e perfil, sem consulta a CPF, endereço ou documentos.</p>
-          <p v-if="notice" class="membership-notice" role="status">{{ notice }}</p>
+          <Transition name="fade-slide">
+            <p v-if="notice" class="membership-notice" role="status">{{ notice }}</p>
+          </Transition>
           <div role="alert"><ErrorMessage :message="error" /></div>
           <p v-if="busy" role="status">Processando ação de vínculo e atualizando a consulta...</p>
           <p v-if="loading" role="status">Consultando pedidos e vínculos...</p>
@@ -142,11 +144,13 @@ async function confirmDecision(reason) {
                   <BaseButton type="button" :disabled="busy" @click="decision = { membership, action: 'approve' }">Aprovar vínculo</BaseButton>
                   <BaseButton type="button" variant="outline" :disabled="busy" @click="decision = { membership, action: 'reject' }">Recusar pedido</BaseButton>
                 </div>
-                <template v-if="decision?.membership.id === membership.id">
-                  <p v-if="decision.action === 'end'">Encerrar termina o acesso operacional do titular sem apagar a conta. Operação em andamento ou alocações futuras podem bloquear; a aplicação não as cancela automaticamente.</p>
-                  <MembershipActionForm :key="`${membership.id}-${decision.action}`" :title="decisionTitle"
-                    :busy="busy" :disabled="!ready" @confirm="confirmDecision" @cancel="decision = null" />
-                </template>
+                <Transition name="fade-slide">
+                  <div v-if="decision?.membership.id === membership.id">
+                    <p v-if="decision.action === 'end'">Encerrar termina o acesso operacional do titular sem apagar a conta. Operação em andamento ou alocações futuras podem bloquear; a aplicação não as cancela automaticamente.</p>
+                    <MembershipActionForm :key="`${membership.id}-${decision.action}`" :title="decisionTitle"
+                      :busy="busy" :disabled="!ready" @confirm="confirmDecision" @cancel="decision = null" />
+                  </div>
+                </Transition>
               </MembershipCard>
             </div>
             <PageNavigation :page="page" :total-pages="totalPages" :disabled="busy || loading" @change="goToPage" />

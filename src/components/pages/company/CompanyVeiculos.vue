@@ -191,14 +191,16 @@ async function salvarPonto() {
                 <span class="mdi mdi-dots-vertical"></span>
               </button>
 
-              <div v-if="menuAberto === veiculo.id" class="menu-dropdown">
-                <button type="button" @click="router.push(`/veiculos/editar/${veiculo.id}`)">
-                  Editar informações do veículo
-                </button>
-                <button type="button" @click="alterarStatus(veiculo.id)">
-                  {{ veiculo.status === 'Ativo' ? 'Enviar para a manutenção' : 'Retirar de manutenção' }}
-                </button>
-              </div>
+              <Transition name="fade-scale">
+                <div v-if="menuAberto === veiculo.id" class="menu-dropdown">
+                  <button type="button" @click="router.push(`/veiculos/editar/${veiculo.id}`)">
+                    Editar informações do veículo
+                  </button>
+                  <button type="button" @click="alterarStatus(veiculo.id)">
+                    {{ veiculo.status === 'Ativo' ? 'Enviar para a manutenção' : 'Retirar de manutenção' }}
+                  </button>
+                </div>
+              </Transition>
             </div>
           </div>
 
@@ -585,20 +587,31 @@ async function salvarPonto() {
 
 .fab-add {
   position: fixed;
-  bottom: 90px;
-  right: 24px;
-  width: 60px;
-  height: 60px;
-  border-radius: 30px;
-  background: var(--gradient-primary);
-  color: white;
-  border: none;
-  font-size: 32px;
+  bottom: 84px;
+  right: 22px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--chrome-bg);
+  color: #ffffff;
+  border: 2px solid var(--primary);
+  font-size: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-primary);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
   cursor: pointer;
+  transition: transform 0.2s var(--ease-fluid), background-color 0.2s var(--ease-fluid);
+  z-index: 20;
+}
+
+.fab-add:hover {
+  background: var(--primary);
+  transform: scale(1.06);
+}
+
+.fab-add:active {
+  transform: scale(0.95);
 }
 
 .status-message {

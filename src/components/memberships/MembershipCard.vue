@@ -37,7 +37,7 @@ const formattedPhone = computed(() =>
       </div>
       <div class="membership-header-info">
         <h3 class="membership-title">{{ title }}</h3>
-        <p class="membership-state">{{ statusLabel }}</p>
+        <span :class="['membership-badge', `status-${membership.status}`]">{{ statusLabel }}</span>
       </div>
     </div>
 
@@ -59,13 +59,14 @@ const formattedPhone = computed(() =>
 
 <style scoped>
 .membership-card {
-  padding: 18px;
+  padding: 16px 18px;
   border: 1px solid var(--border);
   border-left: 4px solid var(--primary);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--superfice);
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
+  transition: border-color 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid);
 }
 
 .membership-header {
@@ -76,13 +77,13 @@ const formattedPhone = computed(() =>
 }
 
 .membership-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
   flex-shrink: 0;
   overflow: hidden;
-  background: var(--altbg);
-  border: 1.5px solid var(--border-primary);
+  background: var(--input-surface);
+  border: 1.5px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,18 +102,43 @@ const formattedPhone = computed(() =>
 
 .membership-header-info {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .membership-title {
-  margin: 0 0 2px;
-  font-size: 1.1rem;
+  margin: 0;
+  font-size: 1.05rem;
 }
 
-.membership-state {
-  margin: 0;
-  font-weight: 600;
+.membership-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.74rem;
+  background: rgba(236, 131, 20, 0.14);
   color: var(--primary);
-  font-size: 0.9rem;
+}
+
+.membership-badge.status-active {
+  background: rgba(34, 197, 94, 0.14);
+  color: var(--success);
+}
+
+.membership-badge.status-pending {
+  background: rgba(234, 179, 8, 0.16);
+  color: var(--warning);
+}
+
+.membership-badge.status-rejected,
+.membership-badge.status-withdrawn,
+.membership-badge.status-ended {
+  background: var(--input-surface);
+  color: var(--text-muted);
 }
 
 .membership-meta {
