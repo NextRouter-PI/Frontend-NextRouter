@@ -29,7 +29,7 @@ const statsLoading = ref(false)
 const companyData = ref(null)
 const companyLoading = ref(false)
 
-const NOT_IN_DB = 'Nao add no Banco'
+const NOT_IN_DB = 'Não informado'
 
 function orNotInDb(value) {
   return value === null || value === undefined || value === '' ? NOT_IN_DB : value
@@ -150,10 +150,12 @@ async function fetchCompany() {
   }
 }
 
-onMounted(() => {
-  fetchStats()
-  fetchCompany()
-  store.fetchVeiculos()
+onMounted(async () => {
+  await fetchCompany()
+  if (companyData.value?.is_approved) {
+    fetchStats()
+    store.fetchVeiculos()
+  }
 })
 </script>
 
@@ -163,6 +165,24 @@ onMounted(() => {
     <div class="titulo">
       <h2>Gerenciamento: {{ companyData?.trade_name || state.user.name }}</h2>
       <span>{{ data }}</span>
+    </div>
+
+    <div v-if="companyData && !companyData.is_approved" class="moderation-banner" role="status">
+      <div class="moderation-header">
+        <span class="mdi mdi-clock-outline" aria-hidden="true"></span>
+        <h3>
+          {{ companyData.registration_status === 'rejected' ? 'Cadastro empresarial recusado' : 'Cadastro empresarial em análise' }}
+        </h3>
+      </div>
+      <p>
+        <template v-if="companyData.registration_status === 'rejected'">
+          A moderação da plataforma não aprovou o cadastro da empresa. Revise seus dados e documentos no perfil ou contate o suporte.
+        </template>
+        <template v-else>
+          Sua conta empresarial está ativa, mas aguarda aprovação da moderação da plataforma. Enquanto o cadastro estiver pendente, a empresa não aparece na busca pública e o gerenciamento de frota, rotas e vínculos permanece bloqueado.
+        </template>
+      </p>
+      <RouterLink to="/usuario" class="btn-moderation">Revisar dados e documentos</RouterLink>
     </div>
 
     <div class="profile-card">
@@ -195,43 +215,45 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="cards-row">
-      <div class="info-card">
-        <span class="mdi mdi-account-group card-icon"></span>
-        <div>
-          <h4>Passageiros Hoje:</h4>
-          <p>{{ passageirosHoje }}</p>
+    <template v-if="!companyData || companyData.is_approved">
+      <div class="cards-row">
+        <div class="info-card">
+          <span class="mdi mdi-account-group card-icon"></span>
+          <div>
+            <h4>Passageiros Hoje:</h4>
+            <p>{{ passageirosHoje }}</p>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <span class="mdi mdi-map-marker-path card-icon"></span>
+          <div>
+            <h4>Rotas Hoje:</h4>
+            <p>{{ routesToday ?? '—' }}</p>
+          </div>
         </div>
       </div>
 
-      <div class="info-card">
-        <span class="mdi mdi-map-marker-path card-icon"></span>
+      <div class="info-card grande">
+        <span class="mdi mdi-van-passenger card-icon"></span>
         <div>
-          <h4>Rotas Hoje:</h4>
-          <p>{{ routesToday ?? '—' }}</p>
+          <h4>Transportes Ativos:</h4>
+          <p>{{ ativos }} / {{ total }}</p>
         </div>
       </div>
-    </div>
 
-    <div class="info-card grande">
-      <span class="mdi mdi-van-passenger card-icon"></span>
-      <div>
-        <h4>Transportes Ativos:</h4>
-        <p>{{ ativos }} / {{ total }}</p>
+      <div class="grafico-card">
+        <h2>Atendimento por Serviço {{ statsDate || data }}</h2>
+        <div class="chart-container">
+          <p v-if="statsLoading">Carregando...</p>
+          <p v-else-if="!serviceSlots.length">Nenhuma viagem datada registrada para a data consultada.</p>
+          <Bar v-else :data="chartData" :options="chartOptions" />
+        </div>
+        <RouterLink to="/lista" class="btn-detalhes">
+          VER DETALHES
+        </RouterLink>
       </div>
-    </div>
-
-    <div class="grafico-card">
-      <h2>Atendimento por Serviço {{ statsDate || data }}</h2>
-      <div class="chart-container">
-        <p v-if="statsLoading">Carregando...</p>
-        <p v-else-if="!serviceSlots.length">Nenhuma viagem datada registrada para a data consultada.</p>
-        <Bar v-else :data="chartData" :options="chartOptions" />
-      </div>
-      <RouterLink to="/lista" class="btn-detalhes">
-        VER DETALHES
-      </RouterLink>
-    </div>
+    </template>
 
   </div>
 </template>
@@ -241,6 +263,54 @@ onMounted(() => {
   margin: 0 auto;
   max-width: 600px;
   padding: 18px 18px 120px;
+}
+
+.moderation-banner {
+  margin: 16px 0;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  color: var(--text);
+}
+
+.moderation-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.moderation-header .mdi {
+  font-size: 1.4rem;
+  color: var(--warning);
+}
+
+.moderation-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.moderation-banner p {
+  margin: 0 0 12px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.btn-moderation {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btn-moderation:hover {
+  background: var(--primary-hover);
 }
 
 .titulo h2 {

@@ -36,31 +36,37 @@ const router = createRouter({
       path: "/cadastro-veiculo",
       name: "cadastro-veiculo",
       component: () => import("../components/pages/company/CadastrarVeiculo.vue"),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresRole: ["company"] }
     },
     {
       path: "/veiculos/editar/:id",
       name: "editar-veiculo",
       component: () => import("../components/pages/company/EditarVeiculo.vue"),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresRole: ["company"] }
     },
     {
       path: "/cadastro-rota",
       name: "cadastro-rota",
       component: () => import("../components/pages/company/CadastrarRota.vue"),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresRole: ["company"] }
     },
     {
       path: "/rotas/editar/:id",
       name: "editar-rota",
       component: () => import("../components/pages/company/EditarRota.vue"),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresRole: ["company"] }
+    },
+    {
+      path: "/pontos-operacionais",
+      name: "pontos-operacionais",
+      component: () => import("../views/OperationalPointsView.vue"),
+      meta: { requiresAuth: true, requiresRole: ["company"] }
     },
     {
       path: "/usuarios",
       name: "usuarios",
       component: () => import("../components/pages/company/CompanyUsuarios.vue"),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresRole: ["company"] }
     },
     {
       path: '/empresas',
@@ -72,7 +78,7 @@ const router = createRouter({
       path: '/vinculos',
       name: 'vinculos',
       component: () => import('../views/MembershipsView.vue'),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, requiresRole: ['passenger', 'driver'] },
     },
     {
       path: '/seguranca',
@@ -84,13 +90,13 @@ const router = createRouter({
       path: "/usuarios/motorista/:id",
       name: "usuario-motorista",
       component: () => import('../views/LinkedProfileView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresRole: ["company"] }
     },
     {
       path: "/usuarios/passageiro/:id",
       name: "usuario-passageiro",
       component: () => import('../views/LinkedProfileView.vue'),
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresRole: ["company"] }
     },
     {
       path: "/login",
@@ -139,6 +145,18 @@ const router = createRouter({
       name: "logout",
       component: () => import("../views/LogoutView.vue"),
       meta: { requiresAuth: false }
+    },
+    {
+      path: "/403",
+      name: "forbidden",
+      component: () => import("../views/ForbiddenView.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: () => import("../views/NotFoundView.vue"),
+      meta: { requiresAuth: false, allowAuthenticated: true }
     }
   ],
 });
@@ -166,6 +184,10 @@ router.beforeEach(async (to) => {
       name: 'login',
       query: to.name === 'vinculos' ? { company: to.query.company } : {},
     };
+  }
+
+  if (to.meta.requiresRole && state.logged && !to.meta.requiresRole.includes(state.role)) {
+    return { name: 'forbidden' };
   }
 
   return true;

@@ -67,7 +67,7 @@ const salvar = async () => {
 
     <div v-if="!carregando && !store.pontosOperacionais.length" class="empty-points">
       <p>Você ainda não possui pontos operacionais cadastrados para selecionar como destino.</p>
-      <RouterLink to="/transporte" class="link-points">Ir para Frota e Pontos Operacionais</RouterLink>
+      <RouterLink to="/pontos-operacionais" class="link-points">Ir para Pontos Operacionais</RouterLink>
     </div>
 
     <form v-else class="cadastro" @submit.prevent="salvar">
