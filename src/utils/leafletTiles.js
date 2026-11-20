@@ -1,10 +1,5 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-
-let iconsConfigured = false
 
 export const DEFAULT_MAP_CENTER = [-26.3044, -48.8455]
 
@@ -14,15 +9,39 @@ const TILE_URLS = {
 }
 const TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
 
-export function ensureLeafletIcons() {
-  if (iconsConfigured) return
-  delete L.Icon.Default.prototype._getIconUrl
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: markerIcon2x,
-    iconUrl: markerIcon,
-    shadowUrl: markerShadow,
+// Mantido como no-op compatível para evitar ícones azuis padrão do Leaflet.
+export function ensureLeafletIcons() {}
+
+function escapeAttr(value) {
+  return String(value ?? '').replace(/[^a-zA-Z0-9_-]/g, '')
+}
+
+export function createPinIcon({
+  variant = 'primary',
+  icon = 'mdi-map-marker',
+  label = '',
+  pulse = false,
+  size = 'md',
+} = {}) {
+  const safeVariant = escapeAttr(variant) || 'primary'
+  const safeSize = size === 'sm' ? 'sm' : 'md'
+  const safeIcon = escapeAttr(icon)
+  const inner = label
+    ? `<span class="nr-map-pin__label">${String(label)}</span>`
+    : `<span class="mdi ${safeIcon}" aria-hidden="true"></span>`
+
+  const dim = safeSize === 'sm' ? [28, 36] : [34, 42]
+  const anchor = safeSize === 'sm' ? [14, 34] : [17, 40]
+  const popupAnchor = safeSize === 'sm' ? [0, -34] : [0, -40]
+
+  return L.divIcon({
+    className: 'nr-pin-wrapper',
+    html: `<div class="nr-map-pin nr-map-pin--${safeVariant} nr-map-pin--${safeSize}${pulse ? ' nr-map-pin--pulse' : ''}"><span class="nr-map-pin__body">${inner}</span></div>`,
+    iconSize: dim,
+    iconAnchor: anchor,
+    popupAnchor,
+    tooltipAnchor: [0, -anchor[1] + 4],
   })
-  iconsConfigured = true
 }
 
 export function currentMapTheme() {

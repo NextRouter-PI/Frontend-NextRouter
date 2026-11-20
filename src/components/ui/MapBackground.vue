@@ -3,29 +3,7 @@ import { onMounted, onUnmounted, watch, ref, nextTick } from 'vue'
 import { state } from '@/stores/state'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-})
-
-const DEFAULT_CENTER = [-26.3044, -48.8455] // Joinville, SC
-
-const TILE_URLS = {
-  light: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-  dark: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-}
-const TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
-
-function currentTheme() {
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-}
+import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER } from '@/utils/leafletTiles'
 
 const props = defineProps({
   selfMarkerLabel: { type: String, default: 'Você' },
@@ -38,24 +16,13 @@ const { state: tracking } = useTravelTracking()
 const mapContainer = ref(null)
 let map = null
 let trackingMarker = null
-let tileLayer = null
-let themeObserver = null
+let cleanupTiles = null
 
 function initialCenter() {
   if (state.user?.latitude != null && state.user?.longitude != null) {
     return [state.user.latitude, state.user.longitude]
   }
-  return DEFAULT_CENTER
-}
-
-function applyTileLayer(theme) {
-  if (!map) return
-  if (tileLayer) map.removeLayer(tileLayer)
-  tileLayer = L.tileLayer(TILE_URLS[theme], {
-    maxZoom: 18,
-    maxNativeZoom: 16,
-    attribution: TILE_ATTRIBUTION,
-  }).addTo(map)
+  return DEFAULT_MAP_CENTER
 }
 
 function ensureMap() {
@@ -71,16 +38,15 @@ function ensureMap() {
     keyboard: false,
   }).setView(initialCenter(), 14)
 
-  applyTileLayer(currentTheme())
+  cleanupTiles = attachThemedTileLayer(map)
 
   if (state.user?.latitude != null && state.user?.longitude != null) {
-    L.marker([state.user.latitude, state.user.longitude])
+    L.marker([state.user.latitude, state.user.longitude], {
+      icon: createPinIcon({ icon: 'mdi-map-marker' }),
+    })
       .addTo(map)
       .bindPopup(props.selfMarkerLabel)
   }
-
-  themeObserver = new MutationObserver(() => applyTileLayer(currentTheme()))
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 }
 
 watch(
@@ -90,11 +56,7 @@ watch(
 
     if (!trackingMarker) {
       trackingMarker = L.marker([lat, lng], {
-        icon: L.divIcon({
-          className: 'map-tracking-marker',
-          html: `<span class="mdi ${props.trackingMarkerIcon}"></span>`,
-          iconSize: [32, 32],
-        }),
+        icon: createPinIcon({ icon: props.trackingMarkerIcon, pulse: true }),
       })
         .addTo(map)
         .bindPopup(props.trackingMarkerLabel)
@@ -122,10 +84,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (themeObserver) {
-    themeObserver.disconnect()
-    themeObserver = null
-  }
+  cleanupTiles?.()
+  cleanupTiles = null
   if (map) {
     map.remove()
     map = null

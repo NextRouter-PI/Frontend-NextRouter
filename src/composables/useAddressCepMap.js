@@ -1,7 +1,7 @@
 import { computed, nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import L from 'leaflet'
 import api from '@/api/client'
-import { attachThemedTileLayer, DEFAULT_MAP_CENTER, ensureLeafletIcons } from '@/utils/leafletTiles'
+import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER, ensureLeafletIcons } from '@/utils/leafletTiles'
 
 export function useAddressCepMap({
   mapEl,
@@ -42,9 +42,12 @@ export function useAddressCepMap({
 
     if (!map) return
     if (!marker) {
-      marker = L.marker([nLat, nLng], { draggable: true })
+      marker = L.marker([nLat, nLng], {
+        draggable: true,
+        icon: createPinIcon({ icon: 'mdi-map-marker' }),
+      })
         .addTo(map)
-        .bindPopup('Localização selecionada (arraste para ajustar)')
+        .bindPopup('<strong>Localização selecionada</strong><br><small>Arraste o pino para ajustar.</small>')
       marker.on('dragend', () => {
         const pos = marker.getLatLng()
         latitude.value = Number(pos.lat.toFixed(6))

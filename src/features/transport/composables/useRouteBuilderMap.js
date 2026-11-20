@@ -1,6 +1,6 @@
 import { nextTick, onMounted, onUnmounted } from 'vue'
 import L from 'leaflet'
-import { attachThemedTileLayer, DEFAULT_MAP_CENTER, ensureLeafletIcons } from '@/utils/leafletTiles'
+import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER, ensureLeafletIcons } from '@/utils/leafletTiles'
 
 function escapeHtml(text) {
   return String(text ?? '')
@@ -53,7 +53,10 @@ export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoo
       const tooltipHtml = passengerTooltipHtml(item)
 
       if (item.selected) {
-        const marker = L.marker([lat, lng], { draggable: true })
+        const marker = L.marker([lat, lng], {
+          draggable: true,
+          icon: createPinIcon({ icon: 'mdi-account-check' }),
+        })
           .bindTooltip(tooltipHtml, {
             direction: 'top',
             offset: [0, -14],

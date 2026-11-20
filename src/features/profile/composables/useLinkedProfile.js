@@ -6,7 +6,7 @@ import { state } from '@/stores/state'
 import api from '@/api/client'
 import { sessionError } from '@/stores/session'
 import { formatApiError } from '@/utils/apiErrors'
-import { attachThemedTileLayer, ensureLeafletIcons } from '@/utils/leafletTiles'
+import { attachThemedTileLayer, createPinIcon, ensureLeafletIcons } from '@/utils/leafletTiles'
 
 export function useLinkedProfile(mapContainer) {
   ensureLeafletIcons()
@@ -78,7 +78,12 @@ export function useLinkedProfile(mapContainer) {
       .filter(Boolean)
       .join('<br>')
 
-    L.marker([lat, lng]).addTo(map).bindPopup(popupText).openPopup()
+    L.marker([lat, lng], {
+      icon: createPinIcon({ icon: 'mdi-account' }),
+    })
+      .addTo(map)
+      .bindPopup(popupText)
+      .openPopup()
   }
 
   watch(

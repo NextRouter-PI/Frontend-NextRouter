@@ -108,16 +108,22 @@ onUnmounted(() => {
           <div class="sheet-status-right">
             <span class="status-dot" :class="statusDotClass" aria-hidden="true"></span>
             <span
-              class="mdi chevron-icon"
-              :class="sheetExpanded ? 'mdi-chevron-down' : 'mdi-chevron-up'"
+              class="mdi mdi-chevron-up chevron-icon"
+              :class="{ rotated: sheetExpanded }"
               aria-hidden="true"
             ></span>
           </div>
         </div>
       </button>
 
-      <Transition name="fade-slide">
-        <div v-if="sheetExpanded" class="sheet-body">
+      <div
+        class="sheet-body-collapse"
+        :class="{ open: sheetExpanded }"
+        :aria-hidden="!sheetExpanded"
+        :inert="!sheetExpanded || undefined"
+      >
+        <div class="sheet-body-inner">
+          <div class="sheet-body">
           <div class="sheet-user-row">
             <div class="sheet-avatar">
               <span class="mdi mdi-account" aria-hidden="true"></span>
@@ -148,43 +154,52 @@ onUnmounted(() => {
             </a>
           </div>
 
-          <div v-if="membershipLoaded && !openMembership" class="sheet-panel">
-            <p class="panel-title">Sem vínculo empresarial</p>
-            <p class="panel-meta">
-              Pesquise uma empresa aprovada e envie seu pedido de vínculo para acessar atendimentos e rotas.
-            </p>
-            <div class="sheet-actions">
-              <RouterLink to="/empresas" class="sheet-cta">Buscar empresas</RouterLink>
-              <RouterLink to="/vinculos" class="sheet-cta-outline">Meus vínculos</RouterLink>
+          <Transition name="fade-slide" mode="out-in">
+            <div v-if="!membershipLoaded" key="loading" class="sheet-panel sheet-skeleton" role="status" aria-label="Carregando vínculo">
+              <span class="sheet-skeleton-bar title"></span>
+              <span class="sheet-skeleton-bar line"></span>
+              <span class="sheet-skeleton-bar line short"></span>
             </div>
-          </div>
 
-          <div v-else-if="membershipLoaded && openMembership?.status === 'pending'" class="sheet-panel pending">
-            <p class="panel-title">Solicitação pendente</p>
-            <p class="panel-meta">
-              Aguardando aprovação de <strong>{{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}</strong>.
-            </p>
-            <div class="sheet-actions">
-              <RouterLink to="/vinculos" class="sheet-cta-outline">Acompanhar pedido</RouterLink>
+            <div v-else-if="!openMembership" key="none" class="sheet-panel">
+              <p class="panel-title">Sem vínculo empresarial</p>
+              <p class="panel-meta">
+                Pesquise uma empresa aprovada e envie seu pedido de vínculo para acessar atendimentos e rotas.
+              </p>
+              <div class="sheet-actions">
+                <RouterLink to="/empresas" class="sheet-cta">Buscar empresas</RouterLink>
+                <RouterLink to="/vinculos" class="sheet-cta-outline">Meus vínculos</RouterLink>
+              </div>
             </div>
-          </div>
 
-          <div v-else-if="membershipLoaded && openMembership?.status === 'active'" class="sheet-panel active">
-            <p class="panel-title">
-              {{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}
-            </p>
-            <p v-if="activeTravel" class="panel-meta">
-              Próxima viagem #{{ activeTravel.id }} · {{ activeTravel.date }}
-              ({{ activeTravel.direction === 'outbound' ? 'Ida' : 'Retorno' }})
-            </p>
-            <p v-else class="panel-meta">Vínculo ativo. Responda aos atendimentos abertos na aba Lista.</p>
-            <div class="sheet-actions">
-              <RouterLink to="/lista" class="sheet-cta">Responder atendimentos</RouterLink>
-              <RouterLink to="/historico" class="sheet-cta-outline">Histórico</RouterLink>
+            <div v-else-if="openMembership?.status === 'pending'" key="pending" class="sheet-panel pending">
+              <p class="panel-title">Solicitação pendente</p>
+              <p class="panel-meta">
+                Aguardando aprovação de <strong>{{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}</strong>.
+              </p>
+              <div class="sheet-actions">
+                <RouterLink to="/vinculos" class="sheet-cta-outline">Acompanhar pedido</RouterLink>
+              </div>
             </div>
+
+            <div v-else-if="openMembership?.status === 'active'" key="active" class="sheet-panel active">
+              <p class="panel-title">
+                {{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}
+              </p>
+              <p v-if="activeTravel" class="panel-meta">
+                Próxima viagem #{{ activeTravel.id }} · {{ activeTravel.date }}
+                ({{ activeTravel.direction === 'outbound' ? 'Ida' : 'Retorno' }})
+              </p>
+              <p v-else class="panel-meta">Vínculo ativo. Responda aos atendimentos abertos na aba Lista.</p>
+              <div class="sheet-actions">
+                <RouterLink to="/lista" class="sheet-cta">Responder atendimentos</RouterLink>
+                <RouterLink to="/historico" class="sheet-cta-outline">Histórico</RouterLink>
+              </div>
+            </div>
+          </Transition>
           </div>
         </div>
-      </Transition>
+      </div>
     </section>
   </div>
 </template>
@@ -193,6 +208,7 @@ onUnmounted(() => {
 .home-page {
   position: relative;
   min-height: calc(100vh - var(--header-height) - var(--bottom-nav-height));
+  margin-bottom: -$space-4;
   background: var(--bg);
   display: flex;
   flex-direction: column;
@@ -209,7 +225,37 @@ onUnmounted(() => {
   border-top: 2px solid var(--primary);
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.35);
-  transition: transform 0.28s var(--ease-fluid);
+  animation: sheet-slide-up 0.34s $ease-fluid;
+}
+
+@keyframes sheet-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sheet-body-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.34s $ease-fluid,
+    opacity 0.24s $ease-fluid;
+
+  &.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+.sheet-body-inner {
+  overflow: hidden;
+  min-height: 0;
 }
 
 .sheet-handle-btn {
@@ -283,6 +329,43 @@ onUnmounted(() => {
 .chevron-icon {
   font-size: 1.25rem;
   color: var(--chrome-muted);
+  transition: transform $duration-normal $ease-fluid;
+
+  &.rotated {
+    transform: rotate(180deg);
+  }
+}
+
+.sheet-skeleton {
+  min-height: 92px;
+  justify-content: center;
+}
+
+.sheet-skeleton-bar {
+  display: block;
+  height: 11px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06) 25%, rgba(255, 255, 255, 0.14) 50%, rgba(255, 255, 255, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: sheet-shimmer 1.35s ease-in-out infinite;
+
+  &.title {
+    width: 46%;
+    height: 14px;
+  }
+
+  &.line {
+    width: 90%;
+  }
+
+  &.short {
+    width: 64%;
+  }
+}
+
+@keyframes sheet-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .sheet-body {
@@ -439,6 +522,7 @@ onUnmounted(() => {
 @media (min-width: 901px) {
   .home-page {
     min-height: calc(100vh - var(--header-height));
+    margin-bottom: -$space-6;
     align-items: flex-end;
     padding: 24px;
   }

@@ -1,6 +1,6 @@
 import { computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import L from 'leaflet'
-import { attachThemedTileLayer, DEFAULT_MAP_CENTER } from '@/utils/leafletTiles'
+import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER } from '@/utils/leafletTiles'
 
 export function pointLatLng(point) {
   if (!point) return null
@@ -60,12 +60,8 @@ export function useRouteSnapshotMap({ mapContainer, getSnapshot, getStops }) {
     if (originCoord) {
       fallbackCoords.push(originCoord)
       boundsPoints.push(originCoord)
-      L.circleMarker(originCoord, {
-        radius: 8,
-        color: '#15803d',
-        fillColor: '#22c55e',
-        fillOpacity: 0.9,
-        weight: 2,
+      L.marker(originCoord, {
+        icon: createPinIcon({ variant: 'success', icon: 'mdi-flag-outline', size: 'sm' }),
       })
         .bindPopup(`<strong>Origem:</strong> ${snapshot.origin.name || 'Início'}`)
         .addTo(routeLayer)
@@ -77,16 +73,16 @@ export function useRouteSnapshotMap({ mapContainer, getSnapshot, getStops }) {
       fallbackCoords.push(coord)
       boundsPoints.push(coord)
       const handled = stop.state === 'handled' || stop.state === 'completed'
-      L.circleMarker(coord, {
-        radius: 7,
-        color: handled ? '#15803d' : '#be6c14',
-        fillColor: handled ? '#22c55e' : '#f48a1d',
-        fillOpacity: 0.9,
-        weight: 2,
+      L.marker(coord, {
+        icon: createPinIcon({
+          variant: handled ? 'success' : 'primary',
+          label: String(stop.position ?? ''),
+          size: 'sm',
+        }),
       })
         .bindTooltip(`#${stop.position}`, { direction: 'top', offset: [0, -6] })
         .bindPopup(
-          `<strong>Parada #${stop.position}:</strong> ${stop.point_snapshot?.name || 'Ponto'}<br>Estado: ${stop.state || 'pendente'}`,
+          `<strong>Parada #${stop.position}:</strong> ${stop.point_snapshot?.name || 'Ponto'}<br><small>Estado: ${stop.state || 'pendente'}</small>`,
         )
         .addTo(routeLayer)
     }
@@ -95,12 +91,8 @@ export function useRouteSnapshotMap({ mapContainer, getSnapshot, getStops }) {
     if (destCoord) {
       fallbackCoords.push(destCoord)
       boundsPoints.push(destCoord)
-      L.circleMarker(destCoord, {
-        radius: 8,
-        color: '#b91c1c',
-        fillColor: '#ef4444',
-        fillOpacity: 0.9,
-        weight: 2,
+      L.marker(destCoord, {
+        icon: createPinIcon({ variant: 'danger', icon: 'mdi-flag-checkered', size: 'sm' }),
       })
         .bindPopup(`<strong>Destino:</strong> ${snapshot.destination.name || 'Destino'}`)
         .addTo(routeLayer)

@@ -1,30 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER } from '@/utils/leafletTiles'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
-
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-})
-
-const DEFAULT_CENTER = [-26.3044, -48.8455] // Joinville, SC
-
-const TILE_URLS = {
-  light: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-  dark: 'https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-}
-const TILE_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
-
-function currentTheme() {
-  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-}
 
 const props = defineProps({
   travelId: { type: [Number, String], default: null },
@@ -37,17 +15,14 @@ const { state: tracking, startViewerTracking } = useTravelTracking()
 const mapContainer = ref(null)
 let map = null
 let marker = null
-let tileLayer = null
-let themeObserver = null
+let cleanupTiles = null
 
-function applyTileLayer(theme) {
-  if (!map) return
-  if (tileLayer) map.removeLayer(tileLayer)
-  tileLayer = L.tileLayer(TILE_URLS[theme], {
-    maxZoom: 18,
-    maxNativeZoom: 16,
-    attribution: TILE_ATTRIBUTION,
-  }).addTo(map)
+function createTrackingMarker(coords) {
+  return L.marker(coords, {
+    icon: createPinIcon({ icon: 'mdi-bus', pulse: true }),
+  })
+    .addTo(map)
+    .bindPopup(`<strong>${props.markerLabel}</strong>`)
 }
 
 function ensureMap() {
@@ -56,7 +31,7 @@ function ensureMap() {
   const center =
     tracking.latitude != null && tracking.longitude != null
       ? [tracking.latitude, tracking.longitude]
-      : DEFAULT_CENTER
+      : DEFAULT_MAP_CENTER
 
   map = L.map(mapContainer.value, {
     zoomControl: false,
@@ -65,14 +40,11 @@ function ensureMap() {
     scrollWheelZoom: false,
   }).setView(center, 14)
 
-  applyTileLayer(currentTheme())
+  cleanupTiles = attachThemedTileLayer(map)
 
   if (tracking.latitude != null && tracking.longitude != null) {
-    marker = L.marker(center).addTo(map).bindPopup(props.markerLabel)
+    marker = createTrackingMarker(center)
   }
-
-  themeObserver = new MutationObserver(() => applyTileLayer(currentTheme()))
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 }
 
 watch(
@@ -81,7 +53,7 @@ watch(
     if (!map || lat == null || lng == null) return
 
     if (!marker) {
-      marker = L.marker([lat, lng]).addTo(map).bindPopup(props.markerLabel)
+      marker = createTrackingMarker([lat, lng])
     } else {
       marker.setLatLng([lat, lng])
     }
@@ -99,10 +71,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  if (themeObserver) {
-    themeObserver.disconnect()
-    themeObserver = null
-  }
+  cleanupTiles?.()
+  cleanupTiles = null
   if (map) {
     map.remove()
     map = null
