@@ -65,9 +65,11 @@ onMounted(refresh)
         <BaseButton type="button" :variant="mode === 'sessions' ? 'primary' : 'outline'" :disabled="busy" @click="mode = 'sessions'">Sessões</BaseButton>
       </div>
       <section class="account-section">
-        <PasswordResetForm v-if="mode === 'password'" :key="`${account.id}:${account.email}:password`" :account-email="account.email" :signal="scope.signal" @busy="busy = $event" @confirmed="confirmed" />
-        <EmailChangeForm v-else-if="mode === 'email'" :key="`${account.id}:email`" @busy="busy = $event" @confirmed="confirmed" />
-        <AccountSessions v-else :key="`${account.id}:sessions`" @busy="busy = $event" @confirmed="confirmed" />
+        <Transition name="fade-slide" mode="out-in">
+          <PasswordResetForm v-if="mode === 'password'" :key="`${account.id}:${account.email}:password`" :account-email="account.email" :signal="scope.signal" @busy="busy = $event" @confirmed="confirmed" />
+          <EmailChangeForm v-else-if="mode === 'email'" :key="`${account.id}:email`" @busy="busy = $event" @confirmed="confirmed" />
+          <AccountSessions v-else :key="`${account.id}:sessions`" @busy="busy = $event" @confirmed="confirmed" />
+        </Transition>
       </section>
     </template>
 

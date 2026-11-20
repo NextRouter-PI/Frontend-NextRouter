@@ -19,10 +19,15 @@ const error = ref('')
 const downloading = ref(false)
 const controller = new AbortController()
 let objectUrl = null
-watch(() => `${state.logged}:${state.user?.id || ''}`, () => {
-  controller.abort()
-  if (objectUrl) URL.revokeObjectURL(objectUrl)
-}, { flush: 'sync' })
+
+watch(
+  () => `${state.logged}:${state.user?.id || ''}`,
+  () => {
+    controller.abort()
+    if (objectUrl) URL.revokeObjectURL(objectUrl)
+  },
+  { flush: 'sync' },
+)
 
 function selectFile(event) {
   const selected = event.target.files?.[0]
@@ -36,13 +41,16 @@ function selectFile(event) {
   }
   file.value = selected
 }
+
 function cancel() {
   context.cancelEdit(part.value)
   if (!busy.value) file.value = null
 }
+
 async function save() {
-  if (file.value && await context.replaceAsset(props.field, file.value)) file.value = null
+  if (file.value && (await context.replaceAsset(props.field, file.value))) file.value = null
 }
+
 async function download() {
   if (downloading.value || !ready.value || !documentData.value?.attachment_key) return
   downloading.value = true
@@ -59,11 +67,14 @@ async function download() {
     link.click()
     link.remove()
   } catch (cause) {
-    if (!controller.signal.aborted) error.value = sessionError(cause, 'Não foi possível baixar o documento autorizado. Atualize o perfil e tente novamente.')
+    if (!controller.signal.aborted) {
+      error.value = sessionError(cause, 'Não foi possível baixar o documento autorizado. Atualize o perfil e tente novamente.')
+    }
   } finally {
     if (!controller.signal.aborted) downloading.value = false
   }
 }
+
 onScopeDispose(() => {
   controller.abort()
   if (objectUrl) URL.revokeObjectURL(objectUrl)
@@ -73,21 +84,131 @@ onScopeDispose(() => {
 <template>
   <section class="account-section">
     <h2>{{ PROFILE_DOCUMENTS[field] }}</h2>
-    <p v-if="documentData">{{ documentData.description || 'Documento cadastrado' }}</p>
-    <p v-else>Nenhum documento associado.</p>
-    <p class="account-hint">PDF de até 10 MB. O upload e a associação são etapas distintas; uma chave de anexo não concede permissão de download.</p>
-    <p v-if="error" role="alert">{{ error }}</p>
-    <div v-if="!isEditing" class="account-actions">
-      <BaseButton type="button" variant="outline" :disabled="!ready || busy || loading || Boolean(editing)" @click="context.startEdit(part)">Substituir documento</BaseButton>
-      <BaseButton v-if="documentData" type="button" variant="outline" :loading="downloading" :disabled="!ready || busy" @click="download">Baixar documento</BaseButton>
-    </div>
-    <form v-else @submit.prevent="save">
-      <label :for="fileId">Novo arquivo PDF</label>
-      <input :id="fileId" type="file" accept=".pdf" :disabled="busy || !ready || loading" @change="selectFile" />
-      <div class="account-actions">
-        <BaseButton type="submit" :disabled="!file || !ready || loading" :loading="busy">Enviar e associar</BaseButton>
-        <BaseButton type="button" variant="outline" :disabled="busy" @click="cancel">Cancelar</BaseButton>
+    <p class="account-hint">PDF de até 10 MB. O upload e a associação são etapas distintas.</p>
+
+    <Transition name="fade-slide">
+      <p v-if="error" class="doc-error" role="alert">{{ error }}</p>
+    </Transition>
+
+    <Transition name="fade-slide" mode="out-in">
+      <div v-if="!isEditing" key="view" class="doc-bar">
+        <div class="doc-info">
+          <span class="mdi mdi-file-pdf-box doc-icon" aria-hidden="true"></span>
+          <span class="doc-name">{{ documentData ? (documentData.description || 'Documento cadastrado') : 'Nenhum documento associado' }}</span>
+        </div>
+        <div class="doc-actions">
+          <BaseButton
+            v-if="documentData"
+            type="button"
+            variant="outline"
+            size="sm"
+            icon="mdi-download-outline"
+            :loading="downloading"
+            :disabled="!ready || busy"
+            @click="download"
+          >
+            Baixar
+          </BaseButton>
+          <BaseButton
+            type="button"
+            variant="primary"
+            size="sm"
+            icon="mdi-file-replace-outline"
+            :disabled="!ready || busy || loading || Boolean(editing)"
+            @click="context.startEdit(part)"
+          >
+            Editar arquivo
+          </BaseButton>
+        </div>
       </div>
-    </form>
+
+      <form v-else key="edit" class="doc-form" @submit.prevent="save">
+        <label :for="fileId" class="doc-label">Novo arquivo PDF</label>
+        <input
+          :id="fileId"
+          type="file"
+          accept=".pdf"
+          class="doc-input"
+          :disabled="busy || !ready || loading"
+          @change="selectFile"
+        />
+        <div class="account-actions">
+          <BaseButton type="submit" size="sm" :disabled="!file || !ready || loading" :loading="busy">
+            Enviar e associar
+          </BaseButton>
+          <BaseButton type="button" variant="outline" size="sm" :disabled="busy" @click="cancel">
+            Cancelar
+          </BaseButton>
+        </div>
+      </form>
+    </Transition>
   </section>
 </template>
+
+<style scoped>
+.doc-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--input-surface);
+}
+
+.doc-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.doc-icon {
+  font-size: 1.4rem;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.doc-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.doc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.doc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doc-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.doc-input {
+  padding: 10px 12px;
+  border: 1.5px dashed var(--border-primary);
+  border-radius: 10px;
+  background: var(--input-surface);
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.doc-error {
+  margin: 0 0 10px;
+  color: var(--danger);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+</style>

@@ -200,14 +200,15 @@ onUnmounted(destroyMap)
       <div role="alert"><ErrorMessage :message="error" /></div>
 
       <template v-if="profile">
-        <section class="account-section identity-card">
+        <header class="account-cover identity-banner">
           <div class="identity-header">
             <img v-if="avatarUrl" :src="avatarUrl" :alt="`Foto de ${profile.name || 'usuário'}`" class="identity-avatar" />
             <div v-else class="identity-avatar identity-fallback" aria-hidden="true">{{ initials }}</div>
             <div>
               <h2>{{ profile.name || 'Nome não disponível' }}</h2>
               <p class="identity-role">
-                {{ driver ? 'Motorista' : 'Passageiro' }} · perfil nº {{ profile.id }}
+                <span class="role-badge">{{ driver ? 'Motorista' : 'Passageiro' }}</span>
+                <span>perfil nº {{ profile.id }}</span>
               </p>
               <p v-if="profile.phone" class="identity-meta">
                 <span class="mdi mdi-phone-outline" aria-hidden="true"></span>
@@ -218,7 +219,7 @@ onUnmounted(destroyMap)
               </p>
             </div>
           </div>
-        </section>
+        </header>
 
         <section v-if="!driver" class="account-section">
           <h2>Endereço do passageiro</h2>
@@ -319,11 +320,12 @@ onUnmounted(destroyMap)
 }
 
 .identity-avatar {
-  width: 68px;
-  height: 68px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--primary);
+  border: 3px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
 }
 
@@ -331,21 +333,37 @@ onUnmounted(destroyMap)
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gradient-primary);
+  background: var(--chrome-bg);
   color: #ffffff;
   font-weight: 700;
-  font-size: 1.35rem;
+  font-size: 1.4rem;
 }
 
-.identity-card h2 {
-  margin: 0 0 4px;
-  font-size: 1.25rem;
+.identity-banner h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  color: #ffffff;
 }
 
 .identity-role {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin: 0 0 6px;
-  color: var(--text-muted);
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.88rem;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .identity-meta {
@@ -354,7 +372,7 @@ onUnmounted(destroyMap)
   gap: 6px;
   margin: 0;
   font-size: 0.9rem;
-  color: var(--text);
+  color: #ffffff;
 }
 
 .coords-hint {

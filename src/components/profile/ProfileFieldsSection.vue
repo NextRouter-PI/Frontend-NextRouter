@@ -9,7 +9,7 @@ const props = defineProps({ part: { type: String, required: true } })
 const context = useOwnProfile()
 const { busy, ready, loading, editing } = context
 const section = computed(() => PROFILE_SECTIONS[props.part])
-const source = computed(() => section.value.target === 'user' ? context.user.value : context.profile.value)
+const source = computed(() => (section.value.target === 'user' ? context.user.value : context.profile.value))
 const isEditing = computed(() => editing.value === props.part)
 const draft = reactive({})
 
@@ -19,10 +19,12 @@ function begin() {
     if (!field.readonly) draft[field.key] = source.value?.[field.key] ?? ''
   }
 }
+
 function cancel() {
   context.cancelEdit(props.part)
   if (!busy.value) for (const key of Object.keys(draft)) delete draft[key]
 }
+
 async function save() {
   if (await context.save(props.part, { ...draft })) {
     for (const key of Object.keys(draft)) delete draft[key]
@@ -32,30 +34,57 @@ async function save() {
 
 <template>
   <section class="account-section">
-    <h2>{{ section.title }}</h2>
-    <p v-if="part === 'personal'" class="account-hint">CPF não é editável. E-mail de acesso e senha usam os fluxos de segurança separados.</p>
+    <div class="account-section-header">
+      <h2>{{ section.title }}</h2>
+      <BaseButton
+        v-if="!isEditing"
+        type="button"
+        variant="primary"
+        size="sm"
+        icon="mdi-pencil-outline"
+        :disabled="!ready || busy || loading || Boolean(editing)"
+        @click="begin"
+      >
+        Editar
+      </BaseButton>
+    </div>
+
+    <p v-if="part === 'personal'" class="account-hint">
+      CPF não é editável. E-mail de acesso e senha usam a aba Segurança.
+    </p>
     <p v-if="part.endsWith('Address')" class="account-hint">
       Endereço cadastral não define ponto operacional de transporte.
-      Consulta automática de CEP adiada; preencha os campos manualmente.
     </p>
-    <template v-if="!isEditing">
-      <dl class="account-grid">
+
+    <Transition name="fade-slide" mode="out-in">
+      <dl v-if="!isEditing" key="view" class="account-grid">
         <div v-for="field in section.fields" :key="field.key">
-          <dt>{{ field.label }}</dt><dd>{{ source?.[field.key] || 'Não informado' }}</dd>
+          <dt>{{ field.label }}</dt>
+          <dd>{{ source?.[field.key] || 'Não informado' }}</dd>
         </div>
       </dl>
-      <BaseButton type="button" variant="outline" :disabled="!ready || busy || loading || Boolean(editing)" @click="begin">Editar</BaseButton>
-    </template>
-    <form v-else class="account-form" @submit.prevent="save">
-      <template v-for="field in section.fields" :key="field.key">
-        <FormField v-if="!field.readonly" v-model="draft[field.key]" :label="field.label"
-          :type="field.type || 'text'" :required="field.required" :maxlength="field.maxlength"
-          :disabled="!ready || busy || loading" />
-      </template>
-      <div class="account-actions">
-        <BaseButton type="submit" :loading="busy" :disabled="!ready || loading">Salvar alterações</BaseButton>
-        <BaseButton type="button" variant="outline" :disabled="busy" @click="cancel">Cancelar edição</BaseButton>
-      </div>
-    </form>
+
+      <form v-else key="edit" class="account-form" @submit.prevent="save">
+        <template v-for="field in section.fields" :key="field.key">
+          <FormField
+            v-if="!field.readonly"
+            v-model="draft[field.key]"
+            :label="field.label"
+            :type="field.type || 'text'"
+            :required="field.required"
+            :maxlength="field.maxlength"
+            :disabled="!ready || busy || loading"
+          />
+        </template>
+        <div class="account-actions">
+          <BaseButton type="submit" :loading="busy" :disabled="!ready || loading">
+            Salvar alterações
+          </BaseButton>
+          <BaseButton type="button" variant="outline" :disabled="busy" @click="cancel">
+            Cancelar
+          </BaseButton>
+        </div>
+      </form>
+    </Transition>
   </section>
 </template>
