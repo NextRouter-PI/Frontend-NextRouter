@@ -2,15 +2,14 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { state } from '@/stores/state'
-import { useCompanyDirectory } from '@/composables/useCompanyDirectory'
-import ThemeButton from '@/components/buttons/ThemeButton.vue'
-import CompanyFilterDropdown from '@/components/directory/CompanyFilterDropdown.vue'
-import CompanyResultCard from '@/components/directory/CompanyResultCard.vue'
+import { PERSONAL_ROLES, ROUTE_PATHS } from '@/constants'
+import { useCompanyDirectory } from '@/features/directory/composables/useCompanyDirectory'
+import CompanyFilterDropdown from '@/features/directory/components/CompanyFilterDropdown.vue'
+import CompanyResultCard from '@/features/directory/components/CompanyResultCard.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
-import Logo from '@/assets/images/logo.png'
-import '@/assets/css/memberships.css'
+import '@/styles/memberships.scss'
 
 const router = useRouter()
 const {
@@ -31,13 +30,13 @@ const {
   goToPage,
 } = useCompanyDirectory()
 
-const personal = computed(() => ['passenger', 'driver'].includes(state.role))
+const personal = computed(() => PERSONAL_ROLES.includes(state.role))
 
 function goBack() {
   if (window.history.length > 1) {
     router.back()
   } else {
-    router.push(state.logged ? '/' : '/login')
+    router.push(state.logged ? ROUTE_PATHS.HOME : ROUTE_PATHS.LOGIN)
   }
 }
 
@@ -55,13 +54,6 @@ function removeCityFilter() {
 
 <template>
   <div class="directory-page" :class="{ authenticated: state.logged }">
-    <header v-if="!state.logged" class="public-header">
-      <RouterLink to="/login" class="public-logo">
-        <img :src="Logo" alt="NextRouter" />
-      </RouterLink>
-      <ThemeButton />
-    </header>
-
     <div class="directory-container">
       <div class="title-bar">
         <button type="button" class="back-btn" aria-label="Voltar" @click="goBack">

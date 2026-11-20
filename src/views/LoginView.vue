@@ -1,20 +1,27 @@
 <script setup>
 import { reactive, shallowRef } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { PERSONAL_ROLES, ROUTE_NAMES, ROUTE_PATHS } from '@/constants'
 import { useLoginState } from '@/stores/useLoginState'
 import { state } from '@/stores/state'
 import PublicShell from '@/components/layout/PublicShell.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 
 const router = useRouter()
 const route = useRoute()
 const { login } = useLoginState()
 
 const erro = shallowRef('')
-const showPassword = shallowRef(false)
 const form = reactive({
   email: '',
   senha: '',
 })
+
+function isPositiveIntString(value) {
+  return typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))
+}
 
 async function enviarLogin() {
   if (state.loading) return
@@ -23,20 +30,13 @@ async function enviarLogin() {
   const sucesso = await login(form.email, form.senha)
 
   if (sucesso) {
-    const company = route.query.company
-    const group = route.query.group
-    const validCompany =
-      typeof company === 'string' &&
-      /^[1-9]\d*$/.test(company) &&
-      Number.isSafeInteger(Number(company))
-    const validGroup =
-      typeof group === 'string' &&
-      /^[1-9]\d*$/.test(group) &&
-      Number.isSafeInteger(Number(group))
+    const { company, group } = route.query
+    const validCompany = isPositiveIntString(company)
+    const validGroup = isPositiveIntString(group)
     const destination =
-      validCompany && ['passenger', 'driver'].includes(state.role)
-        ? { name: 'vinculos', query: validGroup ? { company, group } : { company } }
-        : { name: 'home' }
+      validCompany && PERSONAL_ROLES.includes(state.role)
+        ? { name: ROUTE_NAMES.MEMBERSHIPS, query: validGroup ? { company, group } : { company } }
+        : { name: ROUTE_NAMES.HOME }
     // Recarrega para descartar estado em memória de sessões anteriores.
     window.location.replace(router.resolve(destination).href)
   } else {
@@ -63,60 +63,42 @@ async function enviarLogin() {
         <form class="login-form" @submit.prevent="enviarLogin">
           <p class="login-hint">Entrar em sua conta:</p>
 
-          <div class="underline-field">
-            <input
-              v-model="form.email"
-              type="email"
-              class="underline-input"
-              placeholder="E-mail"
-              aria-label="E-mail"
-              autocomplete="email"
-              required
-              :disabled="state.loading"
-            />
-          </div>
+          <BaseInput
+            v-model="form.email"
+            type="email"
+            variant="underline"
+            placeholder="E-mail"
+            aria-label="E-mail"
+            autocomplete="email"
+            required
+            :disabled="state.loading"
+          />
 
-          <div class="underline-field password-field">
-            <input
-              v-model="form.senha"
-              :type="showPassword ? 'text' : 'password'"
-              class="underline-input"
-              placeholder="Senha"
-              aria-label="Senha"
-              autocomplete="current-password"
-              required
-              :disabled="state.loading"
-            />
-            <button
-              type="button"
-              class="toggle-password"
-              :aria-label="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
-              @click="showPassword = !showPassword"
-            >
-              <span
-                class="mdi"
-                :class="showPassword ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-                aria-hidden="true"
-              ></span>
-            </button>
-          </div>
+          <BaseInput
+            v-model="form.senha"
+            type="password"
+            variant="underline"
+            placeholder="Senha"
+            aria-label="Senha"
+            autocomplete="current-password"
+            required
+            :disabled="state.loading"
+          />
 
-          <Transition name="fade-slide">
-            <p v-if="erro" class="login-error" role="alert">{{ erro }}</p>
-          </Transition>
+          <ErrorMessage :message="erro" />
 
-          <button type="submit" class="btn-enter" :disabled="state.loading">
+          <BaseButton type="submit" block size="lg" :loading="state.loading" class="login-submit">
             {{ state.loading ? 'Entrando...' : 'Entrar' }}
-          </button>
+          </BaseButton>
 
           <p class="forgot-row">
             Esqueceu a senha?
-            <RouterLink to="/forgot-password" class="forgot-link">Clique Aqui</RouterLink>
+            <RouterLink :to="ROUTE_PATHS.FORGOT_PASSWORD" class="forgot-link">Clique Aqui</RouterLink>
           </p>
 
           <div class="bottom-actions">
-            <RouterLink to="/signup" class="btn-create">Criar nova conta</RouterLink>
-            <RouterLink to="/empresas" class="discover-link">
+            <RouterLink :to="ROUTE_PATHS.SIGNUP" class="btn-create">Criar nova conta</RouterLink>
+            <RouterLink :to="ROUTE_PATHS.COMPANIES" class="discover-link">
               Pesquisar empresas sem entrar
             </RouterLink>
           </div>
@@ -126,7 +108,7 @@ async function enviarLogin() {
   </PublicShell>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .login-split {
   flex: 1;
   display: flex;
@@ -135,13 +117,23 @@ async function enviarLogin() {
   background: var(--bg);
   color: var(--text);
   padding: 28px 22px 36px;
+
+  @include from($bp-desktop + 1px) {
+    flex-direction: row;
+    padding: 0;
+  }
 }
 
 .brand-panel {
-  display: flex;
+  @include flex-center;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+
+  @include from($bp-desktop + 1px) {
+    flex: 1;
+    background: var(--altbg);
+    border-right: 1px solid var(--border);
+    padding: $space-10;
+  }
 }
 
 .brand-block {
@@ -149,37 +141,50 @@ async function enviarLogin() {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: $space-8;
+
+  @include from($bp-desktop + 1px) {
+    margin-bottom: 0;
+  }
 }
 
 .brand-pin {
   font-size: 62px;
   line-height: 1;
   color: var(--primary);
-}
 
-.brand-pin-mobile {
-  margin-bottom: 12px;
-}
+  &-desktop {
+    display: none;
+  }
 
-.brand-pin-desktop {
-  display: none;
+  @include from($bp-desktop + 1px) {
+    &-mobile {
+      display: none;
+    }
+
+    &-desktop {
+      display: block;
+      font-size: 76px;
+      margin-top: $space-4;
+    }
+  }
 }
 
 .brand-welcome {
-  margin: 0;
-  font-size: 1.7rem;
-  font-weight: 800;
-  line-height: 1.15;
-  color: var(--text);
+  margin-top: $space-2;
+  color: var(--text-muted);
+  font-size: $text-base;
+  font-weight: $font-medium;
 }
 
 .brand-name {
-  margin: 2px 0 0;
-  font-size: 2rem;
-  font-weight: 900;
-  line-height: 1.1;
-  letter-spacing: 0.5px;
+  font-size: 2.1rem;
+  font-weight: $font-extrabold;
+  letter-spacing: 0.04em;
+
+  @include from($bp-desktop + 1px) {
+    font-size: 2.6rem;
+  }
 }
 
 .brand-accent {
@@ -191,226 +196,80 @@ async function enviarLogin() {
 }
 
 .form-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  @include flex-center;
+  width: 100%;
+
+  @include from($bp-desktop + 1px) {
+    flex: 1;
+    padding: $space-10;
+  }
 }
 
 .login-form {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
 }
 
 .login-hint {
-  margin: 0 0 22px;
-  font-size: 0.96rem;
+  font-size: 1.05rem;
+  font-weight: $font-semibold;
+  margin-bottom: $space-5;
   color: var(--text);
-  opacity: 0.9;
 }
 
-.underline-field {
-  position: relative;
-  margin-bottom: 24px;
-}
-
-.underline-input {
-  width: 100%;
-  padding: 10px 4px;
-  border: none;
-  border-bottom: 1.5px solid var(--primary);
-  border-radius: 0;
-  background: transparent;
-  color: var(--text);
-  font-size: 0.98rem;
-  box-sizing: border-box;
-  transition: border-color 0.2s var(--ease-fluid);
-}
-
-.password-field .underline-input {
-  padding-right: 40px;
-}
-
-.underline-input::placeholder {
-  color: var(--primary);
-  opacity: 0.85;
-}
-
-.underline-input:focus {
-  outline: none;
-  border-bottom-color: var(--primary-hover);
-}
-
-.toggle-password {
-  position: absolute;
-  right: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: none;
-  background: transparent;
-  color: var(--primary);
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 4px;
-}
-
-.login-error {
-  margin: -8px 0 14px;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--danger);
-  text-align: center;
-}
-
-.btn-enter {
-  width: 100%;
-  min-height: 46px;
-  margin-top: 8px;
-  border: none;
-  border-radius: 999px;
-  background: var(--primary);
-  color: #ffffff;
-  font-size: 0.98rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid);
-}
-
-.btn-enter:hover:not(:disabled) {
-  background: var(--primary-hover);
-}
-
-.btn-enter:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.btn-enter:disabled {
-  opacity: 0.7;
-  cursor: wait;
+.login-submit {
+  margin-top: $space-3;
 }
 
 .forgot-row {
-  margin: 18px 0 0;
   text-align: center;
-  font-size: 0.92rem;
-  color: var(--text);
+  margin-top: $space-4;
+  font-size: $text-md;
+  color: var(--text-muted);
 }
 
-.forgot-link {
+.forgot-link,
+.discover-link {
   color: var(--primary);
-  font-weight: 700;
-  text-decoration: none;
-  margin-left: 4px;
-}
+  font-weight: $font-semibold;
 
-.forgot-link:hover {
-  opacity: 0.85;
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .bottom-actions {
-  margin-top: 38px;
-  padding-top: 22px;
-  border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: $space-3;
+  margin-top: $space-6;
+  padding-top: $space-5;
+  border-top: 1px solid var(--border);
 }
 
 .btn-create {
   display: inline-flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   width: 100%;
-  min-height: 46px;
-  border: 1.5px solid var(--primary);
-  border-radius: 999px;
-  background: transparent;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  outline: 1.5px solid var(--primary);
+  outline-offset: -1.5px;
   color: var(--primary);
-  font-size: 0.96rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color 0.2s var(--ease-fluid), color 0.2s var(--ease-fluid),
-    transform 0.16s var(--ease-fluid);
-}
+  font-weight: $font-semibold;
+  transition: background-color $duration-normal $ease-fluid, color $duration-normal $ease-fluid;
 
-.btn-create:hover {
-  background: var(--primary);
-  color: #ffffff;
-}
-
-.btn-create:active {
-  transform: scale(0.98);
+  &:hover {
+    background: var(--primary);
+    color: var(--color-on-primary);
+  }
 }
 
 .discover-link {
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.discover-link:hover {
-  color: var(--primary);
-}
-
-/* Desktop split-screen respeitando modo claro e modo escuro */
-@media (min-width: 900px) {
-  .login-split {
-    flex-direction: row;
-    align-items: stretch;
-    padding: 0;
-  }
-
-  .brand-panel {
-    flex: 1.05;
-    background: var(--primary);
-    padding: 48px 40px;
-  }
-
-  .brand-block {
-    margin-bottom: 0;
-    align-items: flex-start;
-    text-align: left;
-  }
-
-  .brand-pin-mobile {
-    display: none;
-  }
-
-  .brand-pin-desktop {
-    display: block;
-    color: #111113;
-    font-size: 64px;
-    margin-top: 28px;
-    align-self: center;
-  }
-
-  .brand-welcome {
-    font-size: 2.3rem;
-    color: #ffffff;
-  }
-
-  .brand-name {
-    font-size: 3.1rem;
-    letter-spacing: 1px;
-  }
-
-  .brand-accent {
-    color: #111113;
-  }
-
-  .brand-rest {
-    color: #ffffff;
-  }
-
-  .form-panel {
-    flex: 1;
-    background: var(--bg);
-    padding: 48px 40px;
-  }
+  font-size: $text-md;
 }
 </style>

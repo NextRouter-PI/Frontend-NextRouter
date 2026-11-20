@@ -1,5 +1,6 @@
 <script setup>
 defineProps({
+  type: { type: String, default: 'button' },
   variant: { type: String, default: 'primary' },
   loading: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
@@ -13,9 +14,10 @@ const emit = defineEmits(['click'])
 
 <template>
   <button
+    :type="type"
     :class="['base-btn', `variant-${variant}`, `size-${size}`, { block, loading }]"
     :disabled="disabled || loading"
-    @click="emit('click')"
+    @click="emit('click', $event)"
   >
     <span v-if="loading" class="spinner" aria-hidden="true"></span>
     <span v-else-if="icon" class="mdi" :class="icon" aria-hidden="true"></span>
@@ -23,90 +25,109 @@ const emit = defineEmits(['click'])
   </button>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .base-btn {
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: $space-2;
   border: none;
   outline: 1.5px solid transparent;
   outline-offset: -1.5px;
-  border-radius: var(--border-radius);
-  font-weight: 600;
+  border-radius: $radius-md;
+  font-weight: $font-semibold;
   cursor: pointer;
-  transition: background-color 0.2s var(--ease-fluid), color 0.2s var(--ease-fluid),
-    outline-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid),
-    box-shadow 0.2s var(--ease-fluid);
-}
+  transition:
+    background-color $duration-normal $ease-fluid,
+    color $duration-normal $ease-fluid,
+    outline-color $duration-normal $ease-fluid,
+    transform $duration-fast $ease-fluid,
+    box-shadow $duration-normal $ease-fluid;
 
-.base-btn:active:not(:disabled) {
-  transform: scale(0.97);
-}
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
 
-.base-btn.block {
-  width: 100%;
-}
+  &.block {
+    width: 100%;
+  }
 
-.base-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 
-.size-sm { padding: 8px 14px; font-size: 0.82rem; }
-.size-md { padding: 10px 18px; font-size: 0.9rem; }
-.size-lg { padding: 13px 22px; font-size: 0.98rem; }
+  &.size-sm {
+    padding: $space-2 14px;
+    font-size: $text-sm;
+  }
 
-.variant-primary {
-  background: var(--primary);
-  color: #ffffff;
-}
-.variant-primary:hover:not(:disabled) {
-  background: var(--primary-hover);
-  box-shadow: var(--shadow-primary);
-}
+  &.size-md {
+    padding: 10px 18px;
+    font-size: $text-md;
+  }
 
-.variant-secondary {
-  background: transparent;
-  color: var(--primary);
-  outline-color: var(--primary);
-}
-.variant-secondary:hover:not(:disabled) {
-  background: var(--primary);
-  color: #ffffff;
-}
+  &.size-lg {
+    padding: 13px 22px;
+    font-size: 0.98rem;
+  }
 
-.variant-outline {
-  background: transparent;
-  color: var(--text);
-  outline-color: var(--border);
-}
-.variant-outline:hover:not(:disabled) {
-  outline-color: var(--primary);
-  color: var(--primary);
-  background: rgba(236, 131, 20, 0.06);
-}
-.variant-outline.selected {
-  background: rgba(236, 131, 20, 0.1);
-  color: var(--primary);
-  outline-color: var(--primary);
-}
+  &.variant-primary {
+    background: var(--primary);
+    color: var(--color-on-primary);
 
-.variant-ghost {
-  background: transparent;
-  color: var(--text-muted);
-}
-.variant-ghost:hover:not(:disabled) {
-  background: var(--altbg);
-  color: var(--text);
+    &:hover:not(:disabled) {
+      background: var(--primary-hover);
+      box-shadow: var(--shadow-primary);
+    }
+  }
+
+  &.variant-secondary {
+    background: transparent;
+    color: var(--primary);
+    outline-color: var(--primary);
+
+    &:hover:not(:disabled) {
+      background: var(--primary);
+      color: var(--color-on-primary);
+    }
+  }
+
+  &.variant-outline {
+    background: transparent;
+    color: var(--text);
+    outline-color: var(--border);
+
+    &:hover:not(:disabled) {
+      outline-color: var(--primary);
+      color: var(--primary);
+      background: var(--color-primary-soft);
+    }
+
+    &.selected {
+      background: var(--color-primary-soft);
+      color: var(--primary);
+      outline-color: var(--primary);
+    }
+  }
+
+  &.variant-ghost {
+    background: transparent;
+    color: var(--text-muted);
+
+    &:hover:not(:disabled) {
+      background: var(--altbg);
+      color: var(--text);
+    }
+  }
 }
 
 .spinner {
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
-  border-radius: 50%;
+  border-top-color: var(--color-on-primary);
+  border-radius: $radius-round;
   animation: spin 0.6s linear infinite;
 }
 

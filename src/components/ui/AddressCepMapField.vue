@@ -6,8 +6,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import api from '@/api/client'
-import FormField from '@/components/ui/FormField.vue'
-import FormattedField from '@/components/ui/FormattedField.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -230,7 +229,7 @@ onUnmounted(() => {
 
 <template>
   <div class="address-cep-map">
-    <FormattedField
+    <BaseInput
       v-model="cep"
       label="CEP"
       required
@@ -247,14 +246,14 @@ onUnmounted(() => {
     <p v-if="loadingCep" class="cep-status" role="status">Consultando Rua, Bairro e Cidade pelo CEP...</p>
     <p v-else-if="cepFeedback" class="cep-feedback" role="status">{{ cepFeedback }}</p>
 
-    <FormField
+    <BaseInput
       v-model="street"
       label="Rua"
       placeholder="Preenchida automaticamente pelo CEP"
       disabled
     />
 
-    <FormField
+    <BaseInput
       v-model="neighborhood"
       label="Bairro"
       placeholder="Preenchido automaticamente pelo CEP"
@@ -262,14 +261,14 @@ onUnmounted(() => {
     />
 
     <div class="city-state-row">
-      <FormField
+      <BaseInput
         v-model="city"
         label="Cidade"
         placeholder="Cidade do CEP"
         disabled
         class="field-cell"
       />
-      <FormField
+      <BaseInput
         v-model="state"
         label="UF"
         placeholder="UF"
@@ -279,14 +278,14 @@ onUnmounted(() => {
     </div>
 
     <div class="address-row">
-      <FormField
+      <BaseInput
         v-model="number"
         label="Número"
         placeholder="Nº"
         :disabled="disabled"
         class="field-cell"
       />
-      <FormField
+      <BaseInput
         v-model="complement"
         label="Complemento"
         :placeholder="complementPlaceholder"

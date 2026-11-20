@@ -1,7 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import PublicShell from '@/components/layout/PublicShell.vue'
-import RoleSelector from '@/components/auth/RoleSelector.vue'
+import RoleSelector from '@/features/auth/components/RoleSelector.vue'
 </script>
 
 <template>

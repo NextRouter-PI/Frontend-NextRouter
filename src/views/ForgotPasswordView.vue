@@ -1,7 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import PublicShell from '@/components/layout/PublicShell.vue'
-import PasswordResetForm from '@/components/auth/PasswordResetForm.vue'
+import PasswordResetForm from '@/features/auth/components/PasswordResetForm.vue'
 
 const router = useRouter()
 </script>

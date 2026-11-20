@@ -1,18 +1,16 @@
 <script setup>
-import PassengerTransport from '@/components/pages/passenger/PassengerTransport.vue'
-import DriverTransport from '@/components/pages/driver/DriverTransport.vue'
-import CompanyVeiculos from '@/components/pages/company/CompanyVeiculos.vue'
-import { computed } from 'vue'
+import PassengerTransport from '@/features/passenger/components/PassengerTransport.vue'
+import DriverTransport from '@/features/driver/components/DriverTransport.vue'
+import CompanyVeiculos from '@/features/company/components/CompanyVeiculos.vue'
+import { USER_ROLES } from '@/constants'
 import { state } from '@/stores/state'
-
-const userLogged = computed(() => state)
 </script>
 
 <template>
-  <div v-if="!userLogged.checkingAuth">
-    <PassengerTransport v-if="userLogged.role === 'passenger'" />
-    <DriverTransport v-else-if="userLogged.role === 'driver'" />
-    <CompanyVeiculos v-else-if="userLogged.role === 'company'" />
+  <div v-if="!state.checkingAuth">
+    <PassengerTransport v-if="state.role === USER_ROLES.PASSENGER" />
+    <DriverTransport v-else-if="state.role === USER_ROLES.DRIVER" />
+    <CompanyVeiculos v-else-if="state.role === USER_ROLES.COMPANY" />
   </div>
   <div v-else>
     <p>Carregando...</p>

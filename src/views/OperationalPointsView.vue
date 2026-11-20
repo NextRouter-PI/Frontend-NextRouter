@@ -4,7 +4,7 @@ import { useTransporteStore } from '@/stores/useTransporteStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useInputFormat } from '@/composables/useInputFormat'
 import AddressCepMapField from '@/components/ui/AddressCepMapField.vue'
-import FormField from '@/components/ui/FormField.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 
 function emptyPoint() {
@@ -138,7 +138,7 @@ onMounted(async () => {
     <section class="panel form-panel">
       <h2>{{ editingId ? 'Editar Ponto de Destino' : 'Novo Ponto de Destino' }}</h2>
       <form class="point-form" @submit.prevent="handleSubmit">
-        <FormField
+        <BaseInput
           v-model="form.name"
           label="Nome do destino"
           required

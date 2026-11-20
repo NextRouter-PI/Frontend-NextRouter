@@ -1,6 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router';
-import SignupConfirmation from "@/components/auth/SignupConfirmation.vue";
+import SignupConfirmation from "@/features/auth/components/SignupConfirmation.vue";
 
 const router = useRouter();
 

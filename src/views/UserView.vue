@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { state } from '@/stores/state'
-import '@/assets/css/profile.css'
+import '@/styles/profile.scss'
 
 const route = useRoute()
 const tabTransition = ref('account-tab-left')

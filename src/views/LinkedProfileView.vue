@@ -14,7 +14,7 @@ import { useInputFormat } from '@/composables/useInputFormat'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
-import '@/assets/css/profile.css'
+import '@/styles/profile.scss'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({

@@ -3,19 +3,19 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { state } from '@/stores/state'
 import { getPublicCompany } from '@/api/companies'
-import { useMemberships } from '@/composables/useMemberships'
+import { useMemberships } from '@/features/memberships/composables/useMemberships'
 import { useInputFormat } from '@/composables/useInputFormat'
 import { sessionError } from '@/stores/session'
 import { formatApiError } from '@/utils/apiErrors'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
-import FormattedField from '@/components/ui/FormattedField.vue'
+import BaseInput from '@/components/ui/BaseInput.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
-import MembershipCard from '@/components/memberships/MembershipCard.vue'
-import MembershipActionForm from '@/components/memberships/MembershipActionForm.vue'
+import MembershipCard from '@/features/memberships/components/MembershipCard.vue'
+import MembershipActionForm from '@/features/memberships/components/MembershipActionForm.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
-import '@/assets/css/memberships.css'
+import '@/styles/memberships.scss'
 
 const route = useRoute()
 const scope = computed(() => {
@@ -139,7 +139,7 @@ async function closeMembership(reason) {
                 </select>
               </label>
             </div>
-            <FormattedField
+            <BaseInput
               v-model="contactPhone"
               label="Telefone para contato"
               placeholder="(00) 90000-0000"
