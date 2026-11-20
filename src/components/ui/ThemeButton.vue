@@ -40,6 +40,8 @@ function toggleTheme() {
 .theme-btn {
   width: 38px;
   height: 38px;
+  flex-shrink: 0;
+  aspect-ratio: 1;
   border-radius: $radius-round;
   @include flex-center;
   background: transparent;

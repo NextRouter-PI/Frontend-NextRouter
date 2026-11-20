@@ -47,16 +47,26 @@ function isActive(to) {
   width: var(--sidebar-width);
   height: 100vh;
   background: var(--chrome-bg);
-  border-right: 2px solid var(--primary);
   z-index: $z-sidebar;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: $space-3 0 $space-5;
+  padding: 0 0 $space-5;
   gap: $space-6;
   transition: width $duration-slow $ease-fluid;
   overflow: hidden;
   box-shadow: 4px 0 16px rgba(0, 0, 0, 0.22);
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: calc(var(--header-height) - 2px);
+    right: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary);
+    pointer-events: none;
+  }
 
   &:hover,
   &:focus-within {
@@ -72,17 +82,22 @@ function isActive(to) {
 
 .sidebar-logo {
   width: 100%;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
   text-decoration: none;
 
   &-content {
     display: flex;
     align-items: center;
     gap: $space-3;
-    padding: 6px 18px;
+    padding: 0 13px;
 
     img {
       height: 36px;
       width: auto;
+      max-width: none;
       flex-shrink: 0;
     }
   }

@@ -71,15 +71,23 @@
 }
 
 .account-notice {
+  position: relative;
+  overflow: hidden;
   padding: 12px 14px;
-  border-left: 4px solid var(--primary);
   border-radius: 10px;
   background: var(--color-surface);
-  border-top: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  border: 1px solid var(--border);
   font-size: 0.9rem;
   margin: 12px 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: var(--primary);
+    pointer-events: none;
+  }
 }
 
 .account-grid {

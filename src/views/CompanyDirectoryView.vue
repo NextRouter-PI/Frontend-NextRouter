@@ -322,13 +322,24 @@ function removeCityFilter() {
 }
 
 .validation-hint {
+  position: relative;
+  overflow: hidden;
   margin: 0 0 12px;
   padding: 10px 12px;
-  border-left: 3px solid var(--primary);
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   background: var(--color-surface);
   font-size: 0.88rem;
   color: var(--text);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: var(--primary);
+    pointer-events: none;
+  }
 }
 
 .status-text {

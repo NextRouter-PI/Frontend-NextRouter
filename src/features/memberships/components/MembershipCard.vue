@@ -59,16 +59,26 @@ const formattedPhone = computed(() =>
 
 <style lang="scss" scoped>
 .membership-card {
+  position: relative;
+  overflow: hidden;
   padding: 16px 18px;
   outline: 1px solid var(--border);
   outline-offset: -1px;
-  border-left: 4px solid var(--primary);
   border-radius: 14px;
   background: var(--color-surface);
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
   transition: outline-color 0.2s var(--ease-fluid), transform 0.2s var(--ease-fluid),
     box-shadow 0.2s var(--ease-fluid);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: var(--primary);
+    pointer-events: none;
+  }
 }
 
 .membership-card:hover {

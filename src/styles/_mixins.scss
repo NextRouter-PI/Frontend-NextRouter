@@ -42,10 +42,21 @@
 }
 
 @mixin status-banner($color-var, $bg-var) {
+  position: relative;
+  overflow: hidden;
   padding: $space-3 $space-4;
   border-radius: $radius-md;
-  border-left: 4px solid $color-var;
+  border: 1px solid var(--border);
   background: $bg-var;
   color: var(--text);
   font-size: $text-md;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: $color-var;
+    pointer-events: none;
+  }
 }

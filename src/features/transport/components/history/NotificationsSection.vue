@@ -54,13 +54,20 @@ const unreadCount = computed(() => props.notifications.filter((n) => !n.read_at)
 }
 
 .history-card {
+  position: relative;
+  overflow: hidden;
   padding: $space-3;
   border-radius: $radius-md;
   background: var(--altbg);
   border: 1px solid var(--border);
 
-  &.unread {
-    border-left: 4px solid var(--primary);
+  &.unread::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: var(--primary);
+    pointer-events: none;
   }
 }
 

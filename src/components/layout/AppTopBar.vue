@@ -12,7 +12,12 @@ defineProps({
   <header class="app-top-bar" :class="{ 'has-sidebar-offset': offsetForSidebar }">
     <div class="top-bar-left">
       <slot name="brand">
-        <RouterLink :to="brandTo" class="top-bar-logo" aria-label="NextRouter">
+        <RouterLink
+          v-if="!offsetForSidebar"
+          :to="brandTo"
+          class="top-bar-logo"
+          aria-label="NextRouter"
+        >
           <img :src="Logo" alt="NextRouter" />
         </RouterLink>
       </slot>

@@ -30,8 +30,7 @@ defineProps({
 
   &-accent {
     width: 44px;
-    height: 4px;
-    border-radius: $radius-pill;
+    height: 2px;
     background: var(--primary);
   }
 
