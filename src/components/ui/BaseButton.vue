@@ -17,7 +17,7 @@ const emit = defineEmits(['click'])
     :disabled="disabled || loading"
     @click="emit('click')"
   >
-    <span v-if="loading" class="spinner"></span>
+    <span v-if="loading" class="spinner" aria-hidden="true"></span>
     <span v-else-if="icon" class="mdi" :class="icon" aria-hidden="true"></span>
     <slot />
   </button>
@@ -29,17 +29,19 @@ const emit = defineEmits(['click'])
   justify-content: center;
   align-items: center;
   gap: 8px;
-  border: 1.5px solid transparent;
+  border: none;
+  outline: 1.5px solid transparent;
+  outline-offset: -1.5px;
   border-radius: var(--border-radius);
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s var(--ease-fluid), color 0.2s var(--ease-fluid),
-    border-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid),
+    outline-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid),
     box-shadow 0.2s var(--ease-fluid);
 }
 
 .base-btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .base-btn.block {
@@ -67,7 +69,7 @@ const emit = defineEmits(['click'])
 .variant-secondary {
   background: transparent;
   color: var(--primary);
-  border-color: var(--primary);
+  outline-color: var(--primary);
 }
 .variant-secondary:hover:not(:disabled) {
   background: var(--primary);
@@ -77,17 +79,17 @@ const emit = defineEmits(['click'])
 .variant-outline {
   background: transparent;
   color: var(--text);
-  border-color: var(--border);
+  outline-color: var(--border);
 }
 .variant-outline:hover:not(:disabled) {
-  border-color: var(--primary);
+  outline-color: var(--primary);
   color: var(--primary);
   background: rgba(236, 131, 20, 0.06);
 }
 .variant-outline.selected {
   background: rgba(236, 131, 20, 0.1);
   color: var(--primary);
-  border-color: var(--primary);
+  outline-color: var(--primary);
 }
 
 .variant-ghost {

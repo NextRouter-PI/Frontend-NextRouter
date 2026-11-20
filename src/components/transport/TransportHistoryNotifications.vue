@@ -15,6 +15,7 @@ import {
   listTravels,
   listTravelParticipations,
 } from '@/api/transport'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 
 const scope = useAccountScope()
 const role = computed(() => state.role)
@@ -258,7 +259,7 @@ onMounted(refresh)
     <Transition name="fade-slide">
       <p v-if="error" class="error-msg" role="alert">{{ error }}</p>
     </Transition>
-    <p v-if="loading" class="status-msg">Consultando histórico...</p>
+    <SkeletonCard v-if="loading" :count="2" />
 
     <!-- 1. Viagens passadas -->
     <section class="history-section">
@@ -477,9 +478,10 @@ onMounted(refresh)
 
 .history-section {
   background: var(--superfice);
-  border: 1px solid var(--border);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-radius: 16px;
-  padding: 18px;
+  padding: 20px;
   margin-bottom: 18px;
   box-shadow: var(--shadow);
 }
@@ -524,10 +526,16 @@ onMounted(refresh)
 }
 
 .history-card {
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-radius: 12px;
-  border: 1px solid var(--border);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   background: var(--bg);
+  transition: outline-color 0.2s var(--ease-fluid);
+}
+
+.history-card:hover {
+  outline-color: var(--primary);
 }
 
 .history-card.unread {

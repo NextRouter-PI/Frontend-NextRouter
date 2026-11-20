@@ -8,10 +8,12 @@
 .membership-section { margin: 24px 0; }
 .membership-panel {
   background: var(--superfice);
-  border: 1px solid var(--border);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-radius: 14px;
   padding: 20px;
   margin: 16px 0;
+  box-shadow: var(--shadow);
 }
 .membership-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
 .membership-actions a, .membership-link { color: var(--text); text-decoration: none; }
@@ -21,11 +23,17 @@
 .membership-filters { display: flex; flex-wrap: wrap; gap: 16px; margin: 20px 0; }
 .membership-filters label { display: flex; flex-direction: column; gap: 6px; }
 .membership-select {
-  padding: 10px;
-  border: 1px solid var(--border-primary);
-  border-radius: 8px;
+  padding: 10px 12px;
+  outline: 1.5px solid var(--border);
+  outline-offset: -1.5px;
+  border-radius: 10px;
   color: var(--text);
   background: var(--superfice);
+  transition: outline-color 0.2s var(--ease-fluid);
+}
+
+.membership-select:focus {
+  outline-color: var(--primary);
 }
 @media (min-width: 901px) {
   .membership-workspace.authenticated { padding-left: 30px; }

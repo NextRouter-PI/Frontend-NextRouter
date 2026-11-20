@@ -60,13 +60,19 @@ const formattedPhone = computed(() =>
 <style scoped>
 .membership-card {
   padding: 16px 18px;
-  border: 1px solid var(--border);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-left: 4px solid var(--primary);
   border-radius: 14px;
   background: var(--superfice);
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
-  transition: border-color 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid);
+  transition: outline-color 0.2s var(--ease-fluid), transform 0.2s var(--ease-fluid),
+    box-shadow 0.2s var(--ease-fluid);
+}
+
+.membership-card:hover {
+  outline-color: var(--primary);
 }
 
 .membership-header {

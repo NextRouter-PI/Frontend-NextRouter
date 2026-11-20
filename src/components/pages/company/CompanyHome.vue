@@ -4,6 +4,8 @@ import { useTransporteStore } from '@/stores/useTransporteStore'
 import { Bar } from 'vue-chartjs'
 import { state } from '@/stores/state'
 import api from '@/api/client'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 import {
   Chart as ChartJS,
@@ -197,7 +199,7 @@ onMounted(async () => {
           {{ companyData.is_approved ? 'Aprovada' : 'Pendente' }}
         </span>
       </div>
-      <p v-if="companyLoading" class="status-message">Carregando dados da empresa...</p>
+      <SkeletonCard v-if="companyLoading" :count="1" :lines="3" />
       <div v-else class="profile-info-grid">
         <div
           v-for="item in [
@@ -246,7 +248,7 @@ onMounted(async () => {
         <h2>Atendimento por Serviço {{ statsDate || data }}</h2>
         <div class="chart-container">
           <Transition name="fade-slide" mode="out-in">
-            <p v-if="statsLoading" key="loading" class="chart-empty">Carregando...</p>
+            <LoadingSpinner v-if="statsLoading" key="loading" text="Carregando estatísticas..." />
             <p v-else-if="!serviceSlots.length" key="empty" class="chart-empty">Nenhuma viagem datada registrada para a data consultada.</p>
             <Bar v-else key="chart" :data="chartData" :options="chartOptions" />
           </Transition>
@@ -330,9 +332,10 @@ onMounted(async () => {
 }
 
 .profile-card {
-  margin-top: 24px;
-  padding: 22px;
-  border: 1px solid var(--border);
+  margin-top: 20px;
+  padding: 20px;
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-radius: 14px;
   background: var(--superfice);
   box-shadow: var(--shadow);
@@ -392,47 +395,58 @@ onMounted(async () => {
 }
 
 .cards-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 18px;
 }
 
 .info-card {
-  min-width: 100%;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 22px;
-  border: 1px solid var(--border);
+  gap: 12px;
+  padding: 16px;
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-radius: 14px;
   background: var(--superfice);
   box-shadow: var(--shadow);
+  transition: outline-color 0.2s var(--ease-fluid);
+}
+
+.info-card:hover {
+  outline-color: var(--primary);
 }
 
 .grande {
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .card-icon {
   color: var(--primary);
-  font-size: 46px;
+  font-size: 36px;
+  flex-shrink: 0;
 }
 
 .info-card h4 {
   margin: 0;
-  font-size: 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
 }
 
 .info-card p {
-  margin-top: 8px;
-  font-size: 22px;
+  margin: 4px 0 0;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
 }
 
 .grafico-card {
-  margin-top: 28px;
-  padding: 22px;
-  border: 1px solid var(--border);
+  margin-top: 18px;
+  padding: 20px;
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-radius: 14px;
   background: var(--superfice);
   box-shadow: var(--shadow);

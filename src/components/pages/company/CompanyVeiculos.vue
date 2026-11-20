@@ -5,6 +5,7 @@ import { useAccountScope } from '@/composables/useAccountScope'
 import { useInputFormat } from '@/composables/useInputFormat'
 import { useRouter } from 'vue-router'
 import AddressCepMapField from '@/components/ui/AddressCepMapField.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 
 const store = useTransporteStore()
 const scope = useAccountScope()
@@ -174,11 +175,11 @@ async function salvarPonto() {
         </button>
       </div>
 
-      <p v-if="store.loading" class="status-message">Carregando veículos...</p>
+      <SkeletonCard v-if="store.loading" :count="3" />
       <p v-else-if="store.error" class="status-message error" role="alert">{{ store.error }}</p>
       <p v-else-if="!veiculosFiltrados.length" class="status-message">Nenhum veículo encontrado.</p>
 
-      <div class="list-container">
+      <TransitionGroup name="list-stagger" tag="div" class="list-container">
         <div v-for="veiculo in veiculosFiltrados" :key="veiculo.id" class="transport-card">
           <div class="card-header">
             <div class="header-main">
@@ -233,7 +234,7 @@ async function salvarPonto() {
             {{ veiculo.status }}
           </span>
         </div>
-      </div>
+      </TransitionGroup>
 
       <button type="button" class="fab-add" aria-label="Cadastrar veículo" @click="router.push('/cadastro-veiculo')">
         <span class="mdi mdi-plus"></span>

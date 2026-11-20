@@ -56,17 +56,19 @@ const emit = defineEmits(['update:modelValue'])
 .field-group select {
   width: 100%;
   padding: 11px 14px;
-  border: 1.5px solid var(--border);
+  border: none;
+  outline: 1.5px solid var(--border);
+  outline-offset: -1.5px;
   border-radius: var(--border-radius);
   font-size: 0.92rem;
-  transition: border-color 0.2s var(--ease-fluid), box-shadow 0.2s var(--ease-fluid);
+  transition: outline-color 0.2s var(--ease-fluid);
   background: var(--superfice);
   color: var(--text);
   appearance: auto;
 }
 
 .field-group select:focus {
-  outline: none;
-  border-color: var(--primary);
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
 }
 </style>

@@ -11,6 +11,8 @@ import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
 import MembershipCard from '@/components/memberships/MembershipCard.vue'
 import MembershipActionForm from '@/components/memberships/MembershipActionForm.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import '@/assets/css/memberships.css'
 
 const company = ref(null)
@@ -91,7 +93,7 @@ async function confirmDecision(reason) {
       <template v-if="state.role === 'company'">
         <BaseButton type="button" variant="outline" :disabled="busy || companyLoading || loading" @click="loadCompany">Atualizar cadastro e vínculos</BaseButton>
         <div role="alert"><ErrorMessage :message="companyError" /></div>
-        <p v-if="companyLoading" role="status">Consultando cadastro empresarial...</p>
+        <SkeletonCard v-if="companyLoading" :count="1" :lines="2" />
         <section v-else-if="company" class="membership-panel" aria-label="Situação cadastral da empresa">
           <h2>{{ company.trade_name }}</h2>
           <p>Conta autenticada · cadastro empresarial: {{ moderationLabel }}.</p>
@@ -118,12 +120,12 @@ async function confirmDecision(reason) {
             <p v-if="notice" class="membership-notice" role="status">{{ notice }}</p>
           </Transition>
           <div role="alert"><ErrorMessage :message="error" /></div>
-          <p v-if="busy" role="status">Processando ação de vínculo e atualizando a consulta...</p>
-          <p v-if="loading" role="status">Consultando pedidos e vínculos...</p>
+          <LoadingSpinner v-if="busy" size="sm" inline text="Processando ação de vínculo..." />
+          <SkeletonCard v-if="loading" :count="3" avatar />
           <section v-else-if="ready" aria-label="Pedidos e vínculos da empresa">
             <p v-if="!records.length" role="status">Nenhum registro neste estado.</p>
             <p v-else-if="!filteredRecords.length" role="status">Nenhum nome corresponde ao filtro nesta página.</p>
-            <div class="membership-list">
+            <TransitionGroup name="list-stagger" tag="div" class="membership-list">
               <MembershipCard v-for="membership in filteredRecords" :key="membership.id"
                 :membership="membership" :title="membership.applicant_name || 'Nome não disponível'">
                 <template v-if="membership.status === 'active'">
@@ -152,7 +154,7 @@ async function confirmDecision(reason) {
                   </div>
                 </Transition>
               </MembershipCard>
-            </div>
+            </TransitionGroup>
             <PageNavigation :page="page" :total-pages="totalPages" :disabled="busy || loading" @change="goToPage" />
           </section>
         </template>

@@ -8,6 +8,7 @@ import ProfileFieldsSection from '@/components/profile/ProfileFieldsSection.vue'
 import ProfileDocumentSlot from '@/components/profile/ProfileDocumentSlot.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 
 const { profile, role, ready, busy, loading, error, notice, editing, supported, refresh } = provideOwnProfile()
 const documents = computed(() => profileDocumentFields(role.value))
@@ -23,7 +24,8 @@ const { distance } = usePullToRefresh(refresh, () => canRefresh.value && !editin
     </div>
     <p v-if="notice" class="account-notice" role="status">{{ notice }}</p>
     <div role="alert"><ErrorMessage :message="error" /></div>
-    <p v-if="loading" role="status">Consultando perfil atualizado...</p>
+    <SkeletonCard v-if="loading && !profile" :count="2" avatar />
+    <p v-else-if="loading" class="account-hint" role="status">Atualizando perfil...</p>
     <p v-if="profile && !ready" class="account-notice">Os dados exibidos são da última leitura, não estão confirmados como atuais. Atualize antes de editar ou reenviar.</p>
     <p v-if="editing" class="account-hint">Há uma edição aberta. Atualizar após falha não substitui seu rascunho; revise os dados antes de salvar.</p>
     <template v-if="profile">

@@ -13,6 +13,7 @@ import EmailChangeForm from '@/components/account/EmailChangeForm.vue'
 import AccountSessions from '@/components/account/AccountSessions.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 
 const router = useRouter()
 const scope = useAccountScope()
@@ -55,7 +56,7 @@ onMounted(refresh)
     <div class="account-actions">
       <BaseButton type="button" variant="outline" :disabled="busy || loading" @click="refresh">Atualizar conta e reiniciar o fluxo aberto</BaseButton>
     </div>
-    <p v-if="loading" role="status">Consultando conta...</p>
+    <SkeletonCard v-if="loading" :count="1" :lines="4" />
     <div role="alert"><ErrorMessage :message="error" /></div>
     <template v-if="account && state.logged && account.id === state.user?.id">
       <p>{{ account.email }}</p>

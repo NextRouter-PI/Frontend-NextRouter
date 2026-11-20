@@ -55,7 +55,8 @@ watch(
   padding: 6px;
   margin-bottom: 18px;
   background: var(--superfice);
-  border: 1px solid var(--border);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-radius: 14px;
 }
 

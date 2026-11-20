@@ -5,6 +5,7 @@ import { useAccountScope } from '@/composables/useAccountScope'
 import { useInputFormat } from '@/composables/useInputFormat'
 import AddressCepMapField from '@/components/ui/AddressCepMapField.vue'
 import FormField from '@/components/ui/FormField.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 
 function emptyPoint() {
   return {
@@ -174,11 +175,11 @@ onMounted(async () => {
 
     <section class="panel list-panel">
       <h2>Pontos de Destino Cadastrados ({{ store.pontosDestino.length }})</h2>
-      <p v-if="store.pointsLoading" class="hint">Carregando pontos de destino...</p>
+      <SkeletonCard v-if="store.pointsLoading" :count="2" />
       <p v-else-if="!store.pontosDestino.length" class="hint">
         Nenhum ponto de destino cadastrado ainda. Preencha o formulário e selecione a localização no mapa acima.
       </p>
-      <div v-else class="points-list">
+      <TransitionGroup v-else name="list-stagger" tag="div" class="points-list">
         <article v-for="ponto in store.pontosDestino" :key="ponto.id" class="point-card">
           <div>
             <h3>{{ ponto.name }}</h3>
@@ -198,7 +199,7 @@ onMounted(async () => {
             </button>
           </div>
         </article>
-      </div>
+      </TransitionGroup>
     </section>
   </div>
 </template>
@@ -251,9 +252,10 @@ onMounted(async () => {
 
 .panel {
   background: var(--superfice);
-  border: 1px solid var(--border);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
   border-radius: 16px;
-  padding: 18px 20px;
+  padding: 20px;
   margin-bottom: 18px;
   box-shadow: var(--shadow);
 }
@@ -330,10 +332,16 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 14px;
+  padding: 14px 16px;
   border-radius: 12px;
   background: var(--bg);
-  border: 1px solid var(--border);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+  transition: outline-color 0.2s var(--ease-fluid);
+}
+
+.point-card:hover {
+  outline-color: var(--primary);
 }
 
 .point-card h3 {

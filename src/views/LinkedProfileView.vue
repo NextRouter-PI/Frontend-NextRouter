@@ -13,6 +13,7 @@ import { formatApiError } from '@/utils/apiErrors'
 import { useInputFormat } from '@/composables/useInputFormat'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import '@/assets/css/profile.css'
 
 delete L.Icon.Default.prototype._getIconUrl
@@ -196,7 +197,7 @@ onUnmounted(destroyMap)
         </RouterLink>
       </div>
 
-      <p v-if="loading" role="status">Consultando perfil autorizado...</p>
+      <SkeletonCard v-if="loading" :count="2" avatar />
       <div role="alert"><ErrorMessage :message="error" /></div>
 
       <template v-if="profile">

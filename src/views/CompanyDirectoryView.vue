@@ -8,6 +8,7 @@ import CompanyFilterDropdown from '@/components/directory/CompanyFilterDropdown.
 import CompanyResultCard from '@/components/directory/CompanyResultCard.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import Logo from '@/assets/images/logo.png'
 import '@/assets/css/memberships.css'
 
@@ -123,7 +124,7 @@ function removeCityFilter() {
       <div role="alert"><ErrorMessage :message="error" /></div>
 
       <Transition name="fade-slide" mode="out-in">
-        <p v-if="loading" key="loading" class="status-text" role="status">Pesquisando empresas...</p>
+        <SkeletonCard v-if="loading" key="loading" :count="3" avatar />
 
         <section v-else-if="searched && !error" key="results" aria-label="Resultados da busca">
           <div v-if="!results.length" class="empty-state" role="status">
@@ -131,7 +132,7 @@ function removeCityFilter() {
             <p class="empty-title">Nenhuma empresa encontrada para este grupo.</p>
             <p class="empty-hint">Verifique o nome do grupo de rota ou ajuste o filtro de estado e cidade.</p>
           </div>
-          <div v-else class="results-list">
+          <TransitionGroup v-else name="list-stagger" tag="div" class="results-list">
             <CompanyResultCard
               v-for="company in results"
               :key="company.id"
@@ -139,7 +140,7 @@ function removeCityFilter() {
               :logged="state.logged"
               :can-request-membership="personal"
             />
-          </div>
+          </TransitionGroup>
           <PageNavigation :page="page" :total-pages="totalPages" :disabled="loading" @change="goToPage" />
         </section>
 

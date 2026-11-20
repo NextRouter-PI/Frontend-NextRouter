@@ -13,6 +13,8 @@ import FormattedField from '@/components/ui/FormattedField.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
 import MembershipCard from '@/components/memberships/MembershipCard.vue'
 import MembershipActionForm from '@/components/memberships/MembershipActionForm.vue'
+import SkeletonCard from '@/components/ui/SkeletonCard.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import '@/assets/css/memberships.css'
 
 const route = useRoute()
@@ -95,8 +97,8 @@ async function closeMembership(reason) {
         </div>
         <p v-if="notice" class="membership-notice" role="status">{{ notice }}</p>
         <div role="alert"><ErrorMessage :message="error" /></div>
-        <p v-if="busy" role="status">Processando ação de vínculo e atualizando a consulta...</p>
-        <p v-if="loading" role="status">Consultando vínculos...</p>
+        <LoadingSpinner v-if="busy" size="sm" inline text="Processando ação de vínculo..." />
+        <SkeletonCard v-if="loading" :count="2" avatar />
         <section v-else-if="ready" class="membership-section" aria-label="Situação atual do vínculo">
           <h2>Situação atual</h2>
           <MembershipCard v-if="openMembership" :membership="openMembership" :title="companyName(openMembership)">
@@ -171,9 +173,9 @@ async function closeMembership(reason) {
           <h2>Pedidos e vínculos</h2>
           <p>O histórico usa o identificador da empresa quando seu nome público não está disponível.</p>
           <p v-if="!records.length">Nenhum pedido registrado neste perfil.</p>
-          <div class="membership-list">
+          <TransitionGroup name="list-stagger" tag="div" class="membership-list">
             <MembershipCard v-for="membership in records" :key="membership.id" :membership="membership" :title="companyName(membership)" />
-          </div>
+          </TransitionGroup>
           <PageNavigation :page="page" :total-pages="totalPages" :disabled="loading || busy" @change="goToPage" />
         </section>
       </template>
