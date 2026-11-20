@@ -2,7 +2,7 @@ export function navigationItems(role) {
   const company = role === 'company'
   return [
     { to: '/', title: 'Home', icon: 'mdi-home' },
-    { to: '/transporte', title: company ? 'Veículos' : 'Transporte', icon: company ? 'mdi-bus' : 'mdi-car' },
+    { to: company ? '/transporte' : '/historico', title: company ? 'Veículos' : 'Histórico', icon: company ? 'mdi-bus' : 'mdi-history' },
     { to: '/lista', title: company ? 'Rotas' : 'Lista', icon: company ? 'mdi-map-outline' : 'mdi-format-list-bulleted' },
     ...(company ? [
       { to: '/pontos-operacionais', title: 'Pontos', icon: 'mdi-map-marker-radius' },

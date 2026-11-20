@@ -47,6 +47,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: "/historico",
+      name: "historico",
+      component: () => import("../views/TransportView.vue"),
+      meta: { requiresAuth: true }
+    },
+    {
       path: "/cadastro-veiculo",
       name: "cadastro-veiculo",
       component: () => import("../components/pages/company/CadastrarVeiculo.vue"),

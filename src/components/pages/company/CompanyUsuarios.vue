@@ -127,7 +127,13 @@ async function confirmDecision(reason) {
                 <template v-if="membership.status === 'active'">
                   <p>Vínculo aprovado. Grupo e serviços são configurações posteriores.</p>
                   <div class="membership-actions">
-                    <RouterLink :to="membership.driver ? `/usuarios/motorista/${membership.driver}` : `/usuarios/passageiro/${membership.passenger}`">Consultar identidade mínima</RouterLink>
+                    <RouterLink
+                      :to="membership.driver ? `/usuarios/motorista/${membership.driver}` : `/usuarios/passageiro/${membership.passenger}`"
+                      class="btn-profile-link"
+                    >
+                      <span class="mdi mdi-account-details-outline" aria-hidden="true"></span>
+                      <span>Consultar perfil</span>
+                    </RouterLink>
                     <BaseButton v-if="decision?.membership.id !== membership.id" type="button" variant="outline" :disabled="busy"
                       @click="decision = { membership, action: 'end' }">Encerrar vínculo</BaseButton>
                   </div>
@@ -155,3 +161,31 @@ async function confirmDecision(reason) {
     </div>
   </div>
 </template>
+
+<style scoped>
+.btn-profile-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  background: var(--gradient-primary);
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: var(--shadow-primary);
+}
+
+.btn-profile-link:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.btn-profile-link .mdi {
+  font-size: 1.1rem;
+}
+</style>

@@ -111,7 +111,7 @@ onUnmounted(() => {
         </p>
         <div class="onboarding-actions">
           <RouterLink to="/lista" class="btn-primary">Responder atendimentos</RouterLink>
-          <RouterLink to="/transporte" class="btn-outline">Meu transporte</RouterLink>
+          <RouterLink to="/historico" class="btn-outline">Histórico</RouterLink>
         </div>
       </div>
 
