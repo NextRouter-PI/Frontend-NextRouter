@@ -2,9 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const store = useRotasStore()
 const scope = useAccountScope()
 
@@ -20,6 +21,10 @@ const salvando = ref(false)
 onMounted(async () => {
   await store.fetchRotas({ signal: scope.signal })
   if (!scope.current()) return
+  const preselected = Number(route.query.destination)
+  if (preselected && store.pontosDestino.some((p) => p.id === preselected)) {
+    grupoForm.value.destinationId = preselected
+  }
   carregando.value = false
 })
 
@@ -65,9 +70,9 @@ const salvar = async () => {
       Um grupo de atendimento exige um ponto operacional de destino. Após criar o grupo, você será direcionado à tela de configuração para definir a política de respostas, os serviços habituais (ida e retorno separados) e os passageiros atribuídos.
     </p>
 
-    <div v-if="!carregando && !store.pontosOperacionais.length" class="empty-points">
-      <p>Você ainda não possui pontos operacionais cadastrados para selecionar como destino.</p>
-      <RouterLink to="/pontos-operacionais" class="link-points">Ir para Pontos Operacionais</RouterLink>
+    <div v-if="!carregando && !store.pontosDestino.length" class="empty-points">
+      <p>Você ainda não possui pontos operacionais de destino cadastrados para vincular ao grupo.</p>
+      <RouterLink to="/pontos-operacionais" class="link-points">Ir para Pontos de Destino</RouterLink>
     </div>
 
     <form v-else class="cadastro" @submit.prevent="salvar">
@@ -78,8 +83,8 @@ const salvar = async () => {
       <div class="form-group">
         <label>Ponto Operacional de Destino<span>*</span></label>
         <select v-model="grupoForm.destinationId" required :disabled="salvando || carregando">
-          <option value="" disabled>Selecione um ponto operacional</option>
-          <option v-for="ponto in store.pontosOperacionais" :key="ponto.id" :value="ponto.id">
+          <option value="" disabled>Selecione um ponto de destino</option>
+          <option v-for="ponto in store.pontosDestino" :key="ponto.id" :value="ponto.id">
             {{ ponto.name }} — {{ ponto.city }}/{{ ponto.state }} (CEP {{ ponto.cep }})
           </option>
         </select>

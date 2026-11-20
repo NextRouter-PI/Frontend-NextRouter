@@ -63,6 +63,10 @@ export const useTransporteStore = defineStore('transporte', {
     pointsLoading: false,
     error: null,
   }),
+  getters: {
+    garagens: (state) => state.pontosOperacionais.filter((p) => p.point_type === 'garage'),
+    pontosDestino: (state) => state.pontosOperacionais.filter((p) => p.point_type === 'destination'),
+  },
   actions: {
     $reset() {
       this.veiculos = []

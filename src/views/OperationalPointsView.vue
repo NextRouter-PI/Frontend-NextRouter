@@ -105,7 +105,7 @@ function renderExistingPoints() {
     existingMarkersLayer = L.layerGroup().addTo(map)
   }
 
-  for (const ponto of store.pontosOperacionais || []) {
+  for (const ponto of store.pontosDestino || []) {
     const lat = Number(ponto.latitude)
     const lng = Number(ponto.longitude)
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
@@ -184,6 +184,7 @@ async function handleSubmit() {
 
   saving.value = true
   const payload = {
+    point_type: 'destination',
     name: form.value.name.trim(),
     street: form.value.street.trim(),
     number: form.value.number.trim(),
@@ -204,13 +205,13 @@ async function handleSubmit() {
   saving.value = false
 
   if (!saved) {
-    error.value = typeof store.error === 'string' ? store.error : 'Não foi possível salvar o ponto operacional.'
+    error.value = typeof store.error === 'string' ? store.error : 'Não foi possível salvar o ponto de destino.'
     return
   }
 
   notice.value = editingId.value
-    ? 'Ponto operacional atualizado com sucesso.'
-    : 'Ponto operacional cadastrado com sucesso.'
+    ? 'Ponto de destino atualizado com sucesso.'
+    : 'Ponto de destino cadastrado com sucesso.'
   resetForm()
   renderExistingPoints()
 }
@@ -248,13 +249,14 @@ onUnmounted(() => {
   <div class="points-page">
     <div class="page-header">
       <div>
-        <h1>Pontos Operacionais</h1>
+        <h1>Pontos Operacionais de Destino</h1>
         <p class="subtitle">
-          Cadastre destinos, garagens e pontos de embarque. Clique no mapa para capturar latitude e longitude automaticamente.
+          Cadastre os pontos de destino para vincular aos grupos de atendimento. Clique no mapa para capturar latitude e longitude automaticamente.
+          As garagens ficam na seção de Veículos.
         </p>
       </div>
       <div class="header-links">
-        <RouterLink to="/transporte" class="btn-outline">Frota</RouterLink>
+        <RouterLink to="/transporte" class="btn-outline">Frota e Garagens</RouterLink>
         <RouterLink to="/lista" class="btn-outline">Grupos e Rotas</RouterLink>
       </div>
     </div>
@@ -270,11 +272,11 @@ onUnmounted(() => {
       </section>
 
       <section class="panel form-panel">
-        <h2>{{ editingId ? 'Editar Ponto Operacional' : 'Novo Ponto Operacional' }}</h2>
+        <h2>{{ editingId ? 'Editar Ponto de Destino' : 'Novo Ponto de Destino' }}</h2>
         <form class="point-form" @submit.prevent="handleSubmit">
           <div class="field full">
-            <label for="op-name">Nome do ponto *</label>
-            <input id="op-name" v-model="form.name" required placeholder="Ex.: IFC Campus Araquari / Garagem Central" :disabled="saving" />
+            <label for="op-name">Nome do destino *</label>
+            <input id="op-name" v-model="form.name" required placeholder="Ex.: IFC Campus Araquari" :disabled="saving" />
           </div>
 
           <div class="field">
@@ -349,13 +351,13 @@ onUnmounted(() => {
     </div>
 
     <section class="panel list-panel">
-      <h2>Pontos Cadastrados ({{ store.pontosOperacionais.length }})</h2>
-      <p v-if="store.pointsLoading" class="hint">Carregando pontos operacionais...</p>
-      <p v-else-if="!store.pontosOperacionais.length" class="hint">
-        Nenhum ponto operacional cadastrado ainda. Clique no mapa e preencha o formulário acima para criar o primeiro ponto.
+      <h2>Pontos de Destino Cadastrados ({{ store.pontosDestino.length }})</h2>
+      <p v-if="store.pointsLoading" class="hint">Carregando pontos de destino...</p>
+      <p v-else-if="!store.pontosDestino.length" class="hint">
+        Nenhum ponto de destino cadastrado ainda. Clique no mapa e preencha o formulário acima para criar o primeiro destino.
       </p>
       <div v-else class="points-list">
-        <article v-for="ponto in store.pontosOperacionais" :key="ponto.id" class="point-card">
+        <article v-for="ponto in store.pontosDestino" :key="ponto.id" class="point-card">
           <div>
             <h3>{{ ponto.name }}</h3>
             <p class="point-address">
@@ -363,10 +365,16 @@ onUnmounted(() => {
             </p>
             <p class="point-coords">Lat {{ ponto.latitude }} · Lng {{ ponto.longitude }}</p>
           </div>
-          <button type="button" class="btn-outline" @click="startEdit(ponto)">
-            <span class="mdi mdi-pencil-outline" aria-hidden="true"></span>
-            Editar
-          </button>
+          <div class="point-card-actions">
+            <RouterLink :to="{ path: '/cadastro-rota', query: { destination: ponto.id } }" class="btn-outline">
+              <span class="mdi mdi-routes" aria-hidden="true"></span>
+              Vincular grupo
+            </RouterLink>
+            <button type="button" class="btn-outline" @click="startEdit(ponto)">
+              <span class="mdi mdi-pencil-outline" aria-hidden="true"></span>
+              Editar
+            </button>
+          </div>
         </article>
       </div>
     </section>
@@ -574,6 +582,12 @@ onUnmounted(() => {
   margin: 0;
   font-size: 0.82rem;
   color: var(--text-muted);
+}
+
+.point-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 @media (max-width: 860px) {

@@ -26,10 +26,11 @@ export async function updateOperationalPoint(id, input, { signal } = {}) {
 }
 
 function normalizePointInput(input, partial = false) {
-  const fields = ['name', 'street', 'number', 'complement', 'neighborhood', 'city', 'state', 'cep']
+  const fields = ['point_type', 'name', 'street', 'number', 'complement', 'neighborhood', 'city', 'state', 'cep']
   const payload = {}
   for (const field of fields) {
     if (partial && !(field in input)) continue
+    if (field === 'point_type' && !input[field]) continue
     let value = trimString(input[field])
     if (field === 'state') value = value.toUpperCase()
     if (field === 'cep') value = value.replace(/\D/g, '')

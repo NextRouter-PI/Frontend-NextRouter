@@ -127,13 +127,16 @@ const salvar = async () => {
         <input v-model="veiculo.cor" placeholder="Branco" :disabled="salvando || carregando" />
       </div>
       <div class="form-group">
-        <label>Ponto operacional de garagem (opcional)</label>
+        <label>Garagem (opcional)</label>
         <select v-model="veiculo.garagePointId" :disabled="salvando || carregando">
-          <option value="">Sem ponto de garagem fixo</option>
-          <option v-for="ponto in stores.pontosOperacionais" :key="ponto.id" :value="ponto.id">
+          <option value="">Sem garagem vinculada</option>
+          <option v-for="ponto in stores.garagens" :key="ponto.id" :value="ponto.id">
             {{ ponto.name }} — {{ ponto.city }}/{{ ponto.state }}
           </option>
         </select>
+        <p v-if="!stores.pointsLoading && !stores.garagens.length" class="field-hint">
+          Nenhuma garagem cadastrada. Cadastre uma na aba Garagens da seção de Veículos.
+        </p>
       </div>
       <div class="form-group">
         <label>Status</label>
@@ -330,5 +333,11 @@ const salvar = async () => {
   color: var(--danger, #d32f2f);
   font-size: 13px;
   margin-bottom: 16px;
+}
+
+.field-hint {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
 }
 </style>

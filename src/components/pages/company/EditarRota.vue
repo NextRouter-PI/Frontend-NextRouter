@@ -384,7 +384,7 @@ async function salvarAgenda() {
             <div>
               <label>Ponto Operacional de Destino<span>*</span></label>
               <select v-model="grupoForm.destinationId" required :disabled="salvando">
-                <option v-for="ponto in store.pontosOperacionais" :key="ponto.id" :value="ponto.id">
+                <option v-for="ponto in store.pontosDestino" :key="ponto.id" :value="ponto.id">
                   {{ ponto.name }} — {{ ponto.city }}/{{ ponto.state }}
                 </option>
               </select>

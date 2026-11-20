@@ -8,7 +8,7 @@ const store = useTransporteStore()
 const scope = useAccountScope()
 const router = useRouter()
 
-const abaAtiva = ref('frota') // 'frota' | 'pontos'
+const abaAtiva = ref('frota') // 'frota' | 'garagens'
 const busca = ref('')
 const filtroAtivo = ref('Todas')
 const menuAberto = ref(null)
@@ -21,6 +21,7 @@ const pontoForm = ref(emptyPoint())
 
 function emptyPoint() {
   return {
+    point_type: 'garage',
     name: '',
     street: '',
     number: '',
@@ -66,6 +67,7 @@ function iniciarEdicaoPonto(ponto) {
   erroPonto.value = ''
   avisoPonto.value = ''
   pontoForm.value = {
+    point_type: 'garage',
     name: ponto.name || '',
     street: ponto.street || '',
     number: ponto.number || '',
@@ -85,6 +87,10 @@ function cancelarEdicaoPonto() {
   pontoForm.value = emptyPoint()
 }
 
+function veiculosDaGaragem(garageId) {
+  return (store.veiculos || []).filter((v) => v.garagePointId === garageId)
+}
+
 async function salvarPonto() {
   if (!scope.current() || salvandoPonto.value) return
   erroPonto.value = ''
@@ -98,27 +104,28 @@ async function salvarPonto() {
   }
 
   salvandoPonto.value = true
+  const payload = { ...pontoForm.value, point_type: 'garage' }
   const resultado = editandoPontoId.value
-    ? await store.atualizarPontoOperacional(editandoPontoId.value, pontoForm.value, { signal: scope.signal })
-    : await store.adicionarPontoOperacional(pontoForm.value, { signal: scope.signal })
+    ? await store.atualizarPontoOperacional(editandoPontoId.value, payload, { signal: scope.signal })
+    : await store.adicionarPontoOperacional(payload, { signal: scope.signal })
   if (!scope.current()) return
   salvandoPonto.value = false
 
   if (resultado) {
     avisoPonto.value = editandoPontoId.value
-      ? 'Ponto operacional atualizado.'
-      : 'Ponto operacional cadastrado.'
+      ? 'Garagem atualizada com sucesso.'
+      : 'Garagem cadastrada com sucesso.'
     editandoPontoId.value = null
     pontoForm.value = emptyPoint()
   } else {
-    erroPonto.value = store.error || 'Não foi possível salvar o ponto operacional.'
+    erroPonto.value = store.error || 'Não foi possível salvar a garagem.'
   }
 }
 </script>
 
 <template>
   <div class="content">
-    <div class="filter-chips" role="tablist" aria-label="Configuração de frota e pontos">
+    <div class="filter-chips" role="tablist" aria-label="Configuração de frota e garagens">
       <button
         type="button"
         :class="['chip', { active: abaAtiva === 'frota' }]"
@@ -128,10 +135,10 @@ async function salvarPonto() {
       </button>
       <button
         type="button"
-        :class="['chip', { active: abaAtiva === 'pontos' }]"
-        @click="abaAtiva = 'pontos'"
+        :class="['chip', { active: abaAtiva === 'garagens' }]"
+        @click="abaAtiva = 'garagens'"
       >
-        Pontos Operacionais ({{ store.pontosOperacionais.length }})
+        Garagens ({{ store.garagens.length }})
       </button>
     </div>
 
@@ -219,16 +226,17 @@ async function salvarPonto() {
 
     <template v-else>
       <div class="transport-card">
-        <h3>{{ editandoPontoId ? 'Editar ponto operacional' : 'Novo ponto operacional' }}</h3>
+        <h3>{{ editandoPontoId ? 'Editar garagem' : 'Nova garagem' }}</h3>
         <p class="card-subtitle">
-          Pontos operacionais definem destinos de grupos, garagens, paradas habituais e pontos de transporte de alunos. São independentes de endereços pessoais e exigem coordenadas.
+          Cadastre as garagens da frota com endereço completo e coordenadas para vinculá-las aos veículos.
+          Pontos de destino continuam na seção de Pontos Operacionais.
         </p>
 
         <form class="point-form" @submit.prevent="salvarPonto">
           <div class="point-grid">
             <div>
-              <label>Identificação<span>*</span></label>
-              <input v-model="pontoForm.name" placeholder="Ex.: Campus Norte / Garagem Central" required :disabled="salvandoPonto" />
+              <label>Identificação da garagem<span>*</span></label>
+              <input v-model="pontoForm.name" placeholder="Ex.: Garagem Central Joinville" required :disabled="salvandoPonto" />
             </div>
             <div>
               <label>CEP<span>*</span></label>
@@ -244,7 +252,7 @@ async function salvarPonto() {
             </div>
             <div>
               <label>Complemento</label>
-              <input v-model="pontoForm.complement" placeholder="Bloco A" :disabled="salvandoPonto" />
+              <input v-model="pontoForm.complement" placeholder="Galpão 2" :disabled="salvandoPonto" />
             </div>
             <div>
               <label>Bairro<span>*</span></label>
@@ -273,7 +281,7 @@ async function salvarPonto() {
 
           <div class="point-actions">
             <button type="submit" class="btn-primary-inline" :disabled="salvandoPonto">
-              {{ salvandoPonto ? 'Salvando...' : editandoPontoId ? 'Salvar ponto' : 'Cadastrar ponto' }}
+              {{ salvandoPonto ? 'Salvando...' : editandoPontoId ? 'Salvar garagem' : 'Cadastrar garagem' }}
             </button>
             <button v-if="editandoPontoId" type="button" class="btn-outline-inline" :disabled="salvandoPonto" @click="cancelarEdicaoPonto">
               Cancelar edição
@@ -282,13 +290,13 @@ async function salvarPonto() {
         </form>
       </div>
 
-      <p v-if="store.pointsLoading" class="status-message">Carregando pontos operacionais...</p>
-      <p v-else-if="!store.pontosOperacionais.length" class="status-message">
-        Nenhum ponto operacional cadastrado. Cadastre ao menos um destino antes de criar grupos de atendimento.
+      <p v-if="store.pointsLoading" class="status-message">Carregando garagens...</p>
+      <p v-else-if="!store.garagens.length" class="status-message">
+        Nenhuma garagem cadastrada ainda. Cadastre uma garagem acima para vinculá-la aos veículos da frota.
       </p>
 
       <div class="list-container">
-        <div v-for="ponto in store.pontosOperacionais" :key="ponto.id" class="transport-card">
+        <div v-for="ponto in store.garagens" :key="ponto.id" class="transport-card">
           <div class="card-header">
             <div class="header-main">
               <h3>{{ ponto.name }} · #{{ ponto.id }}</h3>
@@ -303,6 +311,13 @@ async function salvarPonto() {
             <div class="detail-item">
               <span class="mdi mdi-crosshairs-gps"></span>
               <span>{{ ponto.latitude }}, {{ ponto.longitude }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="mdi mdi-bus-multiple"></span>
+              <span v-if="veiculosDaGaragem(ponto.id).length">
+                Veículos vinculados: {{ veiculosDaGaragem(ponto.id).map((v) => v.placa).join(', ') }}
+              </span>
+              <span v-else>Nenhum veículo vinculado</span>
             </div>
           </div>
         </div>

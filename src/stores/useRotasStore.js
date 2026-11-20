@@ -86,6 +86,10 @@ export const useRotasStore = defineStore('rotas', {
     dayLoading: false,
     error: null,
   }),
+  getters: {
+    pontosDestino: (state) => state.pontosOperacionais.filter((p) => p.point_type === 'destination'),
+    garagens: (state) => state.pontosOperacionais.filter((p) => p.point_type === 'garage'),
+  },
   actions: {
     $reset() {
       this.grupos = []
