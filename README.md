@@ -54,14 +54,13 @@ a tela de nova senha só abre após verificação no servidor, sem informar se h
 O titular revisa e envia o pedido em `/vinculos`, acompanha o estado e pode retirar
 pedidos pendentes ou encerrar vínculos ativos. A empresa consulta e decide vínculos em
 `/usuarios` e vê a identidade mínima de vinculados. Em `/usuario` e `/seguranca`, o titular
-edita dados permitidos, gerencia documentos, senha, e-mail e sessões. Em `/transporte` e
+edita dados permitidos, gerencia documentos, senha, e-mail, sessões e desativação da conta. Em `/transporte` e
 `/lista`, a empresa configura pontos operacionais, frota, grupos, políticas, serviços,
 autorizações e operação datada; o passageiro responde por data e acompanha viagens
 publicadas; o motorista executa viagens designadas, paradas, presença e localização; e os
 três papéis consultam avisos persistentes, avaliações e objetos perdidos.
 
-CEP permanece inalterado e adiado. R1–R6 têm somente conferência estática;
-validação funcional, de segurança e visual continuam pendentes de autorização.
+A consulta de CEP com mapa interativo utiliza o proxy de mesma origem `/api/cep/<cep>/`.
 
 ## Documentação
 

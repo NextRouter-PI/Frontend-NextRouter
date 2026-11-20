@@ -25,7 +25,7 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
 ## 2. Stack e mapa do repositório
 
 - **Stack:** Vue 3 (JavaScript, ES Modules), Vite 7, Vue Router 5, Pinia 3, Axios,
-  SCSS (`sass-embedded`), Leaflet (mapas), Chart.js / `vue-chartjs` (gráficos) e `@mdi/font` (ícones).
+  SCSS (`sass-embedded`), Leaflet (mapas), Chart.js / `vue-chartjs` (gráficos), `vue-sonner` (notificações toast) e `@mdi/font` (ícones).
   Qualidade com ESLint, Oxlint e Prettier; testes nativos com `node --test`.
 - **Entradas e configuração na raiz:**
   - `index.html` e `src/main.js`: bootstrap da aplicação, limpeza seletiva de
@@ -57,7 +57,7 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
   - `src/api/profile.js` e `src/api/account.js`: leitura do próprio perfil (`/{role}s/me/`),
     edição por seção (`PATCH /users/me/` e `PATCH /companies/me/`), associação e download
     autorizado de documentos (`uploads/documents/{key}/download/`), leitura da conta,
-    troca de e-mail (`email-change/request|verify|confirm/`) e consulta/revogação de
+    troca de e-mail (`email-change/request|verify|confirm/`), desativação da conta (`me/deactivate/`) e consulta/revogação de
     sessões (`sessions/`, `sessions/{id}/` e `me/revoke-sessions/`).
   - `src/api/transport.js`: recursos de configuração habitual (`operational-points/`,
     `vehicles/`, `company-route-groups/`, `response-policies/`, `recurring-services/`,
@@ -223,7 +223,7 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
     - [Outros](https://www.figma.com/design/vUK2DY8Mx0OxD1RqgremkS/NEXTROUTER?node-id=495-890)
   - O Figma orienta a identidade visual e o layout, mas **não autoriza alterar regras
     de negócio** nem reativar fluxos legados. Não copie código gerado do Figma;
-    reutilize os componentes de `src/components/ui/` e `src/assets/css/`, adaptando
+    reutilize os componentes de `src/components/ui/` e `src/styles/`, adaptando
     campos, rótulos e estados ausentes no protótipo (carregamento, erro de rede,
     sessão expirada, empresa em moderação, ausência de vínculo, pedido pendente/recusado,
     conflito de revisão e lista vazia).
