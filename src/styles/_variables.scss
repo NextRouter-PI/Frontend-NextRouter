@@ -1,0 +1,64 @@
+// Espaçamentos (escala base 4px)
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 20px;
+$space-6: 24px;
+$space-8: 32px;
+$space-10: 40px;
+$space-12: 48px;
+
+// Raios de borda
+$radius-xs: 6px;
+$radius-sm: 8px;
+$radius-md: 10px;
+$radius-lg: 14px;
+$radius-xl: 18px;
+$radius-pill: 999px;
+$radius-round: 50%;
+
+// Tipografia
+$font-family-base: 'Inter', system-ui, -apple-system, sans-serif;
+$text-xs: 0.75rem;
+$text-sm: 0.82rem;
+$text-md: 0.9rem;
+$text-base: 0.95rem;
+$text-lg: 1.08rem;
+$text-xl: 1.35rem;
+$text-2xl: 1.75rem;
+
+$font-medium: 500;
+$font-semibold: 600;
+$font-bold: 700;
+$font-extrabold: 800;
+
+// Dimensões de layout
+$header-height: 58px;
+$bottom-nav-height: 60px;
+$sidebar-width: 78px;
+$sidebar-width-expanded: 224px;
+$container-sm: 520px;
+$container-md: 760px;
+$container-lg: 840px;
+$container-xl: 1120px;
+
+// Breakpoints
+$bp-sm: 640px;
+$bp-md: 768px;
+$bp-desktop: 900px;
+
+// Camadas (z-index)
+$z-base: 1;
+$z-sticky: 40;
+$z-header: 100;
+$z-sidebar: 101;
+$z-bottom-nav: 200;
+$z-modal: 300;
+$z-toast: 400;
+
+// Transições e curvas
+$ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
+$duration-fast: 0.16s;
+$duration-normal: 0.22s;
+$duration-slow: 0.3s;

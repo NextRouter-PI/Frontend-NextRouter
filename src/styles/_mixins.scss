@@ -1,0 +1,51 @@
+@use 'variables' as *;
+
+@mixin from($breakpoint) {
+  @media (min-width: $breakpoint) {
+    @content;
+  }
+}
+
+@mixin until($breakpoint) {
+  @media (max-width: $breakpoint) {
+    @content;
+  }
+}
+
+@mixin flex-center($gap: 0) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  @if $gap != 0 {
+    gap: $gap;
+  }
+}
+
+@mixin surface-card($padding: $space-5, $radius: $radius-lg) {
+  background: var(--color-surface);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+  border-radius: $radius;
+  padding: $padding;
+  box-shadow: var(--shadow);
+}
+
+@mixin focus-ring($offset: 2px) {
+  outline: 2px solid var(--primary);
+  outline-offset: $offset;
+}
+
+@mixin truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin status-banner($color-var, $bg-var) {
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  border-left: 4px solid $color-var;
+  background: $bg-var;
+  color: var(--text);
+  font-size: $text-md;
+}

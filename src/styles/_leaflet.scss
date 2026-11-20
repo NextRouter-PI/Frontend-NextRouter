@@ -1,0 +1,78 @@
+@use 'variables' as *;
+
+// Elementos injetados pelo Leaflet fora da árvore scoped dos componentes Vue.
+.passenger-map-tooltip {
+  padding: 6px 10px;
+  border-radius: $radius-md;
+  border: 1px solid var(--border-primary);
+  background: var(--color-surface);
+  color: var(--text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.pmap-tip {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+
+  &-avatar,
+  &-fallback {
+    width: 28px;
+    height: 28px;
+    border-radius: $radius-round;
+    flex-shrink: 0;
+  }
+
+  &-avatar {
+    object-fit: cover;
+    border: 1.5px solid var(--primary);
+  }
+
+  &-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: var(--color-on-primary);
+    font-size: 0.8rem;
+    font-weight: $font-bold;
+  }
+
+  &-name {
+    font-size: 0.84rem;
+    font-weight: $font-bold;
+    white-space: nowrap;
+  }
+}
+
+.map-tracking-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-round;
+  background: var(--primary);
+  color: var(--color-on-primary);
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  border: 2px solid var(--color-on-primary);
+}
+
+.leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.dark {
+  .leaflet-control-attribution,
+  .live-map-wrap .leaflet-control-attribution {
+    background: rgba(0, 0, 0, 0.45);
+    color: #ccc;
+
+    a {
+      color: #ddd;
+    }
+  }
+}

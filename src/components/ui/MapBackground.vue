@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted, watch, ref, nextTick } from 'vue'
 import { state } from '@/stores/state'
-import { useTravelTracking } from '@/composables/useTravelTracking'
+import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -155,37 +155,5 @@ onUnmounted(() => {
 
 .dark .map-background::after {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.55) 100%);
-}
-</style>
-
-<style>
-/* Não escopado: o Leaflet injeta o marcador fora da árvore de templates do Vue. */
-.map-tracking-marker {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--primary, #df801a);
-  color: #fff;
-  font-size: 1.1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-  border: 2px solid #fff;
-}
-
-.leaflet-control-attribution {
-  font-size: 9px;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(2px);
-}
-
-.dark .leaflet-control-attribution {
-  background: rgba(0, 0, 0, 0.45);
-  color: #ccc;
-}
-
-.dark .leaflet-control-attribution a {
-  color: #ddd;
 }
 </style>

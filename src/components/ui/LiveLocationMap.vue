@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-import { useTravelTracking } from '@/composables/useTravelTracking'
+import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -164,20 +164,5 @@ onUnmounted(() => {
 
 .live-map-status.error {
   color: var(--danger, #dc2626);
-}
-</style>
-
-<style>
-.dark .live-map-wrap .leaflet-control-attribution {
-  background: rgba(0, 0, 0, 0.45);
-  color: #ccc;
-}
-
-.dark .live-map-wrap .leaflet-control-attribution a {
-  color: #ddd;
-}
-
-.live-map-wrap .leaflet-control-attribution {
-  font-size: 9px;
 }
 </style>
