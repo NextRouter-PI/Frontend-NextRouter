@@ -2,11 +2,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useTransporteStore } from '@/stores/useTransporteStore'
 import { useAccountScope } from '@/composables/useAccountScope'
+import { useInputFormat } from '@/composables/useInputFormat'
 import { useRouter } from 'vue-router'
+import AddressCepMapField from '@/components/ui/AddressCepMapField.vue'
 
 const store = useTransporteStore()
 const scope = useAccountScope()
 const router = useRouter()
+const { formatCEP } = useInputFormat()
 
 const abaAtiva = ref('frota') // 'frota' | 'garagens'
 const busca = ref('')
@@ -30,8 +33,8 @@ function emptyPoint() {
     city: '',
     state: '',
     cep: '',
-    latitude: '',
-    longitude: '',
+    latitude: null,
+    longitude: null,
   }
 }
 
@@ -75,9 +78,9 @@ function iniciarEdicaoPonto(ponto) {
     neighborhood: ponto.neighborhood || '',
     city: ponto.city || '',
     state: ponto.state || '',
-    cep: ponto.cep || '',
-    latitude: String(ponto.latitude ?? ''),
-    longitude: String(ponto.longitude ?? ''),
+    cep: formatCEP(ponto.cep || ''),
+    latitude: ponto.latitude ?? null,
+    longitude: ponto.longitude ?? null,
   }
 }
 
@@ -98,8 +101,19 @@ async function salvarPonto() {
 
   const lat = Number(pontoForm.value.latitude)
   const lng = Number(pontoForm.value.longitude)
-  if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
-    erroPonto.value = 'Informe latitude (-90 a 90) e longitude (-180 a 180) válidas.'
+  if (
+    pontoForm.value.latitude == null ||
+    pontoForm.value.latitude === '' ||
+    pontoForm.value.longitude == null ||
+    pontoForm.value.longitude === '' ||
+    !Number.isFinite(lat) ||
+    lat < -90 ||
+    lat > 90 ||
+    !Number.isFinite(lng) ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    erroPonto.value = 'Clique no mapa ou informe um CEP válido para definir as coordenadas da garagem.'
     return
   }
 
@@ -233,48 +247,25 @@ async function salvarPonto() {
         </p>
 
         <form class="point-form" @submit.prevent="salvarPonto">
-          <div class="point-grid">
-            <div>
-              <label>Identificação da garagem<span>*</span></label>
-              <input v-model="pontoForm.name" placeholder="Ex.: Garagem Central Joinville" required :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>CEP<span>*</span></label>
-              <input v-model="pontoForm.cep" placeholder="89200000" maxlength="9" required :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>Logradouro<span>*</span></label>
-              <input v-model="pontoForm.street" placeholder="Rua Exemplo" required :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>Número<span>*</span></label>
-              <input v-model="pontoForm.number" placeholder="100" required :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>Complemento</label>
-              <input v-model="pontoForm.complement" placeholder="Galpão 2" :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>Bairro<span>*</span></label>
-              <input v-model="pontoForm.neighborhood" placeholder="Centro" required :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>Cidade<span>*</span></label>
-              <input v-model="pontoForm.city" placeholder="Joinville" required :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>UF<span>*</span></label>
-              <input v-model="pontoForm.state" placeholder="SC" maxlength="2" required :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>Latitude<span>*</span></label>
-              <input v-model="pontoForm.latitude" type="number" step="any" placeholder="-26.3044" required :disabled="salvandoPonto" />
-            </div>
-            <div>
-              <label>Longitude<span>*</span></label>
-              <input v-model="pontoForm.longitude" type="number" step="any" placeholder="-48.8455" required :disabled="salvandoPonto" />
-            </div>
+          <div class="garage-name-field">
+            <label>Identificação da garagem<span>*</span></label>
+            <input v-model="pontoForm.name" placeholder="Ex.: Garagem Central Joinville" required :disabled="salvandoPonto" />
           </div>
+
+          <AddressCepMapField
+            v-model:cep="pontoForm.cep"
+            v-model:street="pontoForm.street"
+            v-model:number="pontoForm.number"
+            v-model:complement="pontoForm.complement"
+            v-model:neighborhood="pontoForm.neighborhood"
+            v-model:city="pontoForm.city"
+            v-model:state="pontoForm.state"
+            v-model:latitude="pontoForm.latitude"
+            v-model:longitude="pontoForm.longitude"
+            :disabled="salvandoPonto"
+            :format-cep="formatCEP"
+            complement-placeholder="Galpão, referência..."
+          />
 
           <p v-if="erroPonto" class="status-message error" role="alert">{{ erroPonto }}</p>
           <p v-if="avisoPonto" class="status-message" role="status">{{ avisoPonto }}</p>
@@ -508,6 +499,33 @@ async function salvarPonto() {
 
 .point-form {
   margin-top: 16px;
+}
+
+.garage-name-field {
+  margin-bottom: 14px;
+}
+
+.garage-name-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--primary);
+}
+
+.garage-name-field label span {
+  color: var(--danger);
+}
+
+.garage-name-field input {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border-primary);
+  background: var(--bg);
+  color: var(--text);
+  box-sizing: border-box;
 }
 
 .point-grid {

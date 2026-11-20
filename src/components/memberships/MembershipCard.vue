@@ -1,27 +1,56 @@
 <script setup>
 import { computed } from 'vue'
+import { useInputFormat } from '@/composables/useInputFormat'
 
 const props = defineProps({
   membership: { type: Object, required: true },
   title: { type: String, required: true },
 })
+
+const { formatPhone } = useInputFormat()
 const labels = {
-  pending: 'Pedido pendente', active: 'Vínculo ativo', rejected: 'Pedido recusado',
-  withdrawn: 'Pedido retirado', ended: 'Vínculo encerrado',
+  pending: 'Pedido pendente',
+  active: 'Vínculo ativo',
+  rejected: 'Pedido recusado',
+  withdrawn: 'Pedido retirado',
+  ended: 'Vínculo encerrado',
 }
 const statusLabel = computed(() => labels[props.membership.status] || 'Estado não reconhecido')
 const createdLabel = computed(() => new Date(props.membership.created_at).toLocaleString('pt-BR'))
+const formattedPhone = computed(() =>
+  props.membership.contact_phone ? formatPhone(props.membership.contact_phone) : ''
+)
 </script>
 
 <template>
   <article class="membership-card">
-    <h3 class="membership-title">{{ title }}</h3>
-    <p class="membership-state">{{ statusLabel }}</p>
+    <div class="membership-header">
+      <div class="membership-avatar" aria-hidden="true">
+        <img
+          v-if="membership.applicant_profile_picture_url"
+          :src="membership.applicant_profile_picture_url"
+          :alt="`Foto de ${title}`"
+          class="avatar-img"
+          loading="lazy"
+        />
+        <span v-else class="mdi mdi-account-circle-outline avatar-fallback"></span>
+      </div>
+      <div class="membership-header-info">
+        <h3 class="membership-title">{{ title }}</h3>
+        <p class="membership-state">{{ statusLabel }}</p>
+      </div>
+    </div>
+
     <p class="membership-meta">
       {{ membership.driver ? 'Motorista' : 'Passageiro' }} · pedido nº {{ membership.id }}
       · <time :datetime="membership.created_at">{{ createdLabel }}</time>
     </p>
-    <p v-if="membership.requested_route_group_name" class="membership-group">
+    <p v-if="formattedPhone" class="membership-detail">
+      <span class="mdi mdi-phone-outline" aria-hidden="true"></span>
+      Telefone para contato: <strong>{{ formattedPhone }}</strong>
+    </p>
+    <p v-if="membership.requested_route_group_name" class="membership-detail">
+      <span class="mdi mdi-routes" aria-hidden="true"></span>
       Grupo de rota solicitado: <strong>{{ membership.requested_route_group_name }}</strong>
     </p>
     <slot />
@@ -38,7 +67,65 @@ const createdLabel = computed(() => new Date(props.membership.created_at).toLoca
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
 }
-.membership-title { margin: 0 0 8px; font-size: 1.1rem; }
-.membership-state { margin: 0 0 8px; font-weight: 600; }
-.membership-meta { margin: 0 0 12px; font-size: 0.85rem; }
+
+.membership-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.membership-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--altbg);
+  border: 1.5px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-fallback {
+  font-size: 30px;
+  color: var(--primary);
+}
+
+.membership-header-info {
+  min-width: 0;
+}
+
+.membership-title {
+  margin: 0 0 2px;
+  font-size: 1.1rem;
+}
+
+.membership-state {
+  margin: 0;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.membership-meta {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.membership-detail {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 </style>

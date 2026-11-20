@@ -4,10 +4,12 @@ import { useRoute } from 'vue-router'
 import { state } from '@/stores/state'
 import { getPublicCompany } from '@/api/companies'
 import { useMemberships } from '@/composables/useMemberships'
+import { useInputFormat } from '@/composables/useInputFormat'
 import { sessionError } from '@/stores/session'
 import { formatApiError } from '@/utils/apiErrors'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import FormattedField from '@/components/ui/FormattedField.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
 import MembershipCard from '@/components/memberships/MembershipCard.vue'
 import MembershipActionForm from '@/components/memberships/MembershipActionForm.vue'
@@ -24,8 +26,10 @@ const {
   error, notice, canRequest, refresh, goToPage, request, transition,
 } = useMemberships(scope)
 
+const { formatPhone } = useInputFormat()
 const selectedCompany = ref(null)
 const selectedGroupId = ref('')
+const contactPhone = ref(formatPhone(state.user?.phone || ''))
 const selectionLoading = ref(false)
 const selectionError = ref('')
 const closingAction = ref('')
@@ -133,6 +137,15 @@ async function closeMembership(reason) {
                 </select>
               </label>
             </div>
+            <FormattedField
+              v-model="contactPhone"
+              label="Telefone para contato"
+              placeholder="(00) 90000-0000"
+              maxlength="16"
+              :only-numbers="true"
+              :format="formatPhone"
+              :disabled="busy"
+            />
             <p>
               Enviar como {{ state.role === 'driver' ? 'motorista' : 'passageiro' }}.
               <template v-if="state.role === 'passenger' && selectedGroupId">
@@ -146,7 +159,7 @@ async function closeMembership(reason) {
               type="button"
               :disabled="!canRequest || selectionLoading"
               :loading="busy"
-              @click="request(selectedCompany.id, selectedGroupId ? Number(selectedGroupId) : null)"
+              @click="request(selectedCompany.id, selectedGroupId ? Number(selectedGroupId) : null, contactPhone)"
             >
               Enviar pedido de vínculo
             </BaseButton>

@@ -80,6 +80,23 @@ function formatAddress(item) {
   return [streetLine, extra, cityLine].filter(Boolean).join(' — ') || 'Endereço não informado'
 }
 
+function escapeHtml(text) {
+  return String(text ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function passengerTooltipHtml(item) {
+  const safeName = escapeHtml(item.passenger_name || 'Passageiro')
+  const avatar = item.profile_picture_url
+    ? `<img src="${escapeHtml(item.profile_picture_url)}" alt="${safeName}" class="pmap-tip-avatar" />`
+    : `<span class="pmap-tip-fallback">${escapeHtml((item.passenger_name || 'P').trim().charAt(0).toUpperCase())}</span>`
+  return `<div class="pmap-tip">${avatar}<span class="pmap-tip-name">${safeName}</span></div>`
+}
+
 function renderMarkers() {
   if (!map) return
   if (markersLayer) {
@@ -95,10 +112,13 @@ function renderMarkers() {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
     bounds.push([lat, lng])
 
+    const tooltipHtml = passengerTooltipHtml(item)
+
     if (item.selected) {
       const marker = L.marker([lat, lng], { draggable: true })
+        .bindTooltip(tooltipHtml, { direction: 'top', offset: [0, -14], opacity: 0.98, className: 'passenger-map-tooltip' })
         .bindPopup(
-          `<strong>${item.passenger_name}</strong> (selecionado)<br>${formatAddress(item)}<br><small>Arraste o pino para ajustar o ponto exato.</small>`
+          `<strong>${escapeHtml(item.passenger_name)}</strong> (selecionado)<br>${escapeHtml(formatAddress(item))}<br><small>Arraste o pino para ajustar o ponto exato.</small>`
         )
         .addTo(markersLayer)
 
@@ -115,8 +135,9 @@ function renderMarkers() {
         fillOpacity: 0.75,
         weight: 2,
       })
+        .bindTooltip(tooltipHtml, { direction: 'top', offset: [0, -10], opacity: 0.98, className: 'passenger-map-tooltip' })
         .bindPopup(
-          `<strong>${item.passenger_name}</strong><br>${formatAddress(item)}<br><small>Clique na lista para incluir na rota.</small>`
+          `<strong>${escapeHtml(item.passenger_name)}</strong><br>${escapeHtml(formatAddress(item))}<br><small>Clique na lista para incluir na rota.</small>`
         )
         .addTo(markersLayer)
 
@@ -647,5 +668,52 @@ onUnmounted(() => {
   color: var(--success);
   font-size: 0.85rem;
   margin: 8px 0;
+}
+</style>
+
+<style>
+/* Não escopado: tooltip do Leaflet é montado fora da árvore scoped do componente. */
+.passenger-map-tooltip {
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-primary, #df801a);
+  background: var(--superfice, #ffffff);
+  color: var(--text, #1c1917);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.pmap-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pmap-tip-avatar,
+.pmap-tip-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pmap-tip-avatar {
+  object-fit: cover;
+  border: 1.5px solid var(--primary, #df801a);
+}
+
+.pmap-tip-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary, #df801a);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.pmap-tip-name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 </style>

@@ -183,8 +183,25 @@ watch(
 watch(
   () => [latitude.value, longitude.value],
   ([lat, lng]) => {
-    if (map && lat != null && lng != null && !marker) {
-      setPin(lat, lng, false)
+    if (!map) return
+    if (lat == null || lat === '' || lng == null || lng === '') {
+      if (marker) {
+        map.removeLayer(marker)
+        marker = null
+      }
+      return
+    }
+    const nLat = Number(lat)
+    const nLng = Number(lng)
+    if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) return
+    if (!marker) {
+      setPin(nLat, nLng, true)
+    } else {
+      const current = marker.getLatLng()
+      if (Math.abs(current.lat - nLat) > 1e-6 || Math.abs(current.lng - nLng) > 1e-6) {
+        marker.setLatLng([nLat, nLng])
+        map.panTo([nLat, nLng])
+      }
     }
   }
 )

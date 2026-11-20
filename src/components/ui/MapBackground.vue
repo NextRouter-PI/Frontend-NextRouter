@@ -63,6 +63,12 @@ function ensureMap() {
   map = L.map(mapContainer.value, {
     zoomControl: false,
     attributionControl: true,
+    dragging: false,
+    touchZoom: false,
+    doubleClickZoom: false,
+    scrollWheelZoom: false,
+    boxZoom: false,
+    keyboard: false,
   }).setView(initialCenter(), 14)
 
   applyTileLayer(currentTheme())
@@ -136,6 +142,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   z-index: 0;
+  pointer-events: none;
 }
 
 .map-background::after {
