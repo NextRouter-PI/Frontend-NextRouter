@@ -1,19 +1,19 @@
 <script setup>
-import { ref } from 'vue'
+import { useTemplateRef } from 'vue'
 
 const props = defineProps({
-  modelValue: { type: [File, Object, String], default: null },
   label: String,
   required: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   accept: { type: String, default: '.pdf,.jpg,.jpeg,.png' },
-  fileName: { type: String, default: '' },
   hint: String,
   error: String,
 })
 
-const emit = defineEmits(['update:modelValue', 'update:fileName', 'error'])
-const inputRef = ref(null)
+const modelValue = defineModel({ type: [File, Object, String], default: null })
+const fileName = defineModel('fileName', { type: String, default: '' })
+const emit = defineEmits(['error'])
+const inputRef = useTemplateRef('inputRef')
 
 const MAX_SIZE = 10 * 1024 * 1024
 
@@ -30,8 +30,8 @@ function handleFile(event) {
     return
   }
 
-  emit('update:modelValue', file)
-  emit('update:fileName', file.name)
+  modelValue.value = file
+  fileName.value = file.name
 }
 </script>
 

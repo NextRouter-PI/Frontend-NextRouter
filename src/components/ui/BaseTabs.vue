@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const props = defineProps({
@@ -8,21 +8,20 @@ const props = defineProps({
     required: true,
     // Each item: { value, label, icon?, to?, badge? }
   },
-  modelValue: { type: [String, Number], default: '' },
   ariaLabel: { type: String, default: 'Seções' },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const modelValue = defineModel({ type: [String, Number], default: '' })
 
 const route = useRoute()
-const trackRef = ref(null)
+const trackRef = useTemplateRef('trackRef')
 const itemRefs = ref([])
 const indicatorStyle = ref({ opacity: 0 })
 let resizeObserver = null
 
 function isItemActive(item) {
   if (item.to) return route.path === item.to || route.path.startsWith(`${item.to}/`)
-  return props.modelValue === item.value
+  return modelValue.value === item.value
 }
 
 const activeIndex = computed(() => {
@@ -47,8 +46,8 @@ function updateIndicator() {
 }
 
 function selectItem(item) {
-  if (!item.to && item.value !== props.modelValue) {
-    emit('update:modelValue', item.value)
+  if (!item.to && item.value !== modelValue.value) {
+    modelValue.value = item.value
   }
 }
 

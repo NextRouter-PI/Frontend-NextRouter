@@ -1,195 +1,25 @@
 <script setup>
-import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { useTemplateRef } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-
-const VIEWPORT_SIZE = 280
-const OUTPUT_SIZE = 512
+import { useImageCropper } from '@/components/layout/composables/useImageCropper'
 
 const props = defineProps({
   file: { type: Object, default: null },
 })
 
 const emit = defineEmits(['confirm', 'cancel', 'error'])
+const imgRef = useTemplateRef('imgRef')
 
-const imageUrl = shallowRef('')
-const naturalWidth = shallowRef(0)
-const naturalHeight = shallowRef(0)
-const zoom = shallowRef(1)
-const offsetX = shallowRef(0)
-const offsetY = shallowRef(0)
-const dragging = shallowRef(false)
-const processing = shallowRef(false)
-
-const imgRef = ref(null)
-let dragStartX = 0
-let dragStartY = 0
-let startOffsetX = 0
-let startOffsetY = 0
-
-const baseScale = computed(() => {
-  if (!naturalWidth.value || !naturalHeight.value) return 1
-  return Math.max(VIEWPORT_SIZE / naturalWidth.value, VIEWPORT_SIZE / naturalHeight.value)
-})
-
-const currentScale = computed(() => baseScale.value * zoom.value)
-const displayWidth = computed(() => naturalWidth.value * currentScale.value)
-const displayHeight = computed(() => naturalHeight.value * currentScale.value)
-
-const imageStyle = computed(() => ({
-  width: `${displayWidth.value}px`,
-  height: `${displayHeight.value}px`,
-  transform: `translate(calc(-50% + ${offsetX.value}px), calc(-50% + ${offsetY.value}px))`,
-}))
-
-function clampOffsets(nextX, nextY) {
-  const maxX = Math.max(0, (displayWidth.value - VIEWPORT_SIZE) / 2)
-  const maxY = Math.max(0, (displayHeight.value - VIEWPORT_SIZE) / 2)
-  offsetX.value = Math.min(maxX, Math.max(-maxX, nextX))
-  offsetY.value = Math.min(maxY, Math.max(-maxY, nextY))
-}
-
-function revokeUrl() {
-  if (imageUrl.value) {
-    URL.revokeObjectURL(imageUrl.value)
-    imageUrl.value = ''
-  }
-}
-
-function resetCrop() {
-  zoom.value = 1
-  offsetX.value = 0
-  offsetY.value = 0
-}
-
-watch(
-  () => props.file,
-  (nextFile) => {
-    revokeUrl()
-    naturalWidth.value = 0
-    naturalHeight.value = 0
-    resetCrop()
-    if (nextFile) {
-      imageUrl.value = URL.createObjectURL(nextFile)
-    }
-  },
-  { immediate: true },
-)
-
-watch(zoom, () => {
-  clampOffsets(offsetX.value, offsetY.value)
-})
-
-function onImageLoad(event) {
-  naturalWidth.value = event.target.naturalWidth || 0
-  naturalHeight.value = event.target.naturalHeight || 0
-  resetCrop()
-}
-
-function onImageError() {
-  revokeUrl()
-  emit('error', 'Não foi possível carregar a imagem selecionada. Tente outro arquivo JPG ou PNG.')
-  emit('cancel')
-}
-
-function onPointerDown(event) {
-  if (!naturalWidth.value || processing.value) return
-  dragging.value = true
-  dragStartX = event.clientX
-  dragStartY = event.clientY
-  startOffsetX = offsetX.value
-  startOffsetY = offsetY.value
-  event.currentTarget.setPointerCapture?.(event.pointerId)
-}
-
-function onPointerMove(event) {
-  if (!dragging.value) return
-  clampOffsets(startOffsetX + (event.clientX - dragStartX), startOffsetY + (event.clientY - dragStartY))
-}
-
-function onPointerUp(event) {
-  if (!dragging.value) return
-  dragging.value = false
-  event.currentTarget.releasePointerCapture?.(event.pointerId)
-}
-
-function onWheel(event) {
-  if (!naturalWidth.value || processing.value) return
-  const delta = event.deltaY < 0 ? 0.12 : -0.12
-  zoom.value = Number(Math.min(3, Math.max(1, zoom.value + delta)).toFixed(2))
-}
-
-function stepZoom(delta) {
-  zoom.value = Number(Math.min(3, Math.max(1, zoom.value + delta)).toFixed(2))
-}
-
-function handleCancel() {
-  if (processing.value) return
-  emit('cancel')
-}
-
-function onKeydown(event) {
-  if (event.key === 'Escape' && props.file && !processing.value) {
-    emit('cancel')
-  }
-}
-
-watch(
-  () => Boolean(props.file),
-  (open) => {
-    if (open) document.addEventListener('keydown', onKeydown)
-    else document.removeEventListener('keydown', onKeydown)
-  },
-  { immediate: true },
-)
-
-async function confirmCrop() {
-  const img = imgRef.value
-  if (!img || !naturalWidth.value || !props.file || processing.value) return
-  processing.value = true
-
-  try {
-    const canvas = document.createElement('canvas')
-    canvas.width = OUTPUT_SIZE
-    canvas.height = OUTPUT_SIZE
-    const ctx = canvas.getContext('2d')
-
-    const imgLeft = VIEWPORT_SIZE / 2 - displayWidth.value / 2 + offsetX.value
-    const imgTop = VIEWPORT_SIZE / 2 - displayHeight.value / 2 + offsetY.value
-    const sx = Math.max(0, -imgLeft / currentScale.value)
-    const sy = Math.max(0, -imgTop / currentScale.value)
-    const sSize = Math.min(
-      VIEWPORT_SIZE / currentScale.value,
-      naturalWidth.value - sx,
-      naturalHeight.value - sy,
-    )
-
-    ctx.imageSmoothingEnabled = true
-    ctx.imageSmoothingQuality = 'high'
-    ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
-
-    const isPng = /\.png$/i.test(props.file.name) || props.file.type === 'image/png'
-    const mimeType = isPng ? 'image/png' : 'image/jpeg'
-    const ext = isPng ? 'png' : 'jpg'
-    const baseName = props.file.name.replace(/\.[^.]+$/, '') || 'avatar'
-
-    const blob = await new Promise((resolve) =>
-      canvas.toBlob(resolve, mimeType, isPng ? undefined : 0.92),
-    )
-    if (!blob) {
-      emit('error', 'Não foi possível recortar a imagem selecionada.')
-      emit('cancel')
-      return
-    }
-    const croppedFile = new File([blob], `${baseName}.${ext}`, { type: mimeType })
-    emit('confirm', croppedFile)
-  } finally {
-    processing.value = false
-  }
-}
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', onKeydown)
-  revokeUrl()
+const {
+  imageUrl, naturalWidth, zoom, dragging, processing, imageStyle,
+  resetCrop, onImageLoad, onImageError, onPointerDown, onPointerMove, onPointerUp,
+  onWheel, stepZoom, handleCancel, confirmCrop,
+} = useImageCropper({
+  getFile: () => props.file,
+  imgRef,
+  onConfirm: (file) => emit('confirm', file),
+  onCancel: () => emit('cancel'),
+  onError: (msg) => emit('error', msg),
 })
 </script>
 

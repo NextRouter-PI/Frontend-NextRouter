@@ -1,13 +1,13 @@
 <script setup>
-import { ref, shallowRef } from 'vue'
+import { shallowRef, useTemplateRef } from 'vue'
 import AvatarCropModal from '@/components/layout/AvatarCropModal.vue'
 
 const props = defineProps({
-  modelValue: { type: String, default: null },
   disabled: { type: Boolean, default: false },
 })
+const modelValue = defineModel({ type: String, default: null })
 const emit = defineEmits(['file-select', 'error'])
-const fileInput = ref(null)
+const fileInput = useTemplateRef('fileInput')
 const pendingCropFile = shallowRef(null)
 
 function openSelector() {
