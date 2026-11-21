@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { SERVICE_DIRECTIONS, USER_ROLES } from '@/constants'
-import { formatDateTimeBr } from '@/utils/formatters'
+import { formatDateBr, formatDateTimeBr } from '@/utils/formatters'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
@@ -9,7 +9,6 @@ defineProps({
   role: { type: String, default: '' },
   ratings: { type: Array, required: true },
   rateableTravels: { type: Array, required: true },
-  formatDate: { type: Function, required: true },
   loading: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
 })
@@ -38,7 +37,7 @@ function submit() {
       <select v-model="form.travel_id" required :disabled="busy" aria-label="Selecionar viagem para avaliar">
         <option value="">Selecionar viagem finalizada com desembarque...</option>
         <option v-for="t in rateableTravels" :key="t.id" :value="t.id">
-          Viagem #{{ t.id }} · {{ formatDate(t.date) }} ({{ t.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }})
+          Viagem #{{ t.id }} · {{ formatDateBr(t.date) }} ({{ t.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }})
         </option>
       </select>
       <select v-model="form.score" required :disabled="busy" aria-label="Nota de 1 a 5">

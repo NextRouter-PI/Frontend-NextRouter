@@ -5,6 +5,7 @@ import {
   SERVICE_DIRECTIONS,
   WINDOW_STATES,
 } from '@/constants'
+import { formatEligibilityServiceLabel } from '@/features/transport/utils/questionnaireMapper'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import AttendanceNormalForm from './AttendanceNormalForm.vue'
 import AttendanceExtensionForm from './AttendanceExtensionForm.vue'
@@ -19,7 +20,6 @@ defineProps({
   eligibility: { type: Object, required: true },
   alreadyAnswered: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
-  serviceLabel: { type: Function, required: true },
 })
 
 const emit = defineEmits(['submit-normal', 'submit-extension', 'cancel-request'])
@@ -72,7 +72,7 @@ const emit = defineEmits(['submit-normal', 'submit-extension', 'cancel-request']
           <strong>
             Pedido #{{ req.id }} ({{ req.leg === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }})
           </strong>
-          → {{ serviceLabel(eligibility, req.proposed_service) }}
+          → {{ formatEligibilityServiceLabel(eligibility, req.proposed_service) }}
           <p class="sub-info">
             Decisão: <strong>{{ CHANGE_REQUEST_STATUS_LABELS[req.status] || req.status }}</strong> · Aplicação:
             <strong>{{ CHANGE_REQUEST_APPLICATION_LABELS[req.application] || req.application || 'não aplicada' }}</strong>

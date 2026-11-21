@@ -1,45 +1,30 @@
 <script setup>
 import { ref, useTemplateRef } from 'vue'
 import { PERSONAL_ROLES, SERVICE_DIRECTIONS, USER_ROLES } from '@/constants'
-import { formatDateTimeBr } from '@/utils/formatters'
+import { formatDateBr, formatDateTimeBr } from '@/utils/formatters'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import FinishedTravelsCard from './FinishedTravelsCard.vue'
 
-const props = defineProps({
+defineProps({
   role: { type: String, default: '' },
   finishedTravels: { type: Array, required: true },
   reportableTravels: { type: Array, required: true },
   lostItems: { type: Array, required: true },
   participationsByTravel: { type: Object, required: true },
   droppedOffTravelIds: { type: Object, required: true },
-  formatDate: { type: Function, required: true },
   loading: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['submit-lost-item', 'advance-lost-item'])
-
 const lostItemsSectionEl = useTemplateRef('lostItemsAnchor')
 const form = ref({ travel_id: '', item_description: '' })
-
-const PARTICIPATION_LABELS = {
-  allocated: 'Alocado',
-  on_board: 'Embarcado',
-  dropped_off: 'Desembarcado',
-  no_show: 'Ausente',
-  withdrawn: 'Desistência',
-}
 
 const LOST_ITEM_LABELS = {
   reported: 'Relatado',
   found: 'Encontrado',
   returned: 'Devolvido',
-}
-
-function canReportLostItem(travel) {
-  if (props.role === USER_ROLES.DRIVER) return true
-  if (props.role === USER_ROLES.PASSENGER) return props.droppedOffTravelIds.has(travel.id)
-  return false
 }
 
 function selectTravelForLostItem(travelId) {
@@ -60,46 +45,15 @@ function submit() {
 
 <template>
   <div class="travels-and-lost">
-    <BaseCard :title="`Viagens Passadas (${finishedTravels.length})`">
-      <p v-if="!finishedTravels.length && !loading" class="status-msg">
-        Nenhuma viagem finalizada registrada no seu histórico até o momento.
-      </p>
-      <div v-else class="item-list">
-        <div v-for="travel in finishedTravels" :key="travel.id" class="history-card">
-          <div class="card-row">
-            <div>
-              <strong>
-                Viagem #{{ travel.id }} · {{ formatDate(travel.date) }}
-                ({{ travel.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }})
-              </strong>
-              <p class="meta-line">
-                Veículo: {{ travel.vehicle ? `#${travel.vehicle}` : 'Não informado' }} ·
-                Motorista: {{ travel.driver ? `#${travel.driver}` : 'Não informado' }}
-                <template v-if="role === USER_ROLES.PASSENGER && participationsByTravel.get(travel.id)">
-                  · Sua presença:
-                  <strong>
-                    {{
-                      PARTICIPATION_LABELS[participationsByTravel.get(travel.id).status] ||
-                      participationsByTravel.get(travel.id).status
-                    }}
-                  </strong>
-                </template>
-              </p>
-            </div>
-            <BaseButton
-              v-if="PERSONAL_ROLES.includes(role) && canReportLostItem(travel)"
-              variant="outline"
-              size="sm"
-              icon="mdi-bag-personal-off-outline"
-              :disabled="busy"
-              @click="selectTravelForLostItem(travel.id)"
-            >
-              Relatar item perdido
-            </BaseButton>
-          </div>
-        </div>
-      </div>
-    </BaseCard>
+    <FinishedTravelsCard
+      :role="role"
+      :finished-travels="finishedTravels"
+      :participations-by-travel="participationsByTravel"
+      :dropped-off-travel-ids="droppedOffTravelIds"
+      :loading="loading"
+      :busy="busy"
+      @select-lost-item="selectTravelForLostItem"
+    />
 
     <div ref="lostItemsAnchor">
       <BaseCard
@@ -114,7 +68,7 @@ function submit() {
           <select v-model="form.travel_id" required :disabled="busy" aria-label="Selecionar viagem finalizada">
             <option value="">Selecionar viagem finalizada...</option>
             <option v-for="t in reportableTravels" :key="t.id" :value="t.id">
-              Viagem #{{ t.id }} · {{ formatDate(t.date) }}
+              Viagem #{{ t.id }} · {{ formatDateBr(t.date) }}
               ({{ t.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }})
             </option>
           </select>

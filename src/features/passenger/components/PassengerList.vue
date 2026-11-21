@@ -1,20 +1,14 @@
 <script setup>
-import { computed, shallowRef, watch } from 'vue'
-import { WINDOW_FULL_LABELS, WINDOW_STATES } from '@/constants'
-import { formatDateChip, formatDateTimeBr } from '@/utils/formatters'
+import { watch } from 'vue'
 import { useTransportQuestionnaire } from '@/features/transport/composables/useTransportQuestionnaire'
 import { useToast } from '@/composables/useToast'
 import PageHeader from '@/components/ui/PageHeader.vue'
-import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import PassengerRoutesCard from '@/features/transport/components/PassengerRoutesCard.vue'
 import AttendanceDayTabs from '@/features/passenger/components/attendance/AttendanceDayTabs.vue'
-import AttendanceSummaryAxes from '@/features/passenger/components/attendance/AttendanceSummaryAxes.vue'
-import AttendanceResponseForms from '@/features/passenger/components/attendance/AttendanceResponseForms.vue'
+import AttendanceDayDetailCard from '@/features/passenger/components/attendance/AttendanceDayDetailCard.vue'
 
-const editingAnswer = shallowRef(false)
-const cardExpanded = shallowRef(true)
 const { showToast } = useToast()
 
 const {
@@ -42,39 +36,6 @@ watch(notice, (msg) => {
 watch(error, (msg) => {
   if (msg) showToast(msg, 'error')
 })
-
-const windowLabel = computed(() => {
-  const w = selectedEligibility.value?.dayData?.window
-  return WINDOW_FULL_LABELS[w] || 'Estado da janela não informado'
-})
-
-const alreadyAnswered = computed(() => Boolean(selectedEligibility.value?.response?.answered_at))
-
-function serviceLabel(elig, serviceId) {
-  if (!serviceId) return 'Não vou neste trecho'
-  const all = [...(elig?.outboundServices || []), ...(elig?.returnServices || [])]
-  const found = all.find((s) => s.id === serviceId)
-  if (!found) return `Serviço #${serviceId}`
-  const tipo = found.is_shared ? 'Compartilhado' : 'Habitual'
-  return `${found.name} (${found.targetTimeLabel} · ${tipo})`
-}
-
-watch(
-  () => selectedEligibility.value?.id,
-  () => {
-    editingAnswer.value = false
-    cardExpanded.value = !alreadyAnswered.value
-  },
-  { immediate: true },
-)
-
-async function handleSendNormalAnswer() {
-  const ok = await sendNormalAnswer()
-  if (ok) {
-    editingAnswer.value = false
-    cardExpanded.value = false
-  }
-}
 </script>
 
 <template>
@@ -121,72 +82,18 @@ async function handleSendNormalAnswer() {
         @select="selectEligibility"
       />
 
-      <BaseCard :title="`Atendimento de ${formatDateChip(selectedEligibility.dayData.date)}`">
-        <template #actions>
-          <span class="window-tag">{{ windowLabel }}</span>
-          <BaseButton
-            variant="outline"
-            size="sm"
-            :icon="cardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-            @click="cardExpanded = !cardExpanded"
-          >
-            {{ cardExpanded ? 'Recolher' : 'Ver / alterar' }}
-          </BaseButton>
-        </template>
-
-        <div v-if="!cardExpanded && alreadyAnswered" class="collapsed-summary">
-          <span class="mdi mdi-check-circle-outline" aria-hidden="true"></span>
-          <span>
-            Confirmado — Ida: <strong>{{ serviceLabel(selectedEligibility, selectedEligibility.response?.outbound_service) }}</strong>
-            · Retorno: <strong>{{ serviceLabel(selectedEligibility, selectedEligibility.response?.return_service) }}</strong>
-          </span>
-        </div>
-
-        <template v-else>
-          <p
-            v-if="selectedEligibility.dayData.opens_at && selectedEligibility.dayData.normal_deadline"
-            class="sub-info"
-          >
-            Janela de confirmação:
-            <strong>abre em {{ formatDateTimeBr(selectedEligibility.dayData.opens_at) }}</strong> ·
-            <strong>fecha em {{ formatDateTimeBr(selectedEligibility.dayData.normal_deadline) }}</strong>
-            <template v-if="selectedEligibility.dayData.extension_deadline">
-              · prorrogação até {{ formatDateTimeBr(selectedEligibility.dayData.extension_deadline) }}
-            </template>
-          </p>
-
-          <p v-if="selectedEligibility.dayData.window === WINDOW_STATES.NOT_OPEN" class="sub-info">
-            Esta janela ainda não abriu. Você poderá selecionar e confirmar ida e volta a partir de
-            <strong>{{ formatDateTimeBr(selectedEligibility.dayData.opens_at) }}</strong>.
-          </p>
-
-          <p v-if="selectedEligibility.point_snapshot?.name" class="sub-info">
-            Ponto operacional congelado: <strong>{{ selectedEligibility.point_snapshot.name }}</strong>
-            ({{ selectedEligibility.point_snapshot.city }}/{{ selectedEligibility.point_snapshot.state }})
-          </p>
-
-          <AttendanceSummaryAxes
-            :eligibility="selectedEligibility"
-            :busy="busy"
-            @withdraw-leg="withdrawLeg"
-          />
-
-          <AttendanceResponseForms
-            v-model:outbound-choice="outboundChoice"
-            v-model:return-choice="returnChoice"
-            v-model:change-leg="changeLeg"
-            v-model:proposed-service-id="proposedServiceId"
-            v-model:editing-answer="editingAnswer"
-            :eligibility="selectedEligibility"
-            :already-answered="alreadyAnswered"
-            :busy="busy"
-            :service-label="serviceLabel"
-            @submit-normal="handleSendNormalAnswer"
-            @submit-extension="sendExtensionRequest"
-            @cancel-request="cancelPendingRequest"
-          />
-        </template>
-      </BaseCard>
+      <AttendanceDayDetailCard
+        v-model:outbound-choice="outboundChoice"
+        v-model:return-choice="returnChoice"
+        v-model:change-leg="changeLeg"
+        v-model:proposed-service-id="proposedServiceId"
+        :eligibility="selectedEligibility"
+        :busy="busy"
+        :send-normal-answer="sendNormalAnswer"
+        @submit-extension="sendExtensionRequest"
+        @cancel-request="cancelPendingRequest"
+        @withdraw-leg="withdrawLeg"
+      />
     </template>
   </div>
 </template>
@@ -200,41 +107,5 @@ async function handleSendNormalAnswer() {
   display: flex;
   flex-direction: column;
   gap: $space-3;
-}
-
-.window-tag {
-  padding: $space-1 $space-3;
-  border-radius: $radius-pill;
-  background: var(--color-primary-soft);
-  color: var(--primary);
-  font-size: $text-xs;
-  font-weight: $font-bold;
-}
-
-.sub-info {
-  font-size: $text-sm;
-  color: var(--text-muted);
-  line-height: 1.5;
-
-  strong {
-    color: var(--text);
-  }
-}
-
-.collapsed-summary {
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-  padding: $space-3;
-  border-radius: $radius-md;
-  background: var(--success-soft);
-  color: var(--success);
-  font-size: $text-sm;
-  line-height: 1.45;
-
-  .mdi {
-    font-size: 1.15rem;
-    flex-shrink: 0;
-  }
 }
 </style>
