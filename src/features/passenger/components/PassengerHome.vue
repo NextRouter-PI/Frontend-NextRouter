@@ -4,13 +4,16 @@ import { state } from '@/stores/state'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 import { useAccountScope } from '@/composables/useAccountScope'
+import { useToast } from '@/composables/useToast'
 import { loadMemberships } from '@/api/memberships'
+import { estimateEtaMinutes, formatDistanceLabel, haversineMeters } from '@/utils/geo'
 import MapBackground from '@/components/ui/MapBackground.vue'
 
 const userLogged = computed(() => state.user)
 const { state: transportState, loadPassengerData } = useTransportState()
 const { state: tracking, startViewerTracking, stopTracking } = useTravelTracking()
 const scope = useAccountScope()
+const { showToast } = useToast()
 
 const sheetExpanded = ref(true)
 const membershipLoaded = ref(false)
@@ -19,8 +22,8 @@ const openCompany = ref(null)
 
 const isSharing = computed(() => tracking.tracking && tracking.role === 'viewer')
 const activeTravel = computed(() => transportState.passenger?.travel || null)
+const participationStatus = computed(() => transportState.passenger?.currentParticipation?.status || '')
 const participationStatusLabel = computed(() => {
-  const status = transportState.passenger?.currentParticipation?.status
   const map = {
     allocated: 'Aguardando embarque',
     on_board: 'A bordo',
@@ -28,7 +31,47 @@ const participationStatusLabel = computed(() => {
     no_show: 'Ausência registrada',
     withdrawn: 'Desistência registrada',
   }
-  return map[status] || ''
+  return map[participationStatus.value] || ''
+})
+const passengerPoint = computed(() => transportState.passenger?.pointSnapshot || null)
+const distanceToPointMeters = computed(() => {
+  if (
+    tracking.latitude == null ||
+    tracking.longitude == null ||
+    passengerPoint.value?.latitude == null ||
+    passengerPoint.value?.longitude == null
+  ) {
+    return null
+  }
+  return haversineMeters(
+    tracking.latitude,
+    tracking.longitude,
+    Number(passengerPoint.value.latitude),
+    Number(passengerPoint.value.longitude),
+  )
+})
+const etaSummary = computed(() => {
+  if (distanceToPointMeters.value == null || participationStatus.value !== 'allocated') return ''
+  const dist = formatDistanceLabel(distanceToPointMeters.value)
+  const mins = estimateEtaMinutes(distanceToPointMeters.value)
+  return distanceToPointMeters.value <= 300
+    ? `Chegando ao seu ponto (${dist})`
+    : `~${mins} min · ${dist} do seu ponto`
+})
+
+let approachedTravelId = null
+watch(distanceToPointMeters, (meters) => {
+  const travelId = transportState.passenger?.travelId
+  if (
+    travelId &&
+    participationStatus.value === 'allocated' &&
+    meters != null &&
+    meters <= 300 &&
+    approachedTravelId !== travelId
+  ) {
+    approachedTravelId = travelId
+    showToast('O transporte está chegando ao seu ponto!', 'info', 6000)
+  }
 })
 const mapsUrl = computed(() => {
   if (tracking.latitude == null || tracking.longitude == null) return null
@@ -110,11 +153,12 @@ onUnmounted(() => {
 <template>
   <div class="home-page">
     <MapBackground
-      self-marker-label="Você"
+      self-marker-label="Seu ponto"
       tracking-marker-label="Motorista"
       tracking-marker-icon="mdi-bus"
       :snapshot="transportState.passenger?.snapshot || null"
       :stops="transportState.passenger?.stops || []"
+      :target-point="passengerPoint"
     />
 
     <section class="map-sheet" :class="{ collapsed: !sheetExpanded }" aria-label="Resumo da viagem e vínculo">
@@ -166,6 +210,19 @@ onUnmounted(() => {
             <div class="tracking-header">
               <span class="pulse-dot"></span>
               Motorista em rota (ao vivo)
+            </div>
+            <p v-if="etaSummary" class="eta-highlight">
+              <span class="mdi mdi-clock-fast" aria-hidden="true"></span>
+              <span>{{ etaSummary }}</span>
+            </p>
+            <div class="trip-steps" aria-label="Etapas da viagem">
+              <span class="trip-step done">Em rota</span>
+              <span class="trip-step" :class="{ done: ['on_board', 'dropped_off'].includes(participationStatus) }">
+                A bordo
+              </span>
+              <span class="trip-step" :class="{ done: participationStatus === 'dropped_off' }">
+                Concluída
+              </span>
             </div>
             <p v-if="participationStatusLabel" class="panel-meta">
               Seu embarque: <strong>{{ participationStatusLabel }}</strong>
@@ -544,6 +601,42 @@ onUnmounted(() => {
 .sheet-cta-outline:hover {
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.eta-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(236, 131, 20, 0.16);
+  color: var(--primary);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.trip-steps {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.trip-step {
+  flex: 1;
+  text-align: center;
+  padding: 4px 6px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--chrome-muted);
+
+  &.done {
+    background: var(--primary);
+    color: var(--color-on-primary);
+  }
 }
 
 /* Desktop: card flutuante no canto inferior direito sobre o mapa (Passageiro Desktop.png) */

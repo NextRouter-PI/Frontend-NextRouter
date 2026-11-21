@@ -8,7 +8,7 @@ import { loadMemberships } from '@/api/memberships'
 import MapBackground from '@/components/ui/MapBackground.vue'
 
 const userLogged = computed(() => state.user)
-const { state: transportState, loadDriverData } = useTransportState()
+const { state: transportState, loadDriverData, registrarPresencaParticipante } = useTransportState()
 const { state: tracking } = useTravelTracking()
 const scope = useAccountScope()
 
@@ -18,12 +18,22 @@ const openMembership = ref(null)
 const openCompany = ref(null)
 
 const driverTransport = computed(() => transportState.driver)
+const isTravelActive = computed(() => driverTransport.value?.travelStatus === 'in_progress')
 const pendingBoardingPassengers = computed(() =>
   (driverTransport.value?.participations || []).filter((p) => p.status === 'allocated'),
 )
 const onBoardPassengers = computed(() =>
   (driverTransport.value?.participations || []).filter((p) => p.status === 'on_board'),
 )
+const nextPendingStop = computed(() =>
+  (driverTransport.value?.stops || []).find((s) => s.state !== 'handled' && s.state !== 'completed') || null,
+)
+const nextStopPoint = computed(() => nextPendingStop.value?.point_snapshot || null)
+
+async function quickBoard(participation) {
+  if (transportState.busy || !isTravelActive.value) return
+  await registrarPresencaParticipante(participation, 'boarded')
+}
 
 const isSharing = computed(() => tracking.tracking && tracking.role === 'driver')
 const mapsUrl = computed(() => {
@@ -84,6 +94,7 @@ onUnmounted(() => {
       tracking-marker-icon="mdi-bus"
       :snapshot="driverTransport?.snapshot || null"
       :stops="driverTransport?.stops || []"
+      :target-point="nextStopPoint"
     />
 
     <section class="map-sheet" :class="{ collapsed: !sheetExpanded }" aria-label="Resumo operacional do motorista">
@@ -185,8 +196,19 @@ onUnmounted(() => {
                 </p>
                 <ul class="pending-boarding-list">
                   <li v-for="p in pendingBoardingPassengers" :key="p.id">
-                    <span class="mdi mdi-account-clock-outline" aria-hidden="true"></span>
-                    <span>{{ p.name || `Passageiro #${p.eligibility}` }}</span>
+                    <span class="pending-passenger-name">
+                      <span class="mdi mdi-account-clock-outline" aria-hidden="true"></span>
+                      <span>{{ p.name || `Passageiro #${p.eligibility}` }}</span>
+                    </span>
+                    <button
+                      v-if="isTravelActive"
+                      type="button"
+                      class="quick-board-btn"
+                      :disabled="transportState.busy"
+                      @click="quickBoard(p)"
+                    >
+                      Embarcou
+                    </button>
                   </li>
                 </ul>
               </div>
@@ -554,9 +576,32 @@ onUnmounted(() => {
   li {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 8px;
     font-size: 0.84rem;
     color: var(--chrome-text);
+  }
+}
+
+.pending-passenger-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quick-board-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  background: var(--primary);
+  color: var(--color-on-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 

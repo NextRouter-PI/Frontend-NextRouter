@@ -101,6 +101,7 @@ export function createPassengerTransportActions({ state, nextSignal }) {
         publishedRevision: currentTravel?.published_revision ?? null,
         snapshot,
         stops,
+        pointSnapshot: currentEligibility?.point_snapshot || null,
         pointLabel: pointLabel(currentEligibility?.point_snapshot),
         rota: {
           ponto_origem:

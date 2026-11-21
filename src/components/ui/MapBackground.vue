@@ -5,6 +5,7 @@ import { useTravelTracking } from '@/features/transport/composables/useTravelTra
 import L from 'leaflet'
 import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER } from '@/utils/leafletTiles'
 import { pointLatLng } from '@/features/transport/composables/useRouteSnapshotMap'
+import { haversineMeters } from '@/utils/geo'
 
 const props = defineProps({
   selfMarkerLabel: { type: String, default: 'Você' },
@@ -12,6 +13,7 @@ const props = defineProps({
   trackingMarkerIcon: { type: String, default: 'mdi-bus' },
   snapshot: { type: Object, default: null },
   stops: { type: Array, default: () => [] },
+  targetPoint: { type: Object, default: null },
 })
 
 const { state: tracking } = useTravelTracking()
@@ -19,16 +21,89 @@ const { state: tracking } = useTravelTracking()
 const mapContainer = ref(null)
 let map = null
 let trackingMarker = null
+let targetMarker = null
 let routeLayer = null
+let passedLine = null
+let remainingLine = null
 let trailLine = null
 let trailCoords = []
 let cleanupTiles = null
+let animFrame = null
+let lastRenderedPos = null
+
+function cancelMarkerAnim() {
+  if (animFrame) {
+    cancelAnimationFrame(animFrame)
+    animFrame = null
+  }
+}
 
 function initialCenter() {
+  const target = pointLatLng(props.targetPoint)
+  if (target) return target
   if (state.user?.latitude != null && state.user?.longitude != null) {
     return [state.user.latitude, state.user.longitude]
   }
   return DEFAULT_MAP_CENTER
+}
+
+function plannedCoordsLatLng() {
+  const raw = props.snapshot?.geometry?.coordinates
+  if (!Array.isArray(raw) || raw.length < 2) return []
+  return raw.map(([lng, lat]) => [lat, lng])
+}
+
+function updateConsumedRoute(busPos) {
+  if (!map) return
+  const coords = plannedCoordsLatLng()
+  if (!coords.length) return
+
+  let closestIdx = 0
+  let bestDist = Infinity
+  for (let i = 0; i < coords.length; i += 1) {
+    const d = haversineMeters(busPos[0], busPos[1], coords[i][0], coords[i][1])
+    if (d < bestDist) {
+      bestDist = d
+      closestIdx = i
+    }
+  }
+
+  const passed = coords.slice(0, closestIdx + 1)
+  const remaining = coords.slice(closestIdx)
+
+  if (passedLine) map.removeLayer(passedLine)
+  if (remainingLine) map.removeLayer(remainingLine)
+
+  if (passed.length >= 2) {
+    passedLine = L.polyline(passed, {
+      color: '#71717a',
+      weight: 4,
+      opacity: 0.45,
+    }).addTo(map)
+  }
+  if (remaining.length >= 2) {
+    remainingLine = L.polyline(remaining, {
+      color: '#df801a',
+      weight: 5,
+      opacity: 0.92,
+      className: 'nr-route-animated-dash',
+    }).addTo(map)
+  }
+}
+
+function renderTargetMarker() {
+  if (!map) return
+  if (targetMarker) {
+    map.removeLayer(targetMarker)
+    targetMarker = null
+  }
+  const target = pointLatLng(props.targetPoint)
+  if (!target) return
+  targetMarker = L.marker(target, {
+    icon: createPinIcon({ variant: 'success', icon: 'mdi-map-marker-account', size: 'md' }),
+  })
+    .addTo(map)
+    .bindPopup(props.targetPoint?.name || props.selfMarkerLabel)
 }
 
 function renderPlannedRoute() {
@@ -40,12 +115,16 @@ function renderPlannedRoute() {
   if (!snapshot) return
   const bounds = []
 
-  if (snapshot.geometry?.type && Array.isArray(snapshot.geometry.coordinates)) {
-    const geo = L.geoJSON(snapshot.geometry, {
-      style: { color: '#df801a', weight: 4, opacity: 0.85, className: 'nr-route-animated-dash' },
-    }).addTo(routeLayer)
-    const b = geo.getBounds()
-    if (b.isValid()) bounds.push(b.getSouthWest(), b.getNorthEast())
+  const coords = plannedCoordsLatLng()
+  if (coords.length >= 2 && tracking.latitude == null) {
+    if (remainingLine) map.removeLayer(remainingLine)
+    remainingLine = L.polyline(coords, {
+      color: '#df801a',
+      weight: 4,
+      opacity: 0.85,
+      className: 'nr-route-animated-dash',
+    }).addTo(map)
+    for (const pt of coords) bounds.push(pt)
   }
 
   const originCoord = pointLatLng(snapshot.origin)
@@ -85,6 +164,46 @@ function renderPlannedRoute() {
   }
 }
 
+function animateMarkerTo(fromPos, toPos, durationMs = 1800) {
+  cancelMarkerAnim()
+  const start = performance.now()
+  function frame(now) {
+    const t = Math.min(1, (now - start) / durationMs)
+    const eased = t * (2 - t)
+    const lat = fromPos[0] + (toPos[0] - fromPos[0]) * eased
+    const lng = fromPos[1] + (toPos[1] - fromPos[1]) * eased
+    trackingMarker?.setLatLng([lat, lng])
+    lastRenderedPos = [lat, lng]
+    if (t < 1) {
+      animFrame = requestAnimationFrame(frame)
+    } else {
+      animFrame = null
+      lastRenderedPos = toPos
+    }
+  }
+  animFrame = requestAnimationFrame(frame)
+}
+
+function frameViewport(busPos) {
+  if (!map) return
+  const target = pointLatLng(props.targetPoint)
+  if (target) {
+    const dist = haversineMeters(busPos[0], busPos[1], target[0], target[1])
+    if (dist <= 450) {
+      map.setView(busPos, 16, { animate: true })
+    } else {
+      map.fitBounds(L.latLngBounds([busPos, target]), {
+        paddingTopLeft: [48, 80],
+        paddingBottomRight: [48, 220],
+        maxZoom: 15,
+        animate: true,
+      })
+    }
+  } else {
+    map.panTo(busPos, { animate: true })
+  }
+}
+
 function ensureMap() {
   if (map || !mapContainer.value) return
   map = L.map(mapContainer.value, {
@@ -99,15 +218,7 @@ function ensureMap() {
   }).setView(initialCenter(), 14)
 
   cleanupTiles = attachThemedTileLayer(map)
-
-  if (state.user?.latitude != null && state.user?.longitude != null) {
-    L.marker([state.user.latitude, state.user.longitude], {
-      icon: createPinIcon({ icon: 'mdi-map-marker' }),
-    })
-      .addTo(map)
-      .bindPopup(props.selfMarkerLabel)
-  }
-
+  renderTargetMarker()
   renderPlannedRoute()
 }
 
@@ -117,37 +228,49 @@ watch(
 )
 
 watch(
+  () => [props.targetPoint?.latitude, props.targetPoint?.longitude],
+  () => renderTargetMarker(),
+)
+
+watch(
   () => [tracking.latitude, tracking.longitude],
   ([lat, lng]) => {
     if (!map || lat == null || lng == null) return
 
-    const point = [lat, lng]
-    const last = trailCoords[trailCoords.length - 1]
-    if (!last || last[0] !== lat || last[1] !== lng) {
-      trailCoords.push(point)
-      if (!trailLine) {
-        trailLine = L.polyline(trailCoords, {
-          color: '#df801a',
-          weight: 5,
-          opacity: 0.92,
-          className: 'nr-route-animated-dash',
-        }).addTo(map)
-      } else {
-        trailLine.setLatLngs(trailCoords)
+    const nextPos = [lat, lng]
+    const hasPlanned = plannedCoordsLatLng().length >= 2
+
+    if (hasPlanned) {
+      updateConsumedRoute(nextPos)
+    } else {
+      const last = trailCoords[trailCoords.length - 1]
+      if (!last || last[0] !== lat || last[1] !== lng) {
+        trailCoords.push(nextPos)
+        if (!trailLine) {
+          trailLine = L.polyline(trailCoords, {
+            color: '#df801a',
+            weight: 5,
+            opacity: 0.92,
+            className: 'nr-route-animated-dash',
+          }).addTo(map)
+        } else {
+          trailLine.setLatLngs(trailCoords)
+        }
       }
     }
 
     if (!trackingMarker) {
-      trackingMarker = L.marker(point, {
+      trackingMarker = L.marker(nextPos, {
         icon: createPinIcon({ icon: props.trackingMarkerIcon, pulse: true }),
       })
         .addTo(map)
         .bindPopup(props.trackingMarkerLabel)
+      lastRenderedPos = nextPos
     } else {
-      trackingMarker.setLatLng(point)
+      animateMarkerTo(lastRenderedPos || nextPos, nextPos)
     }
 
-    map.panTo(point)
+    frameViewport(nextPos)
   },
 )
 
@@ -155,6 +278,7 @@ watch(
   () => tracking.tracking,
   (isTracking) => {
     if (!isTracking && map) {
+      cancelMarkerAnim()
       if (trackingMarker) {
         map.removeLayer(trackingMarker)
         trackingMarker = null
@@ -164,6 +288,7 @@ watch(
         trailLine = null
       }
       trailCoords = []
+      lastRenderedPos = null
     }
   },
 )
@@ -174,14 +299,18 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  cancelMarkerAnim()
   cleanupTiles?.()
   cleanupTiles = null
   if (map) {
     map.remove()
     map = null
     routeLayer = null
+    passedLine = null
+    remainingLine = null
     trailLine = null
     trackingMarker = null
+    targetMarker = null
   }
 })
 </script>
