@@ -2,6 +2,8 @@ import axios from 'axios'
 
 const SAFE_METHODS = new Set(['get', 'head', 'options'])
 const SESSION_LOCK = 'nextrouter-cookie-session'
+// Endpoints de recurso singular (`/me/`) não são listas paginadas e não devem receber `page_size`.
+const SINGLE_IDENTITY_PATH = /^(?:users|companies|drivers|passengers)\/me(?:\/stats)?\/?$/
 
 // Mantém cookies/CSRF e coordenação separados do estado Vue e da navegação.
 export function createHttpClient({
@@ -143,7 +145,8 @@ export function createHttpClient({
     if (!SAFE_METHODS.has(config.method)) {
       config.headers.set('X-CSRFToken', await bootstrapCsrf())
     }
-    if (config.method === 'get' && !config.params?.page_size) {
+    const pathname = config.url.split('?')[0]
+    if (config.method === 'get' && !config.params?.page_size && !SINGLE_IDENTITY_PATH.test(pathname)) {
       config.params = { ...config.params, page_size: 100 }
     }
     return config
