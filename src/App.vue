@@ -1,12 +1,14 @@
 <script setup>
-import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, shallowRef, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Toaster } from 'vue-sonner'
 import 'vue-sonner/style.css'
 import { ROUTE_PATHS, USER_ROLES } from '@/constants'
 import { useDeviceLayout } from '@/composables/useDeviceLayout'
+import { useDocumentTheme } from '@/composables/useDocumentTheme'
+import { useRouteProgress } from '@/composables/useRouteProgress'
 import { navigationItems } from '@/navigation'
-import { state } from '@/stores/state'
+import { useAuthStore } from '@/stores/useAuthStore'
 import AppTopBar from '@/components/layout/AppTopBar.vue'
 import AppNavigation from '@/components/layout/AppNavigation.vue'
 import ThemeButton from '@/components/ui/ThemeButton.vue'
@@ -14,89 +16,35 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
 const { isMobile } = useDeviceLayout()
 const route = useRoute()
-const router = useRouter()
+const auth = useAuthStore()
+const { theme: toasterTheme } = useDocumentTheme()
+const { transitionName, isNavigating, isAuthSlide } = useRouteProgress({ isMobile })
 
 const showTopBar = computed(() => !route.meta?.hideChrome)
-const showNavigation = computed(() => state.logged && !route.meta?.hideChrome)
-const isCompany = computed(() => state.role === USER_ROLES.COMPANY)
-const navItems = computed(() => navigationItems(state.role))
+const showNavigation = computed(() => auth.logged && !route.meta?.hideChrome)
+const isCompany = computed(() => auth.role === USER_ROLES.COMPANY)
+const navItems = computed(() => navigationItems(auth.role))
 const isUserRoute = computed(
   () => route.path === ROUTE_PATHS.USER || route.path.startsWith(`${ROUTE_PATHS.USER}/`),
 )
-const brandDestination = computed(() => (state.logged ? ROUTE_PATHS.HOME : ROUTE_PATHS.LOGIN))
+const brandDestination = computed(() => (auth.logged ? ROUTE_PATHS.HOME : ROUTE_PATHS.LOGIN))
 const avatarFailed = shallowRef(false)
 const userAvatarUrl = computed(() =>
-  avatarFailed.value ? '' : state.user?.profile_picture_data?.url || '',
+  avatarFailed.value ? '' : auth.user?.profile_picture_data?.url || '',
 )
-const toasterTheme = shallowRef(
-  typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
-    ? 'dark'
-    : 'light',
-)
-let themeObserver = null
+const viewKey = computed(() => route.matched[0]?.path || route.path)
 
 watch(
-  () => state.user?.profile_picture_data?.url,
+  () => auth.user?.profile_picture_data?.url,
   () => {
     avatarFailed.value = false
   },
 )
-
-onMounted(() => {
-  if (typeof MutationObserver === 'undefined') return
-  themeObserver = new MutationObserver(() => {
-    toasterTheme.value = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-  })
-  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-})
-
-const transitionName = shallowRef('page-fade')
-const isNavigating = shallowRef(false)
-let navDelayTimer = null
-const viewKey = computed(() => route.matched[0]?.path || route.path)
-const isAuthSlide = computed(
-  () => transitionName.value === 'slide-forward' || transitionName.value === 'slide-back',
-)
-
-function finishNavigation() {
-  if (navDelayTimer) {
-    clearTimeout(navDelayTimer)
-    navDelayTimer = null
-  }
-  isNavigating.value = false
-}
-
-const removeBeforeEach = router.beforeEach((to, from) => {
-  if (!isMobile.value && from.path === ROUTE_PATHS.LOGIN && to.path === ROUTE_PATHS.SIGNUP) {
-    transitionName.value = 'slide-forward'
-  } else if (!isMobile.value && from.path === ROUTE_PATHS.SIGNUP && to.path === ROUTE_PATHS.LOGIN) {
-    transitionName.value = 'slide-back'
-  } else {
-    transitionName.value = 'page-fade'
-  }
-  if (to.path !== from.path) {
-    if (navDelayTimer) clearTimeout(navDelayTimer)
-    navDelayTimer = setTimeout(() => {
-      isNavigating.value = true
-    }, 100)
-  }
-})
-const removeAfterEach = router.afterEach(finishNavigation)
-const removeOnError = router.onError(finishNavigation)
-
-onUnmounted(() => {
-  themeObserver?.disconnect()
-  themeObserver = null
-  removeBeforeEach()
-  removeAfterEach()
-  removeOnError()
-  finishNavigation()
-})
 </script>
 
 <template>
   <Transition name="fade-scale" mode="out-in">
-    <div v-if="!state.checkingAuth" key="ready" class="app-layout">
+    <div v-if="!auth.checkingAuth" key="ready" class="app-layout">
       <div
         v-if="isNavigating"
         class="route-progress-bar"
@@ -112,7 +60,7 @@ onUnmounted(() => {
         <template #actions>
           <ThemeButton />
           <RouterLink
-            v-if="state.logged"
+            v-if="auth.logged"
             :to="ROUTE_PATHS.USER_PROFILE"
             class="top-bar-user-btn"
             :class="{ active: isUserRoute, 'has-avatar': Boolean(userAvatarUrl) }"
@@ -186,7 +134,7 @@ onUnmounted(() => {
   />
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .app-boot-loader {
   min-height: 100vh;
   @include flex-center;
@@ -404,33 +352,5 @@ onUnmounted(() => {
       transform: translateY(-13px) scale(1.02);
     }
   }
-}
-
-.slide-forward-enter-active,
-.slide-forward-leave-active,
-.slide-back-enter-active,
-.slide-back-leave-active {
-  position: fixed;
-  top: var(--header-height);
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
-  background: var(--bg);
-  transition: transform 0.55s cubic-bezier(0.77, 0, 0.18, 1);
-}
-
-.slide-forward-enter-from {
-  transform: translateX(-100%);
-}
-.slide-forward-leave-to {
-  transform: translateX(100%);
-}
-
-.slide-back-enter-from {
-  transform: translateX(100%);
-}
-.slide-back-leave-to {
-  transform: translateX(-100%);
 }
 </style>
