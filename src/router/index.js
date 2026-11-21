@@ -1,9 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { ROUTE_NAMES, STORAGE_KEYS, THEME_MODES } from '@/constants'
+import { ROUTE_NAMES, ROUTE_PATHS, STORAGE_KEYS, THEME_MODES, USER_ROLES } from '@/constants'
 import { useAuthStore } from '@/stores/useAuthStore.js'
 import { authenticatedRoutes } from './routes/authenticated'
 import { companyRoutes } from './routes/company'
 import { publicRoutes } from './routes/public'
+
+const COMPANY_DEFAULT_TAB_PATHS = {
+  [ROUTE_NAMES.TRANSPORT]: ROUTE_PATHS.TRANSPORT_FLEET,
+  [ROUTE_NAMES.LIST]: ROUTE_PATHS.LIST_GROUPS,
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -43,6 +48,21 @@ router.beforeEach(async (to) => {
 
   if (to.meta.requiresRole && auth.logged && !to.meta.requiresRole.includes(auth.role)) {
     return { name: ROUTE_NAMES.FORBIDDEN }
+  }
+
+  if (auth.logged && auth.role === USER_ROLES.COMPANY && !to.params.tab) {
+    const defaultTabPath = COMPANY_DEFAULT_TAB_PATHS[to.name]
+    if (defaultTabPath) {
+      return { path: defaultTabPath, query: to.query, hash: to.hash, replace: true }
+    }
+    if (to.name === ROUTE_NAMES.EDIT_ROUTE) {
+      return {
+        path: `/routes/${to.params.id}/edit/settings`,
+        query: to.query,
+        hash: to.hash,
+        replace: true,
+      }
+    }
   }
 
   return true

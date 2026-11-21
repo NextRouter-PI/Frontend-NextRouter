@@ -75,7 +75,7 @@ async function salvar() {
   salvando.value = false
 
   if (sucesso) {
-    router.push(ROUTE_PATHS.TRANSPORT)
+    router.push(ROUTE_PATHS.TRANSPORT_FLEET)
   } else {
     erro.value = typeof stores.error === 'string' ? stores.error : 'Erro ao salvar alterações.'
   }
@@ -113,8 +113,6 @@ async function salvar() {
 
 <style lang="scss" scoped>
 .vehicle-page {
-  margin: 0 auto;
-  max-width: 600px;
-  padding: $space-5 18px 120px;
+  @include section-container(120px);
 }
 </style>

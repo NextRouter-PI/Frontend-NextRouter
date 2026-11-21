@@ -85,7 +85,7 @@ const chartOptions = computed(() => {
     </div>
 
     <template #footer>
-      <RouterLink :to="ROUTE_PATHS.LIST" class="btn-detalhes">VER DETALHES</RouterLink>
+      <RouterLink :to="ROUTE_PATHS.LIST_GROUPS" class="btn-detalhes">VER DETALHES</RouterLink>
     </template>
   </BaseCard>
 </template>

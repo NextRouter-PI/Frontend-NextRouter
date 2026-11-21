@@ -89,10 +89,10 @@ watch(
             v-for="item in navItems"
             :key="item.to"
             :to="item.to"
-            :class="[mobileMode ? 'bottom-nav-item' : 'sidebar-nav-item', { active: isActive(item.to) }]"
+            :class="[mobileMode ? 'bottom-nav-item' : 'sidebar-nav-item', { active: isActive(item) }]"
             :title="item.title"
             :aria-label="item.title"
-            :aria-current="isActive(item.to) ? 'page' : undefined"
+            :aria-current="isActive(item) ? 'page' : undefined"
           >
             <span class="nav-icon-wrap">
               <span class="mdi" :class="item.icon" aria-hidden="true"></span>

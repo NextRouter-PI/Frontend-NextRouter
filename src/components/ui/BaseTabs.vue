@@ -52,7 +52,7 @@ function selectItem(item) {
 }
 
 watch(
-  [activeIndex, () => props.items.map((i) => `${i.value}:${i.label}:${i.badge ?? ''}`).join('|')],
+  [activeIndex, () => route.fullPath, () => props.items.map((i) => `${i.value}:${i.label}:${i.badge ?? ''}`).join('|')],
   async () => {
     await nextTick()
     updateIndicator()

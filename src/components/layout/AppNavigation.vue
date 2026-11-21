@@ -10,9 +10,10 @@ defineProps({
 
 const route = useRoute()
 
-function isActive(to) {
-  if (to === ROUTE_PATHS.HOME) return route.path === ROUTE_PATHS.HOME
-  return route.path === to || route.path.startsWith(`${to}/`)
+function isActive(target) {
+  const path = typeof target === 'string' ? target : target?.matchPrefix || target?.to || ''
+  if (path === ROUTE_PATHS.HOME) return route.path === ROUTE_PATHS.HOME
+  return route.path === path || route.path.startsWith(`${path}/`)
 }
 </script>
 
