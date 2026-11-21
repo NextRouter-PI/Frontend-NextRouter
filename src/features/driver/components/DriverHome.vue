@@ -1,12 +1,14 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { state } from '@/stores/state'
+import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { loadMemberships } from '@/api/memberships'
 import MapBackground from '@/components/ui/MapBackground.vue'
 
 const userLogged = computed(() => state.user)
+const { state: transportState, loadDriverData } = useTransportState()
 const { state: tracking } = useTravelTracking()
 const scope = useAccountScope()
 
@@ -14,6 +16,14 @@ const sheetExpanded = ref(true)
 const membershipLoaded = ref(false)
 const openMembership = ref(null)
 const openCompany = ref(null)
+
+const driverTransport = computed(() => transportState.driver)
+const pendingBoardingPassengers = computed(() =>
+  (driverTransport.value?.participations || []).filter((p) => p.status === 'allocated'),
+)
+const onBoardPassengers = computed(() =>
+  (driverTransport.value?.participations || []).filter((p) => p.status === 'on_board'),
+)
 
 const isSharing = computed(() => tracking.tracking && tracking.role === 'driver')
 const mapsUrl = computed(() => {
@@ -46,8 +56,23 @@ async function fetchMembershipStatus() {
   }
 }
 
+let driverPollTimer = null
+
 onMounted(() => {
   fetchMembershipStatus()
+  loadDriverData()
+  driverPollTimer = setInterval(() => {
+    if (scope.current() && !transportState.loading) {
+      loadDriverData(driverTransport.value?.travelId)
+    }
+  }, 6000)
+})
+
+onUnmounted(() => {
+  if (driverPollTimer) {
+    clearInterval(driverPollTimer)
+    driverPollTimer = null
+  }
 })
 </script>
 
@@ -57,6 +82,8 @@ onMounted(() => {
       self-marker-label="Sua base"
       tracking-marker-label="Você"
       tracking-marker-icon="mdi-bus"
+      :snapshot="driverTransport?.snapshot || null"
+      :stops="driverTransport?.stops || []"
     />
 
     <section class="map-sheet" :class="{ collapsed: !sheetExpanded }" aria-label="Resumo operacional do motorista">
@@ -152,7 +179,21 @@ onMounted(() => {
               <p class="panel-title">
                 {{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}
               </p>
-              <p class="panel-meta">Acesse suas viagens designadas para iniciar a rota e registrar embarques.</p>
+              <div v-if="pendingBoardingPassengers.length" class="pending-boarding-box">
+                <p class="pending-boarding-title">
+                  Faltam embarcar ({{ pendingBoardingPassengers.length }}):
+                </p>
+                <ul class="pending-boarding-list">
+                  <li v-for="p in pendingBoardingPassengers" :key="p.id">
+                    <span class="mdi mdi-account-clock-outline" aria-hidden="true"></span>
+                    <span>{{ p.name || `Passageiro #${p.eligibility}` }}</span>
+                  </li>
+                </ul>
+              </div>
+              <p v-else-if="onBoardPassengers.length" class="panel-meta">
+                Todos os passageiros já embarcaram ({{ onBoardPassengers.length }} a bordo).
+              </p>
+              <p v-else class="panel-meta">Acesse suas viagens designadas para iniciar a rota e registrar embarques.</p>
               <div class="sheet-actions">
                 <RouterLink to="/historico" class="sheet-cta">Minhas viagens</RouterLink>
                 <RouterLink to="/lista" class="sheet-cta-outline">Lista operacional</RouterLink>
@@ -485,6 +526,38 @@ onMounted(() => {
 .sheet-cta-outline:hover {
   border-color: var(--primary);
   color: var(--primary);
+}
+
+.pending-boarding-box {
+  margin: 6px 0 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(236, 131, 20, 0.12);
+  border: 1px solid rgba(236, 131, 20, 0.3);
+}
+
+.pending-boarding-title {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.pending-boarding-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.84rem;
+    color: var(--chrome-text);
+  }
 }
 
 @media (min-width: 901px) {

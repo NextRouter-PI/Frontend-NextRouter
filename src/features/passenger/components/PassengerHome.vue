@@ -19,6 +19,17 @@ const openCompany = ref(null)
 
 const isSharing = computed(() => tracking.tracking && tracking.role === 'viewer')
 const activeTravel = computed(() => transportState.passenger?.travel || null)
+const participationStatusLabel = computed(() => {
+  const status = transportState.passenger?.currentParticipation?.status
+  const map = {
+    allocated: 'Aguardando embarque',
+    on_board: 'A bordo',
+    dropped_off: 'Desembarcado',
+    no_show: 'Ausência registrada',
+    withdrawn: 'Desistência registrada',
+  }
+  return map[status] || ''
+})
 const mapsUrl = computed(() => {
   if (tracking.latitude == null || tracking.longitude == null) return null
   return `https://www.google.com/maps?q=${tracking.latitude},${tracking.longitude}`
@@ -74,12 +85,24 @@ watch(
   },
 )
 
+let travelPollTimer = null
+
 onMounted(() => {
   loadPassengerData()
   fetchMembershipStatus()
+  // Detecta automaticamente início de viagem ou mudança de embarque/desembarque sem precisar dar F5.
+  travelPollTimer = setInterval(() => {
+    if (scope.current() && !transportState.loading) {
+      loadPassengerData()
+    }
+  }, 5000)
 })
 
 onUnmounted(() => {
+  if (travelPollTimer) {
+    clearInterval(travelPollTimer)
+    travelPollTimer = null
+  }
   stopTracking()
 })
 </script>
@@ -90,6 +113,8 @@ onUnmounted(() => {
       self-marker-label="Você"
       tracking-marker-label="Motorista"
       tracking-marker-icon="mdi-bus"
+      :snapshot="transportState.passenger?.snapshot || null"
+      :stops="transportState.passenger?.stops || []"
     />
 
     <section class="map-sheet" :class="{ collapsed: !sheetExpanded }" aria-label="Resumo da viagem e vínculo">
@@ -142,6 +167,9 @@ onUnmounted(() => {
               <span class="pulse-dot"></span>
               Motorista em rota (ao vivo)
             </div>
+            <p v-if="participationStatusLabel" class="panel-meta">
+              Seu embarque: <strong>{{ participationStatusLabel }}</strong>
+            </p>
             <p v-if="tracking.latitude != null" class="panel-meta">
               {{ tracking.latitude.toFixed(6) }}, {{ tracking.longitude.toFixed(6) }}
               <span v-if="updatedAtLabel"> · {{ updatedAtLabel }}</span>
