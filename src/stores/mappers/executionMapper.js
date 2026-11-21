@@ -1,3 +1,4 @@
+import { markRaw } from 'vue'
 import { formatTimeBr as formatTime } from '@/utils/formatters'
 import { pointLabel } from '@/stores/transport/helpers'
 
@@ -14,18 +15,41 @@ export function selectActiveDriverTravel(travels, selectedTravelId) {
 
 export function buildDriverTransportState({ driver, travels, invitations, currentTravel, participations, snapshot, stops }) {
   const partsById = new Map(participations.map((p) => [p.id, p]))
-  const enrichedStops = stops.map((stop) => ({
-    ...stop,
-    pointLabel: pointLabel(stop.point_snapshot),
-    enrichedParticipants: (stop.participants || []).map((sp) => {
+  const rawSnapshot = snapshot ? markRaw(snapshot) : null
+  const enrichedStops = []
+  for (const stop of stops) {
+    const enrichedParticipants = []
+    for (const sp of stop.participants || []) {
       const part = partsById.get(sp.participation)
-      return {
-        ...sp,
-        name: part?.name || `Participante #${sp.participation}`,
-        status: part?.status || 'allocated',
-      }
-    }),
-  }))
+      enrichedParticipants.push(
+        Object.assign({}, sp, {
+          name: part?.name || `Participante #${sp.participation}`,
+          status: part?.status || 'allocated',
+        }),
+      )
+    }
+    enrichedStops.push(
+      Object.assign({}, stop, {
+        pointLabel: pointLabel(stop.point_snapshot),
+        enrichedParticipants,
+      }),
+    )
+  }
+
+  let naRota = 0
+  let embarcados = 0
+  let pendentes = 0
+  for (const p of participations) {
+    if (p.status === 'allocated') {
+      naRota++
+      pendentes++
+    } else if (p.status === 'on_board') {
+      naRota++
+      embarcados++
+    } else if (p.status === 'dropped_off') {
+      naRota++
+    }
+  }
 
   return {
     driverId: driver.id,
@@ -39,43 +63,46 @@ export function buildDriverTransportState({ driver, travels, invitations, curren
     publishedRevision: currentTravel?.published_revision ?? null,
     publicationCurrent: Boolean(currentTravel?.publication_current),
     vehicleId: currentTravel?.vehicle || null,
-    snapshot,
+    snapshot: rawSnapshot,
     rota: {
-      ponto_origem: pointLabel(snapshot?.origin),
-      ponto_destino: pointLabel(snapshot?.destination),
+      ponto_origem: pointLabel(rawSnapshot?.origin),
+      ponto_destino: pointLabel(rawSnapshot?.destination),
       horario_saida: formatTime(currentTravel?.started_at || currentTravel?.planned_start),
       horario_chegada: formatTime(currentTravel?.finished_at || currentTravel?.planned_end),
-      distanciaKm: snapshot?.distance_meters != null ? (snapshot.distance_meters / 1000).toFixed(1) : null,
-      duracaoMin: snapshot?.duration_seconds != null ? Math.round(snapshot.duration_seconds / 60) : null,
+      distanciaKm: rawSnapshot?.distance_meters != null ? (rawSnapshot.distance_meters / 1000).toFixed(1) : null,
+      duracaoMin: rawSnapshot?.duration_seconds != null ? Math.round(rawSnapshot.duration_seconds / 60) : null,
     },
     participations,
     stops: enrichedStops,
-    passageirosNaRota: participations.filter((p) => ['allocated', 'on_board', 'dropped_off'].includes(p.status)).length,
-    passageirosEmbarcados: participations.filter((p) => p.status === 'on_board').length,
-    passageirosPendentes: participations.filter((p) => p.status === 'allocated').length,
+    passageirosNaRota: naRota,
+    passageirosEmbarcados: embarcados,
+    passageirosPendentes: pendentes,
   }
 }
 
 export function enrichPassengerParticipations(participations, travels) {
   const travelsMap = new Map(travels.map((t) => [t.id, t]))
-  return participations.map((p) => {
+  const result = []
+  for (const p of participations) {
     const travel = travelsMap.get(p.travel) || null
-    return {
-      ...p,
-      travelData: travel,
-      date: travel?.date || '—',
-      direction: travel?.direction || p.leg,
-      travelStatus: travel?.status || 'scheduled',
-      planningStatus: travel?.planning_status || 'draft',
-      revision: travel?.revision ?? null,
-      publishedRevision: travel?.published_revision ?? null,
-      publicationCurrent: Boolean(travel?.publication_current),
-      plannedStartLabel: formatTime(travel?.planned_start),
-      plannedEndLabel: formatTime(travel?.planned_end),
-      startedAtLabel: formatTime(travel?.started_at),
-      finishedAtLabel: formatTime(travel?.finished_at),
-    }
-  })
+    result.push(
+      Object.assign({}, p, {
+        travelData: travel,
+        date: travel?.date || '—',
+        direction: travel?.direction || p.leg,
+        travelStatus: travel?.status || 'scheduled',
+        planningStatus: travel?.planning_status || 'draft',
+        revision: travel?.revision ?? null,
+        publishedRevision: travel?.published_revision ?? null,
+        publicationCurrent: Boolean(travel?.publication_current),
+        plannedStartLabel: formatTime(travel?.planned_start),
+        plannedEndLabel: formatTime(travel?.planned_end),
+        startedAtLabel: formatTime(travel?.started_at),
+        finishedAtLabel: formatTime(travel?.finished_at),
+      }),
+    )
+  }
+  return result
 }
 
 export function buildPassengerTransportState({
@@ -99,7 +126,7 @@ export function buildPassengerTransportState({
     travelStatus: currentTravel?.status || null,
     publicationCurrent: Boolean(currentTravel?.publication_current),
     publishedRevision: currentTravel?.published_revision ?? null,
-    snapshot,
+    snapshot: snapshot ? markRaw(snapshot) : null,
     stops,
     pointSnapshot: currentEligibility?.point_snapshot || null,
     pointLabel: pointLabel(currentEligibility?.point_snapshot),

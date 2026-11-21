@@ -61,10 +61,10 @@ watch(secaoAtiva, (next, prev) => {
   tabTransition.value = (order[next] ?? 0) >= (order[prev] ?? 0) ? 'tab-slide-left' : 'tab-slide-right'
 })
 
-async function carregarTudo() {
+async function carregarTudo({ force = false } = {}) {
   carregando.value = true
   erro.value = ''
-  await store.fetchRotas({ signal: scope.signal })
+  await store.fetchRotas({ signal: scope.signal, force })
   if (!scope.current()) return
   if (!grupoAtual.value) {
     erro.value = 'Grupo de atendimento não encontrado.'
@@ -105,21 +105,21 @@ onMounted(() => {
         <div class="tab-stage">
           <Transition :name="tabTransition" mode="out-in">
             <div v-if="secaoAtiva === 'settings'" key="settings" class="sections-stack">
-              <RouteGroupBasicForm :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
-              <ResponsePolicyForm :group-id="id" :policy="grupoAtual.policy" @updated="carregarTudo" />
+              <RouteGroupBasicForm :group-id="id" :grupo="grupoAtual" @updated="carregarTudo({ force: true })" />
+              <ResponsePolicyForm :group-id="id" :policy="grupoAtual.policy" @updated="carregarTudo({ force: true })" />
               <RecurringServicesSection
                 :group-id="id"
                 :services="servicosHabituais"
-                @updated="carregarTudo"
+                @updated="carregarTudo({ force: true })"
               />
               <RecurringServicesSection
                 :group-id="id"
                 :services="servicosCompartilhados"
                 is-shared
-                @updated="carregarTudo"
+                @updated="carregarTudo({ force: true })"
               />
-              <GroupMembersSection :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
-              <AutomationScheduleSection :group-id="id" :status="agendaStatus" @updated="carregarTudo" />
+              <GroupMembersSection :group-id="id" :grupo="grupoAtual" @updated="carregarTudo({ force: true })" />
+              <AutomationScheduleSection :group-id="id" :status="agendaStatus" @updated="carregarTudo({ force: true })" />
             </div>
 
             <HabitualRouteBuilder
@@ -129,7 +129,7 @@ onMounted(() => {
               :destination-coords="grupoAtual.destinationCoords"
               :habitual-routes="grupoAtual.habitualRoutes || []"
               :shared-routes="grupoAtual.sharedRoutes || []"
-              @updated="carregarTudo"
+              @updated="carregarTudo({ force: true })"
             />
           </Transition>
         </div>

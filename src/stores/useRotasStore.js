@@ -1,4 +1,4 @@
-import { computed, reactive, toRefs, watch } from 'vue'
+import { computed, shallowReactive, toRefs, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { POINT_TYPES, WEEKDAY_OPTIONS } from '@/constants'
 import { formatWeekdays } from '@/utils/formatters'
@@ -34,7 +34,8 @@ function initialState() {
 
 export const useRotasStore = defineStore('rotas', () => {
   const auth = useAuthStore()
-  const state = reactive(initialState())
+  const state = shallowReactive(initialState())
+  const groupConfigActions = createGroupConfigActions(state)
 
   const pontosDestino = computed(() =>
     state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.DESTINATION),
@@ -44,6 +45,7 @@ export const useRotasStore = defineStore('rotas', () => {
   )
 
   function $reset() {
+    groupConfigActions.invalidateRotasCache()
     Object.assign(state, initialState())
   }
 
@@ -54,8 +56,8 @@ export const useRotasStore = defineStore('rotas', () => {
     pontosDestino,
     garagens,
     $reset,
-    ...createGroupConfigActions(state),
-    ...createServiceActions(state),
+    ...groupConfigActions,
+    ...createServiceActions(state, { onMutated: groupConfigActions.invalidateRotasCache }),
     ...createDayActions(state),
     ...createTravelActions(state),
   }

@@ -17,36 +17,40 @@ export function buildEnrichedGroups({
 
   return groups.map((group) => {
     const dest = pointsMap.get(group.destination)
-    const groupServices = services
-      .filter((s) => s.route_group === group.id)
-      .map((s) => ({
-        ...s,
-        targetTimeLabel: formatHour(s.target_time),
-        weekdaysLabel: formatWeekdays(s.weekdays),
-        vehiclePlate: s.vehicle
-          ? vehiclesMap.get(s.vehicle)?.plate || `Veículo #${s.vehicle}`
-          : 'Sem veículo habitual',
-        driverName: s.driver_membership
-          ? membershipsMap.get(s.driver_membership)?.applicant_name || `Vínculo #${s.driver_membership}`
-          : 'Sem motorista habitual',
-        originName: s.origin ? pointsMap.get(s.origin)?.name || `Ponto #${s.origin}` : 'Garagem do veículo',
-        destinationName: s.destination
-          ? pointsMap.get(s.destination)?.name || `Ponto #${s.destination}`
-          : dest?.name || `Ponto #${group.destination}`,
-      }))
+    const groupServices = []
+    for (const s of services) {
+      if (s.route_group !== group.id) continue
+      groupServices.push(
+        Object.assign({}, s, {
+          targetTimeLabel: formatHour(s.target_time),
+          weekdaysLabel: formatWeekdays(s.weekdays),
+          vehiclePlate: s.vehicle
+            ? vehiclesMap.get(s.vehicle)?.plate || `Veículo #${s.vehicle}`
+            : 'Sem veículo habitual',
+          driverName: s.driver_membership
+            ? membershipsMap.get(s.driver_membership)?.applicant_name || `Vínculo #${s.driver_membership}`
+            : 'Sem motorista habitual',
+          originName: s.origin ? pointsMap.get(s.origin)?.name || `Ponto #${s.origin}` : 'Garagem do veículo',
+          destinationName: s.destination
+            ? pointsMap.get(s.destination)?.name || `Ponto #${s.destination}`
+            : dest?.name || `Ponto #${group.destination}`,
+        }),
+      )
+    }
 
-    const activeMembers = groupMemberships
-      .filter((gm) => gm.route_group === group.id && !gm.ended_at)
-      .map((gm) => {
-        const member = membershipsMap.get(gm.membership)
-        const point = gm.transport_point ? pointsMap.get(gm.transport_point) : null
-        return {
-          ...gm,
+    const activeMembers = []
+    for (const gm of groupMemberships) {
+      if (gm.route_group !== group.id || gm.ended_at) continue
+      const member = membershipsMap.get(gm.membership)
+      const point = gm.transport_point ? pointsMap.get(gm.transport_point) : null
+      activeMembers.push(
+        Object.assign({}, gm, {
           applicantName: member?.applicant_name || `Vínculo #${gm.membership}`,
           passengerId: member?.passenger || null,
           pointName: point ? `${point.name} (${point.city}/${point.state})` : 'Sem ponto operacional',
-        }
-      })
+        }),
+      )
+    }
 
     const groupRoutes = habitualRoutes.filter((r) => r.route_group === group.id)
     return {

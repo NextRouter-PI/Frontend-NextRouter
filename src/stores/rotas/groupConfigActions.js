@@ -18,14 +18,24 @@ import {
 } from '@/api/transport'
 import { buildEnrichedGroups } from '@/stores/mappers/routeGroupMapper'
 import { runStoreRequest } from './requestHelper'
+import { createFreshnessCache } from './cacheHelper'
 
 function asList(data) {
   return Array.isArray(data) ? data : data?.results || []
 }
 
 export function createGroupConfigActions(storeState) {
-  return {
-    async fetchRotas({ signal } = {}) {
+  const cache = createFreshnessCache()
+
+  function invalidateRotasCache() {
+    cache.reset()
+  }
+
+  function fetchRotas({ signal, force = false } = {}) {
+    if (!force && cache.isFresh(storeState.grupos.length)) {
+      return Promise.resolve(true)
+    }
+    return cache.dedupe(force, async () => {
       storeState.loading = true
       storeState.error = null
       try {
@@ -58,6 +68,7 @@ export function createGroupConfigActions(storeState) {
           policies,
           habitualRoutes,
         })
+        cache.markFresh()
         return true
       } catch (error) {
         if (!signal?.aborted) {
@@ -70,17 +81,32 @@ export function createGroupConfigActions(storeState) {
       } finally {
         if (!signal?.aborted) storeState.loading = false
       }
-    },
+    })
+  }
+
+  async function runAndInvalidate(fallbackMsg, action, signal) {
+    const res = await runStoreRequest(storeState, signal, fallbackMsg, action)
+    if (res) invalidateRotasCache()
+    return res
+  }
+
+  return {
+    invalidateRotasCache,
+    fetchRotas,
 
     criarGrupo({ name, destinationId }, { signal } = {}) {
-      return runStoreRequest(storeState, signal, 'Erro ao cadastrar grupo de atendimento.', () =>
-        createRouteGroup({ name, destination_id: destinationId }, { signal }),
+      return runAndInvalidate(
+        'Erro ao cadastrar grupo de atendimento.',
+        () => createRouteGroup({ name, destination_id: destinationId }, { signal }),
+        signal,
       )
     },
 
     atualizarGrupo(id, { name, destinationId }, { signal } = {}) {
-      return runStoreRequest(storeState, signal, 'Erro ao atualizar grupo de atendimento.', () =>
-        updateRouteGroup(id, { name, destination_id: destinationId }, { signal }),
+      return runAndInvalidate(
+        'Erro ao atualizar grupo de atendimento.',
+        () => updateRouteGroup(id, { name, destination_id: destinationId }, { signal }),
+        signal,
       )
     },
 
@@ -95,16 +121,21 @@ export function createGroupConfigActions(storeState) {
     },
 
     salvarRotaHabitual(groupId, payload, routeId = null, { signal } = {}) {
-      return runStoreRequest(storeState, signal, 'Erro ao salvar rota do grupo.', () =>
-        routeId
-          ? updateHabitualRoute(routeId, payload, { signal })
-          : createHabitualRoute({ ...payload, route_group_id: groupId }, { signal }),
+      return runAndInvalidate(
+        'Erro ao salvar rota do grupo.',
+        () =>
+          routeId
+            ? updateHabitualRoute(routeId, payload, { signal })
+            : createHabitualRoute({ ...payload, route_group_id: groupId }, { signal }),
+        signal,
       )
     },
 
     salvarPolitica(groupId, policyInput, { signal } = {}) {
-      return runStoreRequest(storeState, signal, 'Erro ao configurar política de respostas.', () =>
-        saveResponsePolicy(groupId, policyInput, { signal }),
+      return runAndInvalidate(
+        'Erro ao configurar política de respostas.',
+        () => saveResponsePolicy(groupId, policyInput, { signal }),
+        signal,
       )
     },
   }
