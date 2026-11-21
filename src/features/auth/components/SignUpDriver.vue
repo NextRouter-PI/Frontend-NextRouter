@@ -6,8 +6,8 @@ import SignUpWizard from '@/features/auth/components/SignUpWizard.vue'
 import PersonalSignUpFields from '@/features/auth/components/PersonalSignUpFields.vue'
 import SignUpReviewSection from '@/features/auth/components/SignUpReviewSection.vue'
 import EmailVerificationStep from '@/features/auth/components/EmailVerificationStep.vue'
+import PersonalSignUpActions from '@/features/auth/components/PersonalSignUpActions.vue'
 import FileUploadField from '@/components/ui/FileUploadField.vue'
-import BaseButton from '@/components/ui/BaseButton.vue'
 
 const controller = new AbortController()
 const { signal } = controller
@@ -107,46 +107,17 @@ async function handleSubmit() {
     />
 
     <template #actions>
-      <BaseButton
-        v-if="currentPage === 1"
-        block
-        size="lg"
+      <PersonalSignUpActions
+        :current-page="currentPage"
         :loading="registerState.state.loading"
-        @click="avancarParaRevisao"
-      >
-        Avançar
-      </BaseButton>
-
-      <BaseButton
-        v-if="currentPage === 2"
-        block
-        size="lg"
-        :loading="enviandoDocumento || enviandoCodigo"
-        @click="avancarParaVerificacao"
-      >
-        {{ enviandoDocumento ? 'Enviando CNH...' : enviandoCodigo ? 'Enviando código...' : 'Continuar' }}
-      </BaseButton>
-
-      <BaseButton
-        v-if="currentPage === 3"
-        type="submit"
-        block
-        size="lg"
-        :loading="registerState.state.loading"
-        :disabled="enviandoCodigo"
-      >
-        {{ registerState.state.loading ? 'Enviando cadastro...' : 'Confirmar e Criar Conta' }}
-      </BaseButton>
-
-      <BaseButton
-        v-if="currentPage > 1"
-        variant="outline"
-        block
-        :disabled="enviandoDocumento || enviandoCodigo || registerState.state.loading"
-        @click="voltarPagina"
-      >
-        Voltar e corrigir dados
-      </BaseButton>
+        :sending-code="enviandoCodigo"
+        :step2-loading="enviandoDocumento || enviandoCodigo"
+        :step2-label="enviandoDocumento ? 'Enviando CNH...' : enviandoCodigo ? 'Enviando código...' : 'Continuar'"
+        :back-disabled="enviandoDocumento || enviandoCodigo || registerState.state.loading"
+        @next="avancarParaRevisao"
+        @continue="avancarParaVerificacao"
+        @back="voltarPagina"
+      />
     </template>
   </SignUpWizard>
 </template>
