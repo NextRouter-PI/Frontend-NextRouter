@@ -1,99 +1,57 @@
 <script setup>
-import { computed, onScopeDispose, ref, watch } from 'vue'
-import api from '@/api/client'
-import { state } from '@/stores/state'
-import { sessionError } from '@/stores/session'
-import { formatApiError } from '@/utils/apiErrors'
+import { computed, ref, useTemplateRef, watch } from 'vue'
+import { useCompanyModerationStatus } from '@/features/company/composables/useCompanyModerationStatus'
 import { useMemberships } from '@/features/memberships/composables/useMemberships'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
-import PageNavigation from '@/components/ui/PageNavigation.vue'
-import MembershipCard from '@/features/memberships/components/MembershipCard.vue'
-import MembershipActionForm from '@/features/memberships/components/MembershipActionForm.vue'
+import CompanyMembershipList from '@/features/company/components/CompanyMembershipList.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import '@/styles/memberships.scss'
 
-const company = ref(null)
-const companyLoading = ref(false)
-const companyError = ref('')
 const status = ref('pending')
 const nameFilter = ref('')
-const decision = ref(null)
-const approved = computed(() => company.value?.is_approved && company.value.review_status === 'approved')
-const scope = computed(() => state.logged && state.role === 'company' && approved.value
-  ? { company: company.value.id } : null)
+const busyRef = ref(false)
+const listRef = useTemplateRef('membershipList')
+
+const {
+  auth,
+  company,
+  companyLoading,
+  companyError,
+  approved,
+  moderationLabel,
+  loadCompany,
+} = useCompanyModerationStatus({
+  canLoad: () => !busyRef.value,
+  onIdentityReset: () => {
+    listRef.value?.resetDecision()
+    nameFilter.value = ''
+    status.value = 'pending'
+  },
+})
+
+const scope = computed(() =>
+  auth.logged && auth.role === 'company' && approved.value ? { company: company.value.id } : null,
+)
 const {
   records, page, totalPages, loading, busy, ready, error, notice, goToPage, transition,
 } = useMemberships(scope, status)
-const filteredRecords = computed(() => records.value.filter((record) =>
-  (record.applicant_name || '').toLocaleLowerCase('pt-BR').includes(nameFilter.value.trim().toLocaleLowerCase('pt-BR')),
-))
-const moderationLabel = computed(() => ({
-  pending: 'Pendente de moderação', approved: 'Aprovado', rejected: 'Recusado na moderação',
-})[company.value?.review_status] || 'Estado cadastral não reconhecido')
-const decisionTitle = computed(() => {
-  if (!decision.value) return ''
-  const action = { approve: 'Aprovar o vínculo', reject: 'Recusar o pedido', end: 'Encerrar o vínculo' }[decision.value.action]
-  return `${action} de ${decision.value.membership.applicant_name}?`
-})
-let companyRequest = null
-let disposed = false
-
-async function loadCompany() {
-  if (disposed || busy.value) return
-  companyRequest?.abort()
-  company.value = null
-  companyError.value = ''
-  companyLoading.value = false
-  if (!state.logged || state.role !== 'company') return
-  const controller = new AbortController()
-  companyRequest = controller
-  companyLoading.value = true
-  try {
-    const { data } = await api.get('/companies/me/', { signal: controller.signal })
-    if (!controller.signal.aborted) company.value = data
-  } catch (cause) {
-    if (!controller.signal.aborted) {
-      companyError.value = sessionError(cause, formatApiError(cause, 'Não foi possível consultar seu cadastro empresarial.'))
-    }
-  } finally {
-    if (!controller.signal.aborted) companyLoading.value = false
-  }
-}
-
-watch(() => `${state.logged}:${state.role}:${state.user?.id || ''}`, () => {
-  // Uma troca de identidade descarta o cadastro anterior, inclusive durante uma escrita.
-  companyRequest?.abort()
-  company.value = null
-  decision.value = null
-  nameFilter.value = ''
-  status.value = 'pending'
-  loadCompany()
+watch(busy, (val) => {
+  busyRef.value = val
 }, { immediate: true, flush: 'sync' })
-watch(records, () => { decision.value = null })
-onScopeDispose(() => {
-  disposed = true
-  companyRequest?.abort()
-})
-
-async function confirmDecision(reason) {
-  if (!decision.value) return
-  const { membership, action } = decision.value
-  if (await transition(membership, action, reason)) decision.value = null
-}
 </script>
 
 <template>
-  <div class="membership-workspace" :class="{ authenticated: state.logged }">
+  <div class="membership-workspace" :class="{ authenticated: auth.logged }">
     <div class="membership-content">
       <PageHeader
         title="Usuários e vínculos"
         subtitle="Aprovar um vínculo não aprova a conta empresarial, não atribui grupo e não publica viagens."
       >
-        <template v-if="state.role === 'company'" #actions>
+        <template v-if="auth.role === 'company'" #actions>
           <BaseButton
             type="button"
             variant="outline"
@@ -105,7 +63,7 @@ async function confirmDecision(reason) {
           </BaseButton>
         </template>
       </PageHeader>
-      <template v-if="state.role === 'company'">
+      <template v-if="auth.role === 'company'">
         <div role="alert"><ErrorMessage :message="companyError" /></div>
         <SkeletonCard v-if="companyLoading" :count="1" :lines="2" />
         <section v-else-if="company" class="membership-panel" aria-label="Situação cadastral da empresa">
@@ -136,44 +94,22 @@ async function confirmDecision(reason) {
           <div role="alert"><ErrorMessage :message="error" /></div>
           <LoadingSpinner v-if="busy" size="sm" inline text="Processando ação de vínculo..." />
           <SkeletonCard v-if="loading" :count="3" avatar />
-          <section v-else-if="ready" aria-label="Pedidos e vínculos da empresa">
-            <p v-if="!records.length" role="status">Nenhum registro neste estado.</p>
-            <p v-else-if="!filteredRecords.length" role="status">Nenhum nome corresponde ao filtro nesta página.</p>
-            <TransitionGroup name="list-stagger" tag="div" class="membership-list">
-              <MembershipCard v-for="membership in filteredRecords" :key="membership.id"
-                :membership="membership" :title="membership.applicant_name || 'Nome não disponível'">
-                <template v-if="membership.status === 'active'">
-                  <p>Vínculo aprovado. Grupo e serviços são configurações posteriores.</p>
-                  <div class="membership-actions">
-                    <RouterLink
-                      :to="membership.driver ? `/users/driver/${membership.driver}` : `/users/passenger/${membership.passenger}`"
-                      class="btn-profile-link"
-                    >
-                      <span class="mdi mdi-account-details-outline" aria-hidden="true"></span>
-                      <span>Consultar perfil</span>
-                    </RouterLink>
-                    <BaseButton v-if="decision?.membership.id !== membership.id" type="button" variant="outline" :disabled="busy"
-                      @click="decision = { membership, action: 'end' }">Encerrar vínculo</BaseButton>
-                  </div>
-                </template>
-                <div v-if="membership.status === 'pending' && decision?.membership.id !== membership.id" class="membership-actions">
-                  <BaseButton type="button" :disabled="busy" @click="decision = { membership, action: 'approve' }">Aprovar vínculo</BaseButton>
-                  <BaseButton type="button" variant="outline" :disabled="busy" @click="decision = { membership, action: 'reject' }">Recusar pedido</BaseButton>
-                </div>
-                <Transition name="fade-slide">
-                  <div v-if="decision?.membership.id === membership.id">
-                    <p v-if="decision.action === 'end'">Encerrar termina o acesso operacional do titular sem apagar a conta. Operação em andamento ou alocações futuras podem bloquear; a aplicação não as cancela automaticamente.</p>
-                    <MembershipActionForm :key="`${membership.id}-${decision.action}`" :title="decisionTitle"
-                      :busy="busy" :disabled="!ready" @confirm="confirmDecision" @cancel="decision = null" />
-                  </div>
-                </Transition>
-              </MembershipCard>
-            </TransitionGroup>
-            <PageNavigation :page="page" :total-pages="totalPages" :disabled="busy || loading" @change="goToPage" />
-          </section>
+          <CompanyMembershipList
+            v-else-if="ready"
+            ref="membershipList"
+            :records="records"
+            :name-filter="nameFilter"
+            :page="page"
+            :total-pages="totalPages"
+            :busy="busy"
+            :loading="loading"
+            :ready="ready"
+            :transition="transition"
+            @page-change="goToPage"
+          />
         </template>
       </template>
-      <template v-else-if="!state.logged">
+      <template v-else-if="!auth.logged">
         <p>Sessão ausente ou encerrada. Entre novamente; nenhuma operação foi repetida.</p>
         <RouterLink class="membership-link" to="/login">Entrar novamente</RouterLink>
       </template>

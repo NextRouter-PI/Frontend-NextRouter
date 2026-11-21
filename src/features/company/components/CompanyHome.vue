@@ -1,9 +1,9 @@
 <script setup>
-import { computed, onMounted, ref, shallowRef } from 'vue'
+import { computed, onMounted } from 'vue'
 import { ROUTE_PATHS } from '@/constants'
 import { useTransporteStore } from '@/stores/useTransporteStore'
-import { state } from '@/stores/state'
-import api from '@/api/client'
+import { useCompanyModerationStatus } from '@/features/company/composables/useCompanyModerationStatus'
+import { useCompanyStats } from '@/features/company/composables/useCompanyStats'
 import {
   formatAddress,
   formatCnpjDisplay as formatCNPJDisplay,
@@ -16,24 +16,21 @@ import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import CompanyStatsChart from '@/features/company/components/CompanyStatsChart.vue'
 
 const store = useTransporteStore()
-
-const routesToday = shallowRef(null)
-const statsDate = shallowRef('')
-const serviceSlots = ref([])
-const statsLoading = shallowRef(false)
-const companyData = shallowRef(null)
-const companyLoading = shallowRef(false)
-
-const todayLabel = computed(() =>
-  new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-)
-
-const passageirosHoje = computed(() =>
-  serviceSlots.value.reduce(
-    (acc, slot) => acc + (slot.allocated || 0) + (slot.on_board || 0) + (slot.dropped_off || 0),
-    0,
-  ),
-)
+const {
+  auth,
+  company: companyData,
+  companyLoading,
+  loadCompany: fetchCompany,
+} = useCompanyModerationStatus({ watchIdentity: false })
+const {
+  routesToday,
+  statsDate,
+  serviceSlots,
+  statsLoading,
+  todayLabel,
+  passageirosHoje,
+  fetchStats,
+} = useCompanyStats()
 
 const ativos = computed(() => store.veiculos.filter((v) => v.status === 'Ativo').length)
 const total = computed(() => store.veiculos.length)
@@ -44,34 +41,6 @@ const companyInfoItems = computed(() => [
   { label: 'CNPJ', value: formatCNPJDisplay(companyData.value?.cnpj) },
   { label: 'Endereço', value: formatAddress(companyData.value) },
 ])
-
-async function fetchStats() {
-  statsLoading.value = true
-  try {
-    const { data: stats } = await api.get('/companies/me/stats/')
-    routesToday.value = stats.routes_today
-    statsDate.value = stats.date || ''
-    serviceSlots.value = Array.isArray(stats.services) ? stats.services : []
-  } catch {
-    routesToday.value = null
-    statsDate.value = ''
-    serviceSlots.value = []
-  } finally {
-    statsLoading.value = false
-  }
-}
-
-async function fetchCompany() {
-  companyLoading.value = true
-  try {
-    const { data } = await api.get('/companies/me/')
-    companyData.value = data
-  } catch {
-    companyData.value = null
-  } finally {
-    companyLoading.value = false
-  }
-}
 
 onMounted(async () => {
   await fetchCompany()
@@ -84,7 +53,7 @@ onMounted(async () => {
 
 <template>
   <div class="company-home-page">
-    <PageHeader :title="`Gerenciamento: ${companyData?.trade_name || state.user?.name || ''}`" accent>
+    <PageHeader :title="`Gerenciamento: ${companyData?.trade_name || auth.user?.name || ''}`" accent>
       <template #actions>
         <span class="date-pill">{{ todayLabel }}</span>
       </template>
