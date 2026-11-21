@@ -22,12 +22,12 @@ const store = useRotasStore()
 const scope = useAccountScope()
 
 const id = Number(route.params.id)
-const secaoAtiva = shallowRef('config')
 const tabTransition = shallowRef('tab-slide-left')
 const carregando = shallowRef(true)
 const erro = shallowRef('')
 const agendaStatus = shallowRef(null)
 
+const secaoAtiva = computed(() => (route.params.tab === 'routes' ? 'routes' : 'settings'))
 const grupoAtual = computed(() => store.grupos.find((g) => g.id === id) || null)
 const servicosHabituais = computed(() => (grupoAtual.value?.services || []).filter((s) => !s.is_shared))
 const servicosCompartilhados = computed(() =>
@@ -35,9 +35,15 @@ const servicosCompartilhados = computed(() =>
 )
 
 const sectionTabs = computed(() => [
-  { value: 'config', label: '1. Configurações do Grupo', icon: 'mdi-cog-outline' },
   {
-    value: 'rotas',
+    value: 'settings',
+    to: `/routes/${id}/edit/settings`,
+    label: '1. Configurações do Grupo',
+    icon: 'mdi-cog-outline',
+  },
+  {
+    value: 'routes',
+    to: `/routes/${id}/edit/routes`,
     label: '2. Rotas do Grupo',
     icon: 'mdi-map-marker-path',
     badge: (grupoAtual.value?.habitualRoutes?.length || 0) + (grupoAtual.value?.sharedRoutes?.length || 0),
@@ -45,7 +51,7 @@ const sectionTabs = computed(() => [
 ])
 
 watch(secaoAtiva, (next, prev) => {
-  const order = { config: 0, rotas: 1 }
+  const order = { settings: 0, routes: 1 }
   tabTransition.value = (order[next] ?? 0) >= (order[prev] ?? 0) ? 'tab-slide-left' : 'tab-slide-right'
 })
 
@@ -65,7 +71,12 @@ async function carregarTudo() {
   carregando.value = false
 }
 
-onMounted(carregarTudo)
+onMounted(() => {
+  if (!route.params.tab) {
+    router.replace(`/routes/${id}/edit/settings`)
+  }
+  carregarTudo()
+})
 </script>
 
 <template>
@@ -83,14 +94,13 @@ onMounted(carregarTudo)
 
     <template v-else-if="grupoAtual">
       <BaseTabs
-        v-model="secaoAtiva"
         :items="sectionTabs"
         aria-label="Seções do grupo"
       />
 
       <div class="tab-stage">
         <Transition :name="tabTransition" mode="out-in">
-          <div v-if="secaoAtiva === 'config'" key="config" class="sections-stack">
+          <div v-if="secaoAtiva === 'settings'" key="settings" class="sections-stack">
             <RouteGroupBasicForm :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
             <ResponsePolicyForm :group-id="id" :policy="grupoAtual.policy" @updated="carregarTudo" />
             <RecurringServicesSection
@@ -110,7 +120,7 @@ onMounted(carregarTudo)
 
           <HabitualRouteBuilder
             v-else
-            key="rotas"
+            key="routes"
             :group-id="id"
             :destination-coords="grupoAtual.destinationCoords"
             :habitual-routes="grupoAtual.habitualRoutes || []"

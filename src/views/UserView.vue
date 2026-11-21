@@ -1,6 +1,7 @@
 <script setup>
 import { shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { ROUTE_NAMES, ROUTE_PATHS } from '@/constants'
 import { state } from '@/stores/state'
 import BaseTabs from '@/components/ui/BaseTabs.vue'
 import '@/styles/profile.scss'
@@ -9,13 +10,13 @@ const route = useRoute()
 const tabTransition = shallowRef('tab-slide-left')
 
 const accountTabs = [
-  { value: 'usuario-profile', to: '/usuario/profile', label: 'Perfil', icon: 'mdi-account-outline' },
-  { value: 'usuario-security', to: '/usuario/security', label: 'Segurança', icon: 'mdi-shield-lock-outline' },
+  { value: ROUTE_NAMES.USER_PROFILE, to: ROUTE_PATHS.USER_PROFILE, label: 'Perfil', icon: 'mdi-account-outline' },
+  { value: ROUTE_NAMES.USER_SECURITY, to: ROUTE_PATHS.USER_SECURITY, label: 'Segurança', icon: 'mdi-shield-lock-outline' },
 ]
 
 const tabOrder = {
-  'usuario-profile': 0,
-  'usuario-security': 1,
+  [ROUTE_NAMES.USER_PROFILE]: 0,
+  [ROUTE_NAMES.USER_SECURITY]: 1,
 }
 
 watch(

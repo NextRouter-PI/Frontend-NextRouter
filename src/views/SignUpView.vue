@@ -16,7 +16,7 @@ import RoleSelector from '@/features/auth/components/RoleSelector.vue'
 
       <div class="signup-footer">
         <p class="footer-row">
-          <RouterLink to="/empresas" class="footer-link">Pesquisar empresas sem criar conta</RouterLink>
+          <RouterLink to="/companies" class="footer-link">Pesquisar empresas sem criar conta</RouterLink>
         </p>
         <p class="footer-row">
           Já possui uma conta?

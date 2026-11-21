@@ -22,7 +22,7 @@ export const companyRoutes = [
     meta: COMPANY_META,
   },
   {
-    path: ROUTE_PATHS.EDIT_ROUTE,
+    path: `${ROUTE_PATHS.EDIT_ROUTE}/:tab(settings|routes)?`,
     name: ROUTE_NAMES.EDIT_ROUTE,
     component: () => import('@/features/company/components/EditarRota.vue'),
     meta: COMPANY_META,

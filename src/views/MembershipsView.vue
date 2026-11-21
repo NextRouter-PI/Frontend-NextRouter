@@ -102,7 +102,7 @@ async function closeMembership(reason) {
       <template v-if="scope">
         <p>Conta autenticada · perfil de {{ state.role === 'driver' ? 'motorista' : 'passageiro' }}.</p>
         <div class="membership-actions">
-          <RouterLink to="/empresas">Pesquisar empresas</RouterLink>
+          <RouterLink to="/companies">Pesquisar empresas</RouterLink>
           <BaseButton type="button" variant="outline" :disabled="busy || loading" @click="refresh(1)">Atualizar vínculos</BaseButton>
         </div>
         <LoadingSpinner v-if="busy" size="sm" inline text="Processando ação de vínculo..." />
@@ -187,7 +187,7 @@ async function closeMembership(reason) {
       </template>
       <template v-else>
         <p>Esta tela exige um perfil único de passageiro ou motorista. Nenhum pedido foi enviado.</p>
-        <RouterLink v-if="state.role === 'company'" class="membership-link" to="/usuarios">Gerenciar pedidos da empresa</RouterLink>
+        <RouterLink v-if="state.role === 'company'" class="membership-link" to="/users">Gerenciar pedidos da empresa</RouterLink>
       </template>
     </div>
   </div>

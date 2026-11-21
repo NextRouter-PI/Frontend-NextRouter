@@ -3,17 +3,17 @@ import { RouterLink } from 'vue-router'
 
 const roles = [
   {
-    to: '/signup/usuario/',
+    to: '/signup/passenger',
     icon: 'mdi-seat-passenger',
     title: 'Passageiro',
   },
   {
-    to: '/signup/motorista/',
+    to: '/signup/driver',
     icon: 'mdi-steering',
     title: 'Motorista',
   },
   {
-    to: '/signup/empresa/',
+    to: '/signup/company',
     icon: 'mdi-office-building-outline',
     title: 'Empresa',
   },

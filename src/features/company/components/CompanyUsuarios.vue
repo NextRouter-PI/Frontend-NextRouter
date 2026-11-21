@@ -8,6 +8,7 @@ import { useMemberships } from '@/features/memberships/composables/useMembership
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
 import MembershipCard from '@/features/memberships/components/MembershipCard.vue'
 import MembershipActionForm from '@/features/memberships/components/MembershipActionForm.vue'
@@ -88,10 +89,23 @@ async function confirmDecision(reason) {
 <template>
   <div class="membership-workspace" :class="{ authenticated: state.logged }">
     <div class="membership-content">
-      <h1 class="membership-heading">Usuários e vínculos</h1>
-      <p>Aprovar um vínculo não aprova a conta empresarial, não atribui grupo e não publica viagens.</p>
+      <PageHeader
+        title="Usuários e vínculos"
+        subtitle="Aprovar um vínculo não aprova a conta empresarial, não atribui grupo e não publica viagens."
+      >
+        <template v-if="state.role === 'company'" #actions>
+          <BaseButton
+            type="button"
+            variant="outline"
+            size="sm"
+            :disabled="busy || companyLoading || loading"
+            @click="loadCompany"
+          >
+            Atualizar cadastro e vínculos
+          </BaseButton>
+        </template>
+      </PageHeader>
       <template v-if="state.role === 'company'">
-        <BaseButton type="button" variant="outline" :disabled="busy || companyLoading || loading" @click="loadCompany">Atualizar cadastro e vínculos</BaseButton>
         <div role="alert"><ErrorMessage :message="companyError" /></div>
         <SkeletonCard v-if="companyLoading" :count="1" :lines="2" />
         <section v-else-if="company" class="membership-panel" aria-label="Situação cadastral da empresa">
@@ -132,7 +146,7 @@ async function confirmDecision(reason) {
                   <p>Vínculo aprovado. Grupo e serviços são configurações posteriores.</p>
                   <div class="membership-actions">
                     <RouterLink
-                      :to="membership.driver ? `/usuarios/motorista/${membership.driver}` : `/usuarios/passageiro/${membership.passenger}`"
+                      :to="membership.driver ? `/users/driver/${membership.driver}` : `/users/passenger/${membership.passenger}`"
                       class="btn-profile-link"
                     >
                       <span class="mdi mdi-account-details-outline" aria-hidden="true"></span>

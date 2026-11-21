@@ -1,5 +1,7 @@
 <script setup>
 import { computed, onMounted, shallowRef, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ROUTE_PATHS } from '@/constants'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useToast } from '@/composables/useToast'
@@ -9,18 +11,41 @@ import CompanyRouteGroupsTab from '@/features/company/components/routes/CompanyR
 import CompanyDatedOperationTab from '@/features/company/components/routes/CompanyDatedOperationTab.vue'
 import TransportHistoryNotifications from '@/features/transport/components/TransportHistoryNotifications.vue'
 
+const route = useRoute()
+const router = useRouter()
 const store = useRotasStore()
 const scope = useAccountScope()
 const { showToast } = useToast()
 
-const aba = shallowRef('grupos')
 const tabTransition = shallowRef('tab-slide-left')
-const tabOrder = { grupos: 0, operacao: 1, historico: 2 }
+const tabOrder = { groups: 0, operations: 1, history: 2 }
+
+const aba = computed(() => {
+  const param = String(route.params.tab || '')
+  return param in tabOrder ? param : 'groups'
+})
 
 const routeTabs = computed(() => [
-  { value: 'grupos', label: 'Grupos e Programação', icon: 'mdi-routes', badge: store.grupos.length },
-  { value: 'operacao', label: 'Operação por Data', icon: 'mdi-calendar-clock', badge: store.diasAtendimento.length },
-  { value: 'historico', label: 'Avisos e Histórico', icon: 'mdi-history' },
+  {
+    value: 'groups',
+    to: ROUTE_PATHS.LIST_GROUPS,
+    label: 'Grupos e Programação',
+    icon: 'mdi-routes',
+    badge: store.grupos.length,
+  },
+  {
+    value: 'operations',
+    to: ROUTE_PATHS.LIST_OPERATIONS,
+    label: 'Operação por Data',
+    icon: 'mdi-calendar-clock',
+    badge: store.diasAtendimento.length,
+  },
+  {
+    value: 'history',
+    to: ROUTE_PATHS.LIST_HISTORY,
+    label: 'Avisos e Histórico',
+    icon: 'mdi-history',
+  },
 ])
 
 watch(aba, (next, prev) => {
@@ -28,6 +53,9 @@ watch(aba, (next, prev) => {
 })
 
 onMounted(async () => {
+  if (!route.params.tab) {
+    router.replace(ROUTE_PATHS.LIST_GROUPS)
+  }
   await store.fetchRotas({ signal: scope.signal })
   if (!scope.current()) return
   await store.fetchOperacaoDatada({}, { signal: scope.signal })
@@ -43,16 +71,15 @@ function handleToast({ message, type }) {
     <PageHeader title="Grupos e Operação de Rotas" accent />
 
     <BaseTabs
-      v-model="aba"
       :items="routeTabs"
       aria-label="Programação habitual, operação por data e histórico"
     />
 
     <div class="tab-stage">
       <Transition :name="tabTransition" mode="out-in">
-        <CompanyRouteGroupsTab v-if="aba === 'grupos'" key="grupos" />
-        <CompanyDatedOperationTab v-else-if="aba === 'operacao'" key="operacao" @toast="handleToast" />
-        <TransportHistoryNotifications v-else key="historico" />
+        <CompanyRouteGroupsTab v-if="aba === 'groups'" key="groups" />
+        <CompanyDatedOperationTab v-else-if="aba === 'operations'" key="operations" @toast="handleToast" />
+        <TransportHistoryNotifications v-else key="history" />
       </Transition>
     </div>
   </div>

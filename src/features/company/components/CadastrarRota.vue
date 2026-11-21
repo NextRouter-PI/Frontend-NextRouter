@@ -53,7 +53,7 @@ const salvar = async () => {
     return
   }
 
-  router.push(`/rotas/editar/${criado.id}`)
+  router.push(`/routes/${criado.id}/edit/settings`)
 }
 </script>
 
@@ -72,7 +72,7 @@ const salvar = async () => {
 
     <div v-if="!carregando && !store.pontosDestino.length" class="empty-points">
       <p>Você ainda não possui pontos operacionais de destino cadastrados para vincular ao grupo.</p>
-      <RouterLink to="/pontos-operacionais" class="link-points">Ir para Pontos de Destino</RouterLink>
+      <RouterLink to="/operational-points" class="link-points">Ir para Pontos de Destino</RouterLink>
     </div>
 
     <form v-else class="cadastro" @submit.prevent="salvar">

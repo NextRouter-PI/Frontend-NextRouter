@@ -34,13 +34,13 @@ export const authenticatedRoutes = [
     meta: { requiresAuth: true },
   },
   {
-    path: ROUTE_PATHS.LIST,
+    path: `${ROUTE_PATHS.LIST}/:tab(groups|operations|history)?`,
     name: ROUTE_NAMES.LIST,
     component: () => import('@/views/ListView.vue'),
     meta: { requiresAuth: true },
   },
   {
-    path: ROUTE_PATHS.TRANSPORT,
+    path: `${ROUTE_PATHS.TRANSPORT}/:tab(fleet|garages)?`,
     name: ROUTE_NAMES.TRANSPORT,
     component: () => import('@/views/TransportView.vue'),
     meta: { requiresAuth: true },

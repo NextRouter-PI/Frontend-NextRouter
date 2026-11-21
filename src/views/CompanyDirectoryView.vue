@@ -146,10 +146,10 @@ function removeCityFilter() {
       </Transition>
 
       <nav class="context-links" aria-label="Atalhos da conta">
-        <RouterLink v-if="state.logged && personal" to="/vinculos" class="context-link">
+        <RouterLink v-if="state.logged && personal" to="/memberships" class="context-link">
           Meus vínculos
         </RouterLink>
-        <RouterLink v-else-if="state.logged && state.role === 'company'" to="/usuarios" class="context-link">
+        <RouterLink v-else-if="state.logged && state.role === 'company'" to="/users" class="context-link">
           Gerenciar pedidos de vínculo
         </RouterLink>
         <template v-else-if="!state.logged">
@@ -331,15 +331,6 @@ function removeCityFilter() {
   background: var(--color-surface);
   font-size: 0.88rem;
   color: var(--text);
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 2px;
-    background: var(--primary);
-    pointer-events: none;
-  }
 }
 
 .status-text {

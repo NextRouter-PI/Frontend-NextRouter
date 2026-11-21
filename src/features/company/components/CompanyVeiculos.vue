@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, shallowRef, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
 import { useTransporteStore } from '@/stores/useTransporteStore'
 import { useAccountScope } from '@/composables/useAccountScope'
@@ -14,25 +14,42 @@ import CompanyGaragesTab from '@/features/company/components/vehicles/CompanyGar
 
 const store = useTransporteStore()
 const scope = useAccountScope()
+const route = useRoute()
 const router = useRouter()
 
-const abaAtiva = shallowRef('frota')
 const tabTransition = shallowRef('tab-slide-left')
 const busca = shallowRef('')
 const filtroAtivo = shallowRef('Todas')
 const menuAberto = shallowRef(null)
 
+const abaAtiva = computed(() => (route.params.tab === 'garages' ? 'garages' : 'fleet'))
+
 const vehicleTabs = computed(() => [
-  { value: 'frota', label: 'Frota', icon: 'mdi-bus', badge: store.veiculos.length },
-  { value: 'garagens', label: 'Garagens', icon: 'mdi-garage', badge: store.garagens.length },
+  {
+    value: 'fleet',
+    to: ROUTE_PATHS.TRANSPORT_FLEET,
+    label: 'Frota',
+    icon: 'mdi-bus',
+    badge: store.veiculos.length,
+  },
+  {
+    value: 'garages',
+    to: ROUTE_PATHS.TRANSPORT_GARAGES,
+    label: 'Garagens',
+    icon: 'mdi-garage',
+    badge: store.garagens.length,
+  },
 ])
 
 watch(abaAtiva, (next, prev) => {
-  const order = { frota: 0, garagens: 1 }
+  const order = { fleet: 0, garages: 1 }
   tabTransition.value = (order[next] ?? 0) >= (order[prev] ?? 0) ? 'tab-slide-left' : 'tab-slide-right'
 })
 
 onMounted(async () => {
+  if (!route.params.tab) {
+    router.replace(ROUTE_PATHS.TRANSPORT_FLEET)
+  }
   await store.fetchVeiculos({ signal: scope.signal })
 })
 
@@ -62,14 +79,13 @@ async function alterarStatus(id) {
     <PageHeader title="Frota e Garagens" accent />
 
     <BaseTabs
-      v-model="abaAtiva"
       :items="vehicleTabs"
       aria-label="Configuração de frota e garagens"
     />
 
     <div class="tab-stage">
       <Transition :name="tabTransition" mode="out-in">
-        <div v-if="abaAtiva === 'frota'" key="frota" class="tab-pane-stack">
+        <div v-if="abaAtiva === 'fleet'" key="fleet" class="tab-pane-stack">
           <div class="search-container">
             <span class="mdi mdi-magnify search-icon" aria-hidden="true"></span>
             <input v-model="busca" type="text" placeholder="Busque por placa, modelo..." aria-label="Buscar veículo" />
@@ -98,7 +114,7 @@ async function alterarStatus(id) {
               :veiculo="veiculo"
               :menu-open="menuAberto === veiculo.id"
               @toggle-menu="toggleMenu"
-              @edit="(id) => router.push(`/veiculos/editar/${id}`)"
+              @edit="(id) => router.push(`/vehicles/${id}/edit`)"
               @toggle-status="alterarStatus"
             />
           </TransitionGroup>
@@ -113,7 +129,7 @@ async function alterarStatus(id) {
           </button>
         </div>
 
-        <CompanyGaragesTab v-else key="garagens" />
+        <CompanyGaragesTab v-else key="garages" />
       </Transition>
     </div>
   </div>
@@ -176,20 +192,7 @@ async function alterarStatus(id) {
 }
 
 .chip {
-  padding: $space-2 $space-4;
-  border-radius: $radius-pill;
-  background: var(--color-surface);
-  color: var(--text);
-  outline: 1.5px solid var(--border);
-  outline-offset: -1.5px;
-  font-size: $text-sm;
-  font-weight: $font-semibold;
-
-  &.active {
-    background: var(--primary);
-    color: var(--color-on-primary);
-    outline-color: var(--primary);
-  }
+  @include filter-chip;
 }
 
 .list-container {

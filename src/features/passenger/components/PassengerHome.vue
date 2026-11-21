@@ -281,8 +281,8 @@ onUnmounted(() => {
                 Pesquise uma empresa aprovada e envie seu pedido de vínculo para acessar atendimentos e rotas.
               </p>
               <div class="sheet-actions">
-                <RouterLink to="/empresas" class="sheet-cta">Buscar empresas</RouterLink>
-                <RouterLink to="/vinculos" class="sheet-cta-outline">Meus vínculos</RouterLink>
+                <RouterLink to="/companies" class="sheet-cta">Buscar empresas</RouterLink>
+                <RouterLink to="/memberships" class="sheet-cta-outline">Meus vínculos</RouterLink>
               </div>
             </div>
 
@@ -292,7 +292,7 @@ onUnmounted(() => {
                 Aguardando aprovação de <strong>{{ openCompany?.trade_name || `Empresa #${openMembership.company}` }}</strong>.
               </p>
               <div class="sheet-actions">
-                <RouterLink to="/vinculos" class="sheet-cta-outline">Acompanhar pedido</RouterLink>
+                <RouterLink to="/memberships" class="sheet-cta-outline">Acompanhar pedido</RouterLink>
               </div>
             </div>
 
@@ -306,8 +306,8 @@ onUnmounted(() => {
               </p>
               <p v-else class="panel-meta">Vínculo ativo. Responda aos atendimentos abertos na aba Lista.</p>
               <div class="sheet-actions">
-                <RouterLink to="/lista" class="sheet-cta">Responder atendimentos</RouterLink>
-                <RouterLink to="/historico" class="sheet-cta-outline">Histórico</RouterLink>
+                <RouterLink to="/list" class="sheet-cta">Responder atendimentos</RouterLink>
+                <RouterLink to="/history" class="sheet-cta-outline">Histórico</RouterLink>
               </div>
             </div>
           </Transition>
