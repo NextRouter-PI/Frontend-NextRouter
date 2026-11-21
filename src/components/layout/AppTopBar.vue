@@ -40,7 +40,7 @@ defineProps({
   left: 0;
   right: 0;
   height: var(--header-height);
-  padding: 0 18px;
+  padding: var(--safe-top) calc(18px + var(--safe-right)) 0 calc(18px + var(--safe-left));
   background: var(--chrome-bg);
   border-bottom: 2px solid var(--primary);
   display: flex;

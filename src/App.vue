@@ -143,7 +143,7 @@ watch(
 
 .route-progress-bar {
   position: fixed;
-  top: 0;
+  top: var(--safe-top);
   left: 0;
   right: 0;
   height: 2.5px;

@@ -1,3 +1,4 @@
+import { getPlatformGeolocation } from '@/platform/runtime'
 import { haversineMeters } from '@/utils/geo'
 
 const MIN_SEND_INTERVAL_MS = 2000
@@ -5,13 +6,14 @@ const STATIONARY_HEARTBEAT_MS = 15000
 const MIN_DISPLACEMENT_METERS = 5
 
 export function createGeolocationWatcher({ state, sendPosition }) {
+  const geo = getPlatformGeolocation()
   let watchId = null
   let lastSentAt = 0
   let lastSentCoords = null
 
   function stop() {
-    if (watchId !== null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(watchId)
+    if (watchId !== null) {
+      geo.clearWatch(watchId)
       watchId = null
     }
     lastSentAt = 0
@@ -27,11 +29,11 @@ export function createGeolocationWatcher({ state, sendPosition }) {
 
   function start(travelId) {
     stop()
-    if (!navigator.geolocation) {
+    if (!geo.isSupported()) {
       state.error = 'Geolocalização não é suportada neste navegador ou contexto HTTP.'
       return
     }
-    watchId = navigator.geolocation.watchPosition(
+    watchId = geo.watchPosition(
       (position) => {
         if (!state.tracking || state.role !== 'driver' || state.travelId !== travelId) return
         const nowMs = Date.now()

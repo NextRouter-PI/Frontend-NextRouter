@@ -91,6 +91,7 @@ function isActive(target) {
 .sidebar-logo {
   width: 100%;
   height: var(--header-height);
+  padding-top: var(--safe-top);
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -148,7 +149,7 @@ function isActive(target) {
   border-top: 2px solid var(--primary);
   display: flex;
   align-items: center;
-  padding: 0 $space-1;
+  padding: 0 calc(#{$space-1} + var(--safe-right)) var(--safe-bottom) calc(#{$space-1} + var(--safe-left));
   z-index: $z-bottom-nav;
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
 }

@@ -15,15 +15,21 @@ function resolveVendorChunk(id) {
   return undefined
 }
 
+const tauriDevHost = process.env.TAURI_DEV_HOST
+const isTauriEnv = Boolean(process.env.TAURI_ENV_PLATFORM)
+
 export default defineConfig(({ command }) => ({
   base: '/',
   // Somente assets importados, emitidos com hash em /assets/. PWA fica adiada.
   publicDir: false,
+  clearScreen: !isTauriEnv,
+  envPrefix: ['VITE_', 'TAURI_ENV_'],
   plugins: [vue(), ...(command === 'serve' ? [vueDevTools()] : [])],
   server: {
-    host: '127.0.0.1',
+    host: tauriDevHost || '127.0.0.1',
     port: 5173,
     strictPort: true,
+    hmr: tauriDevHost ? { protocol: 'ws', host: tauriDevHost, port: 5174 } : undefined,
     proxy: {
       // Preservar Host e Origin mantém os checks de CSRF e WebSocket no Django.
       '/api': { target: 'http://127.0.0.1:8000', changeOrigin: false },
