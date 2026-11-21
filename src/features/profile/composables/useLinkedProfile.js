@@ -1,25 +1,21 @@
-import { computed, nextTick, onUnmounted, shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import L from 'leaflet'
 import { ROUTE_NAMES, USER_ROLES } from '@/constants'
-import { state } from '@/stores/state'
+import { useAuthStore } from '@/stores/useAuthStore'
 import api from '@/api/client'
 import { sessionError } from '@/stores/session'
 import { formatApiError } from '@/utils/apiErrors'
-import { attachThemedTileLayer, createPinIcon, ensureLeafletIcons } from '@/utils/leafletTiles'
+import { useLinkedPassengerMap } from './useLinkedPassengerMap'
 
 export function useLinkedProfile(mapContainer) {
-  ensureLeafletIcons()
-
+  const auth = useAuthStore()
   const route = useRoute()
+  const { renderMap, destroyMap } = useLinkedPassengerMap(mapContainer)
   const driver = computed(() => route.name === ROUTE_NAMES.LINKED_DRIVER)
   const profile = shallowRef(null)
   const loading = shallowRef(false)
   const error = shallowRef('')
   const reloadToken = shallowRef(0)
-
-  let map = null
-  let cleanupTiles = null
 
   const hasCoordinates = computed(() => {
     const lat = Number(profile.value?.latitude)
@@ -54,46 +50,14 @@ export function useLinkedProfile(mapContainer) {
       .join(''),
   )
 
-  function destroyMap() {
-    cleanupTiles?.()
-    cleanupTiles = null
-    if (map) {
-      map.remove()
-      map = null
-    }
-  }
-
-  async function renderMap() {
-    destroyMap()
-    if (driver.value || !hasCoordinates.value) return
-    await nextTick()
-    if (!mapContainer.value) return
-
-    const lat = Number(profile.value.latitude)
-    const lng = Number(profile.value.longitude)
-    map = L.map(mapContainer.value, { zoomControl: true, attributionControl: true }).setView([lat, lng], 15)
-    cleanupTiles = attachThemedTileLayer(map)
-
-    const popupText = [`<strong>${profile.value.name || 'Passageiro'}</strong>`, formattedAddress.value]
-      .filter(Boolean)
-      .join('<br>')
-
-    L.marker([lat, lng], {
-      icon: createPinIcon({ icon: 'mdi-account' }),
-    })
-      .addTo(map)
-      .bindPopup(popupText)
-      .openPopup()
-  }
-
   watch(
-    [() => route.params.id, driver, () => `${state.logged}:${state.role}:${state.user?.id}`, reloadToken],
+    [() => route.params.id, driver, () => auth.roleIdentityKey, reloadToken],
     async (_value, _old, onCleanup) => {
       destroyMap()
       profile.value = null
       error.value = ''
       loading.value = false
-      if (!state.logged || state.role !== USER_ROLES.COMPANY) return
+      if (!auth.logged || auth.role !== USER_ROLES.COMPANY) return
 
       const id = String(route.params.id)
       if (!/^[1-9]\d*$/.test(id) || !Number.isSafeInteger(Number(id))) {
@@ -127,7 +91,14 @@ export function useLinkedProfile(mapContainer) {
             average: data.average_rating,
             ratings: data.ratings_count,
           }
-          await renderMap()
+          if (!driver.value && hasCoordinates.value) {
+            await renderMap({
+              latitude: profile.value.latitude,
+              longitude: profile.value.longitude,
+              name: profile.value.name,
+              formattedAddress: formattedAddress.value,
+            })
+          }
         }
       } catch (cause) {
         if (!controller.signal.aborted) {
@@ -140,18 +111,8 @@ export function useLinkedProfile(mapContainer) {
     { immediate: true, flush: 'sync' },
   )
 
-  onUnmounted(destroyMap)
-
   return {
-    driver,
-    profile,
-    loading,
-    error,
-    hasCoordinates,
-    avatarUrl,
-    initials,
-    reload: () => {
-      reloadToken.value += 1
-    },
+    driver, profile, loading, error, hasCoordinates, avatarUrl, initials,
+    reload: () => { reloadToken.value += 1 },
   }
 }
