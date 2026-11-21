@@ -1,17 +1,28 @@
 <script setup>
-import PassengerTransport from '@/features/passenger/components/PassengerTransport.vue'
-import DriverTransport from '@/features/driver/components/DriverTransport.vue'
-import CompanyVeiculos from '@/features/company/components/CompanyVeiculos.vue'
+import { defineAsyncComponent } from 'vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import { USER_ROLES } from '@/constants'
-import { state } from '@/stores/state'
+import { useAuthStore } from '@/stores/useAuthStore'
+
+const auth = useAuthStore()
+
+const asyncRoleView = (loader) =>
+  defineAsyncComponent({
+    loader,
+    loadingComponent: LoadingSpinner,
+    delay: 150,
+  })
+
+const PassengerTransport = asyncRoleView(() => import('@/features/passenger/components/PassengerTransport.vue'))
+const DriverTransport = asyncRoleView(() => import('@/features/driver/components/DriverTransport.vue'))
+const CompanyVeiculos = asyncRoleView(() => import('@/features/company/components/CompanyVeiculos.vue'))
 </script>
 
 <template>
-  <div v-if="!state.checkingAuth">
-    <PassengerTransport v-if="state.role === USER_ROLES.PASSENGER" />
-    <DriverTransport v-else-if="state.role === USER_ROLES.DRIVER" />
-    <CompanyVeiculos v-else-if="state.role === USER_ROLES.COMPANY" />
+  <div v-if="!auth.checkingAuth">
+    <PassengerTransport v-if="auth.role === USER_ROLES.PASSENGER" />
+    <DriverTransport v-else-if="auth.role === USER_ROLES.DRIVER" />
+    <CompanyVeiculos v-else-if="auth.role === USER_ROLES.COMPANY" />
   </div>
   <LoadingSpinner v-else size="lg" />
 </template>

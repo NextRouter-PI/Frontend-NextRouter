@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, shallowRef, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
 import { useRotasStore } from '@/stores/useRotasStore'
@@ -7,9 +7,19 @@ import { useAccountScope } from '@/composables/useAccountScope'
 import { useToast } from '@/composables/useToast'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseTabs from '@/components/ui/BaseTabs.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import CompanyRouteGroupsTab from '@/features/company/components/routes/CompanyRouteGroupsTab.vue'
-import CompanyDatedOperationTab from '@/features/company/components/routes/CompanyDatedOperationTab.vue'
-import TransportHistoryNotifications from '@/features/transport/components/TransportHistoryNotifications.vue'
+
+const CompanyDatedOperationTab = defineAsyncComponent({
+  loader: () => import('@/features/company/components/routes/CompanyDatedOperationTab.vue'),
+  loadingComponent: LoadingSpinner,
+  delay: 150,
+})
+const TransportHistoryNotifications = defineAsyncComponent({
+  loader: () => import('@/features/transport/components/TransportHistoryNotifications.vue'),
+  loadingComponent: LoadingSpinner,
+  delay: 150,
+})
 
 const route = useRoute()
 const store = useRotasStore()

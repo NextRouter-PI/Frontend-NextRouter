@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, shallowRef, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
 import { useRotasStore } from '@/stores/useRotasStore'
@@ -9,12 +9,18 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseTabs from '@/components/ui/BaseTabs.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import HabitualRouteBuilder from '@/features/transport/components/HabitualRouteBuilder.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import RouteGroupBasicForm from '@/features/company/components/route-editor/RouteGroupBasicForm.vue'
 import ResponsePolicyForm from '@/features/company/components/route-editor/ResponsePolicyForm.vue'
 import RecurringServicesSection from '@/features/company/components/route-editor/RecurringServicesSection.vue'
 import GroupMembersSection from '@/features/company/components/route-editor/GroupMembersSection.vue'
 import AutomationScheduleSection from '@/features/company/components/route-editor/AutomationScheduleSection.vue'
+
+const HabitualRouteBuilder = defineAsyncComponent({
+  loader: () => import('@/features/transport/components/HabitualRouteBuilder.vue'),
+  loadingComponent: LoadingSpinner,
+  delay: 150,
+})
 
 const router = useRouter()
 const route = useRoute()

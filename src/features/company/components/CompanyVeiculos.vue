@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, shallowRef, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
 import { useTransporteStore } from '@/stores/useTransporteStore'
@@ -9,8 +9,14 @@ import BaseTabs from '@/components/ui/BaseTabs.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
+import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 import CompanyVehicleCard from '@/features/company/components/vehicles/CompanyVehicleCard.vue'
-import CompanyGaragesTab from '@/features/company/components/vehicles/CompanyGaragesTab.vue'
+
+const CompanyGaragesTab = defineAsyncComponent({
+  loader: () => import('@/features/company/components/vehicles/CompanyGaragesTab.vue'),
+  loadingComponent: LoadingSpinner,
+  delay: 150,
+})
 
 const store = useTransporteStore()
 const scope = useAccountScope()
