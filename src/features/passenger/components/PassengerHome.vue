@@ -83,7 +83,7 @@ onMounted(() => {
           Motorista em rota (ao vivo)
         </div>
         <p v-if="etaSummary" class="eta-highlight">
-          <span class="mdi mdi-clock-fast" aria-hidden="true"></span>
+          <BaseIcon name="mdi-clock-fast" />
           <span>{{ etaSummary }}</span>
         </p>
         <div class="trip-steps" aria-label="Etapas da viagem">
@@ -106,7 +106,7 @@ onMounted(() => {
         <p v-else class="panel-meta">Aguardando localização do motorista...</p>
         <p v-if="tracking.error" class="panel-error" role="alert">{{ tracking.error }}</p>
         <a v-if="mapsUrl" :href="mapsUrl" target="_blank" rel="noopener noreferrer" class="sheet-cta">
-          Abrir no Google Maps <span class="mdi mdi-open-in-new" aria-hidden="true"></span>
+          Abrir no Google Maps <BaseIcon name="mdi-open-in-new" />
         </a>
       </div>
 

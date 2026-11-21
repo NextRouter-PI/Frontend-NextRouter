@@ -74,7 +74,7 @@ watch(
               class="top-bar-user-avatar"
               @error="avatarFailed = true"
             />
-            <span v-else class="mdi mdi-account" aria-hidden="true"></span>
+            <BaseIcon v-else name="mdi-account" />
           </RouterLink>
         </template>
       </AppTopBar>
@@ -95,7 +95,7 @@ watch(
             :aria-current="isActive(item) ? 'page' : undefined"
           >
             <span class="nav-icon-wrap">
-              <span class="mdi" :class="item.icon" aria-hidden="true"></span>
+              <BaseIcon :name="item.icon" />
             </span>
             <small v-if="!mobileMode" class="nav-label">{{ item.title }}</small>
           </RouterLink>

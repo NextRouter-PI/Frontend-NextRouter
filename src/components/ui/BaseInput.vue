@@ -103,11 +103,7 @@ const {
         :aria-pressed="isPasswordVisible"
         @click="togglePassword"
       >
-        <span
-          class="mdi"
-          :class="isPasswordVisible ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-          aria-hidden="true"
-        ></span>
+        <BaseIcon :name="isPasswordVisible ? 'mdi-eye-off-outline' : 'mdi-eye-outline'" />
       </button>
 
       <span v-if="$slots.suffix" class="base-field-affix is-suffix">

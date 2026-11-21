@@ -73,7 +73,7 @@ async function handleDeactivate() {
         :disabled="disabled || deactivating"
         @click="toggleConfirm"
       >
-        <span class="mdi mdi-account-off-outline" aria-hidden="true"></span>
+        <BaseIcon name="mdi-account-off-outline" />
         <span>Desativar minha conta</span>
       </button>
     </div>

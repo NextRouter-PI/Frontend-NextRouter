@@ -34,7 +34,7 @@ const emit = defineEmits(['submit', 'cancel-edit'])
           :disabled="busy"
           @click="outboundChoice = ''"
         >
-          <span class="mdi mdi-close-circle-outline option-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-close-circle-outline" class="option-icon" />
           <div class="option-copy">
             <span class="option-time">Não vou na ida</span>
             <span class="option-sub">Negativa para o trecho de ida</span>
@@ -51,7 +51,7 @@ const emit = defineEmits(['submit', 'cancel-edit'])
           :disabled="busy"
           @click="outboundChoice = String(srv.id)"
         >
-          <span class="mdi mdi-bus-clock option-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-bus-clock" class="option-icon" />
           <div class="option-copy">
             <span class="option-time">{{ srv.targetTimeLabel }}</span>
             <span class="option-sub">
@@ -76,7 +76,7 @@ const emit = defineEmits(['submit', 'cancel-edit'])
           :disabled="busy"
           @click="returnChoice = ''"
         >
-          <span class="mdi mdi-close-circle-outline option-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-close-circle-outline" class="option-icon" />
           <div class="option-copy">
             <span class="option-time">Não volto com o transporte</span>
             <span class="option-sub">Negativa para o trecho de retorno</span>
@@ -93,7 +93,7 @@ const emit = defineEmits(['submit', 'cancel-edit'])
           :disabled="busy"
           @click="returnChoice = String(srv.id)"
         >
-          <span class="mdi mdi-bus-clock option-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-bus-clock" class="option-icon" />
           <div class="option-copy">
             <span class="option-time">{{ srv.targetTimeLabel }}</span>
             <span class="option-sub">

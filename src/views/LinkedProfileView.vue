@@ -21,7 +21,7 @@ const { driver, profile, loading, error, hasCoordinates, avatarUrl, initials, re
       <div class="profile-topbar">
         <h1>Perfil do titular vinculado</h1>
         <RouterLink :to="ROUTE_PATHS.USERS" class="back-btn">
-          <span class="mdi mdi-arrow-left" aria-hidden="true"></span>
+          <BaseIcon name="mdi-arrow-left" />
           <span>Voltar aos vínculos</span>
         </RouterLink>
       </div>
@@ -46,7 +46,7 @@ const { driver, profile, loading, error, hasCoordinates, avatarUrl, initials, re
                 <span>perfil nº {{ profile.id }}</span>
               </p>
               <p v-if="profile.phone" class="identity-meta">
-                <span class="mdi mdi-phone-outline" aria-hidden="true"></span>
+                <BaseIcon name="mdi-phone-outline" />
                 <span>{{ formatPhone(profile.phone) }}</span>
               </p>
               <p v-if="driver && profile.ratings != null" class="identity-meta">

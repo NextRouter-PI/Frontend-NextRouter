@@ -93,7 +93,7 @@ onScopeDispose(() => {
     <Transition name="fade-slide" mode="out-in">
       <div v-if="!isEditing" key="view" class="doc-bar">
         <div class="doc-info">
-          <span class="mdi mdi-file-pdf-box doc-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-file-pdf-box" class="doc-icon" />
           <span class="doc-name">{{ documentData ? (documentData.description || 'Documento cadastrado') : 'Nenhum documento associado' }}</span>
         </div>
         <div class="doc-actions">

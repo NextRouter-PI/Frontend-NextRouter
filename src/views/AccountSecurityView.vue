@@ -84,7 +84,7 @@ onMounted(refresh)
       <p class="account-hint">Saia da sua conta neste dispositivo quando terminar de usar o NextRouter.</p>
       <div class="account-actions">
         <button type="button" class="logout-action-btn" :disabled="busy || deactivating" @click="handleLogout">
-          <span class="mdi mdi-logout" aria-hidden="true"></span>
+          <BaseIcon name="mdi-logout" />
           <span>Sair da conta</span>
         </button>
       </div>

@@ -72,7 +72,7 @@ defineExpose({ resetDecision })
               :to="membership.driver ? `/users/driver/${membership.driver}` : `/users/passenger/${membership.passenger}`"
               class="btn-profile-link"
             >
-              <span class="mdi mdi-account-details-outline" aria-hidden="true"></span>
+              <BaseIcon name="mdi-account-details-outline" />
               <span>Consultar perfil</span>
             </RouterLink>
             <BaseButton

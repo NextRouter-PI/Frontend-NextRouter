@@ -46,15 +46,12 @@ function handleFile(event) {
         class="file-display"
         :class="{ 'has-file': modelValue && typeof modelValue === 'object' }"
       >
-        <span
-          class="mdi"
-          :class="modelValue && typeof modelValue === 'object' ? 'mdi-file-pdf' : 'mdi-file'"
-        ></span>
+        <BaseIcon :name="modelValue && typeof modelValue === 'object' ? 'mdi-file-pdf' : 'mdi-file'" />
         {{ modelValue && typeof modelValue === 'object' ? fileName : 'Nenhum arquivo selecionado' }}
       </div>
 
       <button type="button" class="btn-upload" :disabled="disabled" @click="openSelector">
-        <span class="mdi mdi-folder-open"></span> Selecionar
+        <BaseIcon name="mdi-folder-open" /> Selecionar
       </button>
     </div>
 

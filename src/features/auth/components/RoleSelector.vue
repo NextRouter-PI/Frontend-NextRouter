@@ -29,7 +29,7 @@ const roles = [
       class="role-card"
     >
       <span class="role-title">{{ role.title }}</span>
-      <span class="mdi role-icon" :class="role.icon" aria-hidden="true"></span>
+      <BaseIcon :name="role.icon" class="role-icon" />
     </RouterLink>
   </div>
 </template>

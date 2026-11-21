@@ -42,7 +42,7 @@ watch(etapa, (value) => {
     <Transition name="fade-slide" mode="out-in">
       <form v-if="etapa === 1" key="step-1" class="reset-step" @submit.prevent="solicitarCodigo">
         <div class="step-intro">
-          <span class="mdi mdi-email-fast-outline step-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-email-fast-outline" class="step-icon" />
           <p>
             Digite seu e-mail para enviarmos um código de verificação. A confirmação encerra as sessões anteriores.
           </p>
@@ -117,7 +117,7 @@ watch(etapa, (value) => {
       </form>
 
       <section v-else-if="etapa === 4" key="step-4" class="reset-step reset-done" role="status">
-        <span class="mdi mdi-check-circle-outline done-icon" aria-hidden="true"></span>
+        <BaseIcon name="mdi-check-circle-outline" class="done-icon" />
         <p class="step-desc">
           Senha redefinida com sucesso! Entre novamente com a nova senha; as sessões anteriores foram encerradas.
         </p>

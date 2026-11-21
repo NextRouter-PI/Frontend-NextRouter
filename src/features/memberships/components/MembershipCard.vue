@@ -33,7 +33,7 @@ const formattedPhone = computed(() =>
           class="avatar-img"
           loading="lazy"
         />
-        <span v-else class="mdi mdi-account-circle-outline avatar-fallback"></span>
+        <BaseIcon v-else name="mdi-account-circle-outline" class="avatar-fallback" />
       </div>
       <div class="membership-header-info">
         <h3 class="membership-title">{{ title }}</h3>
@@ -46,11 +46,11 @@ const formattedPhone = computed(() =>
       · <time :datetime="membership.created_at">{{ createdLabel }}</time>
     </p>
     <p v-if="formattedPhone" class="membership-detail">
-      <span class="mdi mdi-phone-outline" aria-hidden="true"></span>
+      <BaseIcon name="mdi-phone-outline" />
       Telefone para contato: <strong>{{ formattedPhone }}</strong>
     </p>
     <p v-if="membership.requested_route_group_name" class="membership-detail">
-      <span class="mdi mdi-routes" aria-hidden="true"></span>
+      <BaseIcon name="mdi-routes" />
       Grupo de rota solicitado: <strong>{{ membership.requested_route_group_name }}</strong>
     </p>
     <slot />

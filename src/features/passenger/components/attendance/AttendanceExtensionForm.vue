@@ -62,7 +62,7 @@ function selectLeg(leg) {
         :disabled="busy"
         @click="proposedServiceId = String(srv.id)"
       >
-        <span class="mdi mdi-clock-edit-outline option-icon" aria-hidden="true"></span>
+        <BaseIcon name="mdi-clock-edit-outline" class="option-icon" />
         <div class="option-copy">
           <span class="option-time">{{ srv.targetTimeLabel }}</span>
           <span class="option-sub">

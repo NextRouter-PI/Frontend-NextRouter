@@ -63,11 +63,11 @@ watch(
 
     <section class="wizard-card">
       <div v-if="success" class="wizard-success" role="status">
-        <span class="mdi mdi-check-circle wizard-success-icon" aria-hidden="true"></span>
+        <BaseIcon name="mdi-check-circle" class="wizard-success-icon" />
         <p class="wizard-success-title">{{ successTitle }}</p>
         <p v-if="successMessage" class="wizard-success-desc">{{ successMessage }}</p>
         <div class="wizard-redirect">
-          <span class="mdi mdi-loading mdi-spin" aria-hidden="true"></span>
+          <BaseIcon name="mdi-loading" spin />
           Redirecionando...
         </div>
       </div>

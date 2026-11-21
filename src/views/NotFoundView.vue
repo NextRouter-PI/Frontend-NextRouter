@@ -12,7 +12,7 @@ const primaryLabel = computed(() => (state.logged ? 'Voltar ao início' : 'Ir pa
   <div class="status-page">
     <div class="status-card">
       <div class="icon-wrap">
-        <span class="mdi mdi-map-marker-question-outline" aria-hidden="true"></span>
+        <BaseIcon name="mdi-map-marker-question-outline" />
       </div>
       <p class="status-code">404</p>
       <h1>Página não encontrada</h1>
@@ -21,11 +21,11 @@ const primaryLabel = computed(() => (state.logged ? 'Voltar ao início' : 'Ir pa
       </p>
       <div class="status-actions">
         <RouterLink :to="primaryTarget" class="btn-primary">
-          <span class="mdi mdi-home-outline" aria-hidden="true"></span>
+          <BaseIcon name="mdi-home-outline" />
           {{ primaryLabel }}
         </RouterLink>
         <button type="button" class="btn-outline" @click="router.back()">
-          <span class="mdi mdi-arrow-left" aria-hidden="true"></span>
+          <BaseIcon name="mdi-arrow-left" />
           Voltar
         </button>
       </div>

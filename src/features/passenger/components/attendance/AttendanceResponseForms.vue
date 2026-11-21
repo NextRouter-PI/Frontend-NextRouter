@@ -32,7 +32,7 @@ const emit = defineEmits(['submit-normal', 'submit-extension', 'cancel-request']
       class="answered-box"
     >
       <p class="answered-title">
-        <span class="mdi mdi-check-circle-outline" aria-hidden="true"></span>
+        <BaseIcon name="mdi-check-circle-outline" />
         Você já respondeu este atendimento.
       </p>
       <p class="sub-info">

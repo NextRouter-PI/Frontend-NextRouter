@@ -17,7 +17,7 @@ const emit = defineEmits(['prev-month', 'next-month', 'select-day'])
   <div class="date-popover" role="dialog" aria-label="Selecionar data de nascimento">
     <div class="popover-header">
       <button type="button" class="nav-arrow-btn" aria-label="Mês anterior" @click="emit('prev-month')">
-        <span class="mdi mdi-chevron-left" aria-hidden="true"></span>
+        <BaseIcon name="mdi-chevron-left" />
       </button>
 
       <div class="popover-selects">
@@ -32,7 +32,7 @@ const emit = defineEmits(['prev-month', 'next-month', 'select-day'])
       </div>
 
       <button type="button" class="nav-arrow-btn" aria-label="Próximo mês" @click="emit('next-month')">
-        <span class="mdi mdi-chevron-right" aria-hidden="true"></span>
+        <BaseIcon name="mdi-chevron-right" />
       </button>
     </div>
 

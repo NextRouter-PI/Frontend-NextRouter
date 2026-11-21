@@ -12,7 +12,7 @@ const goBack = () => {
 <template>
   <div class="confirmation-wrapper">
     <button type="button" class="btn-back-top" @click="goBack" aria-label="Voltar">
-      <span class="mdi mdi-arrow-left"></span>
+      <BaseIcon name="mdi-arrow-left" />
     </button>
     <SignupConfirmation @continue-signup="goBack" />
   </div>

@@ -90,7 +90,7 @@ async function alterarStatus(id) {
       <Transition :name="tabTransition" mode="out-in">
         <div v-if="abaAtiva === 'fleet'" key="fleet" class="tab-pane-stack">
           <div class="search-container">
-            <span class="mdi mdi-magnify search-icon" aria-hidden="true"></span>
+            <BaseIcon name="mdi-magnify" class="search-icon" />
             <input v-model="busca" type="text" placeholder="Busque por placa, modelo..." aria-label="Buscar veículo" />
           </div>
 
@@ -135,7 +135,7 @@ async function alterarStatus(id) {
             aria-label="Cadastrar veículo"
             @click="router.push(ROUTE_PATHS.REGISTER_VEHICLE)"
           >
-            <span class="mdi mdi-plus" aria-hidden="true"></span>
+            <BaseIcon name="mdi-plus" />
           </button>
         </div>
 

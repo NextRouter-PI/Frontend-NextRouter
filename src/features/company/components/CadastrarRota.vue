@@ -61,7 +61,7 @@ const salvar = async () => {
   <div class="content">
     <div class="top-bar">
       <button type="button" class="back-button" @click="$router.back()">
-        <span class="mdi mdi-arrow-left"></span>
+        <BaseIcon name="mdi-arrow-left" />
       </button>
       <h1>Cadastrar Grupo de Atendimento</h1>
     </div>

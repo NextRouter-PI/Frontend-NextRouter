@@ -104,7 +104,7 @@ onMounted(async () => {
     <template v-if="!companyData || companyData.is_approved">
       <div class="stats-grid">
         <div class="stat-card">
-          <span class="mdi mdi-account-group stat-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-account-group" class="stat-icon" />
           <div>
             <span class="stat-label">Passageiros Hoje</span>
             <p class="stat-value">{{ passageirosHoje }}</p>
@@ -112,7 +112,7 @@ onMounted(async () => {
         </div>
 
         <div class="stat-card">
-          <span class="mdi mdi-map-marker-path stat-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-map-marker-path" class="stat-icon" />
           <div>
             <span class="stat-label">Rotas Hoje</span>
             <p class="stat-value">{{ routesToday ?? '—' }}</p>
@@ -120,7 +120,7 @@ onMounted(async () => {
         </div>
 
         <div class="stat-card stat-wide">
-          <span class="mdi mdi-van-passenger stat-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-van-passenger" class="stat-icon" />
           <div>
             <span class="stat-label">Transportes Ativos</span>
             <p class="stat-value">{{ ativos }} / {{ total }}</p>

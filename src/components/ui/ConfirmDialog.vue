@@ -27,12 +27,12 @@ const emit = defineEmits(['confirm', 'cancel'])
       >
         <div class="confirm-dialog">
           <div class="confirm-header">
-            <span class="mdi mdi-alert-circle-outline confirm-icon" aria-hidden="true"></span>
+            <BaseIcon name="mdi-alert-circle-outline" class="confirm-icon" />
             <h3>{{ title }}</h3>
           </div>
           <p v-if="message" class="confirm-message">{{ message }}</p>
           <p v-if="warning" class="confirm-warning">
-            <span class="mdi mdi-alert-outline" aria-hidden="true"></span>
+            <BaseIcon name="mdi-alert-outline" />
             <span>{{ warning }}</span>
           </p>
           <slot />

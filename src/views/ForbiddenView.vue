@@ -19,7 +19,7 @@ const roleLabel = computed(() => {
   <div class="status-page">
     <div class="status-card">
       <div class="icon-wrap">
-        <span class="mdi mdi-shield-lock-outline" aria-hidden="true"></span>
+        <BaseIcon name="mdi-shield-lock-outline" />
       </div>
       <p class="status-code">403</p>
       <h1>Acesso não autorizado</h1>
@@ -28,11 +28,11 @@ const roleLabel = computed(() => {
       </p>
       <div class="status-actions">
         <RouterLink to="/" class="btn-primary">
-          <span class="mdi mdi-home-outline" aria-hidden="true"></span>
+          <BaseIcon name="mdi-home-outline" />
           Ir para meu painel
         </RouterLink>
         <button type="button" class="btn-outline" @click="router.back()">
-          <span class="mdi mdi-arrow-left" aria-hidden="true"></span>
+          <BaseIcon name="mdi-arrow-left" />
           Voltar
         </button>
       </div>

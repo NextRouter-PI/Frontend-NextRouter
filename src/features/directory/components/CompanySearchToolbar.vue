@@ -27,7 +27,7 @@ const emit = defineEmits(['search', 'clear', 'remove-state', 'remove-city'])
           aria-label="Pesquisar grupo de rota"
           :disabled="disabled"
         >
-          <span class="mdi mdi-magnify" aria-hidden="true"></span>
+          <BaseIcon name="mdi-magnify" />
         </button>
         <input
           v-model="destination"
@@ -56,11 +56,11 @@ const emit = defineEmits(['search', 'clear', 'remove-state', 'remove-city'])
     <div v-if="stateFilter || city" class="active-chips" aria-label="Filtros aplicados">
       <button v-if="stateFilter" type="button" class="filter-chip" @click="emit('remove-state')">
         UF: {{ stateFilter }}
-        <span class="mdi mdi-close" aria-hidden="true"></span>
+        <BaseIcon name="mdi-close" />
       </button>
       <button v-if="city" type="button" class="filter-chip" @click="emit('remove-city')">
         Cidade: {{ city }}
-        <span class="mdi mdi-close" aria-hidden="true"></span>
+        <BaseIcon name="mdi-close" />
       </button>
     </div>
   </div>

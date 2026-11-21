@@ -25,7 +25,7 @@ const gruposFiltrados = computed(() => {
 <template>
   <div class="groups-tab">
     <div class="search-container">
-      <span class="mdi mdi-magnify search-icon" aria-hidden="true"></span>
+      <BaseIcon name="mdi-magnify" class="search-icon" />
       <input
         v-model="busca"
         type="text"
@@ -60,7 +60,7 @@ const gruposFiltrados = computed(() => {
 
         <div class="group-card-content">
           <div class="policy-box">
-            <span class="mdi mdi-clock-outline policy-icon" aria-hidden="true"></span>
+            <BaseIcon name="mdi-clock-outline" class="policy-icon" />
             <span v-if="grupo.policy" class="policy-text">
               Política: abre {{ grupo.policy.opens_days_before }}d antes às
               {{ String(grupo.policy.opens_time).slice(0, 5) }} · fecha
@@ -78,7 +78,7 @@ const gruposFiltrados = computed(() => {
 
           <div class="group-section">
             <p class="section-label">
-              <span class="mdi mdi-bus-clock" aria-hidden="true"></span>
+              <BaseIcon name="mdi-bus-clock" />
               Serviços habituais ({{ grupo.services.length }})
             </p>
             <div v-if="grupo.services.length" class="services-list">
@@ -100,7 +100,7 @@ const gruposFiltrados = computed(() => {
 
           <div class="secao-vinculos">
             <p class="section-label">
-              <span class="mdi mdi-account-multiple" aria-hidden="true"></span>
+              <BaseIcon name="mdi-account-multiple" />
               Passageiros atribuídos ao grupo ({{ grupo.members.length }})
             </p>
             <div v-if="grupo.members.length" class="members-grid">
@@ -127,7 +127,7 @@ const gruposFiltrados = computed(() => {
       aria-label="Cadastrar grupo"
       @click="router.push(ROUTE_PATHS.REGISTER_ROUTE)"
     >
-      <span class="mdi mdi-plus" aria-hidden="true"></span>
+      <BaseIcon name="mdi-plus" />
     </button>
   </div>
 </template>

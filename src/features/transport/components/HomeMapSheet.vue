@@ -23,16 +23,12 @@ const expanded = defineModel('expanded', { type: Boolean, default: true })
       <span class="sheet-pill" aria-hidden="true"></span>
       <div class="sheet-summary-row">
         <div class="sheet-location">
-          <span class="mdi" :class="headerIcon" aria-hidden="true"></span>
+          <BaseIcon :name="headerIcon" />
           <span>{{ headerTitle }}</span>
         </div>
         <div class="sheet-status-right">
           <slot name="summary-status" />
-          <span
-            class="mdi mdi-chevron-up chevron-icon"
-            :class="{ rotated: expanded }"
-            aria-hidden="true"
-          ></span>
+          <BaseIcon :class="{ rotated: expanded }" name="mdi-chevron-up" class="chevron-icon" />
         </div>
       </div>
     </button>
@@ -47,12 +43,12 @@ const expanded = defineModel('expanded', { type: Boolean, default: true })
         <div class="sheet-body">
           <div class="sheet-user-row">
             <div class="sheet-avatar">
-              <span class="mdi" :class="avatarIcon" aria-hidden="true"></span>
+              <BaseIcon :name="avatarIcon" />
             </div>
             <div class="sheet-user-info">
               <h1>Olá, {{ userName }}</h1>
               <span class="sheet-role-badge">
-                <span v-if="roleIcon" class="mdi" :class="roleIcon" aria-hidden="true"></span>
+                <BaseIcon v-if="roleIcon" :name="roleIcon" />
                 {{ roleLabel }}
               </span>
             </div>

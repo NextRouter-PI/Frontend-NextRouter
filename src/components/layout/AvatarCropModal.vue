@@ -47,7 +47,7 @@ const {
               :disabled="processing"
               @click="handleCancel"
             >
-              <span class="mdi mdi-close" aria-hidden="true"></span>
+              <BaseIcon name="mdi-close" />
             </button>
           </header>
 
@@ -81,7 +81,7 @@ const {
               :disabled="zoom <= 1 || processing"
               @click="stepZoom(-0.2)"
             >
-              <span class="mdi mdi-magnify-minus-outline" aria-hidden="true"></span>
+              <BaseIcon name="mdi-magnify-minus-outline" />
             </button>
 
             <input
@@ -102,7 +102,7 @@ const {
               :disabled="zoom >= 3 || processing"
               @click="stepZoom(0.2)"
             >
-              <span class="mdi mdi-magnify-plus-outline" aria-hidden="true"></span>
+              <BaseIcon name="mdi-magnify-plus-outline" />
             </button>
 
             <button

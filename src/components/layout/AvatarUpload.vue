@@ -51,7 +51,7 @@ function handleCropCancel() {
           class="avatar-image"
         />
         <div v-else class="avatar-placeholder">
-          <span class="mdi mdi-camera-plus-outline"></span>
+          <BaseIcon name="mdi-camera-plus-outline" />
         </div>
       </div>
     </button>

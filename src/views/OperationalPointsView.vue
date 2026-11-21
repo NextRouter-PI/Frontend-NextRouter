@@ -74,7 +74,7 @@ onMounted(() => store.fetchPontosOperacionais({ signal: scope.signal }))
                 :to="{ path: ROUTE_PATHS.REGISTER_ROUTE, query: { destination: ponto.id } }"
                 class="link-outline"
               >
-                <span class="mdi mdi-routes" aria-hidden="true"></span>
+                <BaseIcon name="mdi-routes" />
                 Vincular grupo
               </RouterLink>
               <BaseButton variant="outline" size="sm" icon="mdi-pencil-outline" @click="startEdit(ponto)">

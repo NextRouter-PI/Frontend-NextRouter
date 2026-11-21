@@ -10,7 +10,7 @@ defineProps({
 <template>
   <div class="empty-state" :role="loading ? 'status' : undefined">
     <div v-if="loading" class="empty-state-spinner" aria-hidden="true"></div>
-    <span v-else-if="icon" class="mdi empty-state-icon" :class="icon" aria-hidden="true"></span>
+    <BaseIcon v-else-if="icon" :name="icon" class="empty-state-icon" />
     <h2 v-if="title" class="empty-state-title">{{ title }}</h2>
     <p v-if="description" class="empty-state-desc">{{ description }}</p>
     <div v-if="$slots.actions" class="empty-state-actions">

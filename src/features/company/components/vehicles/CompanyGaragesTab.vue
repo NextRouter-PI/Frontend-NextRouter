@@ -44,11 +44,11 @@ function veiculosDaGaragem(garageId) {
 
           <div class="card-details">
             <div class="detail-item">
-              <span class="mdi mdi-crosshairs-gps" aria-hidden="true"></span>
+              <BaseIcon name="mdi-crosshairs-gps" />
               <span>{{ ponto.latitude }}, {{ ponto.longitude }}</span>
             </div>
             <div class="detail-item">
-              <span class="mdi mdi-bus-multiple" aria-hidden="true"></span>
+              <BaseIcon name="mdi-bus-multiple" />
               <span v-if="veiculosDaGaragem(ponto.id).length">
                 Veículos vinculados: {{ veiculosDaGaragem(ponto.id).map((v) => v.placa).join(', ') }}
               </span>

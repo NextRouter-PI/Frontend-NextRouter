@@ -94,7 +94,7 @@ onUnmounted(() => {
         role="tab"
         :aria-selected="isItemActive(item)"
       >
-        <span v-if="item.icon" class="mdi" :class="item.icon" aria-hidden="true"></span>
+        <BaseIcon v-if="item.icon" :name="item.icon" />
         <span class="base-tab-label">{{ item.label }}</span>
         <span v-if="item.badge != null && item.badge !== ''" class="base-tab-badge">
           {{ item.badge }}
@@ -111,7 +111,7 @@ onUnmounted(() => {
         :aria-selected="isItemActive(item)"
         @click="selectItem(item)"
       >
-        <span v-if="item.icon" class="mdi" :class="item.icon" aria-hidden="true"></span>
+        <BaseIcon v-if="item.icon" :name="item.icon" />
         <span class="base-tab-label">{{ item.label }}</span>
         <span v-if="item.badge != null && item.badge !== ''" class="base-tab-badge">
           {{ item.badge }}

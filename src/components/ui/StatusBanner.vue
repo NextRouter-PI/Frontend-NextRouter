@@ -34,7 +34,7 @@ watch(
     :class="`variant-${variant}`"
     :role="ariaRole"
   >
-    <span v-if="icon" class="mdi status-banner-icon" :class="icon" aria-hidden="true"></span>
+    <BaseIcon v-if="icon" :name="icon" class="status-banner-icon" />
     <div class="status-banner-content">
       <slot>{{ message }}</slot>
     </div>

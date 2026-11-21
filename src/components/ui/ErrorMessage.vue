@@ -6,7 +6,7 @@ defineProps({
 
 <template>
   <div v-if="message" class="error-message">
-    <span class="mdi mdi-alert-circle"></span>
+    <BaseIcon name="mdi-alert-circle" />
     <span>{{ message }}</span>
   </div>
 </template>

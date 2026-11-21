@@ -32,7 +32,7 @@ const emit = defineEmits(['dismiss', 'presence'])
           aria-label="Dispensar"
           @click="emit('dismiss', approaching.participation.id)"
         >
-          <span class="mdi mdi-close" aria-hidden="true"></span>
+          <BaseIcon name="mdi-close" />
         </button>
       </div>
       <div class="approaching-actions">
@@ -42,7 +42,7 @@ const emit = defineEmits(['dismiss', 'presence'])
           :disabled="busy"
           @click="emit('presence', approaching.participation, 'boarded')"
         >
-          <span class="mdi mdi-check-circle-outline" aria-hidden="true"></span>
+          <BaseIcon name="mdi-check-circle-outline" />
           Confirmar Embarque
         </button>
         <button

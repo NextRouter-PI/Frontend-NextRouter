@@ -1,14 +1,16 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import '@fontsource-variable/inter'
 import '@/styles/main.scss'
-import '@mdi/font/css/materialdesignicons.css'
 
 import App from '@/App.vue'
+import BaseIcon from '@/components/ui/BaseIcon.vue'
 import router from '@/router'
 import { http } from '@/api/client'
 import { retireLegacyCredentials, retireLegacyPwa } from './legacyPwa.js'
 
 const app = createApp(App)
+app.component('BaseIcon', BaseIcon)
 
 // Uma troca de conta em outra aba descarta também os dados privados das telas antigas.
 http.events.addEventListener('external-changed', () => window.location.reload())

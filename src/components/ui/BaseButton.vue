@@ -20,7 +20,7 @@ const emit = defineEmits(['click'])
     @click="emit('click', $event)"
   >
     <span v-if="loading" class="spinner" aria-hidden="true"></span>
-    <span v-else-if="icon" class="mdi" :class="icon" aria-hidden="true"></span>
+    <BaseIcon v-else-if="icon" :name="icon" />
     <slot />
   </button>
 </template>

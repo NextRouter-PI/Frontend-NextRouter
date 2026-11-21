@@ -83,7 +83,7 @@ function handleTextInput(event) {
           aria-label="Limpar data"
           @click="clearDate"
         >
-          <span class="mdi mdi-close" aria-hidden="true"></span>
+          <BaseIcon name="mdi-close" />
         </button>
         <button
           type="button"
@@ -94,7 +94,7 @@ function handleTextInput(event) {
           :aria-expanded="pickerOpen"
           @click="togglePicker"
         >
-          <span class="mdi mdi-calendar-month-outline" aria-hidden="true"></span>
+          <BaseIcon name="mdi-calendar-month-outline" />
         </button>
       </div>
     </div>

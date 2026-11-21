@@ -39,7 +39,7 @@ function linkQuery(groupId = defaultGroupId.value) {
         class="company-logo"
         loading="lazy"
       />
-      <span v-else class="mdi mdi-bus-side company-placeholder-icon"></span>
+      <BaseIcon v-else name="mdi-bus-side" class="company-placeholder-icon" />
     </div>
 
     <div class="company-body">
@@ -62,7 +62,7 @@ function linkQuery(groupId = defaultGroupId.value) {
           :to="{ name: 'vinculos', query: linkQuery() }"
         >
           Solicitar vínculo
-          <span class="mdi mdi-chevron-right" aria-hidden="true"></span>
+          <BaseIcon name="mdi-chevron-right" />
         </RouterLink>
         <RouterLink
           v-else-if="!logged"
@@ -70,7 +70,7 @@ function linkQuery(groupId = defaultGroupId.value) {
           :to="{ name: 'login', query: linkQuery() }"
         >
           Entrar para solicitar
-          <span class="mdi mdi-chevron-right" aria-hidden="true"></span>
+          <BaseIcon name="mdi-chevron-right" />
         </RouterLink>
         <p v-else class="card-note">
           Apenas contas de passageiro ou motorista solicitam vínculo.

@@ -96,7 +96,7 @@ onBeforeUnmount(() => {
       <span v-if="activeFilterCount > 0" class="filter-badge" :aria-label="`${activeFilterCount} filtros ativos`">
         {{ activeFilterCount }}
       </span>
-      <span class="mdi mdi-chevron-down trigger-icon" :class="{ rotated: open }" aria-hidden="true"></span>
+      <BaseIcon :class="{ rotated: open }" name="mdi-chevron-down" class="trigger-icon" />
     </button>
 
     <div v-show="open" :id="panelId" class="filter-panel" role="region" aria-label="Filtros da busca">

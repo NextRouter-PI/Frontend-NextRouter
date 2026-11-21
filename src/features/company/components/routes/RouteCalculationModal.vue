@@ -66,7 +66,7 @@ const durationLabel = computed(() => {
               <p class="calc-subtitle">{{ serviceName }} · {{ participants.length }} passageiro(s) confirmado(s)</p>
             </div>
             <button type="button" class="calc-close" aria-label="Fechar" @click="emit('close')">
-              <span class="mdi mdi-close" aria-hidden="true"></span>
+              <BaseIcon name="mdi-close" />
             </button>
           </header>
 
@@ -86,7 +86,7 @@ const durationLabel = computed(() => {
           </div>
 
           <div v-if="job?.status === 'failed'" class="calc-error" role="alert">
-            <span class="mdi mdi-alert-circle-outline" aria-hidden="true"></span>
+            <BaseIcon name="mdi-alert-circle-outline" />
             <span>Falha no cálculo ({{ job.error || 'erro desconhecido' }}). Verifique o OSRM e tente novamente.</span>
           </div>
 

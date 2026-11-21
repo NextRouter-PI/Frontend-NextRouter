@@ -1,5 +1,6 @@
 import * as maplibregl from 'maplibre-gl'
 import { pointToLatLng } from '@/utils/geo'
+import { renderIconSvg } from '@/utils/icons'
 import { escapeHtml } from '@/utils/leafletMarkers'
 
 export const MAPLIBRE_STYLE_URLS = {
@@ -17,7 +18,7 @@ export function createNavPuckElement() {
   el.innerHTML = `
     <div class="gps-nav-puck__halo"></div>
     <div class="gps-nav-puck__core">
-      <span class="mdi mdi-navigation" aria-hidden="true"></span>
+      ${renderIconSvg('mdi-navigation')}
     </div>
   `
   return el
@@ -36,7 +37,7 @@ export function createStopMarkerElement({
     ? `<img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(avatarAlt)}" class="nr-map-pin__avatar" />`
     : label
       ? `<span class="nr-map-pin__label">${escapeHtml(label)}</span>`
-      : `<span class="mdi ${icon}" aria-hidden="true"></span>`
+      : renderIconSvg(icon)
   el.innerHTML = `<span class="nr-map-pin__body">${inner}</span>`
   return el
 }

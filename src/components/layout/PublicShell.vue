@@ -22,7 +22,7 @@ const emit = defineEmits(['back'])
           aria-label="Voltar"
           @click="emit('back')"
         >
-          <span class="mdi mdi-chevron-left" aria-hidden="true"></span>
+          <BaseIcon name="mdi-chevron-left" />
         </button>
         <span v-else class="shell-spacer" aria-hidden="true"></span>
 
@@ -40,7 +40,7 @@ const emit = defineEmits(['back'])
 
     <footer class="shell-footer">
       <div class="footer-inner">
-        <span class="mdi mdi-instagram footer-icon" aria-hidden="true"></span>
+        <BaseIcon name="mdi-instagram" class="footer-icon" />
         <span>@routerifc</span>
       </div>
     </footer>

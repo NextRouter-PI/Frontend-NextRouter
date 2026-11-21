@@ -19,7 +19,7 @@ const emit = defineEmits(['toggle-menu', 'edit', 'toggle-status'])
           aria-label="Opções do veículo"
           @click="emit('toggle-menu', veiculo.id)"
         >
-          <span class="mdi mdi-dots-vertical" aria-hidden="true"></span>
+          <BaseIcon name="mdi-dots-vertical" />
         </button>
 
         <Transition name="fade-scale">
@@ -37,19 +37,19 @@ const emit = defineEmits(['toggle-menu', 'edit', 'toggle-status'])
 
     <div class="card-details">
       <div class="detail-item">
-        <span class="mdi mdi-seat-passenger" aria-hidden="true"></span>
+        <BaseIcon name="mdi-seat-passenger" />
         <span>{{ veiculo.capacidade }} Lugares</span>
       </div>
       <div v-if="veiculo.ano" class="detail-item">
-        <span class="mdi mdi-calendar-outline" aria-hidden="true"></span>
+        <BaseIcon name="mdi-calendar-outline" />
         <span>{{ veiculo.ano }}</span>
       </div>
       <div v-if="veiculo.cor" class="detail-item">
-        <span class="mdi mdi-palette-outline" aria-hidden="true"></span>
+        <BaseIcon name="mdi-palette-outline" />
         <span>{{ veiculo.cor }}</span>
       </div>
       <div v-if="veiculo.garagePointName" class="detail-item">
-        <span class="mdi mdi-garage-outline" aria-hidden="true"></span>
+        <BaseIcon name="mdi-garage-outline" />
         <span>Garagem: {{ veiculo.garagePointName }}</span>
       </div>
     </div>

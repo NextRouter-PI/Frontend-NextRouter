@@ -90,7 +90,7 @@ onMounted(() => {
         <p v-else class="panel-meta">Obtendo localização...</p>
         <p v-if="tracking.error" class="panel-error">{{ tracking.error }}</p>
         <a v-if="mapsUrl" :href="mapsUrl" target="_blank" rel="noopener noreferrer" class="sheet-cta-outline">
-          Ver no Google Maps <span class="mdi mdi-open-in-new" aria-hidden="true"></span>
+          Ver no Google Maps <BaseIcon name="mdi-open-in-new" />
         </a>
       </div>
 
@@ -111,7 +111,7 @@ onMounted(() => {
             <ul class="pending-boarding-list">
               <li v-for="p in pendingBoardingPassengers" :key="p.id">
                 <span class="pending-passenger-name">
-                  <span class="mdi mdi-account-clock-outline" aria-hidden="true"></span>
+                  <BaseIcon name="mdi-account-clock-outline" />
                   <span>{{ p.name || `Passageiro #${p.eligibility}` }}</span>
                 </span>
                 <button

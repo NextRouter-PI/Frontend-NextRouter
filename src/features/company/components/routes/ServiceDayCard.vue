@@ -58,11 +58,7 @@ function submitCancel() {
           <span>Viagens: <strong>{{ travelsCount }}</strong></span>
         </div>
       </div>
-      <span
-        class="mdi mdi-chevron-down day-chevron"
-        :class="{ open: expanded }"
-        aria-hidden="true"
-      ></span>
+      <BaseIcon :class="{ open: expanded }" name="mdi-chevron-down" class="day-chevron" />
     </button>
 
     <div

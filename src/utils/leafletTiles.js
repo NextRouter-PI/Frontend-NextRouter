@@ -1,5 +1,6 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { renderIconSvg } from '@/utils/icons'
 
 export const DEFAULT_MAP_CENTER = [-26.3044, -48.8455]
 
@@ -44,7 +45,7 @@ export function createPinIcon({
   } else if (label) {
     inner = `<span class="nr-map-pin__label">${escapeHtmlAttr(label)}</span>`
   } else {
-    inner = `<span class="mdi ${safeIcon}" aria-hidden="true"></span>`
+    inner = renderIconSvg(safeIcon)
   }
 
   const dim = safeSize === 'sm' ? [28, 36] : [36, 44]

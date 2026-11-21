@@ -25,13 +25,8 @@ function toggleTheme() {
     @click="toggleTheme"
   >
     <Transition name="icon-swap" mode="out-in">
-      <span
-        v-if="theme === THEME_MODES.LIGHT"
-        key="night"
-        class="mdi mdi-weather-night"
-        aria-hidden="true"
-      ></span>
-      <span v-else key="sunny" class="mdi mdi-weather-sunny" aria-hidden="true"></span>
+      <BaseIcon v-if="theme === THEME_MODES.LIGHT" key="night" name="mdi-weather-night" />
+      <BaseIcon v-else key="sunny" name="mdi-weather-sunny" />
     </Transition>
   </button>
 </template>

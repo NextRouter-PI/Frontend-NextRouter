@@ -121,7 +121,7 @@ function goBack() {
           :disabled="registerState.state.loading"
           @click="goToNextPage"
         >
-          Próximo <span class="mdi mdi-arrow-right" aria-hidden="true"></span>
+          Próximo <BaseIcon name="mdi-arrow-right" />
         </BaseButton>
 
         <BaseButton

@@ -62,7 +62,7 @@ async function handleSendNormalAnswer() {
     </template>
 
     <div v-if="!cardExpanded && alreadyAnswered" class="collapsed-summary">
-      <span class="mdi mdi-check-circle-outline" aria-hidden="true"></span>
+      <BaseIcon name="mdi-check-circle-outline" />
       <span>
         Confirmado — Ida: <strong>{{ formatEligibilityServiceLabel(eligibility, eligibility.response?.outbound_service) }}</strong>
         · Retorno: <strong>{{ formatEligibilityServiceLabel(eligibility, eligibility.response?.return_service) }}</strong>

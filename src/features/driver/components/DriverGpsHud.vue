@@ -10,7 +10,7 @@ const emit = defineEmits(['toggle-3d'])
 <template>
   <div v-if="hud" class="gps-top-hud" role="status" aria-label="Próxima parada GPS">
     <div class="gps-hud-icon">
-      <span class="mdi mdi-navigation-variant" aria-hidden="true"></span>
+      <BaseIcon name="mdi-navigation-variant" />
     </div>
     <div class="gps-hud-info">
       <strong class="gps-hud-title">{{ hud.title }}</strong>

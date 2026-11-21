@@ -101,7 +101,7 @@ function removerFeature(feature) {
           <span v-for="feature in features" :key="feature" class="feature-chip">
             {{ feature }}
             <button type="button" class="chip-remove" :disabled="disabled" @click="removerFeature(feature)">
-              <span class="mdi mdi-close" aria-hidden="true"></span>
+              <BaseIcon name="mdi-close" />
             </button>
           </span>
         </div>

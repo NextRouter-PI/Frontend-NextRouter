@@ -58,7 +58,7 @@ function removeCityFilter() {
     <div class="directory-container">
       <div class="title-bar">
         <button type="button" class="back-btn" aria-label="Voltar" @click="goBack">
-          <span class="mdi mdi-chevron-left" aria-hidden="true"></span>
+          <BaseIcon name="mdi-chevron-left" />
         </button>
         <h1 class="page-title">Escolha de Empresa</h1>
         <span class="title-spacer" aria-hidden="true"></span>
@@ -92,7 +92,7 @@ function removeCityFilter() {
 
         <section v-else-if="searched && !error" key="results" aria-label="Resultados da busca">
           <div v-if="!results.length" class="empty-state" role="status">
-            <span class="mdi mdi-map-search-outline empty-icon" aria-hidden="true"></span>
+            <BaseIcon name="mdi-map-search-outline" class="empty-icon" />
             <p class="empty-title">Nenhuma empresa encontrada para este grupo.</p>
             <p class="empty-hint">Verifique o nome do grupo de rota ou ajuste o filtro de estado e cidade.</p>
           </div>
@@ -109,7 +109,7 @@ function removeCityFilter() {
         </section>
 
         <div v-else-if="!searched" key="idle" class="empty-state">
-          <span class="mdi mdi-routes empty-icon" aria-hidden="true"></span>
+          <BaseIcon name="mdi-routes" class="empty-icon" />
           <p class="empty-title">Procure pelo nome do grupo de rota</p>
           <p class="empty-hint">
             Digite o nome do grupo de rota que você precisa ou filtre por estado e cidade na caixa de seleção ao lado.

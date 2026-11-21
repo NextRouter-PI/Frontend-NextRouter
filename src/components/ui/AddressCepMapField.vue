@@ -95,11 +95,7 @@ const { loadingCep, cepFeedback, isFullscreen, hasCoordinates, toggleFullscreen 
           :aria-label="isFullscreen ? 'Sair da tela cheia' : 'Abrir mapa em tela cheia'"
           @click="toggleFullscreen"
         >
-          <span
-            class="mdi"
-            :class="isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
-            aria-hidden="true"
-          ></span>
+          <BaseIcon :name="isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'" />
           <span>{{ isFullscreen ? 'Reduzir' : 'Tela cheia' }}</span>
         </button>
       </div>
