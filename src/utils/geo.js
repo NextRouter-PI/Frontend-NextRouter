@@ -24,3 +24,15 @@ export function formatDistanceLabel(distanceMeters) {
   if (distanceMeters < 1000) return `${Math.round(distanceMeters)} m`
   return `${(distanceMeters / 1000).toFixed(1)} km`
 }
+
+export function bearingDegrees(lat1, lng1, lat2, lng2) {
+  const phi1 = toRad(lat1)
+  const phi2 = toRad(lat2)
+  const dLambda = toRad(lng2 - lng1)
+  const y = Math.sin(dLambda) * Math.cos(phi2)
+  const x =
+    Math.cos(phi1) * Math.sin(phi2) -
+    Math.sin(phi1) * Math.cos(phi2) * Math.cos(dLambda)
+  const theta = Math.atan2(y, x)
+  return ((theta * 180) / Math.PI + 360) % 360
+}

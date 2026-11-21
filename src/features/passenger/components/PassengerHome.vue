@@ -73,6 +73,35 @@ watch(distanceToPointMeters, (meters) => {
     showToast('O transporte está chegando ao seu ponto!', 'info', 6000)
   }
 })
+
+// Reação instantânea via WebSocket (sem esperar polling)
+watch(
+  () => tracking.lastApproaching?.at,
+  () => {
+    const ev = tracking.lastApproaching
+    const travelId = transportState.passenger?.travelId
+    if (!ev || !travelId || approachedTravelId === travelId) return
+    approachedTravelId = travelId
+    showToast(`O transporte está a ${ev.distanceMeters} m do seu ponto!`, 'info', 6000)
+  },
+)
+
+watch(
+  () => tracking.lastPresence?.at,
+  () => {
+    const ev = tracking.lastPresence
+    if (!ev || !scope.current()) return
+    const labels = {
+      on_board: 'Embarque confirmado pelo motorista! Boa viagem.',
+      dropped_off: 'Desembarque confirmado! Viagem concluída.',
+      no_show: 'O motorista registrou ausência neste trecho.',
+    }
+    if (labels[ev.status]) {
+      showToast(labels[ev.status], ev.status === 'no_show' ? 'warning' : 'success', 6000)
+    }
+    loadPassengerData()
+  },
+)
 const mapsUrl = computed(() => {
   if (tracking.latitude == null || tracking.longitude == null) return null
   return `https://www.google.com/maps?q=${tracking.latitude},${tracking.longitude}`

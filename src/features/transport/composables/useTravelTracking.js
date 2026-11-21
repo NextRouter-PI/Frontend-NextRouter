@@ -2,6 +2,7 @@ import { reactive, watch } from 'vue'
 import { http } from '@/api/client'
 import { readTravelLocation } from '@/api/transport'
 import { state as authState } from '@/stores/state'
+import { bearingDegrees, haversineMeters } from '@/utils/geo'
 
 const state = reactive({
   travelId: null,
@@ -12,7 +13,10 @@ const state = reactive({
   closed: false,
   latitude: null,
   longitude: null,
+  bearing: 0,
   updatedAt: null,
+  lastApproaching: null,
+  lastPresence: null,
   error: null,
 })
 
@@ -31,6 +35,13 @@ function applyLocationPayload(payload) {
   const pos = payload?.position
   state.stale = Boolean(payload?.stale ?? !pos)
   if (pos && typeof pos.latitude === 'number' && typeof pos.longitude === 'number') {
+    if (
+      state.latitude != null &&
+      state.longitude != null &&
+      haversineMeters(state.latitude, state.longitude, pos.latitude, pos.longitude) >= 5
+    ) {
+      state.bearing = bearingDegrees(state.latitude, state.longitude, pos.latitude, pos.longitude)
+    }
     state.latitude = pos.latitude
     state.longitude = pos.longitude
     state.updatedAt = pos.updated_at || null
@@ -100,6 +111,18 @@ function openSocket(travelId) {
       if (data.type === 'location') {
         applyLocationPayload(data)
         state.error = null
+      } else if (data.type === 'approaching') {
+        state.lastApproaching = {
+          participationId: data.participation_id,
+          distanceMeters: data.distance_meters,
+          at: Date.now(),
+        }
+      } else if (data.type === 'presence') {
+        state.lastPresence = {
+          participationId: data.participation_id,
+          status: data.status,
+          at: Date.now(),
+        }
       } else if (data.type === 'closed') {
         state.closed = true
         state.stale = true

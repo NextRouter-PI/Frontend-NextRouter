@@ -25,7 +25,7 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
 ## 2. Stack e mapa do repositório
 
 - **Stack:** Vue 3 (JavaScript, ES Modules), Vite 7, Vue Router 5, Pinia 3, Axios,
-  SCSS (`sass-embedded`), Leaflet (mapas), Chart.js / `vue-chartjs` (gráficos), `vue-sonner` (notificações toast) e `@mdi/font` (ícones).
+  SCSS (`sass-embedded`), Leaflet e MapLibre GL JS (mapas 2D e GPS 3D WebGL), Chart.js / `vue-chartjs` (gráficos), `vue-sonner` (notificações toast) e `@mdi/font` (ícones).
   Qualidade com ESLint, Oxlint e Prettier; testes nativos com `node --test`.
 - **Entradas e configuração na raiz:**
   - `index.html` e `src/main.js`: bootstrap da aplicação, limpeza seletiva de
