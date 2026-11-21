@@ -86,12 +86,23 @@ function participacoesDaViagem(travelId) {
   return store.participacoesViagem.filter((p) => p.travel === travelId).length
 }
 
-function snapshotDaViagem(snapshotId) {
-  return snapshotId ? store.snapshotsViagem.find((s) => s.id === snapshotId) || null : null
+function snapshotDaViagem(travel) {
+  if (travel.current_snapshot) {
+    const current = store.snapshotsViagem.find((s) => s.id === travel.current_snapshot)
+    if (current) return current
+  }
+  let latest = null
+  for (const snapshot of store.snapshotsViagem) {
+    if (snapshot.travel === travel.id && (!latest || snapshot.id > latest.id)) {
+      latest = snapshot
+    }
+  }
+  return latest
 }
 
-function jobDoSnapshot(snapshotId) {
-  return snapshotId ? store.jobsCalculo.find((j) => j.snapshot === snapshotId) || null : null
+function jobDoSnapshot(travel) {
+  const snapshot = snapshotDaViagem(travel)
+  return snapshot ? store.jobsCalculo.find((j) => j.snapshot === snapshot.id) || null : null
 }
 
 async function consultarOperacao() {
@@ -281,8 +292,8 @@ function handleInviteDriver({ travel, driverMembershipId, expiresAt, onSuccess }
         :travel="travel"
         :service-name="nomeServico(travel.service)"
         :participants-count="participacoesDaViagem(travel.id)"
-        :snapshot="snapshotDaViagem(travel.current_snapshot)"
-        :job="jobDoSnapshot(travel.current_snapshot)"
+        :snapshot="snapshotDaViagem(travel)"
+        :job="jobDoSnapshot(travel)"
         :veiculos-ativos="veiculosAtivos"
         :motoristas-ativos="motoristasAtivos"
         :busy="busy"

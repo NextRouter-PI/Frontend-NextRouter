@@ -80,8 +80,8 @@ function submitInvite() {
       </div>
     </div>
 
-    <div v-if="travel.current_snapshot" class="sub-meta snapshot-row">
-      Snapshot atual #{{ travel.current_snapshot }}:
+    <div v-if="snapshot || job" class="sub-meta snapshot-row">
+      Snapshot #{{ snapshot?.id ?? travel.current_snapshot }}:
       <span v-if="snapshot">
         estado <strong>{{ snapshot.state }}</strong>
         <template v-if="snapshot.distance_meters != null">
