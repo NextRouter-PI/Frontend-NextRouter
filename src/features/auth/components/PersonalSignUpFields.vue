@@ -2,6 +2,8 @@
 import BaseInput from '@/components/ui/BaseInput.vue'
 import DateInput from '@/components/ui/DateInput.vue'
 import AddressCepMapField from '@/components/ui/AddressCepMapField.vue'
+import { formatCEP, formatCPF, formatPhone } from '@/composables/useInputFormat'
+import { isCEP, isCPF, isEmail, isPhone, isStrongPassword, passwordMatch, requiredField } from '@/utils/validators'
 
 const form = defineModel('form', { type: Object, required: true })
 
@@ -11,11 +13,10 @@ defineProps({
   days: { type: Array, required: true },
   months: { type: Array, required: true },
   years: { type: Array, required: true },
-  isPasswordVisible: { type: Boolean, default: false },
-  helpers: { type: Object, required: true },
+  validateField: { type: Function, required: true },
+  clearFieldError: { type: Function, required: true },
+  clearBirthdayErrors: { type: Function, required: true },
 })
-
-const emit = defineEmits(['toggle-password'])
 </script>
 
 <template>
@@ -27,8 +28,8 @@ const emit = defineEmits(['toggle-password'])
       placeholder="Digite seu nome completo"
       :disabled="disabled"
       :error="fieldErrors.name"
-      @input="helpers.clearFieldError('name')"
-      @blur="helpers.validateField(form.name, [(v) => helpers.requiredField(v, 'Nome completo')], 'name')"
+      @input="clearFieldError('name')"
+      @blur="validateField(form.name, [(v) => requiredField(v, 'Nome completo')], 'name')"
     />
 
     <DateInput
@@ -43,9 +44,9 @@ const emit = defineEmits(['toggle-password'])
       :day-error="fieldErrors.day"
       :month-error="fieldErrors.month"
       :year-error="fieldErrors.year"
-      @update:day="helpers.clearBirthdayErrors"
-      @update:month="helpers.clearBirthdayErrors"
-      @update:year="helpers.clearBirthdayErrors"
+      @update:day="clearBirthdayErrors"
+      @update:month="clearBirthdayErrors"
+      @update:year="clearBirthdayErrors"
     />
 
     <BaseInput
@@ -56,10 +57,10 @@ const emit = defineEmits(['toggle-password'])
       placeholder="000.000.000-00"
       maxlength="14"
       :disabled="disabled"
-      :format="helpers.formatCPF"
+      :format="formatCPF"
       :error="fieldErrors.cpf"
-      @input="helpers.clearFieldError('cpf')"
-      @blur="helpers.validateField(form.cpf, [(v) => helpers.requiredField(v, 'CPF') || helpers.isCPF(v)], 'cpf')"
+      @input="clearFieldError('cpf')"
+      @blur="validateField(form.cpf, [(v) => requiredField(v, 'CPF') || isCPF(v)], 'cpf')"
     />
 
     <BaseInput
@@ -71,8 +72,8 @@ const emit = defineEmits(['toggle-password'])
       placeholder="seu@email.com"
       :disabled="disabled"
       :error="fieldErrors.email"
-      @input="helpers.clearFieldError('email')"
-      @blur="helpers.validateField(form.email, [(v) => helpers.requiredField(v, 'Email') || helpers.isEmail(v)], 'email')"
+      @input="clearFieldError('email')"
+      @blur="validateField(form.email, [(v) => requiredField(v, 'Email') || isEmail(v)], 'email')"
     />
 
     <BaseInput
@@ -82,10 +83,10 @@ const emit = defineEmits(['toggle-password'])
       placeholder="(00) 90000-0000"
       maxlength="16"
       :disabled="disabled"
-      :format="helpers.formatPhone"
+      :format="formatPhone"
       :error="fieldErrors.phone"
-      @input="helpers.clearFieldError('phone')"
-      @blur="helpers.validateField(form.phone, [(v) => helpers.isPhone(v)], 'phone')"
+      @input="clearFieldError('phone')"
+      @blur="validateField(form.phone, [(v) => isPhone(v)], 'phone')"
     />
 
     <AddressCepMapField
@@ -100,10 +101,10 @@ const emit = defineEmits(['toggle-password'])
       v-model:longitude="form.longitude"
       :disabled="disabled"
       :cep-error="fieldErrors.cep"
-      :format-cep="helpers.formatCEP"
+      :format-cep="formatCEP"
       complement-placeholder="Bloco, condomínio, apto..."
-      @cep-input="helpers.clearFieldError('cep')"
-      @cep-blur="helpers.validateField(form.cep, [(v) => helpers.requiredField(v, 'CEP') || helpers.isCEP(v)], 'cep')"
+      @cep-input="clearFieldError('cep')"
+      @cep-blur="validateField(form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
     />
 
     <BaseInput
@@ -115,11 +116,11 @@ const emit = defineEmits(['toggle-password'])
       placeholder="Mínimo 8 caracteres, não só números"
       :disabled="disabled"
       :error="fieldErrors.password"
-      @input="helpers.clearFieldError('password')"
+      @input="clearFieldError('password')"
       @blur="
-        helpers.validateField(
+        validateField(
           form.password,
-          [(v) => helpers.requiredField(v, 'Senha') || helpers.isStrongPassword(v)],
+          [(v) => requiredField(v, 'Senha') || isStrongPassword(v)],
           'password',
         )
       "
@@ -134,11 +135,11 @@ const emit = defineEmits(['toggle-password'])
       placeholder="Digite a senha novamente"
       :disabled="disabled"
       :error="fieldErrors.confirmPassword"
-      @input="helpers.clearFieldError('confirmPassword')"
+      @input="clearFieldError('confirmPassword')"
       @blur="
-        helpers.validateField(
+        validateField(
           form.confirmPassword,
-          [(v) => helpers.requiredField(v, 'Confirmação') || helpers.passwordMatch(v, form.password)],
+          [(v) => requiredField(v, 'Confirmação') || passwordMatch(v, form.password)],
           'confirmPassword',
         )
       "

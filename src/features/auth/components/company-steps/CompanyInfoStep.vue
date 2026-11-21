@@ -1,13 +1,16 @@
 <script setup>
 import BaseInput from '@/components/ui/BaseInput.vue'
 import AddressCepMapField from '@/components/ui/AddressCepMapField.vue'
+import { formatCEP, formatCNPJ, formatPhone } from '@/composables/useInputFormat'
+import { isCEP, isCNPJ, isEmail, isPhone, requiredField } from '@/utils/validators'
 
 const form = defineModel('form', { type: Object, required: true })
 
 defineProps({
   fieldErrors: { type: Object, required: true },
   disabled: { type: Boolean, default: false },
-  helpers: { type: Object, required: true },
+  validateField: { type: Function, required: true },
+  clearFieldError: { type: Function, required: true },
 })
 </script>
 
@@ -23,8 +26,8 @@ defineProps({
       placeholder="Digite a razão social da empresa"
       :disabled="disabled"
       :error="fieldErrors.legalName"
-      @input="helpers.clearFieldError('legalName')"
-      @blur="helpers.validateField(form.legalName, [(v) => helpers.requiredField(v, 'Razão Social')], 'legalName')"
+      @input="clearFieldError('legalName')"
+      @blur="validateField(form.legalName, [(v) => requiredField(v, 'Razão Social')], 'legalName')"
     />
 
     <BaseInput
@@ -35,8 +38,8 @@ defineProps({
       placeholder="Digite o nome fantasia da empresa"
       :disabled="disabled"
       :error="fieldErrors.tradeName"
-      @input="helpers.clearFieldError('tradeName')"
-      @blur="helpers.validateField(form.tradeName, [(v) => helpers.requiredField(v, 'Nome Fantasia')], 'tradeName')"
+      @input="clearFieldError('tradeName')"
+      @blur="validateField(form.tradeName, [(v) => requiredField(v, 'Nome Fantasia')], 'tradeName')"
     />
 
     <BaseInput
@@ -47,10 +50,10 @@ defineProps({
       placeholder="00.000.000/0000-00"
       maxlength="18"
       :disabled="disabled"
-      :format="helpers.formatCNPJ"
+      :format="formatCNPJ"
       :error="fieldErrors.cnpj"
-      @input="helpers.clearFieldError('cnpj')"
-      @blur="helpers.validateField(form.cnpj, [(v) => helpers.requiredField(v, 'CNPJ') || helpers.isCNPJ(v)], 'cnpj')"
+      @input="clearFieldError('cnpj')"
+      @blur="validateField(form.cnpj, [(v) => requiredField(v, 'CNPJ') || isCNPJ(v)], 'cnpj')"
     />
 
     <BaseInput
@@ -60,10 +63,10 @@ defineProps({
       placeholder="(00) 90000-0000"
       maxlength="16"
       :disabled="disabled"
-      :format="helpers.formatPhone"
+      :format="formatPhone"
       :error="fieldErrors.contactPhone"
-      @input="helpers.clearFieldError('contactPhone')"
-      @blur="helpers.validateField(form.contactPhone, [(v) => helpers.isPhone(v)], 'contactPhone')"
+      @input="clearFieldError('contactPhone')"
+      @blur="validateField(form.contactPhone, [(v) => isPhone(v)], 'contactPhone')"
     />
 
     <BaseInput
@@ -73,8 +76,8 @@ defineProps({
       placeholder="contato@empresa.com"
       :disabled="disabled"
       :error="fieldErrors.contactEmail"
-      @input="helpers.clearFieldError('contactEmail')"
-      @blur="helpers.validateField(form.contactEmail, [(v) => helpers.isEmail(v)], 'contactEmail')"
+      @input="clearFieldError('contactEmail')"
+      @blur="validateField(form.contactEmail, [(v) => isEmail(v)], 'contactEmail')"
     />
 
     <AddressCepMapField
@@ -89,10 +92,10 @@ defineProps({
       v-model:longitude="form.longitude"
       :disabled="disabled"
       :cep-error="fieldErrors.cep"
-      :format-cep="helpers.formatCEP"
+      :format-cep="formatCEP"
       complement-placeholder="Sala, andar, galpão..."
-      @cep-input="helpers.clearFieldError('cep')"
-      @cep-blur="helpers.validateField(form.cep, [(v) => helpers.requiredField(v, 'CEP') || helpers.isCEP(v)], 'cep')"
+      @cep-input="clearFieldError('cep')"
+      @cep-blur="validateField(form.cep, [(v) => requiredField(v, 'CEP') || isCEP(v)], 'cep')"
     />
   </div>
 </template>

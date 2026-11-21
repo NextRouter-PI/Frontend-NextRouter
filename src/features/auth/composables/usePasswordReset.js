@@ -1,48 +1,23 @@
-import { onScopeDispose, ref, watch } from 'vue'
+import { onScopeDispose, ref, shallowRef, watch } from 'vue'
 import api from '@/api/client'
 import { useValidator } from '@/composables/useValidation'
-import { formatApiError } from '@/utils/apiErrors'
+import { useCooldownTimer } from '@/composables/useCooldownTimer'
+import { mapPasswordResetFailure, resolveConfirmResetError } from '@/features/auth/utils/passwordResetErrors'
 
 export function usePasswordReset(options = {}) {
-  const etapa = ref(1)
-  const email = ref('')
-  const emailCodigo = ref('')
+  const etapa = shallowRef(1)
+  const email = shallowRef('')
+  const emailCodigo = shallowRef('')
   const codigo = ref(['', '', '', '', '', ''])
-  const novaSenha = ref('')
-  const confirmarSenha = ref('')
-  const erro = ref('')
-  const ocupado = ref(false)
-  const cooldown = ref(0)
+  const novaSenha = shallowRef('')
+  const confirmarSenha = shallowRef('')
+  const erro = shallowRef('')
+  const ocupado = shallowRef(false)
+  const { cooldown, startCooldown, resetCooldown } = useCooldownTimer(60)
   const { requiredField, isEmail, isStrongPassword } = useValidator()
   const controller = new AbortController()
   const signal = options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal
   let verifiedCode = ''
-  let interval = null
-
-  function stopCooldown() {
-    clearInterval(interval)
-    interval = null
-  }
-
-  function startCooldown() {
-    stopCooldown()
-    const until = Date.now() + 60000
-    cooldown.value = 60
-    interval = setInterval(() => {
-      cooldown.value = Math.max(0, Math.ceil((until - Date.now()) / 1000))
-      if (!cooldown.value) stopCooldown()
-    }, 1000)
-  }
-
-  // Não exibir detalhes de solicitação/verificação que possam enumerar contas.
-  function failure(error, fallback) {
-    const status = error.response?.status
-    if (status === 429) return 'Muitas tentativas. Aguarde antes de tentar novamente.'
-    if (status === 401 || status === 403) {
-      return 'Solicitação recusada. Recarregue a página antes de tentar novamente; a operação não foi repetida.'
-    }
-    return fallback
-  }
 
   function clearPasswords() {
     novaSenha.value = ''
@@ -59,7 +34,6 @@ export function usePasswordReset(options = {}) {
       else erro.value = `Aguarde ${cooldown.value}s para reenviar o código.`
       return
     }
-
     ocupado.value = true
     try {
       await api.post('/password-reset/request/', { email: target }, { signal })
@@ -71,7 +45,10 @@ export function usePasswordReset(options = {}) {
       startCooldown()
     } catch (error) {
       if (!signal.aborted) {
-        erro.value = failure(error, 'Não foi possível solicitar o código. Confira o formato do e-mail e tente novamente mais tarde.')
+        erro.value = mapPasswordResetFailure(
+          error,
+          'Não foi possível solicitar o código. Confira o formato do e-mail e tente novamente mais tarde.',
+        )
       }
     } finally {
       if (!signal.aborted) ocupado.value = false
@@ -94,7 +71,10 @@ export function usePasswordReset(options = {}) {
       etapa.value = 3
     } catch (error) {
       if (!signal.aborted) {
-        erro.value = failure(error, 'Código inválido, expirado ou utilizado. Confira o código ou solicite outro.')
+        erro.value = mapPasswordResetFailure(
+          error,
+          'Código inválido, expirado ou utilizado. Confira o código ou solicite outro.',
+        )
       }
     } finally {
       if (!signal.aborted) ocupado.value = false
@@ -138,39 +118,26 @@ export function usePasswordReset(options = {}) {
       codigo.value = ['', '', '', '', '', '']
       email.value = ''
       emailCodigo.value = ''
-      stopCooldown()
-      cooldown.value = 0
+      resetCooldown()
       etapa.value = 4
     } catch (error) {
       if (signal.aborted) return
-      const status = error.response?.status
-      const data = error.response?.data
-      const passwordErrors = !data?.code &&
-        (data?.password || data?.new_password || data?.non_field_errors)
-      if (status === 400 && Array.isArray(passwordErrors)) {
-        erro.value = formatApiError({ response: { status, data: { password: passwordErrors } } })
-      } else if (status === 400) {
+      const resolved = resolveConfirmResetError(error)
+      if (resolved.backToCode) {
         verifiedCode = ''
         clearPasswords()
         codigo.value = ['', '', '', '', '', '']
         etapa.value = 2
-        erro.value = 'Não foi possível confirmar o código. Confira os seis dígitos ou solicite outro.'
-      } else {
-        erro.value = failure(error, 'Não foi possível confirmar a redefinição. A operação não foi repetida; tente entrar com a nova senha antes de enviar novamente.')
       }
+      erro.value = resolved.message
     } finally {
       if (!signal.aborted) ocupado.value = false
     }
   }
 
-  watch(codigo, () => {
-    verifiedCode = ''
-    erro.value = ''
-  }, { flush: 'sync' })
-
+  watch(codigo, () => { verifiedCode = ''; erro.value = '' }, { flush: 'sync' })
   onScopeDispose(() => {
     controller.abort()
-    stopCooldown()
     clearPasswords()
     codigo.value = ['', '', '', '', '', '']
     verifiedCode = ''

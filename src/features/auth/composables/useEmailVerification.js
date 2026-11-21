@@ -1,33 +1,19 @@
-import { ref, onScopeDispose, watch } from 'vue'
+import { onScopeDispose, ref, shallowRef, watch } from 'vue'
 import { requestRegistrationCode } from '@/api/registration'
 import { formatApiError } from '@/utils/apiErrors'
-
-const RESEND_COOLDOWN_SECONDS = 60
+import { useCooldownTimer } from '@/composables/useCooldownTimer'
 
 export function useEmailVerification() {
   const codigo = ref(['', '', '', '', '', ''])
-  const enviandoCodigo = ref(false)
-  const erroCodigo = ref('')
-  const cooldown = ref(0)
-  const emailCodigo = ref('')
+  const enviandoCodigo = shallowRef(false)
+  const erroCodigo = shallowRef('')
+  const emailCodigo = shallowRef('')
+  const { cooldown, startCooldown } = useCooldownTimer(60)
   const controller = new AbortController()
   const { signal } = controller
-  let intervalId = null
 
-  function stopCooldownTimer() {
-    if (intervalId !== null) {
-      clearInterval(intervalId)
-      intervalId = null
-    }
-  }
-
-  function startCooldown() {
-    stopCooldownTimer()
-    cooldown.value = RESEND_COOLDOWN_SECONDS
-    intervalId = setInterval(() => {
-      cooldown.value -= 1
-      if (cooldown.value <= 0) stopCooldownTimer()
-    }, 1000)
+  function resetCodigo() {
+    codigo.value = ['', '', '', '', '', '']
   }
 
   async function enviarCodigo(email) {
@@ -60,14 +46,6 @@ export function useEmailVerification() {
     }
   }
 
-  function resetCodigo() {
-    codigo.value = ['', '', '', '', '', '']
-  }
-
-  function codigoCompleto() {
-    return codigo.value.join('')
-  }
-
   async function prepararVerificacao(email) {
     if (signal.aborted || enviandoCodigo.value) return false
     if (emailCodigo.value === email.trim().toLowerCase() && cooldown.value > 0) {
@@ -82,7 +60,7 @@ export function useEmailVerification() {
       erroCodigo.value = 'O e-mail foi alterado. Volte à revisão e solicite um código para esse endereço.'
       return null
     }
-    const code = codigoCompleto()
+    const code = codigo.value.join('')
     if (!/^\d{6}$/.test(code)) {
       erroCodigo.value = 'Digite o código completo de 6 dígitos.'
       return null
@@ -90,15 +68,10 @@ export function useEmailVerification() {
     return code
   }
 
-  watch(codigo, () => { erroCodigo.value = '' })
-
-  onScopeDispose(() => {
-    controller.abort()
-    stopCooldownTimer()
+  watch(codigo, () => {
+    erroCodigo.value = ''
   })
+  onScopeDispose(() => controller.abort())
 
-  return {
-    codigo, enviandoCodigo, erroCodigo, enviarCodigo, prepararVerificacao,
-    codigoPara, cooldown, emailCodigo,
-  }
+  return { codigo, enviandoCodigo, erroCodigo, enviarCodigo, prepararVerificacao, codigoPara, cooldown, emailCodigo }
 }

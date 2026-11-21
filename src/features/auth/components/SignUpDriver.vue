@@ -1,12 +1,7 @@
 <script setup>
-import { computed, onScopeDispose, reactive, shallowRef, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { DEFAULT_EMPTY_LABEL, ROUTE_PATHS, VERIFICATION_CODE_LENGTH } from '@/constants'
-import { useRegisterState } from '@/features/auth/composables/useRegisterState'
-import { useSignUpPassengerDriverForm } from '@/features/auth/composables/useSignUpForm'
-import { useEmailVerification } from '@/features/auth/composables/useEmailVerification'
-import { uploadDocument } from '@/api/upload'
-import { formatApiError } from '@/utils/apiErrors'
+import { onScopeDispose } from 'vue'
+import { usePersonalSignUpFlow } from '@/features/auth/composables/usePersonalSignUpFlow'
+import { useDriverCnhUpload } from '@/features/auth/composables/useDriverCnhUpload'
 import SignUpWizard from '@/features/auth/components/SignUpWizard.vue'
 import PersonalSignUpFields from '@/features/auth/components/PersonalSignUpFields.vue'
 import SignUpReviewSection from '@/features/auth/components/SignUpReviewSection.vue'
@@ -14,143 +9,39 @@ import EmailVerificationStep from '@/features/auth/components/EmailVerificationS
 import FileUploadField from '@/components/ui/FileUploadField.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
-const router = useRouter()
-const registerState = useRegisterState()
-const {
-  codigo,
-  enviandoCodigo,
-  erroCodigo,
-  enviarCodigo,
-  prepararVerificacao,
-  codigoPara,
-  cooldown,
-  emailCodigo,
-} = useEmailVerification()
-
-const cnhAttachmentKey = shallowRef('')
-const enviandoDocumento = shallowRef(false)
 const controller = new AbortController()
 const { signal } = controller
 onScopeDispose(() => controller.abort())
 
-const signUpHelpers = useSignUpPassengerDriverForm()
+let cnhState = null
+
 const {
-  errorMessage,
-  days,
-  months,
-  years,
-  fieldErrors,
-  validarFormulario,
-  formatBirthday,
-  currentPage,
-  isPasswordVisible,
-  showPassword,
-} = signUpHelpers
-
-const form = reactive({
-  name: '',
-  day: '',
-  month: '',
-  year: '',
-  cpf: '',
-  email: '',
-  phone: '',
-  password: '',
-  confirmPassword: '',
-  cep: '',
-  street: '',
-  number: '',
-  complement: '',
-  neighborhood: '',
-  city: '',
-  state: '',
-  latitude: null,
-  longitude: null,
+  form,
+  registerState,
+  emailVerification: { codigo, enviandoCodigo, enviarCodigo, prepararVerificacao, codigoPara, cooldown, emailCodigo },
+  signUp: { errorMessage, days, months, years, fieldErrors, validarFormulario, formatBirthday, currentPage, validateField, clearFieldError, clearBirthdayErrors },
+  reviewItems,
+  activeErrors,
+  goBack,
+  avancarParaRevisao,
+  voltarPagina,
+} = usePersonalSignUpFlow({
+  extraBusyRef: { get value() { return Boolean(cnhState?.enviandoDocumento.value) } },
+  extraReviewItems: () => (cnhState?.cnh.name ? [{ label: 'CNH:', value: `✓ ${cnhState.cnh.name}` }] : []),
 })
 
-const cnh = reactive({
-  file: null,
-  name: '',
-})
-
-// Arquivo da CNH já enviado: evita reenviar (e duplicar) a cada clique em "Continuar".
-let cnhArquivoEnviado = null
-
-watch(
-  () => registerState.state.success,
-  (success) => {
-    if (!success) return
-    form.password = ''
-    form.confirmPassword = ''
-    codigo.value = Array(VERIFICATION_CODE_LENGTH).fill('')
-  },
-)
-
-const reviewItems = computed(() => [
-  { label: 'Nome:', value: form.name },
-  { label: 'CPF:', value: form.cpf },
-  { label: 'E-mail:', value: form.email },
-  { label: 'Localização:', value: `${form.city}, ${form.state} - ${form.cep}` },
-  { label: 'Telefone:', value: form.phone || DEFAULT_EMPTY_LABEL },
-  { label: 'Data de Nascimento:', value: `${form.day}/${form.month}/${form.year}` },
-  ...(cnh.name ? [{ label: 'CNH:', value: `✓ ${cnh.name}` }] : []),
-])
-
-const activeErrors = computed(() => [erroCodigo.value, errorMessage.value, registerState.state.error])
-
-function goBack() {
-  router.push(ROUTE_PATHS.SIGNUP)
-}
-
-function avancarParaRevisao() {
-  if (!validarFormulario(form)) return
-  currentPage.value = 2
-}
-
-function voltarPagina() {
-  if (enviandoDocumento.value || enviandoCodigo.value || registerState.state.loading) return
-  erroCodigo.value = ''
-  registerState.reset()
-  currentPage.value -= 1
-}
+cnhState = useDriverCnhUpload({ signal, errorMessage, getDriverName: () => form.name })
+const { cnh, cnhAttachmentKey, enviandoDocumento, ensureCnhUploaded } = cnhState
 
 async function avancarParaVerificacao() {
-  if (signal.aborted || enviandoDocumento.value || enviandoCodigo.value) return
-  if (currentPage.value !== 2) return
-
-  errorMessage.value = ''
-  enviandoDocumento.value = true
-  try {
-    const arquivo = cnh.file
-    if (!arquivo) {
-      cnhAttachmentKey.value = ''
-      cnhArquivoEnviado = null
-    } else if (cnhArquivoEnviado !== arquivo) {
-      const { data } = await uploadDocument(arquivo, `CNH de ${form.name.trim()}`, { signal })
-      if (signal.aborted) return
-      cnhAttachmentKey.value = data.attachment_key
-      cnhArquivoEnviado = arquivo
-    }
-  } catch (error) {
-    if (!signal.aborted) {
-      errorMessage.value = formatApiError(
-        error,
-        'Não foi possível enviar o arquivo da CNH. Verifique se é um PDF válido.',
-      )
-    }
-    return
-  } finally {
-    if (!signal.aborted) enviandoDocumento.value = false
-  }
-
-  const sucesso = await prepararVerificacao(form.email)
-  if (sucesso && !signal.aborted) currentPage.value = 3
+  if (signal.aborted || enviandoDocumento.value || enviandoCodigo.value || currentPage.value !== 2) return
+  if (!(await ensureCnhUploaded())) return
+  if ((await prepararVerificacao(form.email)) && !signal.aborted) currentPage.value = 3
 }
 
 async function handleSubmit() {
   if (signal.aborted || registerState.state.loading || currentPage.value !== 3) return
   if (!validarFormulario(form)) return
-
   const code = codigoPara(form.email)
   if (!code || enviandoCodigo.value) return
   await registerState.registerDriver({
@@ -182,20 +73,19 @@ async function handleSubmit() {
       :days="days"
       :months="months"
       :years="years"
-      :is-password-visible="isPasswordVisible"
-      :helpers="signUpHelpers"
-      @toggle-password="showPassword"
+      :validate-field="validateField"
+      :clear-field-error="clearFieldError"
+      :clear-birthday-errors="clearBirthdayErrors"
     >
       <template #extra-fields>
         <FileUploadField
           v-model="cnh.file"
-          :file-name="cnh.name"
+          v-model:file-name="cnh.name"
           label="Arquivo CNH"
           accept=".pdf"
           :disabled="registerState.state.loading"
           hint="Opcional. Formato aceito: PDF, até 10 MB."
           :error="fieldErrors.cnh"
-          @update:file-name="cnh.name = $event"
           @error="errorMessage = $event"
         />
       </template>

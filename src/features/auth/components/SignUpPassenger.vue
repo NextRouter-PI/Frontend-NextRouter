@@ -1,110 +1,30 @@
 <script setup>
-import { computed, reactive, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { DEFAULT_EMPTY_LABEL, ROUTE_PATHS, VERIFICATION_CODE_LENGTH } from '@/constants'
-import { useRegisterState } from '@/features/auth/composables/useRegisterState'
-import { useSignUpPassengerDriverForm } from '@/features/auth/composables/useSignUpForm'
-import { useEmailVerification } from '@/features/auth/composables/useEmailVerification'
+import { usePersonalSignUpFlow } from '@/features/auth/composables/usePersonalSignUpFlow'
 import SignUpWizard from '@/features/auth/components/SignUpWizard.vue'
 import PersonalSignUpFields from '@/features/auth/components/PersonalSignUpFields.vue'
 import SignUpReviewSection from '@/features/auth/components/SignUpReviewSection.vue'
 import EmailVerificationStep from '@/features/auth/components/EmailVerificationStep.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
-const router = useRouter()
-const registerState = useRegisterState()
 const {
-  codigo,
-  enviandoCodigo,
-  erroCodigo,
-  enviarCodigo,
-  prepararVerificacao,
-  codigoPara,
-  cooldown,
-  emailCodigo,
-} = useEmailVerification()
-
-const signUpHelpers = useSignUpPassengerDriverForm()
-const {
-  errorMessage,
-  days,
-  months,
-  years,
-  fieldErrors,
-  validarFormulario,
-  formatBirthday,
-  currentPage,
-  isPasswordVisible,
-  showPassword,
-} = signUpHelpers
-
-const form = reactive({
-  name: '',
-  day: '',
-  month: '',
-  year: '',
-  cpf: '',
-  email: '',
-  phone: '',
-  password: '',
-  confirmPassword: '',
-  cep: '',
-  street: '',
-  number: '',
-  complement: '',
-  neighborhood: '',
-  city: '',
-  state: '',
-  latitude: null,
-  longitude: null,
-})
-
-watch(
-  () => registerState.state.success,
-  (success) => {
-    if (!success) return
-    form.password = ''
-    form.confirmPassword = ''
-    codigo.value = Array(VERIFICATION_CODE_LENGTH).fill('')
-  },
-)
-
-const reviewItems = computed(() => [
-  { label: 'Nome:', value: form.name },
-  { label: 'CPF:', value: form.cpf },
-  { label: 'E-mail:', value: form.email },
-  { label: 'Localização:', value: `${form.city}, ${form.state} - ${form.cep}` },
-  { label: 'Telefone:', value: form.phone || DEFAULT_EMPTY_LABEL },
-  { label: 'Data de Nascimento:', value: `${form.day}/${form.month}/${form.year}` },
-])
-
-const activeErrors = computed(() => [erroCodigo.value, errorMessage.value, registerState.state.error])
-
-function goBack() {
-  router.push(ROUTE_PATHS.SIGNUP)
-}
-
-function avancarParaRevisao() {
-  if (!validarFormulario(form)) return
-  currentPage.value = 2
-}
-
-function voltarPagina() {
-  if (enviandoCodigo.value || registerState.state.loading) return
-  erroCodigo.value = ''
-  registerState.reset()
-  currentPage.value -= 1
-}
+  form,
+  registerState,
+  emailVerification: { codigo, enviandoCodigo, enviarCodigo, prepararVerificacao, codigoPara, cooldown, emailCodigo },
+  signUp: { days, months, years, fieldErrors, validarFormulario, formatBirthday, currentPage, validateField, clearFieldError, clearBirthdayErrors },
+  reviewItems,
+  activeErrors,
+  goBack,
+  avancarParaRevisao,
+  voltarPagina,
+} = usePersonalSignUpFlow()
 
 async function avancarParaVerificacao() {
-  const sucesso = await prepararVerificacao(form.email)
-  if (sucesso) currentPage.value = 3
+  if (await prepararVerificacao(form.email)) currentPage.value = 3
 }
 
 async function handleSubmit() {
   if (registerState.state.loading || currentPage.value !== 3) return
   if (!validarFormulario(form)) return
-
   const code = codigoPara(form.email)
   if (!code || enviandoCodigo.value) return
   await registerState.registerPassenger({ ...form, code, birthday: formatBirthday(form) })
@@ -131,9 +51,9 @@ async function handleSubmit() {
       :days="days"
       :months="months"
       :years="years"
-      :is-password-visible="isPasswordVisible"
-      :helpers="signUpHelpers"
-      @toggle-password="showPassword"
+      :validate-field="validateField"
+      :clear-field-error="clearFieldError"
+      :clear-birthday-errors="clearBirthdayErrors"
     />
 
     <div v-else-if="currentPage === 2" key="step-2">

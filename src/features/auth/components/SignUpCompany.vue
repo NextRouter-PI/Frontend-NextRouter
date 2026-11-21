@@ -1,8 +1,9 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { DEFAULT_EMPTY_LABEL, ROUTE_PATHS, VERIFICATION_CODE_LENGTH } from '@/constants'
+import { ROUTE_PATHS, VERIFICATION_CODE_LENGTH } from '@/constants'
 import { useSignUpCompanyForm } from '@/features/auth/composables/useSignUpCompanyForm'
+import { buildCompanyReviewSections } from '@/features/auth/validators/companySignUpValidation'
 import SignUpWizard from '@/features/auth/components/SignUpWizard.vue'
 import SignUpReviewSection from '@/features/auth/components/SignUpReviewSection.vue'
 import EmailVerificationStep from '@/features/auth/components/EmailVerificationStep.vue'
@@ -11,29 +12,12 @@ import CompanyDocumentsStep from '@/features/auth/components/company-steps/Compa
 import CompanyOwnerStep from '@/features/auth/components/company-steps/CompanyOwnerStep.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
-const companyForm = useSignUpCompanyForm()
 const {
-  currentPage,
-  errorMessage,
-  fieldErrors,
-  showPassword,
-  page1Form,
-  page3Form,
-  files,
-  goToNextPage,
-  goToPreviousPage,
-  avancarParaVerificacao,
-  handleSubmit,
-  registerState,
-  isPasswordVisible,
-  codigo,
-  enviandoCodigo,
-  erroCodigo,
-  enviarCodigo,
-  emailCodigo,
-  cooldown,
-  enviandoDocumentos,
-} = companyForm
+  currentPage, errorMessage, fieldErrors, page1Form, page3Form, files,
+  clearFieldError, validateField, goToNextPage, goToPreviousPage,
+  avancarParaVerificacao, handleSubmit, registerState,
+  codigo, enviandoCodigo, erroCodigo, enviarCodigo, emailCodigo, cooldown, enviandoDocumentos,
+} = useSignUpCompanyForm()
 
 const router = useRouter()
 
@@ -50,28 +34,7 @@ watch(
 const stepperCurrent = computed(() =>
   currentPage.value <= 2 ? currentPage.value : currentPage.value <= 4 ? 3 : 4,
 )
-
-const companyReviewItems = computed(() => [
-  { label: 'Razão Social:', value: page1Form.legalName },
-  { label: 'Nome Fantasia:', value: page1Form.tradeName },
-  { label: 'CNPJ:', value: page1Form.cnpj },
-  { label: 'Telefone:', value: page1Form.contactPhone || DEFAULT_EMPTY_LABEL },
-  { label: 'E-mail:', value: page1Form.contactEmail || DEFAULT_EMPTY_LABEL },
-  { label: 'Localização:', value: `${page1Form.city}, ${page1Form.state} - ${page1Form.cep}` },
-])
-
-const ceoReviewItems = computed(() => [
-  { label: 'Nome do CEO/Diretor/Sócio:', value: page3Form.ceoName },
-  { label: 'CPF:', value: page3Form.ceoCpf },
-  { label: 'Senha:', value: '••••••••' },
-])
-
-const documentsReviewItems = computed(() => [
-  { label: 'Contrato Social:', value: `✓ ${files.articlesOfAssociation.name}` },
-  { label: 'Licença de Operação:', value: `✓ ${files.stateOperatingLicense.name}` },
-  { label: 'Certidões Negativas:', value: `✓ ${files.certificateOfGoodStading.name}` },
-])
-
+const reviewSections = computed(() => buildCompanyReviewSections({ page1Form, page3Form, files }))
 const activeErrors = computed(() => [erroCodigo.value, errorMessage.value, registerState.state.error])
 
 function goBack() {
@@ -98,7 +61,8 @@ function goBack() {
       v-model:form="page1Form"
       :field-errors="fieldErrors"
       :disabled="registerState.state.loading"
-      :helpers="companyForm"
+      :validate-field="validateField"
+      :clear-field-error="clearFieldError"
     />
 
     <CompanyDocumentsStep
@@ -108,7 +72,8 @@ function goBack() {
       v-model:files="files"
       :field-errors="fieldErrors"
       :disabled="registerState.state.loading"
-      :helpers="companyForm"
+      :validate-field="validateField"
+      :clear-field-error="clearFieldError"
       @file-error="errorMessage = $event"
     />
 
@@ -118,16 +83,15 @@ function goBack() {
       v-model:form="page3Form"
       :field-errors="fieldErrors"
       :disabled="registerState.state.loading"
-      :is-password-visible="isPasswordVisible"
-      :helpers="companyForm"
-      @toggle-password="showPassword"
+      :validate-field="validateField"
+      :clear-field-error="clearFieldError"
     />
 
     <div v-else-if="currentPage === 4" key="step-4">
       <h2 class="step-heading">Revisão do <span class="step-accent">Cadastro</span></h2>
-      <SignUpReviewSection title="Informações da Empresa" :items="companyReviewItems" />
-      <SignUpReviewSection title="Informações do Responsável" :items="ceoReviewItems" />
-      <SignUpReviewSection title="Documentos" :items="documentsReviewItems" />
+      <SignUpReviewSection title="Informações da Empresa" :items="reviewSections.company" />
+      <SignUpReviewSection title="Informações do Responsável" :items="reviewSections.ceo" />
+      <SignUpReviewSection title="Documentos" :items="reviewSections.documents" />
     </div>
 
     <EmailVerificationStep

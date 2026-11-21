@@ -1,16 +1,16 @@
 <script setup>
 import BaseInput from '@/components/ui/BaseInput.vue'
+import { formatCPF } from '@/composables/useInputFormat'
+import { isCPF, isEmail, isStrongPassword, passwordMatch, requiredField } from '@/utils/validators'
 
 const form = defineModel('form', { type: Object, required: true })
 
 defineProps({
   fieldErrors: { type: Object, required: true },
   disabled: { type: Boolean, default: false },
-  isPasswordVisible: { type: Boolean, default: false },
-  helpers: { type: Object, required: true },
+  validateField: { type: Function, required: true },
+  clearFieldError: { type: Function, required: true },
 })
-
-const emit = defineEmits(['toggle-password'])
 </script>
 
 <template>
@@ -24,8 +24,8 @@ const emit = defineEmits(['toggle-password'])
       placeholder="Digite o nome completo"
       :disabled="disabled"
       :error="fieldErrors.ceoName"
-      @input="helpers.clearFieldError('ceoName')"
-      @blur="helpers.validateField(form.ceoName, [(v) => helpers.requiredField(v, 'Nome')], 'ceoName')"
+      @input="clearFieldError('ceoName')"
+      @blur="validateField(form.ceoName, [(v) => requiredField(v, 'Nome')], 'ceoName')"
     />
 
     <BaseInput
@@ -36,10 +36,10 @@ const emit = defineEmits(['toggle-password'])
       placeholder="000.000.000-00"
       maxlength="14"
       :disabled="disabled"
-      :format="helpers.formatCPF"
+      :format="formatCPF"
       :error="fieldErrors.ceoCpf"
-      @input="helpers.clearFieldError('ceoCpf')"
-      @blur="helpers.validateField(form.ceoCpf, [(v) => helpers.requiredField(v, 'CPF') || helpers.isCPF(v)], 'ceoCpf')"
+      @input="clearFieldError('ceoCpf')"
+      @blur="validateField(form.ceoCpf, [(v) => requiredField(v, 'CPF') || isCPF(v)], 'ceoCpf')"
     />
 
     <BaseInput
@@ -51,11 +51,11 @@ const emit = defineEmits(['toggle-password'])
       placeholder="empresa@login.com"
       :disabled="disabled"
       :error="fieldErrors.loginEmail"
-      @input="helpers.clearFieldError('loginEmail')"
+      @input="clearFieldError('loginEmail')"
       @blur="
-        helpers.validateField(
+        validateField(
           form.loginEmail,
-          [(v) => helpers.requiredField(v, 'Email de login') || helpers.isEmail(v)],
+          [(v) => requiredField(v, 'Email de login') || isEmail(v)],
           'loginEmail',
         )
       "
@@ -70,11 +70,11 @@ const emit = defineEmits(['toggle-password'])
       placeholder="Mínimo 8 caracteres, não só números"
       :disabled="disabled"
       :error="fieldErrors.password"
-      @input="helpers.clearFieldError('password')"
+      @input="clearFieldError('password')"
       @blur="
-        helpers.validateField(
+        validateField(
           form.password,
-          [(v) => helpers.requiredField(v, 'Senha') || helpers.isStrongPassword(v)],
+          [(v) => requiredField(v, 'Senha') || isStrongPassword(v)],
           'password',
         )
       "
@@ -89,11 +89,11 @@ const emit = defineEmits(['toggle-password'])
       placeholder="Digite a senha novamente"
       :disabled="disabled"
       :error="fieldErrors.passwordConfirm"
-      @input="helpers.clearFieldError('passwordConfirm')"
+      @input="clearFieldError('passwordConfirm')"
       @blur="
-        helpers.validateField(
+        validateField(
           form.passwordConfirm,
-          [(v) => helpers.requiredField(v, 'Confirmação') || helpers.passwordMatch(v, form.password)],
+          [(v) => requiredField(v, 'Confirmação') || passwordMatch(v, form.password)],
           'passwordConfirm',
         )
       "
