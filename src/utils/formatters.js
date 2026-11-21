@@ -1,4 +1,4 @@
-import { DEFAULT_EMPTY_LABEL, WEEKDAY_OPTIONS } from '@/constants'
+import { DEFAULT_EMPTY_LABEL, SERVICE_DIRECTIONS, WEEKDAY_OPTIONS } from '@/constants'
 
 export function formatOrEmpty(value, fallback = DEFAULT_EMPTY_LABEL) {
   return value === null || value === undefined || value === '' ? fallback : value
@@ -7,6 +7,23 @@ export function formatOrEmpty(value, fallback = DEFAULT_EMPTY_LABEL) {
 export function formatHour(value) {
   if (!value) return ''
   return String(value).slice(0, 5)
+}
+
+export function formatDateBr(dateStr, fallback = '—') {
+  if (!dateStr) return fallback
+  const parts = String(dateStr).split('-')
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : String(dateStr)
+}
+
+export function formatServiceSummary(service, { includeDirection = true } = {}) {
+  if (!service) return ''
+  const tipo = service.is_shared ? 'Compartilhado' : 'Habitual'
+  const time = service.targetTimeLabel || formatHour(service.target_time)
+  if (!includeDirection) {
+    return `${service.name} (${time} · ${tipo})`
+  }
+  const dir = service.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno'
+  return `${service.name} (${dir} ${time} · ${tipo})`
 }
 
 export function formatWeekdays(mask) {

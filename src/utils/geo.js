@@ -36,3 +36,46 @@ export function bearingDegrees(lat1, lng1, lat2, lng2) {
   const theta = Math.atan2(y, x)
   return ((theta * 180) / Math.PI + 360) % 360
 }
+
+export function isValidLatLng(lat, lng) {
+  if (lat == null || lat === '' || lng == null || lng === '') return false
+  const nLat = Number(lat)
+  const nLng = Number(lng)
+  return (
+    Number.isFinite(nLat) &&
+    nLat >= -90 &&
+    nLat <= 90 &&
+    Number.isFinite(nLng) &&
+    nLng >= -180 &&
+    nLng <= 180
+  )
+}
+
+export function pointToLatLng(point) {
+  if (!point) return null
+  const lat = Number(point.latitude)
+  const lng = Number(point.longitude)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return [lat, lng]
+}
+
+export function splitPolylineAtPosition(coords, posLat, posLng, { isLngLat = false } = {}) {
+  if (posLat == null || posLng == null || !Array.isArray(coords) || coords.length < 2) {
+    return { passed: [], remaining: coords || [] }
+  }
+  const latIdx = isLngLat ? 1 : 0
+  const lngIdx = isLngLat ? 0 : 1
+  let closestIdx = 0
+  let bestDist = Infinity
+  for (let i = 0; i < coords.length; i += 1) {
+    const d = haversineMeters(posLat, posLng, coords[i][latIdx], coords[i][lngIdx])
+    if (d < bestDist) {
+      bestDist = d
+      closestIdx = i
+    }
+  }
+  return {
+    passed: coords.slice(0, closestIdx + 1),
+    remaining: coords.slice(closestIdx),
+  }
+}
