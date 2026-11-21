@@ -1,9 +1,14 @@
 <script setup>
 import { ref, shallowRef, watch } from 'vue'
-import { POINT_TYPES } from '@/constants'
 import { useTransporteStore } from '@/stores/useTransporteStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useInputFormat } from '@/composables/useInputFormat'
+import {
+  buildDestinationPointPayload,
+  createEmptyPointForm,
+  mapPointToForm,
+  parseValidPointCoords,
+} from '@/features/company/utils/pointPayload'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -19,43 +24,13 @@ const store = useTransporteStore()
 const scope = useAccountScope()
 const { formatCEP } = useInputFormat()
 
-function emptyPoint() {
-  return {
-    name: '',
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    cep: '',
-    latitude: null,
-    longitude: null,
-  }
-}
-
-const form = ref(emptyPoint())
+const form = ref(createEmptyPointForm())
 const saving = shallowRef(false)
 
 watch(
   () => props.editingPoint,
   (ponto) => {
-    if (!ponto) {
-      form.value = emptyPoint()
-      return
-    }
-    form.value = {
-      name: ponto.name || '',
-      street: ponto.street || '',
-      number: ponto.number || '',
-      complement: ponto.complement || '',
-      neighborhood: ponto.neighborhood || '',
-      city: ponto.city || '',
-      state: ponto.state || '',
-      cep: formatCEP(ponto.cep || ''),
-      latitude: ponto.latitude ?? null,
-      longitude: ponto.longitude ?? null,
-    }
+    form.value = mapPointToForm(ponto, formatCEP)
   },
   { immediate: true },
 )
@@ -64,38 +39,14 @@ async function handleSubmit() {
   if (!scope.current() || saving.value) return
   emit('error', '')
 
-  const lat = Number(form.value.latitude)
-  const lng = Number(form.value.longitude)
-  if (
-    form.value.latitude == null ||
-    form.value.latitude === '' ||
-    form.value.longitude == null ||
-    form.value.longitude === '' ||
-    !Number.isFinite(lat) ||
-    lat < -90 ||
-    lat > 90 ||
-    !Number.isFinite(lng) ||
-    lng < -180 ||
-    lng > 180
-  ) {
+  const coords = parseValidPointCoords(form.value.latitude, form.value.longitude)
+  if (!coords) {
     emit('error', 'Clique no mapa ou informe um CEP válido para definir as coordenadas do ponto de destino.')
     return
   }
 
   saving.value = true
-  const payload = {
-    point_type: POINT_TYPES.DESTINATION,
-    name: form.value.name.trim(),
-    street: form.value.street.trim(),
-    number: form.value.number.trim(),
-    complement: form.value.complement.trim(),
-    neighborhood: form.value.neighborhood.trim(),
-    city: form.value.city.trim(),
-    state: form.value.state.trim().toUpperCase(),
-    cep: form.value.cep.replace(/\D/g, ''),
-    latitude: lat.toFixed(6),
-    longitude: lng.toFixed(6),
-  }
+  const payload = buildDestinationPointPayload(form.value, coords)
 
   const editingId = props.editingPoint?.id
   const saved = editingId
@@ -110,7 +61,7 @@ async function handleSubmit() {
     return
   }
 
-  form.value = emptyPoint()
+  form.value = createEmptyPointForm()
   emit('saved', editingId ? 'Ponto de destino atualizado com sucesso.' : 'Ponto de destino cadastrado com sucesso.')
 }
 </script>
