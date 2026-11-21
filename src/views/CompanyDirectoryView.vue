@@ -1,10 +1,10 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { state } from '@/stores/state'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { PERSONAL_ROLES, ROUTE_PATHS } from '@/constants'
 import { useCompanyDirectory } from '@/features/directory/composables/useCompanyDirectory'
-import CompanyFilterDropdown from '@/features/directory/components/CompanyFilterDropdown.vue'
+import CompanySearchToolbar from '@/features/directory/components/CompanySearchToolbar.vue'
 import CompanyResultCard from '@/features/directory/components/CompanyResultCard.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
@@ -12,6 +12,7 @@ import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import '@/styles/memberships.scss'
 
 const router = useRouter()
+const auth = useAuthStore()
 const {
   filters,
   results,
@@ -30,13 +31,13 @@ const {
   goToPage,
 } = useCompanyDirectory()
 
-const personal = computed(() => PERSONAL_ROLES.includes(state.role))
+const personal = computed(() => PERSONAL_ROLES.includes(auth.role))
 
 function goBack() {
   if (window.history.length > 1) {
     router.back()
   } else {
-    router.push(state.logged ? ROUTE_PATHS.HOME : ROUTE_PATHS.LOGIN)
+    router.push(auth.logged ? ROUTE_PATHS.HOME : ROUTE_PATHS.LOGIN)
   }
 }
 
@@ -53,7 +54,7 @@ function removeCityFilter() {
 </script>
 
 <template>
-  <div class="directory-page" :class="{ authenticated: state.logged }">
+  <div class="directory-page" :class="{ authenticated: auth.logged }">
     <div class="directory-container">
       <div class="title-bar">
         <button type="button" class="back-btn" aria-label="Voltar" @click="goBack">
@@ -67,50 +68,21 @@ function removeCityFilter() {
         Busque pelo grupo de rota que atende você para encontrar uma empresa:
       </p>
 
-      <form class="search-row" @submit.prevent="search">
-        <div class="search-input-wrap">
-          <button
-            type="submit"
-            class="search-icon-btn"
-            aria-label="Pesquisar grupo de rota"
-            :disabled="loading"
-          >
-            <span class="mdi mdi-magnify" aria-hidden="true"></span>
-          </button>
-          <input
-            v-model="filters.destination"
-            type="search"
-            class="search-input"
-            placeholder="Buscar grupo de rota..."
-            aria-label="Nome do grupo de rota"
-            autocomplete="off"
-          />
-        </div>
-
-        <CompanyFilterDropdown
-          v-model:state="filters.state"
-          v-model:city="filters.city"
-          v-model:ordering="filters.ordering"
-          :served-cities="servedCities"
-          :cities-loading="citiesLoading"
-          :cities-error="citiesError"
-          :active-filter-count="activeFilterCount"
-          :disabled="loading"
-          @apply="search"
-          @clear="clearFilters"
-        />
-      </form>
-
-      <div v-if="filters.state || filters.city" class="active-chips" aria-label="Filtros aplicados">
-        <button v-if="filters.state" type="button" class="filter-chip" @click="removeStateFilter">
-          UF: {{ filters.state }}
-          <span class="mdi mdi-close" aria-hidden="true"></span>
-        </button>
-        <button v-if="filters.city" type="button" class="filter-chip" @click="removeCityFilter">
-          Cidade: {{ filters.city }}
-          <span class="mdi mdi-close" aria-hidden="true"></span>
-        </button>
-      </div>
+      <CompanySearchToolbar
+        v-model:destination="filters.destination"
+        v-model:state="filters.state"
+        v-model:city="filters.city"
+        v-model:ordering="filters.ordering"
+        :served-cities="servedCities"
+        :cities-loading="citiesLoading"
+        :cities-error="citiesError"
+        :active-filter-count="activeFilterCount"
+        :disabled="loading"
+        @search="search"
+        @clear="clearFilters"
+        @remove-state="removeStateFilter"
+        @remove-city="removeCityFilter"
+      />
 
       <p v-if="validationError" class="validation-hint" role="alert">{{ validationError }}</p>
       <div role="alert"><ErrorMessage :message="error" /></div>
@@ -129,7 +101,7 @@ function removeCityFilter() {
               v-for="company in results"
               :key="company.id"
               :company="company"
-              :logged="state.logged"
+              :logged="auth.logged"
               :can-request-membership="personal"
             />
           </TransitionGroup>
@@ -146,13 +118,13 @@ function removeCityFilter() {
       </Transition>
 
       <nav class="context-links" aria-label="Atalhos da conta">
-        <RouterLink v-if="state.logged && personal" to="/memberships" class="context-link">
+        <RouterLink v-if="auth.logged && personal" to="/memberships" class="context-link">
           Meus vínculos
         </RouterLink>
-        <RouterLink v-else-if="state.logged && state.role === 'company'" to="/users" class="context-link">
+        <RouterLink v-else-if="auth.logged && auth.role === 'company'" to="/users" class="context-link">
           Gerenciar pedidos de vínculo
         </RouterLink>
-        <template v-else-if="!state.logged">
+        <template v-else-if="!auth.logged">
           <RouterLink to="/login" class="context-link">Entrar</RouterLink>
           <RouterLink to="/signup" class="context-link">Criar conta</RouterLink>
         </template>
@@ -167,26 +139,6 @@ function removeCityFilter() {
   background: var(--bg);
   color: var(--text);
   padding-bottom: 96px;
-}
-
-.public-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  background: var(--chrome-bg);
-  border-bottom: 2px solid var(--primary);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22);
-}
-
-.public-logo img {
-  height: 36px;
-  width: auto;
-  display: block;
 }
 
 .directory-container {
@@ -215,10 +167,10 @@ function removeCityFilter() {
   color: var(--text);
   font-size: 1.9rem;
   cursor: pointer;
-}
 
-.back-btn:hover {
-  background: var(--altbg);
+  &:hover {
+    background: var(--altbg);
+  }
 }
 
 .page-title {
@@ -240,87 +192,6 @@ function removeCityFilter() {
   color: var(--text);
 }
 
-.search-row {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.search-input-wrap {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  min-height: 46px;
-  padding: 0 10px 0 4px;
-  border: 1.5px solid var(--border-primary);
-  border-radius: 10px;
-  background: var(--color-surface);
-  transition: box-shadow 0.2s ease;
-}
-
-.search-input-wrap:focus-within {
-  border-color: var(--primary);
-}
-
-.search-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 1.35rem;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.search-icon-btn:hover:not(:disabled) {
-  color: var(--primary);
-}
-
-.search-input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: transparent;
-  color: var(--text);
-  font-size: 0.95rem;
-  padding: 8px 4px;
-}
-
-.search-input:focus {
-  outline: none;
-}
-
-.search-input::placeholder {
-  color: var(--text-muted);
-}
-
-.active-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  border: 1px solid var(--border-primary);
-  border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--text);
-  font-size: 0.82rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
 .validation-hint {
   position: relative;
   overflow: hidden;
@@ -331,13 +202,6 @@ function removeCityFilter() {
   background: var(--color-surface);
   font-size: 0.88rem;
   color: var(--text);
-}
-
-.status-text {
-  margin: 24px 0;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.95rem;
 }
 
 .results-list {
