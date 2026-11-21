@@ -1,10 +1,12 @@
+import { computed, reactive, toRefs, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { watch } from 'vue'
 import { POINT_TYPES, WEEKDAY_OPTIONS } from '@/constants'
 import { formatWeekdays } from '@/utils/formatters'
-import { state as authState } from '@/stores/state'
-import { habitualActions } from './rotas/habitualActions'
-import { operationActions } from './rotas/operationActions'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { createGroupConfigActions } from './rotas/groupConfigActions'
+import { createServiceActions } from './rotas/serviceActions'
+import { createDayActions } from './rotas/dayActions'
+import { createTravelActions } from './rotas/travelActions'
 
 export { WEEKDAY_OPTIONS, formatWeekdays }
 
@@ -30,29 +32,31 @@ function initialState() {
   }
 }
 
-export const useRotasStore = defineStore('rotas', {
-  state: initialState,
-  getters: {
-    pontosDestino: (state) => state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.DESTINATION),
-    garagens: (state) => state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.GARAGE),
-  },
-  actions: {
-    $reset() {
-      Object.assign(this, initialState())
-    },
-    ...habitualActions,
-    ...operationActions,
-  },
-})
+export const useRotasStore = defineStore('rotas', () => {
+  const auth = useAuthStore()
+  const state = reactive(initialState())
 
-watch(
-  () => `${authState.logged}:${authState.user?.id || ''}`,
-  () => {
-    try {
-      useRotasStore().$reset()
-    } catch {
-      // Store ainda não inicializada pelo Pinia
-    }
-  },
-  { flush: 'sync' },
-)
+  const pontosDestino = computed(() =>
+    state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.DESTINATION),
+  )
+  const garagens = computed(() =>
+    state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.GARAGE),
+  )
+
+  function $reset() {
+    Object.assign(state, initialState())
+  }
+
+  watch(() => auth.identityKey, $reset, { flush: 'sync' })
+
+  return {
+    ...toRefs(state),
+    pontosDestino,
+    garagens,
+    $reset,
+    ...createGroupConfigActions(state),
+    ...createServiceActions(state),
+    ...createDayActions(state),
+    ...createTravelActions(state),
+  }
+})

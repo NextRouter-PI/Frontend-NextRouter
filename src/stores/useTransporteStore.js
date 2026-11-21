@@ -1,8 +1,7 @@
+import { computed, reactive, toRefs, watch } from 'vue'
 import { defineStore } from 'pinia'
-import { watch } from 'vue'
-import { state as authState } from '@/stores/state'
-import { sessionError } from '@/stores/session'
-import { formatApiError } from '@/utils/apiErrors'
+import { VEHICLE_STATUS_TO_API } from '@/constants'
+import { useAuthStore } from '@/stores/useAuthStore'
 import {
   listVehicles,
   createVehicle,
@@ -11,190 +10,133 @@ import {
   createOperationalPoint,
   updateOperationalPoint,
 } from '@/api/transport'
+import { POINT_TYPES } from '@/constants'
+import { runStoreRequest } from './rotas/requestHelper'
+import { formatGarageLabel, mapVehicleFromApi, mapVehicleToApi } from './mappers/vehicleMapper'
 
-import { POINT_TYPES, VEHICLE_STATUS_FROM_API, VEHICLE_STATUS_TO_API } from '@/constants'
-
-function mapVehicleFromApi(vehicle, pointsMap = new Map()) {
-  const garagePoint = pointsMap.get(vehicle.garage_point) || null
-  return {
-    id: vehicle.id,
-    company: vehicle.company,
-    placa: vehicle.plate,
-    modelo: vehicle.model || '',
-    ano: vehicle.year ?? '',
-    capacidade: vehicle.capacity ?? '',
-    status: VEHICLE_STATUS_FROM_API[vehicle.status] || vehicle.status,
-    rawStatus: vehicle.status,
-    garagePointId: vehicle.garage_point ?? null,
-    garagePointName: garagePoint ? `${garagePoint.name} (${garagePoint.city}/${garagePoint.state})` : null,
-    cor: vehicle.color || '',
-    caracteristicas: Array.isArray(vehicle.features) ? vehicle.features : [],
-  }
-}
-
-function mapVehicleToApi(vehicle) {
-  const payload = {}
-  if (vehicle.placa !== undefined) payload.plate = vehicle.placa
-  if (vehicle.modelo !== undefined) payload.model = vehicle.modelo
-  if (vehicle.ano !== undefined) payload.year = vehicle.ano
-  if (vehicle.capacidade !== undefined) payload.capacity = vehicle.capacidade
-  if (vehicle.status !== undefined) payload.status = VEHICLE_STATUS_TO_API[vehicle.status] || vehicle.status
-  if (vehicle.garagePointId !== undefined) payload.garage_point_id = vehicle.garagePointId
-  if (vehicle.cor !== undefined) payload.color = vehicle.cor
-  if (vehicle.caracteristicas !== undefined) payload.features = vehicle.caracteristicas
-  return payload
-}
-
-export const useTransporteStore = defineStore('transporte', {
-  state: () => ({
+export const useTransporteStore = defineStore('transporte', () => {
+  const auth = useAuthStore()
+  const state = reactive({
     veiculos: [],
     pontosOperacionais: [],
     loading: false,
     pointsLoading: false,
     error: null,
-  }),
-  getters: {
-    garagens: (state) => state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.GARAGE),
-    pontosDestino: (state) => state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.DESTINATION),
-  },
-  actions: {
-    $reset() {
-      this.veiculos = []
-      this.pontosOperacionais = []
-      this.loading = false
-      this.pointsLoading = false
-      this.error = null
-    },
+  })
 
-    async fetchPontosOperacionais({ signal } = {}) {
-      this.pointsLoading = true
-      try {
-        this.pontosOperacionais = await listOperationalPoints({}, { signal })
-        const pointsMap = new Map(this.pontosOperacionais.map((p) => [p.id, p]))
-        this.veiculos = this.veiculos.map((v) => ({
-          ...v,
-          garagePointName: v.garagePointId && pointsMap.has(v.garagePointId)
-            ? `${pointsMap.get(v.garagePointId).name} (${pointsMap.get(v.garagePointId).city}/${pointsMap.get(v.garagePointId).state})`
-            : null,
-        }))
-        return true
-      } catch (error) {
-        if (!signal?.aborted) {
-          this.error = sessionError(error, formatApiError(error, 'Erro ao carregar pontos operacionais.'))
-        }
-        return false
-      } finally {
-        if (!signal?.aborted) this.pointsLoading = false
-      }
-    },
+  const garagens = computed(() =>
+    state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.GARAGE),
+  )
+  const pontosDestino = computed(() =>
+    state.pontosOperacionais.filter((p) => p.point_type === POINT_TYPES.DESTINATION),
+  )
 
-    async adicionarPontoOperacional(dados, { signal } = {}) {
-      this.error = null
-      try {
-        const criado = await createOperationalPoint(dados, { signal })
-        await this.fetchPontosOperacionais({ signal })
-        return criado
-      } catch (error) {
-        if (!signal?.aborted) {
-          this.error = sessionError(error, formatApiError(error, 'Erro ao cadastrar ponto operacional.'))
-        }
-        return null
-      }
-    },
-
-    async atualizarPontoOperacional(id, dados, { signal } = {}) {
-      this.error = null
-      try {
-        const atualizado = await updateOperationalPoint(id, dados, { signal })
-        await this.fetchPontosOperacionais({ signal })
-        return atualizado
-      } catch (error) {
-        if (!signal?.aborted) {
-          this.error = sessionError(error, formatApiError(error, 'Erro ao atualizar ponto operacional.'))
-        }
-        return null
-      }
-    },
-
-    async fetchVeiculos({ signal } = {}) {
-      this.loading = true
-      this.error = null
-      try {
-        const [vehicles, points] = await Promise.all([
-          listVehicles({}, { signal }),
-          listOperationalPoints({}, { signal }).catch(() => this.pontosOperacionais),
-        ])
-        if (signal?.aborted) return false
-        this.pontosOperacionais = points
-        const pointsMap = new Map(points.map((p) => [p.id, p]))
-        this.veiculos = vehicles.map((v) => mapVehicleFromApi(v, pointsMap))
-        return true
-      } catch (error) {
-        if (!signal?.aborted) {
-          this.error = sessionError(error, formatApiError(error, 'Erro ao carregar veículos.'))
-        }
-        return false
-      } finally {
-        if (!signal?.aborted) this.loading = false
-      }
-    },
-
-    async adicionarVeiculo(novoVeiculo, { signal } = {}) {
-      this.error = null
-      try {
-        const data = await createVehicle(mapVehicleToApi(novoVeiculo), { signal })
-        const pointsMap = new Map(this.pontosOperacionais.map((p) => [p.id, p]))
-        this.veiculos.unshift(mapVehicleFromApi(data, pointsMap))
-        return true
-      } catch (error) {
-        if (!signal?.aborted) {
-          this.error = sessionError(error, formatApiError(error, 'Erro ao cadastrar veículo.'))
-        }
-        return false
-      }
-    },
-
-    async alterarStatus(id, { signal } = {}) {
-      const veiculo = this.veiculos.find((v) => v.id === id)
-      if (!veiculo) return false
-
-      const novoStatus = veiculo.status === 'Ativo' ? 'Manutenção' : 'Ativo'
-      this.error = null
-      try {
-        const data = await updateVehicle(id, { status: VEHICLE_STATUS_TO_API[novoStatus] }, { signal })
-        const pointsMap = new Map(this.pontosOperacionais.map((p) => [p.id, p]))
-        Object.assign(veiculo, mapVehicleFromApi(data, pointsMap))
-        return true
-      } catch (error) {
-        if (!signal?.aborted) {
-          this.error = sessionError(error, formatApiError(error, 'Erro ao alterar status do veículo.'))
-        }
-        return false
-      }
-    },
-
-    async atualizarVeiculo(id, dados, { signal } = {}) {
-      this.error = null
-      try {
-        const data = await updateVehicle(id, mapVehicleToApi(dados), { signal })
-        const pointsMap = new Map(this.pontosOperacionais.map((p) => [p.id, p]))
-        const index = this.veiculos.findIndex((v) => v.id == id)
-        if (index !== -1) this.veiculos[index] = mapVehicleFromApi(data, pointsMap)
-        return true
-      } catch (error) {
-        if (!signal?.aborted) {
-          this.error = sessionError(error, formatApiError(error, 'Erro ao atualizar veículo.'))
-        }
-        return false
-      }
-    },
-  },
-})
-
-watch(() => `${authState.logged}:${authState.user?.id || ''}`, () => {
-  try {
-    useTransporteStore().$reset()
-  } catch {
-    // Store ainda não inicializada pelo Pinia
+  function $reset() {
+    state.veiculos = []
+    state.pontosOperacionais = []
+    state.loading = false
+    state.pointsLoading = false
+    state.error = null
   }
-}, { flush: 'sync' })
+
+  watch(() => auth.identityKey, $reset, { flush: 'sync' })
+
+  const pointsMap = () => new Map(state.pontosOperacionais.map((p) => [p.id, p]))
+
+  async function fetchPontosOperacionais({ signal } = {}) {
+    state.pointsLoading = true
+    const points = await runStoreRequest(
+      state,
+      signal,
+      'Erro ao carregar pontos operacionais.',
+      () => listOperationalPoints({}, { signal }),
+    )
+    if (!signal?.aborted) state.pointsLoading = false
+    if (!points || signal?.aborted) return false
+    state.pontosOperacionais = points
+    const map = pointsMap()
+    state.veiculos = state.veiculos.map((v) => ({
+      ...v,
+      garagePointName: formatGarageLabel(v.garagePointId ? map.get(v.garagePointId) : null),
+    }))
+    return true
+  }
+
+  async function adicionarPontoOperacional(dados, { signal } = {}) {
+    const criado = await runStoreRequest(state, signal, 'Erro ao cadastrar ponto operacional.', () =>
+      createOperationalPoint(dados, { signal }),
+    )
+    if (criado) await fetchPontosOperacionais({ signal })
+    return criado
+  }
+
+  async function atualizarPontoOperacional(id, dados, { signal } = {}) {
+    const atualizado = await runStoreRequest(state, signal, 'Erro ao atualizar ponto operacional.', () =>
+      updateOperationalPoint(id, dados, { signal }),
+    )
+    if (atualizado) await fetchPontosOperacionais({ signal })
+    return atualizado
+  }
+
+  async function fetchVeiculos({ signal } = {}) {
+    state.loading = true
+    const result = await runStoreRequest(state, signal, 'Erro ao carregar veículos.', () =>
+      Promise.all([
+        listVehicles({}, { signal }),
+        listOperationalPoints({}, { signal }).catch(() => state.pontosOperacionais),
+      ]),
+    )
+    if (!signal?.aborted) state.loading = false
+    if (!result || signal?.aborted) return false
+    const [vehicles, points] = result
+    state.pontosOperacionais = points
+    const map = new Map(points.map((p) => [p.id, p]))
+    state.veiculos = vehicles.map((v) => mapVehicleFromApi(v, map))
+    return true
+  }
+
+  async function adicionarVeiculo(novoVeiculo, { signal } = {}) {
+    const data = await runStoreRequest(state, signal, 'Erro ao cadastrar veículo.', () =>
+      createVehicle(mapVehicleToApi(novoVeiculo), { signal }),
+    )
+    if (!data) return false
+    state.veiculos.unshift(mapVehicleFromApi(data, pointsMap()))
+    return true
+  }
+
+  async function alterarStatus(id, { signal } = {}) {
+    const veiculo = state.veiculos.find((v) => v.id === id)
+    if (!veiculo) return false
+    const novoStatus = veiculo.status === 'Ativo' ? 'Manutenção' : 'Ativo'
+    const data = await runStoreRequest(state, signal, 'Erro ao alterar status do veículo.', () =>
+      updateVehicle(id, { status: VEHICLE_STATUS_TO_API[novoStatus] }, { signal }),
+    )
+    if (!data) return false
+    Object.assign(veiculo, mapVehicleFromApi(data, pointsMap()))
+    return true
+  }
+
+  async function atualizarVeiculo(id, dados, { signal } = {}) {
+    const data = await runStoreRequest(state, signal, 'Erro ao atualizar veículo.', () =>
+      updateVehicle(id, mapVehicleToApi(dados), { signal }),
+    )
+    if (!data) return false
+    const index = state.veiculos.findIndex((v) => v.id == id)
+    if (index !== -1) state.veiculos[index] = mapVehicleFromApi(data, pointsMap())
+    return true
+  }
+
+  return {
+    ...toRefs(state),
+    garagens,
+    pontosDestino,
+    $reset,
+    fetchPontosOperacionais,
+    adicionarPontoOperacional,
+    atualizarPontoOperacional,
+    fetchVeiculos,
+    adicionarVeiculo,
+    alterarStatus,
+    atualizarVeiculo,
+  }
+})
