@@ -1,5 +1,11 @@
 <script setup>
 import { computed, reactive, shallowRef } from 'vue'
+import {
+  JOB_STATUS_LABELS,
+  PLANNING_STATUS_LABELS,
+  SNAPSHOT_STATE_LABELS,
+  TRAVEL_STATUS_LABELS,
+} from '@/constants'
 import { formatDateTimeBr } from '@/utils/formatters'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import RouteMapSnapshot from '@/features/transport/components/RouteMapSnapshot.vue'
@@ -75,8 +81,8 @@ function submitInvite() {
       <div>
         <strong>Viagem #{{ travel.id }} · {{ serviceName }}</strong>
         <p class="sub-meta">
-          Execução: <strong>{{ travel.status }}</strong> · Planejamento:
-          <strong>{{ travel.planning_status }}</strong> · Revisão:
+          Execução: <strong>{{ TRAVEL_STATUS_LABELS[travel.status] || travel.status }}</strong> · Planejamento:
+          <strong>{{ PLANNING_STATUS_LABELS[travel.planning_status] || travel.planning_status }}</strong> · Revisão:
           <strong>{{ travel.revision }}</strong> · Publicada:
           <strong>{{ travel.published_revision ?? 'nenhuma' }}</strong> · Vigente:
           <strong>{{ travel.publication_current ? 'Sim' : 'Não' }}</strong>
@@ -114,14 +120,14 @@ function submitInvite() {
     <div v-if="snapshot || job" class="sub-meta snapshot-row">
       Snapshot #{{ snapshot?.id ?? travel.current_snapshot }}:
       <span v-if="snapshot">
-        estado <strong>{{ snapshot.state }}</strong>
+        estado <strong>{{ SNAPSHOT_STATE_LABELS[snapshot.state] || snapshot.state }}</strong>
         <template v-if="snapshot.distance_meters != null">
           · {{ (snapshot.distance_meters / 1000).toFixed(1) }} km ·
           {{ Math.round((snapshot.duration_seconds || 0) / 60) }} min
         </template>
       </span>
       <span v-if="job">
-        · Job #{{ job.id }}: <strong>{{ job.status }}</strong> (tentativas: {{ job.attempts }})
+        · Job #{{ job.id }}: <strong>{{ JOB_STATUS_LABELS[job.status] || job.status }}</strong> (tentativas: {{ job.attempts }})
         <strong v-if="job.error" class="error-inline"> · erro: {{ job.error }}</strong>
       </span>
       <div>

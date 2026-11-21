@@ -51,47 +51,69 @@ const gruposFiltrados = computed(() => {
         :subtitle="`Destino: ${grupo.destinationName}`"
       >
         <template #actions>
-          <BaseButton variant="outline" size="sm" @click="router.push(`/rotas/editar/${grupo.id}`)">
+          <BaseButton variant="outline" size="sm" @click="router.push(`/routes/${grupo.id}/edit/settings`)">
             Configurar grupo
           </BaseButton>
         </template>
 
-        <div class="policy-box">
-          <span v-if="grupo.policy" class="policy-text">
-            Política: abre {{ grupo.policy.opens_days_before }}d antes às
-            {{ String(grupo.policy.opens_time).slice(0, 5) }} · fecha
-            {{ grupo.policy.normal_days_before }}d antes às
-            {{ String(grupo.policy.normal_time).slice(0, 5) }}
-            <template v-if="grupo.policy.extension_time">
-              · prorrogação {{ grupo.policy.extension_days_before }}d antes às
-              {{ String(grupo.policy.extension_time).slice(0, 5) }}
-            </template>
-          </span>
-          <span v-else class="policy-missing">
-            Pendência: política de respostas ainda não configurada.
-          </span>
-        </div>
-
-        <div v-if="grupo.services.length" class="horarios-linha">
-          <span v-for="s in grupo.services" :key="s.id" class="badge-horario">
-            {{ s.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }}
-            {{ s.targetTimeLabel }} · {{ s.name }} · {{ s.weekdaysLabel }} ·
-            {{ s.vehiclePlate }} · {{ s.driverName }}
-          </span>
-        </div>
-        <p v-else class="sem-horario">Nenhum serviço habitual cadastrado neste grupo.</p>
-
-        <div class="secao-vinculos">
-          <p class="vinculo-titulo">
-            <span class="mdi mdi-account-multiple" aria-hidden="true"></span>
-            Passageiros atribuídos ao grupo ({{ grupo.members.length }})
-          </p>
-          <div v-if="grupo.members.length" class="chips">
-            <span v-for="m in grupo.members" :key="m.id" class="chip">
-              {{ m.applicantName }} · {{ m.pointName }} · {{ m.service_ids?.length || 0 }} serviço(s)
+        <div class="group-card-content">
+          <div class="policy-box">
+            <span class="mdi mdi-clock-outline policy-icon" aria-hidden="true"></span>
+            <span v-if="grupo.policy" class="policy-text">
+              Política: abre {{ grupo.policy.opens_days_before }}d antes às
+              {{ String(grupo.policy.opens_time).slice(0, 5) }} · fecha
+              {{ grupo.policy.normal_days_before }}d antes às
+              {{ String(grupo.policy.normal_time).slice(0, 5) }}
+              <template v-if="grupo.policy.extension_time">
+                · prorrogação {{ grupo.policy.extension_days_before }}d antes às
+                {{ String(grupo.policy.extension_time).slice(0, 5) }}
+              </template>
+            </span>
+            <span v-else class="policy-missing">
+              Pendência: política de respostas ainda não configurada.
             </span>
           </div>
-          <span v-else class="chip-vazio">Nenhum passageiro atribuído.</span>
+
+          <div class="group-section">
+            <p class="section-label">
+              <span class="mdi mdi-bus-clock" aria-hidden="true"></span>
+              Serviços habituais ({{ grupo.services.length }})
+            </p>
+            <div v-if="grupo.services.length" class="services-list">
+              <div v-for="s in grupo.services" :key="s.id" class="service-row">
+                <span class="service-direction">
+                  {{ s.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }}
+                  {{ s.targetTimeLabel }}
+                </span>
+                <div class="service-details">
+                  <strong class="service-name">{{ s.name }}</strong>
+                  <span class="service-meta">
+                    {{ s.weekdaysLabel }} · {{ s.vehiclePlate }} · {{ s.driverName }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <p v-else class="sem-horario">Nenhum serviço habitual cadastrado neste grupo.</p>
+          </div>
+
+          <div class="secao-vinculos">
+            <p class="section-label">
+              <span class="mdi mdi-account-multiple" aria-hidden="true"></span>
+              Passageiros atribuídos ao grupo ({{ grupo.members.length }})
+            </p>
+            <div v-if="grupo.members.length" class="members-grid">
+              <div v-for="m in grupo.members" :key="m.id" class="member-tile">
+                <div class="member-info">
+                  <strong class="member-name">{{ m.applicantName }}</strong>
+                  <span class="member-point">{{ m.pointName }}</span>
+                </div>
+                <span class="member-services-badge">
+                  {{ m.service_ids?.length || 0 }} serviço(s)
+                </span>
+              </div>
+            </div>
+            <span v-else class="chip-vazio">Nenhum passageiro atribuído.</span>
+          </div>
         </div>
       </BaseCard>
     </div>
@@ -150,11 +172,29 @@ const gruposFiltrados = computed(() => {
   gap: $space-4;
 }
 
+.group-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
 .policy-box {
-  padding: $space-2 $space-3;
-  border-radius: $radius-sm;
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
   background: var(--altbg);
+  border: 1px solid var(--border);
   font-size: $text-sm;
+  line-height: 1.45;
+}
+
+.policy-icon {
+  color: var(--primary);
+  font-size: 1.05rem;
+  margin-top: 1px;
+  flex-shrink: 0;
 }
 
 .policy-text {
@@ -166,21 +206,73 @@ const gruposFiltrados = computed(() => {
   font-weight: $font-semibold;
 }
 
-.horarios-linha,
-.chips {
+.group-section {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: $space-2;
 }
 
-.badge-horario,
-.chip {
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  font-size: $text-sm;
+  font-weight: $font-semibold;
+  color: var(--text);
+
+  .mdi {
+    color: var(--primary);
+    font-size: 1.05rem;
+  }
+}
+
+.services-list {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.service-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: $space-3;
+  padding: $space-3;
+  border-radius: $radius-md;
+  background: var(--altbg);
+  border: 1px solid var(--border);
+}
+
+.service-direction {
+  display: inline-flex;
+  align-items: center;
   padding: $space-1 $space-3;
   border-radius: $radius-pill;
   background: var(--color-primary-soft);
-  color: var(--text);
+  color: var(--primary);
   font-size: $text-xs;
+  font-weight: $font-bold;
+  white-space: nowrap;
+}
+
+.service-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.service-name {
+  font-size: $text-sm;
   font-weight: $font-semibold;
+  color: var(--text);
+}
+
+.service-meta {
+  font-size: $text-xs;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .sem-horario,
@@ -192,18 +284,57 @@ const gruposFiltrados = computed(() => {
 .secao-vinculos {
   display: flex;
   flex-direction: column;
-  gap: $space-2;
-  padding-top: $space-2;
+  gap: $space-3;
+  padding-top: $space-3;
   border-top: 1px solid var(--border);
 }
 
-.vinculo-titulo {
+.members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: $space-2;
+}
+
+.member-tile {
   display: flex;
   align-items: center;
-  gap: $space-2;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: var(--altbg);
+  border: 1px solid var(--border);
+}
+
+.member-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.member-name {
   font-size: $text-sm;
   font-weight: $font-semibold;
   color: var(--text);
+  @include truncate;
+}
+
+.member-point {
+  font-size: $text-xs;
+  color: var(--text-muted);
+  @include truncate;
+}
+
+.member-services-badge {
+  flex-shrink: 0;
+  padding: 2px $space-2;
+  border-radius: $radius-pill;
+  background: var(--color-primary-soft);
+  color: var(--primary);
+  font-size: $text-xs;
+  font-weight: $font-semibold;
+  white-space: nowrap;
 }
 
 .fab-add {

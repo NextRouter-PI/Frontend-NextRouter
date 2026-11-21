@@ -1,5 +1,6 @@
 <script setup>
 import { shallowRef } from 'vue'
+import { WINDOW_SHORT_LABELS } from '@/constants'
 import { formatDateTimeBr } from '@/utils/formatters'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
@@ -40,7 +41,9 @@ function submitCancel() {
         <div class="day-title-row">
           <strong class="day-title">{{ day.date }} · {{ groupName }}</strong>
           <span class="day-pill">Dia #{{ day.id }}</span>
-          <span class="day-pill" :class="`window-${day.window}`">{{ day.window }}</span>
+          <span class="day-pill" :class="`window-${day.window}`">
+            {{ WINDOW_SHORT_LABELS[day.window] || day.window }}
+          </span>
           <span v-if="day.canceled_at" class="day-pill canceled-pill">Cancelado</span>
         </div>
         <div class="day-meta-row">
@@ -62,59 +65,66 @@ function submitCancel() {
       ></span>
     </button>
 
-    <Transition name="fade-slide">
-      <div v-if="expanded" class="day-accordion-body">
-        <div v-if="day.canceled_at" class="day-canceled-note">
-          Cancelado em {{ formatDateTimeBr(day.canceled_at) }}.
-        </div>
+    <div
+      class="day-accordion-collapse"
+      :class="{ open: expanded }"
+      :aria-hidden="!expanded"
+      :inert="!expanded || undefined"
+    >
+      <div class="day-accordion-collapse-inner">
+        <div class="day-accordion-body">
+          <div v-if="day.canceled_at" class="day-canceled-note">
+            Cancelado em {{ formatDateTimeBr(day.canceled_at) }}.
+          </div>
 
-        <div v-if="!day.canceled_at" class="day-top-actions">
-          <BaseButton
-            v-if="day.window === 'closed' || day.window === 'extension'"
-            size="sm"
-            :disabled="busy"
-            @click="emit('close-window', day)"
-          >
-            Consolidar respostas e alocar
-          </BaseButton>
-          <BaseButton variant="outline" size="sm" :disabled="busy" @click="emit('revise', day)">
-            Revisar atendimento
-          </BaseButton>
-        </div>
+          <div v-if="!day.canceled_at" class="day-top-actions">
+            <BaseButton
+              v-if="day.window === 'closed' || day.window === 'extension'"
+              size="sm"
+              :disabled="busy"
+              @click="emit('close-window', day)"
+            >
+              Consolidar respostas e alocar
+            </BaseButton>
+            <BaseButton variant="outline" size="sm" :disabled="busy" @click="emit('revise', day)">
+              Revisar atendimento
+            </BaseButton>
+          </div>
 
-        <StatusBanner
-          v-if="day.issues?.length"
-          persistent
-          variant="danger"
-          :message="`Pendências do atendimento: ${day.issues.join(' · ')}`"
-        />
-
-        <div class="resumo-demanda">
-          <span>Elegíveis: <strong>{{ resumo.total }}</strong></span>
-          <span>Com ida: <strong>{{ resumo.comIda }}</strong></span>
-          <span>Com retorno: <strong>{{ resumo.comRetorno }}</strong></span>
-          <span>Negativas explícitas: <strong>{{ resumo.negativas }}</strong></span>
-          <span>Sem resposta: <strong>{{ resumo.semResposta }}</strong></span>
-        </div>
-
-        <div v-if="!day.canceled_at" class="cancel-row">
-          <input
-            v-model="motivo"
-            placeholder="Motivo para cancelar este atendimento..."
-            maxlength="500"
-            :disabled="busy"
+          <StatusBanner
+            v-if="day.issues?.length"
+            persistent
+            variant="danger"
+            :message="`Pendências do atendimento: ${day.issues.join(' · ')}`"
           />
-          <BaseButton variant="outline" size="sm" :disabled="busy" @click="submitCancel">
-            Cancelar atendimento
-          </BaseButton>
-        </div>
 
-        <div class="travels-section">
-          <h3 class="travels-heading">Viagens do Atendimento ({{ travelsCount }})</h3>
-          <slot />
+          <div class="resumo-demanda">
+            <span>Elegíveis: <strong>{{ resumo.total }}</strong></span>
+            <span>Com ida: <strong>{{ resumo.comIda }}</strong></span>
+            <span>Com retorno: <strong>{{ resumo.comRetorno }}</strong></span>
+            <span>Negativas explícitas: <strong>{{ resumo.negativas }}</strong></span>
+            <span>Sem resposta: <strong>{{ resumo.semResposta }}</strong></span>
+          </div>
+
+          <div v-if="!day.canceled_at" class="cancel-row">
+            <input
+              v-model="motivo"
+              placeholder="Motivo para cancelar este atendimento..."
+              maxlength="500"
+              :disabled="busy"
+            />
+            <BaseButton variant="outline" size="sm" :disabled="busy" @click="submitCancel">
+              Cancelar atendimento
+            </BaseButton>
+          </div>
+
+          <div class="travels-section">
+            <h3 class="travels-heading">Viagens do Atendimento ({{ travelsCount }})</h3>
+            <slot />
+          </div>
         </div>
       </div>
-    </Transition>
+    </div>
   </section>
 </template>
 
@@ -220,7 +230,9 @@ function submitCancel() {
   font-size: 1.4rem;
   color: var(--text-muted);
   flex-shrink: 0;
-  transition: transform $duration-normal $ease-fluid;
+  transition:
+    transform 0.36s $ease-fluid,
+    color 0.25s $ease-fluid;
 
   &.open {
     transform: rotate(180deg);
@@ -228,13 +240,37 @@ function submitCancel() {
   }
 }
 
+.day-accordion-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.38s $ease-fluid,
+    opacity 0.28s $ease-fluid;
+
+  &.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+
+    .day-accordion-body {
+      transform: translateY(0);
+    }
+  }
+}
+
+.day-accordion-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
 .day-accordion-body {
-  padding: 0 $space-4 $space-4;
+  padding: $space-4;
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   gap: $space-3;
-  padding-top: $space-4;
+  transform: translateY(-6px);
+  transition: transform 0.36s $ease-fluid;
 }
 
 .day-canceled-note {

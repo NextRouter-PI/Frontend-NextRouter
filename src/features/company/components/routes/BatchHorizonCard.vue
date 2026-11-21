@@ -75,100 +75,195 @@ function submitCancelDate() {
     title="Aplicar Atendimentos em Lote ou Cancelar Data"
     subtitle="Aplique atendimentos para dias futuros (até 31 dias por lote). Clique nas datas previstas abaixo para excluir feriados ou folgas antes de aplicar, ou cancele uma data específica."
   >
-    <form class="op-grid" @submit.prevent="submitGenerate">
-      <select v-model="gerarForm.groupId" required :disabled="busy">
-        <option value="">Grupo para aplicar atendimentos...</option>
-        <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
-      </select>
-      <input
-        v-model="gerarForm.start_date"
-        type="date"
-        :min="tomorrowIso"
-        required
-        :disabled="busy"
-        aria-label="Data inicial (a partir de amanhã)"
-      />
-      <input
-        v-model="gerarForm.horizon_days"
-        type="number"
-        min="1"
-        max="31"
-        placeholder="Dias posteriores (1-31)"
-        required
-        :disabled="busy"
-      />
-      <input
-        v-model="gerarForm.batch_size"
-        type="number"
-        min="1"
-        max="31"
-        placeholder="Lote (1-31)"
-        required
-        :disabled="busy"
-      />
-      <BaseButton type="submit" size="sm" :disabled="busy">Aplicar atendimentos</BaseButton>
-    </form>
+    <div class="batch-sections">
+      <form class="op-section" @submit.prevent="submitGenerate">
+        <p class="op-section-title">Aplicar em lote</p>
+        <div class="op-fields-grid">
+          <label class="op-field">
+            <span class="op-label">Grupo</span>
+            <select v-model="gerarForm.groupId" required :disabled="busy">
+              <option value="">Selecione o grupo...</option>
+              <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
+            </select>
+          </label>
+          <label class="op-field">
+            <span class="op-label">Data inicial</span>
+            <input
+              v-model="gerarForm.start_date"
+              type="date"
+              :min="tomorrowIso"
+              required
+              :disabled="busy"
+              aria-label="Data inicial (a partir de amanhã)"
+            />
+          </label>
+          <label class="op-field">
+            <span class="op-label">Dias posteriores (1–31)</span>
+            <input
+              v-model="gerarForm.horizon_days"
+              type="number"
+              min="1"
+              max="31"
+              placeholder="Ex.: 7"
+              required
+              :disabled="busy"
+            />
+          </label>
+          <label class="op-field">
+            <span class="op-label">Tamanho do lote (1–31)</span>
+            <input
+              v-model="gerarForm.batch_size"
+              type="number"
+              min="1"
+              max="31"
+              placeholder="Ex.: 7"
+              required
+              :disabled="busy"
+            />
+          </label>
+        </div>
 
-    <div v-if="datasPrevistasLote.length" class="exclude-dates-box">
-      <p class="exclude-hint">
-        Clique em uma data para <strong>excluir</strong> da aplicação (ex.: feriados):
-        <span v-if="datasExcluidas.length">({{ datasExcluidas.length }} excluída(s))</span>
-      </p>
-      <div class="exclude-chips">
-        <button
-          v-for="item in datasPrevistasLote"
-          :key="item.iso"
-          type="button"
-          :class="['exclude-chip', { excluded: datasExcluidas.includes(item.iso) }]"
-          :disabled="busy"
-          @click="toggleExcluirData(item.iso)"
-        >
-          {{ item.label }}
-        </button>
-      </div>
+        <div v-if="datasPrevistasLote.length" class="exclude-dates-box">
+          <p class="exclude-hint">
+            Clique em uma data para <strong>excluir</strong> da aplicação (ex.: feriados):
+            <span v-if="datasExcluidas.length">({{ datasExcluidas.length }} excluída(s))</span>
+          </p>
+          <div class="exclude-chips">
+            <button
+              v-for="item in datasPrevistasLote"
+              :key="item.iso"
+              type="button"
+              :class="['exclude-chip', { excluded: datasExcluidas.includes(item.iso) }]"
+              :disabled="busy"
+              @click="toggleExcluirData(item.iso)"
+            >
+              {{ item.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="op-actions">
+          <BaseButton type="submit" size="sm" :disabled="busy">Aplicar atendimentos</BaseButton>
+        </div>
+      </form>
+
+      <form class="op-section op-section-divider" @submit.prevent="submitCancelDate">
+        <p class="op-section-title">Cancelar data específica</p>
+        <div class="op-cancel-grid">
+          <label class="op-field">
+            <span class="op-label">Grupo</span>
+            <select v-model="cancelarDataForm.groupId" required :disabled="busy">
+              <option value="">Selecione o grupo...</option>
+              <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
+            </select>
+          </label>
+          <label class="op-field">
+            <span class="op-label">Data a cancelar</span>
+            <input
+              v-model="cancelarDataForm.date"
+              type="date"
+              required
+              :disabled="busy"
+              aria-label="Data a cancelar"
+            />
+          </label>
+          <label class="op-field op-field-wide">
+            <span class="op-label">Motivo do cancelamento</span>
+            <input
+              v-model="cancelarDataForm.reason"
+              placeholder="Informe o motivo (até 500 caracteres)"
+              maxlength="500"
+              required
+              :disabled="busy"
+            />
+          </label>
+        </div>
+        <div class="op-actions">
+          <BaseButton type="submit" variant="outline" size="sm" :disabled="busy">
+            Cancelar data
+          </BaseButton>
+        </div>
+      </form>
     </div>
-
-    <form class="op-grid" @submit.prevent="submitCancelDate">
-      <select v-model="cancelarDataForm.groupId" required :disabled="busy">
-        <option value="">Grupo para cancelar data...</option>
-        <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
-      </select>
-      <input v-model="cancelarDataForm.date" type="date" required :disabled="busy" aria-label="Data a cancelar" />
-      <input
-        v-model="cancelarDataForm.reason"
-        placeholder="Motivo do cancelamento (até 500 caracteres)"
-        maxlength="500"
-        required
-        :disabled="busy"
-      />
-      <BaseButton type="submit" variant="outline" size="sm" :disabled="busy">Cancelar data</BaseButton>
-    </form>
   </BaseCard>
 </template>
 
 <style lang="scss" scoped>
-.op-grid {
+.batch-sections {
   display: flex;
-  flex-wrap: wrap;
-  gap: $space-2;
-  align-items: center;
+  flex-direction: column;
+  gap: $space-5;
+}
+
+.op-section {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+
+  &-divider {
+    padding-top: $space-4;
+    border-top: 1px solid var(--border);
+  }
+
+  &-title {
+    font-size: $text-sm;
+    font-weight: $font-bold;
+    color: var(--text);
+  }
+}
+
+.op-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: $space-3;
+}
+
+.op-cancel-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-3;
+
+  @include from($bp-sm) {
+    grid-template-columns: minmax(180px, 1.1fr) minmax(150px, 0.9fr) minmax(220px, 1.8fr);
+  }
+}
+
+.op-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 
   input,
   select {
-    flex: 1 1 160px;
-    padding: 9px $space-3;
-    border-radius: $radius-sm;
+    width: 100%;
+    padding: 10px $space-3;
+    border-radius: $radius-md;
     background: var(--color-surface);
     outline: 1.5px solid var(--border);
     outline-offset: -1.5px;
     color: var(--text);
     font-size: $text-sm;
+    transition: outline-color $duration-normal $ease-fluid;
 
-    &:focus {
+    &:focus,
+    &:focus-visible {
       outline: 2px solid var(--primary);
       outline-offset: -2px;
     }
   }
+}
+
+.op-label {
+  font-size: $text-xs;
+  font-weight: $font-semibold;
+  color: var(--primary);
+}
+
+.op-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: $space-1;
 }
 
 .exclude-dates-box {

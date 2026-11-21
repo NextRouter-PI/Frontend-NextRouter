@@ -1,6 +1,10 @@
 <script setup>
 import { ref } from 'vue'
-import { SERVICE_DIRECTIONS } from '@/constants'
+import {
+  CHANGE_REQUEST_APPLICATION_LABELS,
+  CHANGE_REQUEST_STATUS_LABELS,
+  SERVICE_DIRECTIONS,
+} from '@/constants'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
@@ -28,8 +32,8 @@ const motivoDecisao = ref({})
           Serviço proposto: {{ serviceLabel(req.proposed_service) }}
         </p>
         <p class="sub-meta">
-          Decisão: <strong>{{ req.status }}</strong> · Aplicação:
-          <strong>{{ req.application || 'não iniciada' }}</strong>
+          Decisão: <strong>{{ CHANGE_REQUEST_STATUS_LABELS[req.status] || req.status }}</strong> · Aplicação:
+          <strong>{{ CHANGE_REQUEST_APPLICATION_LABELS[req.application] || req.application || 'não iniciada' }}</strong>
           <span v-if="req.reason"> · Motivo: {{ req.reason }}</span>
         </p>
 

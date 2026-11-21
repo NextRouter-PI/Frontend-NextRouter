@@ -1,5 +1,10 @@
 <script setup>
 import { computed } from 'vue'
+import {
+  DOMAIN_STATUS_LABELS,
+  NOTIFICATION_KIND_LABELS,
+  RESOURCE_TYPE_LABELS,
+} from '@/constants'
 import { formatDateTimeBr } from '@/utils/formatters'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -13,6 +18,19 @@ const props = defineProps({
 const emit = defineEmits(['mark-read'])
 
 const unreadCount = computed(() => props.notifications.filter((n) => !n.read_at).length)
+
+function formatKind(kind) {
+  return NOTIFICATION_KIND_LABELS[kind] || kind || 'Aviso'
+}
+
+function formatResource(type) {
+  return RESOURCE_TYPE_LABELS[type] || type || 'Registro'
+}
+
+function formatStatus(status) {
+  if (!status) return '—'
+  return DOMAIN_STATUS_LABELS[status] || status
+}
 </script>
 
 <template>
@@ -29,10 +47,10 @@ const unreadCount = computed(() => props.notifications.filter((n) => !n.read_at)
       >
         <div class="card-row">
           <div>
-            <strong>Aviso #{{ n.id }} · {{ n.kind }}</strong>
-            <span> ({{ n.resource_type }} #{{ n.resource_id }})</span>
+            <strong>Aviso #{{ n.id }} · {{ formatKind(n.kind) }}</strong>
+            <span> ({{ formatResource(n.resource_type) }} #{{ n.resource_id }})</span>
             <p class="meta-line">
-              Estado informado: <strong>{{ n.payload?.status || '—' }}</strong> · Criado em
+              Estado informado: <strong>{{ formatStatus(n.payload?.status) }}</strong> · Criado em
               {{ formatDateTimeBr(n.created_at) }}
               <span v-if="n.read_at"> · Lido em {{ formatDateTimeBr(n.read_at) }}</span>
             </p>
@@ -61,13 +79,8 @@ const unreadCount = computed(() => props.notifications.filter((n) => !n.read_at)
   background: var(--altbg);
   border: 1px solid var(--border);
 
-  &.unread::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 2px;
-    background: var(--primary);
-    pointer-events: none;
+  &.unread {
+    border-color: var(--border-primary);
   }
 }
 

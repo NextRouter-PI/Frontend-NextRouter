@@ -1,5 +1,10 @@
 <script setup>
-import { SERVICE_DIRECTIONS, WINDOW_STATES } from '@/constants'
+import {
+  CHANGE_REQUEST_APPLICATION_LABELS,
+  CHANGE_REQUEST_STATUS_LABELS,
+  SERVICE_DIRECTIONS,
+  WINDOW_STATES,
+} from '@/constants'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import AttendanceNormalForm from './AttendanceNormalForm.vue'
 import AttendanceExtensionForm from './AttendanceExtensionForm.vue'
@@ -69,8 +74,8 @@ const emit = defineEmits(['submit-normal', 'submit-extension', 'cancel-request']
           </strong>
           → {{ serviceLabel(eligibility, req.proposed_service) }}
           <p class="sub-info">
-            Decisão: <strong>{{ req.status }}</strong> · Aplicação:
-            <strong>{{ req.application || 'não aplicada' }}</strong>
+            Decisão: <strong>{{ CHANGE_REQUEST_STATUS_LABELS[req.status] || req.status }}</strong> · Aplicação:
+            <strong>{{ CHANGE_REQUEST_APPLICATION_LABELS[req.application] || req.application || 'não aplicada' }}</strong>
             <span v-if="req.reason"> · Motivo: {{ req.reason }}</span>
           </p>
         </div>

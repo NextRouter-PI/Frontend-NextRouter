@@ -314,34 +314,44 @@ function handleInviteDriver({ travel, driverMembershipId, expiresAt, onSuccess }
     />
 
     <BaseCard title="Filtrar Atendimentos por Data">
-      <div class="op-grid">
-        <select v-model="filtroGrupoId" :disabled="busy || store.dayLoading">
-          <option value="">Todos os grupos</option>
-          <option v-for="g in store.grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
-        </select>
-        <input v-model="filtroData" type="date" :disabled="busy || store.dayLoading" />
-        <BaseButton size="sm" :disabled="busy || store.dayLoading" @click="consultarOperacao">
-          Atualizar consulta
-        </BaseButton>
-      </div>
+      <div class="filter-panel">
+        <div class="filter-controls">
+          <label class="filter-field">
+            <span class="filter-label">Grupo</span>
+            <select v-model="filtroGrupoId" :disabled="busy || store.dayLoading">
+              <option value="">Todos os grupos</option>
+              <option v-for="g in store.grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
+            </select>
+          </label>
+          <label class="filter-field">
+            <span class="filter-label">Data</span>
+            <input v-model="filtroData" type="date" :disabled="busy || store.dayLoading" />
+          </label>
+          <div class="filter-action">
+            <BaseButton size="sm" :disabled="busy || store.dayLoading" @click="consultarOperacao">
+              Atualizar consulta
+            </BaseButton>
+          </div>
+        </div>
 
-      <div class="filter-chips" role="tablist" aria-label="Filtrar atendimentos por situação">
-        <button
-          v-for="opt in [
-            { id: 'em_andamento', label: 'Em andamento' },
-            { id: 'encerradas', label: 'Encerradas' },
-            { id: 'canceladas', label: 'Canceladas' },
-            { id: 'todas', label: `Todas (${store.diasAtendimento.length})` },
-          ]"
-          :key="opt.id"
-          type="button"
-          role="tab"
-          :aria-selected="filtroStatusDia === opt.id"
-          :class="['filter-chip', { active: filtroStatusDia === opt.id }]"
-          @click="filtroStatusDia = opt.id"
-        >
-          {{ opt.label }}
-        </button>
+        <div class="filter-chips" role="tablist" aria-label="Filtrar atendimentos por situação">
+          <button
+            v-for="opt in [
+              { id: 'em_andamento', label: 'Em andamento' },
+              { id: 'encerradas', label: 'Encerradas' },
+              { id: 'canceladas', label: 'Canceladas' },
+              { id: 'todas', label: `Todas (${store.diasAtendimento.length})` },
+            ]"
+            :key="opt.id"
+            type="button"
+            role="tab"
+            :aria-selected="filtroStatusDia === opt.id"
+            :class="['filter-chip', { active: filtroStatusDia === opt.id }]"
+            @click="filtroStatusDia = opt.id"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
       </div>
     </BaseCard>
 
@@ -482,46 +492,70 @@ function handleInviteDriver({ travel, driverMembershipId, expiresAt, onSuccess }
   gap: $space-4;
 }
 
-.op-grid {
+.filter-panel {
   display: flex;
-  flex-wrap: wrap;
-  gap: $space-2;
-  align-items: center;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.filter-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $space-3;
+  align-items: end;
+
+  @include from($bp-sm) {
+    grid-template-columns: minmax(200px, 1.4fr) minmax(170px, 1fr) auto;
+  }
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 
   input,
   select {
-    flex: 1 1 160px;
-    padding: 9px $space-3;
-    border-radius: $radius-sm;
+    width: 100%;
+    padding: 10px $space-3;
+    border-radius: $radius-md;
     background: var(--color-surface);
     outline: 1.5px solid var(--border);
     outline-offset: -1.5px;
     color: var(--text);
     font-size: $text-sm;
+    transition: outline-color $duration-normal $ease-fluid;
+
+    &:focus,
+    &:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
   }
+}
+
+.filter-label {
+  font-size: $text-xs;
+  font-weight: $font-semibold;
+  color: var(--primary);
+}
+
+.filter-action {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .filter-chips {
   display: flex;
   flex-wrap: wrap;
   gap: $space-2;
+  padding-top: $space-3;
+  border-top: 1px solid var(--border);
 }
 
 .filter-chip {
-  padding: $space-1 $space-3;
-  border-radius: $radius-pill;
-  background: var(--color-surface);
-  color: var(--text);
-  outline: 1.5px solid var(--border);
-  outline-offset: -1.5px;
-  font-size: $text-xs;
-  font-weight: $font-semibold;
-
-  &.active {
-    background: var(--primary);
-    color: var(--color-on-primary);
-    outline-color: var(--primary);
-  }
+  @include filter-chip;
 }
 
 .sub-meta {
