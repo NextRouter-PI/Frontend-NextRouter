@@ -51,6 +51,6 @@ watch(
 }
 
 .account-tab-stage {
-  overflow-x: hidden;
+  @include tab-stage;
 }
 </style>

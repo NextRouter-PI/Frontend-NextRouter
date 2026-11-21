@@ -73,80 +73,84 @@ onMounted(async () => {
     <StatusBanner variant="success" :message="state.notice" />
     <StatusBanner variant="danger" :message="state.error" />
 
-    <EmptyState
-      v-if="state.loading"
-      loading
-      description="Carregando viagens e convites do motorista..."
-    />
-
-    <template v-else-if="transport">
-      <DriverInvitationsCard
-        :invitations="pendingInvitations"
-        :busy="state.busy"
-        @respond="responderConviteMotorista"
-      />
-
-      <div v-if="transport.travels.length" class="travel-chips" role="tablist" aria-label="Viagens designadas">
-        <button
-          v-for="t in transport.travels"
-          :key="t.id"
-          type="button"
-          role="tab"
-          :aria-selected="t.id === transport.travelId"
-          :class="['travel-chip', { active: t.id === transport.travelId }]"
-          :disabled="state.busy"
-          @click="loadDriverData(t.id)"
-        >
-          #{{ t.id }} · {{ t.date }} ({{ t.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }}) · {{ t.status }}
-        </button>
-      </div>
-
-      <template v-if="transport.travel">
-        <DriverActiveTravelCard
-          :transport="transport"
-          :busy="state.busy"
-          @toggle-travel="handleStartOrFinish"
-          @unavailable="informarIndisponibilidade"
-        />
-
-        <BaseCard v-if="isInProgress" title="Localização ao Vivo (Mesma Origem)">
-          <LiveLocationMap marker-label="Você" />
-          <StatusBanner v-if="tracking.error" variant="danger" :message="tracking.error" />
-        </BaseCard>
-
-        <DriverRouteSnapshotCard :transport="transport" />
-
-        <DriverTravelStopsCard
-          :stops="transport.stops"
-          :participations="transport.participations"
-          :is-in-progress="isInProgress"
-          :busy="state.busy"
-          @handle-stop="tratarParadaPercurso"
-          @record-presence="registrarPresencaParticipante"
-        />
-      </template>
-
+    <Transition name="fade-slide" mode="out-in">
       <EmptyState
-        v-else
-        icon="mdi-bus-clock"
-        title="Sem viagens designadas"
-        description="Você não possui viagens designadas no momento."
+        v-if="state.loading"
+        key="loading"
+        loading
+        description="Carregando viagens e convites do motorista..."
       />
 
-      <TransportHistoryNotifications />
-    </template>
+      <div v-else-if="transport" key="content" class="transport-stack">
+        <DriverInvitationsCard
+          :invitations="pendingInvitations"
+          :busy="state.busy"
+          @respond="responderConviteMotorista"
+        />
+
+        <div v-if="transport.travels.length" class="travel-chips" role="tablist" aria-label="Viagens designadas">
+          <button
+            v-for="t in transport.travels"
+            :key="t.id"
+            type="button"
+            role="tab"
+            :aria-selected="t.id === transport.travelId"
+            :class="['travel-chip', { active: t.id === transport.travelId }]"
+            :disabled="state.busy"
+            @click="loadDriverData(t.id)"
+          >
+            #{{ t.id }} · {{ t.date }} ({{ t.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }}) · {{ t.status }}
+          </button>
+        </div>
+
+        <template v-if="transport.travel">
+          <DriverActiveTravelCard
+            :transport="transport"
+            :busy="state.busy"
+            @toggle-travel="handleStartOrFinish"
+            @unavailable="informarIndisponibilidade"
+          />
+
+          <BaseCard v-if="isInProgress" title="Localização ao Vivo (Mesma Origem)">
+            <LiveLocationMap marker-label="Você" />
+            <StatusBanner v-if="tracking.error" variant="danger" :message="tracking.error" />
+          </BaseCard>
+
+          <DriverRouteSnapshotCard :transport="transport" />
+
+          <DriverTravelStopsCard
+            :stops="transport.stops"
+            :participations="transport.participations"
+            :is-in-progress="isInProgress"
+            :busy="state.busy"
+            @handle-stop="tratarParadaPercurso"
+            @record-presence="registrarPresencaParticipante"
+          />
+        </template>
+
+        <EmptyState
+          v-else
+          icon="mdi-bus-clock"
+          title="Sem viagens designadas"
+          description="Você não possui viagens designadas no momento."
+        />
+
+        <TransportHistoryNotifications />
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.driver-transport-page {
-  padding: $space-5 $space-4 120px;
-  min-height: 100vh;
-  max-width: 720px;
-  margin: 0 auto;
+.driver-transport-page,
+.transport-stack {
   display: flex;
   flex-direction: column;
   gap: $space-4;
+}
+
+.driver-transport-page {
+  @include section-container(120px);
 }
 
 .travel-chips {

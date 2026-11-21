@@ -50,6 +50,7 @@ watch(busy, (val) => {
       <PageHeader
         title="Usuários e vínculos"
         subtitle="Aprovar um vínculo não aprova a conta empresarial, não atribui grupo e não publica viagens."
+        accent
       >
         <template v-if="auth.role === 'company'" #actions>
           <BaseButton
@@ -65,12 +66,14 @@ watch(busy, (val) => {
       </PageHeader>
       <template v-if="auth.role === 'company'">
         <div role="alert"><ErrorMessage :message="companyError" /></div>
-        <SkeletonCard v-if="companyLoading" :count="1" :lines="2" />
-        <section v-else-if="company" class="membership-panel" aria-label="Situação cadastral da empresa">
-          <h2>{{ company.trade_name }}</h2>
-          <p>Conta autenticada · cadastro empresarial: {{ moderationLabel }}.</p>
-          <p v-if="!approved">A moderação cadastral é feita pela plataforma no admin Django. Não é possível decidir pedidos enquanto a empresa não estiver aprovada e ativa.</p>
-        </section>
+        <Transition name="fade-slide" mode="out-in">
+          <SkeletonCard v-if="companyLoading" key="company-loading" :count="1" :lines="2" />
+          <section v-else-if="company" key="company-info" class="membership-panel" aria-label="Situação cadastral da empresa">
+            <h2>{{ company.trade_name }}</h2>
+            <p>Conta autenticada · cadastro empresarial: {{ moderationLabel }}.</p>
+            <p v-if="!approved">A moderação cadastral é feita pela plataforma no admin Django. Não é possível decidir pedidos enquanto a empresa não estiver aprovada e ativa.</p>
+          </section>
+        </Transition>
 
         <template v-if="scope">
           <div class="membership-filters">
@@ -93,20 +96,23 @@ watch(busy, (val) => {
           </Transition>
           <div role="alert"><ErrorMessage :message="error" /></div>
           <LoadingSpinner v-if="busy" size="sm" inline text="Processando ação de vínculo..." />
-          <SkeletonCard v-if="loading" :count="3" avatar />
-          <CompanyMembershipList
-            v-else-if="ready"
-            ref="membershipList"
-            :records="records"
-            :name-filter="nameFilter"
-            :page="page"
-            :total-pages="totalPages"
-            :busy="busy"
-            :loading="loading"
-            :ready="ready"
-            :transition="transition"
-            @page-change="goToPage"
-          />
+          <Transition name="fade-slide" mode="out-in">
+            <SkeletonCard v-if="loading" key="loading" :count="3" avatar />
+            <CompanyMembershipList
+              v-else-if="ready"
+              key="list"
+              ref="membershipList"
+              :records="records"
+              :name-filter="nameFilter"
+              :page="page"
+              :total-pages="totalPages"
+              :busy="busy"
+              :loading="loading"
+              :ready="ready"
+              :transition="transition"
+              @page-change="goToPage"
+            />
+          </Transition>
         </template>
       </template>
       <template v-else-if="!auth.logged">

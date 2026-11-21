@@ -142,10 +142,8 @@ function removeCityFilter() {
 }
 
 .directory-container {
-  width: 100%;
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 16px 16px 24px;
+  @include section-container(120px);
+  display: block;
 }
 
 .title-bar {

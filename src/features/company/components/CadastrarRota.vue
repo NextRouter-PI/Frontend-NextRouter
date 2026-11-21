@@ -102,9 +102,8 @@ const salvar = async () => {
 
 <style lang="scss" scoped>
 .content {
-  margin: 0 auto;
-  max-width: 600px;
-  padding: 18px 18px 120px;
+  @include section-container(120px);
+  display: block;
 }
 
 .top-bar {

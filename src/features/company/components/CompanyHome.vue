@@ -139,12 +139,7 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .company-home-page {
-  margin: 0 auto;
-  max-width: 600px;
-  padding: $space-5 18px 120px;
-  display: flex;
-  flex-direction: column;
-  gap: $space-4;
+  @include section-container(120px);
 }
 
 .date-pill {

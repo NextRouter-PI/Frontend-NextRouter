@@ -75,8 +75,9 @@ async function closeMembership(reason) {
           <BaseButton type="button" variant="outline" :disabled="busy || loading" @click="refresh(1)">Atualizar vínculos</BaseButton>
         </div>
         <LoadingSpinner v-if="busy" size="sm" inline text="Processando ação de vínculo..." />
-        <SkeletonCard v-if="loading" :count="2" avatar />
-        <section v-else-if="ready" class="membership-section" aria-label="Situação atual do vínculo">
+        <Transition name="fade-slide" mode="out-in">
+          <SkeletonCard v-if="loading" key="loading" :count="2" avatar />
+          <section v-else-if="ready" key="content" class="membership-section" aria-label="Situação atual do vínculo">
           <h2>Situação atual</h2>
           <MembershipCard v-if="openMembership" :membership="openMembership" :title="companyName(openMembership)">
             <p v-if="openMembership.status === 'active'">
@@ -108,7 +109,8 @@ async function closeMembership(reason) {
             </template>
           </MembershipCard>
           <p v-else role="status">Você não tem pedido pendente nem vínculo ativo neste perfil.</p>
-        </section>
+          </section>
+        </Transition>
 
         <MembershipRequestPreviewCard
           v-if="route.query.company"

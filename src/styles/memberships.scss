@@ -1,9 +1,14 @@
-/* Estilos restritos à jornada de descoberta/vínculo, sem alterar o layout legado. */
+@use 'variables' as *;
+@use 'mixins' as *;
+
+/* Estilos restritos à jornada de descoberta/vínculo e usuários da empresa, alinhados ao container padrão. */
 .membership-workspace {
-  padding: 28px 20px 100px;
+  @include section-container;
   color: var(--text);
 }
-.membership-content { max-width: 840px; margin: 0 auto; }
+.membership-content {
+  width: 100%;
+}
 .membership-heading { margin: 0 0 12px; color: var(--primary); }
 .membership-section { margin: 24px 0; }
 .membership-panel {
@@ -41,7 +46,4 @@
 
 .membership-select:focus {
   outline-color: var(--primary);
-}
-@media (min-width: 901px) {
-  .membership-workspace.authenticated { padding-left: 30px; }
 }

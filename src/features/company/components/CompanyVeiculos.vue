@@ -47,9 +47,6 @@ watch(abaAtiva, (next, prev) => {
 })
 
 onMounted(async () => {
-  if (!route.params.tab) {
-    router.replace(ROUTE_PATHS.TRANSPORT_FLEET)
-  }
   await store.fetchVeiculos({ signal: scope.signal })
 })
 
@@ -103,21 +100,28 @@ async function alterarStatus(id) {
             </button>
           </div>
 
-          <SkeletonCard v-if="store.loading" :count="3" />
-          <StatusBanner v-else-if="store.error" variant="danger" :message="store.error" />
-          <EmptyState v-else-if="!veiculosFiltrados.length" icon="mdi-bus-alert" description="Nenhum veículo encontrado." />
-
-          <TransitionGroup v-else name="list-stagger" tag="div" class="list-container">
-            <CompanyVehicleCard
-              v-for="veiculo in veiculosFiltrados"
-              :key="veiculo.id"
-              :veiculo="veiculo"
-              :menu-open="menuAberto === veiculo.id"
-              @toggle-menu="toggleMenu"
-              @edit="(id) => router.push(`/vehicles/${id}/edit`)"
-              @toggle-status="alterarStatus"
+          <Transition name="fade-slide" mode="out-in">
+            <SkeletonCard v-if="store.loading" key="loading" :count="3" />
+            <StatusBanner v-else-if="store.error" key="error" variant="danger" :message="store.error" />
+            <EmptyState
+              v-else-if="!veiculosFiltrados.length"
+              key="empty"
+              icon="mdi-bus-alert"
+              description="Nenhum veículo encontrado."
             />
-          </TransitionGroup>
+
+            <TransitionGroup v-else key="list" name="list-stagger" tag="div" class="list-container">
+              <CompanyVehicleCard
+                v-for="veiculo in veiculosFiltrados"
+                :key="veiculo.id"
+                :veiculo="veiculo"
+                :menu-open="menuAberto === veiculo.id"
+                @toggle-menu="toggleMenu"
+                @edit="(id) => router.push(`/vehicles/${id}/edit`)"
+                @toggle-status="alterarStatus"
+              />
+            </TransitionGroup>
+          </Transition>
 
           <button
             type="button"
@@ -137,16 +141,11 @@ async function alterarStatus(id) {
 
 <style lang="scss" scoped>
 .company-vehicles-page {
-  margin: 0 auto;
-  max-width: 680px;
-  padding: $space-5 18px 120px;
-  display: flex;
-  flex-direction: column;
-  gap: $space-4;
+  @include section-container(120px);
 }
 
 .tab-stage {
-  overflow-x: hidden;
+  @include tab-stage;
 }
 
 .tab-pane-stack {

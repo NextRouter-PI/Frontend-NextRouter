@@ -22,39 +22,42 @@ function veiculosDaGaragem(garageId) {
       @cancel-edit="editingPoint = null"
     />
 
-    <EmptyState v-if="store.pointsLoading" loading description="Carregando garagens..." />
-    <EmptyState
-      v-else-if="!store.garagens.length"
-      icon="mdi-garage-outline"
-      description="Nenhuma garagem cadastrada ainda. Cadastre uma garagem acima para vinculá-la aos veículos da frota."
-    />
+    <Transition name="fade-slide" mode="out-in">
+      <EmptyState v-if="store.pointsLoading" key="loading" loading description="Carregando garagens..." />
+      <EmptyState
+        v-else-if="!store.garagens.length"
+        key="empty"
+        icon="mdi-garage-outline"
+        description="Nenhuma garagem cadastrada ainda. Cadastre uma garagem acima para vinculá-la aos veículos da frota."
+      />
 
-    <div v-else class="garages-list">
-      <BaseCard
-        v-for="ponto in store.garagens"
-        :key="ponto.id"
-        :title="`${ponto.name} · #${ponto.id}`"
-        :subtitle="`${ponto.street}, ${ponto.number}${ponto.complement ? ` (${ponto.complement})` : ''} — ${ponto.neighborhood}, ${ponto.city}/${ponto.state} · CEP ${ponto.cep}`"
-      >
-        <template #actions>
-          <BaseButton variant="outline" size="sm" @click="editingPoint = ponto">Editar</BaseButton>
-        </template>
+      <div v-else key="list" class="garages-list">
+        <BaseCard
+          v-for="ponto in store.garagens"
+          :key="ponto.id"
+          :title="`${ponto.name} · #${ponto.id}`"
+          :subtitle="`${ponto.street}, ${ponto.number}${ponto.complement ? ` (${ponto.complement})` : ''} — ${ponto.neighborhood}, ${ponto.city}/${ponto.state} · CEP ${ponto.cep}`"
+        >
+          <template #actions>
+            <BaseButton variant="outline" size="sm" @click="editingPoint = ponto">Editar</BaseButton>
+          </template>
 
-        <div class="card-details">
-          <div class="detail-item">
-            <span class="mdi mdi-crosshairs-gps" aria-hidden="true"></span>
-            <span>{{ ponto.latitude }}, {{ ponto.longitude }}</span>
+          <div class="card-details">
+            <div class="detail-item">
+              <span class="mdi mdi-crosshairs-gps" aria-hidden="true"></span>
+              <span>{{ ponto.latitude }}, {{ ponto.longitude }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="mdi mdi-bus-multiple" aria-hidden="true"></span>
+              <span v-if="veiculosDaGaragem(ponto.id).length">
+                Veículos vinculados: {{ veiculosDaGaragem(ponto.id).map((v) => v.placa).join(', ') }}
+              </span>
+              <span v-else>Nenhum veículo vinculado</span>
+            </div>
           </div>
-          <div class="detail-item">
-            <span class="mdi mdi-bus-multiple" aria-hidden="true"></span>
-            <span v-if="veiculosDaGaragem(ponto.id).length">
-              Veículos vinculados: {{ veiculosDaGaragem(ponto.id).map((v) => v.placa).join(', ') }}
-            </span>
-            <span v-else>Nenhum veículo vinculado</span>
-          </div>
-        </div>
-      </BaseCard>
-    </div>
+        </BaseCard>
+      </div>
+    </Transition>
   </div>
 </template>
 

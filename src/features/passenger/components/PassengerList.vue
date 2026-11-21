@@ -61,51 +61,56 @@ watch(error, (msg) => {
 
     <PassengerRoutesCard />
 
-    <EmptyState
-      v-if="loading"
-      loading
-      description="Consultando elegibilidades e atendimentos no servidor..."
-    />
-
-    <EmptyState
-      v-else-if="!enrichedEligibilities.length"
-      icon="mdi-calendar-blank-outline"
-      title="Nenhum atendimento disponível"
-      description="Você ainda não possui elegibilidades geradas para datas de atendimento. É necessário vínculo ativo, atribuição a um grupo de atendimento, serviços autorizados e geração de datas pela empresa."
-    />
-
-    <template v-else-if="selectedEligibility">
-      <AttendanceDayTabs
-        :eligibilities="enrichedEligibilities"
-        :selected-id="selectedEligibility.id"
-        :disabled="busy"
-        @select="selectEligibility"
+    <Transition name="fade-slide" mode="out-in">
+      <EmptyState
+        v-if="loading"
+        key="loading"
+        loading
+        description="Consultando elegibilidades e atendimentos no servidor..."
       />
 
-      <AttendanceDayDetailCard
-        v-model:outbound-choice="outboundChoice"
-        v-model:return-choice="returnChoice"
-        v-model:change-leg="changeLeg"
-        v-model:proposed-service-id="proposedServiceId"
-        :eligibility="selectedEligibility"
-        :busy="busy"
-        :send-normal-answer="sendNormalAnswer"
-        @submit-extension="sendExtensionRequest"
-        @cancel-request="cancelPendingRequest"
-        @withdraw-leg="withdrawLeg"
+      <EmptyState
+        v-else-if="!enrichedEligibilities.length"
+        key="empty"
+        icon="mdi-calendar-blank-outline"
+        title="Nenhum atendimento disponível"
+        description="Você ainda não possui elegibilidades geradas para datas de atendimento. É necessário vínculo ativo, atribuição a um grupo de atendimento, serviços autorizados e geração de datas pela empresa."
       />
-    </template>
+
+      <div v-else-if="selectedEligibility" key="content" class="list-stack">
+        <AttendanceDayTabs
+          :eligibilities="enrichedEligibilities"
+          :selected-id="selectedEligibility.id"
+          :disabled="busy"
+          @select="selectEligibility"
+        />
+
+        <AttendanceDayDetailCard
+          v-model:outbound-choice="outboundChoice"
+          v-model:return-choice="returnChoice"
+          v-model:change-leg="changeLeg"
+          v-model:proposed-service-id="proposedServiceId"
+          :eligibility="selectedEligibility"
+          :busy="busy"
+          :send-normal-answer="sendNormalAnswer"
+          @submit-extension="sendExtensionRequest"
+          @cancel-request="cancelPendingRequest"
+          @withdraw-leg="withdrawLeg"
+        />
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.passenger-list-page {
-  padding: $space-6 $space-4 120px;
-  min-height: 100vh;
-  max-width: 680px;
-  margin: 0 auto;
+.passenger-list-page,
+.list-stack {
   display: flex;
   flex-direction: column;
   gap: $space-3;
+}
+
+.passenger-list-page {
+  @include section-container(120px);
 }
 </style>

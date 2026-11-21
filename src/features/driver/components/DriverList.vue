@@ -116,10 +116,8 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .usuarios-list-container {
-  padding: 20px 20px 140px;
-  min-height: 100vh;
-  max-width: 680px;
-  margin: 0 auto;
+  @include section-container(140px);
+  display: block;
 }
 
 .questionario-header-block {

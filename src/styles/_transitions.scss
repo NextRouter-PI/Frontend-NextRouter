@@ -1,16 +1,22 @@
 @use 'variables' as *;
 
 .page-fade-enter-active {
-  transition: opacity 0.2s $ease-fluid, transform 0.2s $ease-fluid;
+  transition:
+    opacity 0.22s $ease-fluid,
+    transform 0.22s $ease-fluid;
+  will-change: opacity, transform;
 }
 
 .page-fade-leave-active {
-  transition: opacity 0.14s ease-out, transform 0.14s ease-out;
+  transition:
+    opacity 0.15s $ease-fluid,
+    transform 0.15s $ease-fluid;
+  will-change: opacity, transform;
 }
 
 .page-fade-enter-from {
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(8px);
 }
 
 .page-fade-leave-to {
@@ -18,12 +24,25 @@
   transform: translateY(-4px);
 }
 
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.2s $ease-fluid, transform 0.2s $ease-fluid;
+.fade-slide-enter-active {
+  transition:
+    opacity 0.22s $ease-fluid,
+    transform 0.22s $ease-fluid;
+  will-change: opacity, transform;
 }
 
-.fade-slide-enter-from,
+.fade-slide-leave-active {
+  transition:
+    opacity 0.15s $ease-fluid,
+    transform 0.15s $ease-fluid;
+  will-change: opacity, transform;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-4px);
@@ -71,32 +90,39 @@
 }
 
 .tab-slide-left-enter-active,
-.tab-slide-left-leave-active,
-.tab-slide-right-enter-active,
-.tab-slide-right-leave-active {
+.tab-slide-right-enter-active {
   transition:
     opacity 0.22s $ease-fluid,
-    transform 0.24s $ease-fluid;
+    transform 0.22s $ease-fluid;
+  will-change: opacity, transform;
+}
+
+.tab-slide-left-leave-active,
+.tab-slide-right-leave-active {
+  transition:
+    opacity 0.14s $ease-fluid,
+    transform 0.14s $ease-fluid;
+  will-change: opacity, transform;
 }
 
 .tab-slide-left-enter-from {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(14px);
 }
 
 .tab-slide-left-leave-to {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-14px);
 }
 
 .tab-slide-right-enter-from {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-14px);
 }
 
 .tab-slide-right-leave-to {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(14px);
 }
 
 .slide-forward-enter-active,

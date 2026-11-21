@@ -48,45 +48,54 @@ onMounted(refresh)
 
     <StatusBanner variant="success" :message="notice" />
     <StatusBanner variant="danger" :message="error" />
-    <SkeletonCard v-if="loading" :count="2" />
 
-    <LostItemsSection
-      :role="role"
-      :finished-travels="finishedTravels"
-      :reportable-travels="reportableTravels"
-      :lost-items="lostItems"
-      :participations-by-travel="participationsByTravel"
-      :dropped-off-travel-ids="droppedOffTravelIds"
-      :loading="loading"
-      :busy="busy"
-      @submit-lost-item="handleSubmitLostItem"
-      @advance-lost-item="handleAdvanceLostItem"
-    />
+    <Transition name="fade-slide" mode="out-in">
+      <SkeletonCard v-if="loading" key="loading" :count="2" />
 
-    <DriverRatingsSection
-      :role="role"
-      :ratings="ratings"
-      :rateable-travels="rateableTravels"
-      :loading="loading"
-      :busy="busy"
-      @submit-rating="handleSubmitRating"
-    />
+      <div v-else key="content" class="history-sections">
+        <LostItemsSection
+          :role="role"
+          :finished-travels="finishedTravels"
+          :reportable-travels="reportableTravels"
+          :lost-items="lostItems"
+          :participations-by-travel="participationsByTravel"
+          :dropped-off-travel-ids="droppedOffTravelIds"
+          :loading="loading"
+          :busy="busy"
+          @submit-lost-item="handleSubmitLostItem"
+          @advance-lost-item="handleAdvanceLostItem"
+        />
 
-    <NotificationsSection
-      :notifications="notifications"
-      :loading="loading"
-      :busy="busy"
-      @mark-read="readNotification"
-    />
+        <DriverRatingsSection
+          :role="role"
+          :ratings="ratings"
+          :rateable-travels="rateableTravels"
+          :loading="loading"
+          :busy="busy"
+          @submit-rating="handleSubmitRating"
+        />
+
+        <NotificationsSection
+          :notifications="notifications"
+          :loading="loading"
+          :busy="busy"
+          @mark-read="readNotification"
+        />
+      </div>
+    </Transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.history-panel {
-  margin-top: $space-2;
+.history-panel,
+.history-sections {
   display: flex;
   flex-direction: column;
   gap: $space-4;
+}
+
+.history-panel {
+  margin-top: $space-2;
 }
 
 .history-header {

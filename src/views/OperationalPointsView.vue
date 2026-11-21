@@ -54,46 +54,43 @@ onMounted(() => store.fetchPontosOperacionais({ signal: scope.signal }))
     />
 
     <BaseCard :title="`Pontos de Destino Cadastrados (${store.pontosDestino.length})`">
-      <SkeletonCard v-if="store.pointsLoading" :count="2" />
-      <p v-else-if="!store.pontosDestino.length" class="hint">
-        Nenhum ponto de destino cadastrado ainda. Preencha o formulário e selecione a localização no mapa acima.
-      </p>
-      <TransitionGroup v-else name="list-stagger" tag="div" class="points-list">
-        <article v-for="ponto in store.pontosDestino" :key="ponto.id" class="point-card">
-          <div>
-            <h3>{{ ponto.name }}</h3>
-            <p class="point-address">
-              {{ ponto.street }}, {{ ponto.number }} — {{ ponto.neighborhood }}, {{ ponto.city }}/{{ ponto.state }}
-              (CEP {{ formatCEP(ponto.cep) }})
-            </p>
-            <p class="point-coords">Lat {{ ponto.latitude }} · Lng {{ ponto.longitude }}</p>
-          </div>
-          <div class="point-card-actions">
-            <RouterLink
-              :to="{ path: ROUTE_PATHS.REGISTER_ROUTE, query: { destination: ponto.id } }"
-              class="link-outline"
-            >
-              <span class="mdi mdi-routes" aria-hidden="true"></span>
-              Vincular grupo
-            </RouterLink>
-            <BaseButton variant="outline" size="sm" icon="mdi-pencil-outline" @click="startEdit(ponto)">
-              Editar
-            </BaseButton>
-          </div>
-        </article>
-      </TransitionGroup>
+      <Transition name="fade-slide" mode="out-in">
+        <SkeletonCard v-if="store.pointsLoading" key="loading" :count="2" />
+        <p v-else-if="!store.pontosDestino.length" key="empty" class="hint">
+          Nenhum ponto de destino cadastrado ainda. Preencha o formulário e selecione a localização no mapa acima.
+        </p>
+        <TransitionGroup v-else key="list" name="list-stagger" tag="div" class="points-list">
+          <article v-for="ponto in store.pontosDestino" :key="ponto.id" class="point-card">
+            <div>
+              <h3>{{ ponto.name }}</h3>
+              <p class="point-address">
+                {{ ponto.street }}, {{ ponto.number }} — {{ ponto.neighborhood }}, {{ ponto.city }}/{{ ponto.state }}
+                (CEP {{ formatCEP(ponto.cep) }})
+              </p>
+              <p class="point-coords">Lat {{ ponto.latitude }} · Lng {{ ponto.longitude }}</p>
+            </div>
+            <div class="point-card-actions">
+              <RouterLink
+                :to="{ path: ROUTE_PATHS.REGISTER_ROUTE, query: { destination: ponto.id } }"
+                class="link-outline"
+              >
+                <span class="mdi mdi-routes" aria-hidden="true"></span>
+                Vincular grupo
+              </RouterLink>
+              <BaseButton variant="outline" size="sm" icon="mdi-pencil-outline" @click="startEdit(ponto)">
+                Editar
+              </BaseButton>
+            </div>
+          </article>
+        </TransitionGroup>
+      </Transition>
     </BaseCard>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .points-page {
-  max-width: $container-md;
-  margin: 0 auto;
-  padding: $space-5 $space-4 96px;
-  display: flex;
-  flex-direction: column;
-  gap: $space-4;
+  @include section-container(120px);
 }
 
 .hint {

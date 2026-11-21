@@ -72,9 +72,6 @@ async function carregarTudo() {
 }
 
 onMounted(() => {
-  if (!route.params.tab) {
-    router.replace(`/routes/${id}/edit/settings`)
-  }
   carregarTudo()
 })
 </script>
@@ -83,68 +80,65 @@ onMounted(() => {
   <div class="route-editor-page">
     <PageHeader :title="`Configurar Grupo #${id}`" accent>
       <template #actions>
-        <BaseButton variant="outline" size="sm" icon="mdi-arrow-left" @click="router.push(ROUTE_PATHS.LIST)">
+        <BaseButton variant="outline" size="sm" icon="mdi-arrow-left" @click="router.push(ROUTE_PATHS.LIST_GROUPS)">
           Voltar para rotas
         </BaseButton>
       </template>
     </PageHeader>
 
-    <EmptyState v-if="carregando" loading description="Carregando configuração do grupo..." />
-    <StatusBanner v-else-if="erro" variant="danger" :message="erro" />
+    <Transition name="fade-slide" mode="out-in">
+      <EmptyState v-if="carregando" key="loading" loading description="Carregando configuração do grupo..." />
+      <StatusBanner v-else-if="erro" key="error" variant="danger" :message="erro" />
 
-    <template v-else-if="grupoAtual">
-      <BaseTabs
-        :items="sectionTabs"
-        aria-label="Seções do grupo"
-      />
+      <div v-else-if="grupoAtual" key="content" class="sections-stack">
+        <BaseTabs
+          :items="sectionTabs"
+          aria-label="Seções do grupo"
+        />
 
-      <div class="tab-stage">
-        <Transition :name="tabTransition" mode="out-in">
-          <div v-if="secaoAtiva === 'settings'" key="settings" class="sections-stack">
-            <RouteGroupBasicForm :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
-            <ResponsePolicyForm :group-id="id" :policy="grupoAtual.policy" @updated="carregarTudo" />
-            <RecurringServicesSection
+        <div class="tab-stage">
+          <Transition :name="tabTransition" mode="out-in">
+            <div v-if="secaoAtiva === 'settings'" key="settings" class="sections-stack">
+              <RouteGroupBasicForm :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
+              <ResponsePolicyForm :group-id="id" :policy="grupoAtual.policy" @updated="carregarTudo" />
+              <RecurringServicesSection
+                :group-id="id"
+                :services="servicosHabituais"
+                @updated="carregarTudo"
+              />
+              <RecurringServicesSection
+                :group-id="id"
+                :services="servicosCompartilhados"
+                is-shared
+                @updated="carregarTudo"
+              />
+              <GroupMembersSection :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
+              <AutomationScheduleSection :group-id="id" :status="agendaStatus" @updated="carregarTudo" />
+            </div>
+
+            <HabitualRouteBuilder
+              v-else
+              key="routes"
               :group-id="id"
-              :services="servicosHabituais"
+              :destination-coords="grupoAtual.destinationCoords"
+              :habitual-routes="grupoAtual.habitualRoutes || []"
+              :shared-routes="grupoAtual.sharedRoutes || []"
               @updated="carregarTudo"
             />
-            <RecurringServicesSection
-              :group-id="id"
-              :services="servicosCompartilhados"
-              is-shared
-              @updated="carregarTudo"
-            />
-            <GroupMembersSection :group-id="id" :grupo="grupoAtual" @updated="carregarTudo" />
-            <AutomationScheduleSection :group-id="id" :status="agendaStatus" @updated="carregarTudo" />
-          </div>
-
-          <HabitualRouteBuilder
-            v-else
-            key="routes"
-            :group-id="id"
-            :destination-coords="grupoAtual.destinationCoords"
-            :habitual-routes="grupoAtual.habitualRoutes || []"
-            :shared-routes="grupoAtual.sharedRoutes || []"
-            @updated="carregarTudo"
-          />
-        </Transition>
+          </Transition>
+        </div>
       </div>
-    </template>
+    </Transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .route-editor-page {
-  max-width: $container-lg;
-  margin: 0 auto;
-  padding: $space-5 18px 120px;
-  display: flex;
-  flex-direction: column;
-  gap: $space-4;
+  @include section-container(120px);
 }
 
 .tab-stage {
-  overflow-x: hidden;
+  @include tab-stage;
 }
 
 .sections-stack {

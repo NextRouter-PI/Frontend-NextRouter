@@ -34,16 +34,18 @@ const gruposFiltrados = computed(() => {
       />
     </div>
 
-    <EmptyState v-if="store.loading" loading description="Carregando grupos e serviços habituais..." />
-    <StatusBanner v-else-if="store.error" variant="danger" :message="store.error" />
-    <EmptyState
-      v-else-if="!gruposFiltrados.length"
-      icon="mdi-map-outline"
-      title="Nenhum grupo de atendimento"
-      description="Cadastre o primeiro grupo para configurar serviços habituais e políticas de resposta."
-    />
+    <Transition name="fade-slide" mode="out-in">
+      <EmptyState v-if="store.loading" key="loading" loading description="Carregando grupos e serviços habituais..." />
+      <StatusBanner v-else-if="store.error" key="error" variant="danger" :message="store.error" />
+      <EmptyState
+        v-else-if="!gruposFiltrados.length"
+        key="empty"
+        icon="mdi-map-outline"
+        title="Nenhum grupo de atendimento"
+        description="Cadastre o primeiro grupo para configurar serviços habituais e políticas de resposta."
+      />
 
-    <div v-else class="groups-list">
+      <div v-else key="list" class="groups-list">
       <BaseCard
         v-for="grupo in gruposFiltrados"
         :key="grupo.id"
@@ -116,7 +118,8 @@ const gruposFiltrados = computed(() => {
           </div>
         </div>
       </BaseCard>
-    </div>
+      </div>
+    </Transition>
 
     <button
       type="button"

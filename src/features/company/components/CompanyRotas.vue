@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, shallowRef, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
@@ -12,7 +12,6 @@ import CompanyDatedOperationTab from '@/features/company/components/routes/Compa
 import TransportHistoryNotifications from '@/features/transport/components/TransportHistoryNotifications.vue'
 
 const route = useRoute()
-const router = useRouter()
 const store = useRotasStore()
 const scope = useAccountScope()
 const { showToast } = useToast()
@@ -53,9 +52,6 @@ watch(aba, (next, prev) => {
 })
 
 onMounted(async () => {
-  if (!route.params.tab) {
-    router.replace(ROUTE_PATHS.LIST_GROUPS)
-  }
   await store.fetchRotas({ signal: scope.signal })
   if (!scope.current()) return
   await store.fetchOperacaoDatada({}, { signal: scope.signal })
@@ -87,15 +83,10 @@ function handleToast({ message, type }) {
 
 <style lang="scss" scoped>
 .company-routes-page {
-  margin: 0 auto;
-  max-width: $container-lg;
-  padding: $space-5 18px 120px;
-  display: flex;
-  flex-direction: column;
-  gap: $space-4;
+  @include section-container(120px);
 }
 
 .tab-stage {
-  overflow-x: hidden;
+  @include tab-stage;
 }
 </style>
