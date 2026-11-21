@@ -91,6 +91,8 @@ function linkQuery(groupId = defaultGroupId.value) {
   color: var(--color-on-primary);
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 140px;
 }
 
 .company-media {

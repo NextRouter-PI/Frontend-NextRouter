@@ -165,6 +165,8 @@ function submit() {
   border-radius: $radius-md;
   background: var(--altbg);
   border: 1px solid var(--border);
+  content-visibility: auto;
+  contain-intrinsic-size: auto 110px;
 }
 
 .card-row {

@@ -68,6 +68,8 @@ const formattedPhone = computed(() =>
   background: var(--color-surface);
   box-shadow: var(--shadow);
   overflow-wrap: anywhere;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 150px;
   transition: outline-color 0.2s var(--ease-fluid), transform 0.2s var(--ease-fluid),
     box-shadow 0.2s var(--ease-fluid);
 }

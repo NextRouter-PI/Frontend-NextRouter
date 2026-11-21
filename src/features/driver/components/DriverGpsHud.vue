@@ -44,11 +44,10 @@ const emit = defineEmits(['toggle-3d'])
   gap: 12px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: rgba(18, 18, 22, 0.92);
+  background: rgba(18, 18, 22, 0.95);
   color: #ffffff;
   border: 1.5px solid rgba(236, 131, 20, 0.55);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
-  backdrop-filter: blur(8px);
 }
 
 .gps-hud-icon {

@@ -1,6 +1,7 @@
 import { nextTick, onMounted, onUnmounted, watch } from 'vue'
 import L from 'leaflet'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { usePageVisibility } from '@/composables/usePageVisibility'
 import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER } from '@/utils/leafletTiles'
 import { pointToLatLng } from '@/utils/geo'
 import { animateLngLatMarker } from '@/utils/mapAnimation'
@@ -12,27 +13,22 @@ import {
 } from '@/features/transport/utils/leafletRouteLayers'
 
 export function useLiveBackgroundMap({
-  mapContainer,
-  tracking,
-  getSnapshot,
-  getStops,
-  getTargetPoint,
-  getSelfLabel,
-  getTrackingLabel,
-  getTrackingIcon,
+  mapContainer, tracking, getSnapshot, getStops, getTargetPoint, getSelfLabel, getTrackingLabel, getTrackingIcon,
 }) {
   const auth = useAuthStore()
-  let map = null
-  let trackingMarker = null
-  let targetMarker = null
-  let routeLayer = null
-  let passedLine = null
-  let remainingLine = null
-  let trailLine = null
-  let trailCoords = []
-  let cleanupTiles = null
-  let stopAnim = null
-  let lastRenderedPos = null
+  const { isVisible } = usePageVisibility()
+  let map = null, trackingMarker = null, targetMarker = null, routeLayer = null
+  let passedLine = null, remainingLine = null, trailLine = null, cleanupTiles = null
+  let stopAnim = null, lastRenderedPos = null, cachedSnapshotRef = null
+  let trailCoords = [], cachedPlannedCoords = []
+
+  function getPlannedCoords() {
+    const snap = getSnapshot()
+    if (snap === cachedSnapshotRef) return cachedPlannedCoords
+    cachedSnapshotRef = snap
+    cachedPlannedCoords = plannedCoordsLatLng(snap)
+    return cachedPlannedCoords
+  }
 
   function initialCenter() {
     const target = pointToLatLng(getTargetPoint())
@@ -77,13 +73,16 @@ export function useLiveBackgroundMap({
     }
   }
 
+  watch(isVisible, (visible) => {
+    if (!visible) { stopAnim?.(); stopAnim = null }
+  })
   watch(() => [getSnapshot()?.id, getStops()?.length], renderPlannedRoute)
   watch(() => [getTargetPoint()?.latitude, getTargetPoint()?.longitude], renderTargetMarker)
 
   watch(() => [tracking.latitude, tracking.longitude], ([lat, lng]) => {
     if (!map || lat == null || lng == null) return
     const nextPos = [lat, lng]
-    const coords = plannedCoordsLatLng(getSnapshot())
+    const coords = getPlannedCoords()
     if (coords.length >= 2) {
       const res = renderConsumedPolylineLayers({ map, coords, busPos: nextPos, passedLine, remainingLine })
       passedLine = res.passedLine
@@ -97,17 +96,20 @@ export function useLiveBackgroundMap({
         icon: createPinIcon({ icon: getTrackingIcon(), pulse: true }),
       }).addTo(map).bindPopup(getTrackingLabel())
       lastRenderedPos = nextPos
+    } else if (!isVisible.value) {
+      stopAnim?.()
+      stopAnim = null
+      trackingMarker.setLatLng(nextPos)
+      lastRenderedPos = nextPos
     } else {
       stopAnim?.()
       stopAnim = animateLngLatMarker({
-        startLngLat: lastRenderedPos || nextPos,
-        nextLngLat: nextPos,
-        duration: 1800,
+        startLngLat: lastRenderedPos || nextPos, nextLngLat: nextPos, duration: 1800,
         onStep: (pos) => { trackingMarker?.setLatLng(pos); lastRenderedPos = pos },
         onDone: () => { stopAnim = null; lastRenderedPos = nextPos },
       })
     }
-    frameBackgroundViewport(map, nextPos, getTargetPoint())
+    if (isVisible.value) frameBackgroundViewport(map, nextPos, getTargetPoint())
   })
 
   watch(() => tracking.tracking, (isTracking) => {
