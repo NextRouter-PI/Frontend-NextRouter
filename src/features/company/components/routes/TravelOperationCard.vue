@@ -1,5 +1,5 @@
 <script setup>
-import { computed, reactive, shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import {
   JOB_STATUS_LABELS,
   PLANNING_STATUS_LABELS,
@@ -9,6 +9,7 @@ import {
 import { formatDateTimeBr } from '@/utils/formatters'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import RouteMapSnapshot from '@/features/transport/components/RouteMapSnapshot.vue'
+import TravelAssignmentControls from './TravelAssignmentControls.vue'
 
 const props = defineProps({
   travel: { type: Object, required: true },
@@ -48,31 +49,6 @@ const calculateBlockedTitle = computed(() => {
 })
 
 const mapaAberto = shallowRef(false)
-const veiculoSubstituto = shallowRef('')
-const convite = reactive({ driverMembershipId: '', expiresAt: '' })
-
-function submitVehicle() {
-  if (!veiculoSubstituto.value) return
-  emit('assign-vehicle', {
-    travel: props.travel,
-    vehicleId: veiculoSubstituto.value,
-    onSuccess: () => {
-      veiculoSubstituto.value = ''
-    },
-  })
-}
-
-function submitInvite() {
-  emit('invite-driver', {
-    travel: props.travel,
-    driverMembershipId: convite.driverMembershipId,
-    expiresAt: convite.expiresAt,
-    onSuccess: () => {
-      convite.driverMembershipId = ''
-      convite.expiresAt = ''
-    },
-  })
-}
 </script>
 
 <template>
@@ -143,32 +119,15 @@ function submitInvite() {
       />
     </div>
 
-    <div v-if="travel.status === 'scheduled'" class="sub-actions">
-      <div class="op-grid">
-        <select v-model="veiculoSubstituto" :disabled="busy">
-          <option value="">Substituir veículo...</option>
-          <option v-for="v in veiculosAtivos" :key="v.id" :value="v.id">
-            {{ v.plate }} ({{ v.capacity }} lug.)
-          </option>
-        </select>
-        <BaseButton variant="outline" size="sm" :disabled="busy" @click="submitVehicle">
-          Designar veículo
-        </BaseButton>
-      </div>
-
-      <div class="op-grid">
-        <select v-model="convite.driverMembershipId" :disabled="busy">
-          <option value="">Convidar motorista substituto...</option>
-          <option v-for="m in motoristasAtivos" :key="m.id" :value="m.id">
-            {{ m.applicant_name }} (vínculo #{{ m.id }})
-          </option>
-        </select>
-        <input v-model="convite.expiresAt" type="datetime-local" :disabled="busy" aria-label="Prazo do convite" />
-        <BaseButton variant="outline" size="sm" :disabled="busy" @click="submitInvite">
-          Convidar motorista
-        </BaseButton>
-      </div>
-    </div>
+    <TravelAssignmentControls
+      v-if="travel.status === 'scheduled'"
+      :travel="travel"
+      :veiculos-ativos="veiculosAtivos"
+      :motoristas-ativos="motoristasAtivos"
+      :busy="busy"
+      @assign-vehicle="emit('assign-vehicle', $event)"
+      @invite-driver="emit('invite-driver', $event)"
+    />
   </div>
 </template>
 

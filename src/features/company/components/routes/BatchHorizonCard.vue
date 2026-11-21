@@ -1,7 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { buildBatchDatesPreview, tomorrowIsoString } from '@/features/company/utils/operationLookups'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import CancelDateForm from './CancelDateForm.vue'
 
 defineProps({
   grupos: { type: Array, required: true },
@@ -12,33 +14,11 @@ const emit = defineEmits(['generate-horizon', 'cancel-date'])
 
 const gerarForm = ref({ groupId: '', start_date: '', horizon_days: '', batch_size: '' })
 const datasExcluidas = ref([])
-const cancelarDataForm = ref({ groupId: '', date: '', reason: '' })
 
-const tomorrowIso = computed(() => {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-})
-
-const datasPrevistasLote = computed(() => {
-  const { start_date, horizon_days, batch_size } = gerarForm.value
-  const total = Math.min(Number(horizon_days) || 0, Number(batch_size) || 0, 31)
-  if (!start_date || total < 1) return []
-  const base = new Date(`${start_date}T12:00:00`)
-  if (Number.isNaN(base.getTime())) return []
-  const dias = []
-  for (let i = 0; i < total; i++) {
-    const d = new Date(base)
-    d.setDate(base.getDate() + i)
-    const iso = d.toISOString().slice(0, 10)
-    const label = d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })
-    dias.push({ iso, label })
-  }
-  return dias
-})
+const tomorrowIso = computed(tomorrowIsoString)
+const datasPrevistasLote = computed(() =>
+  buildBatchDatesPreview(gerarForm.value.start_date, gerarForm.value.horizon_days, gerarForm.value.batch_size),
+)
 
 function toggleExcluirData(iso) {
   datasExcluidas.value = datasExcluidas.value.includes(iso)
@@ -56,15 +36,6 @@ function submitGenerate() {
     excludedDates: validExcluded,
     onSuccess: () => {
       datasExcluidas.value = []
-    },
-  })
-}
-
-function submitCancelDate() {
-  emit('cancel-date', {
-    ...cancelarDataForm.value,
-    onSuccess: () => {
-      cancelarDataForm.value = { groupId: '', date: '', reason: '' }
     },
   })
 }
@@ -147,43 +118,7 @@ function submitCancelDate() {
         </div>
       </form>
 
-      <form class="op-section op-section-divider" @submit.prevent="submitCancelDate">
-        <p class="op-section-title">Cancelar data específica</p>
-        <div class="op-cancel-grid">
-          <label class="op-field">
-            <span class="op-label">Grupo</span>
-            <select v-model="cancelarDataForm.groupId" required :disabled="busy">
-              <option value="">Selecione o grupo...</option>
-              <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.name }}</option>
-            </select>
-          </label>
-          <label class="op-field">
-            <span class="op-label">Data a cancelar</span>
-            <input
-              v-model="cancelarDataForm.date"
-              type="date"
-              required
-              :disabled="busy"
-              aria-label="Data a cancelar"
-            />
-          </label>
-          <label class="op-field op-field-wide">
-            <span class="op-label">Motivo do cancelamento</span>
-            <input
-              v-model="cancelarDataForm.reason"
-              placeholder="Informe o motivo (até 500 caracteres)"
-              maxlength="500"
-              required
-              :disabled="busy"
-            />
-          </label>
-        </div>
-        <div class="op-actions">
-          <BaseButton type="submit" variant="outline" size="sm" :disabled="busy">
-            Cancelar data
-          </BaseButton>
-        </div>
-      </form>
+      <CancelDateForm :grupos="grupos" :busy="busy" @cancel-date="emit('cancel-date', $event)" />
     </div>
   </BaseCard>
 </template>
