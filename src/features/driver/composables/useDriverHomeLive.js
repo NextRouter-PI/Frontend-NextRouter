@@ -1,6 +1,7 @@
 import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
+import { useAdaptivePolling } from '@/composables/useAdaptivePolling'
 import { useToast } from '@/composables/useToast'
 import { estimateEtaMinutes, formatDistanceLabel, haversineMeters } from '@/utils/geo'
 
@@ -104,20 +105,19 @@ export function useDriverHomeLive({ scope }) {
   const updatedAtLabel = computed(() => (tracking.updatedAt ? new Date(tracking.updatedAt).toLocaleTimeString('pt-BR') : ''))
   const routeStatusLabel = computed(() => (isSharing.value ? 'Rota em andamento' : 'Rota não iniciada'))
 
-  let driverPollTimer = null
+  const polling = useAdaptivePolling({
+    getIntervalMs: () => (tracking.connected ? 25_000 : 6_000),
+    canRun: () => scope.current() && !transportState.loading,
+    onTick: () => loadDriverData(driverTransport.value?.travelId),
+  })
 
   function startLivePolling() {
     loadDriverData()
-    driverPollTimer = setInterval(() => {
-      if (scope.current() && !transportState.loading) loadDriverData(driverTransport.value?.travelId)
-    }, 6000)
+    polling.start(false)
   }
 
   onUnmounted(() => {
-    if (driverPollTimer) {
-      clearInterval(driverPollTimer)
-      driverPollTimer = null
-    }
+    polling.stop()
     if (tracking.role === 'viewer') stopTracking()
   })
 

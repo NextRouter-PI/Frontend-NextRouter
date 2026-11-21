@@ -1,6 +1,7 @@
 import { computed, onUnmounted, watch } from 'vue'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
+import { useAdaptivePolling } from '@/composables/useAdaptivePolling'
 import { useToast } from '@/composables/useToast'
 import { estimateEtaMinutes, formatDistanceLabel, haversineMeters } from '@/utils/geo'
 
@@ -108,20 +109,18 @@ export function usePassengerHomeLive({ scope }) {
   })
   const updatedAtLabel = computed(() => (tracking.updatedAt ? new Date(tracking.updatedAt).toLocaleTimeString('pt-BR') : ''))
 
-  let travelPollTimer = null
+  const polling = useAdaptivePolling({
+    getIntervalMs: () => (tracking.connected ? 25_000 : 5_000),
+    canRun: () => scope.current() && !transportState.loading,
+    onTick: () => loadPassengerData(),
+  })
 
   function startLivePolling() {
-    loadPassengerData()
-    travelPollTimer = setInterval(() => {
-      if (scope.current() && !transportState.loading) loadPassengerData()
-    }, 5000)
+    polling.start(true)
   }
 
   onUnmounted(() => {
-    if (travelPollTimer) {
-      clearInterval(travelPollTimer)
-      travelPollTimer = null
-    }
+    polling.stop()
     stopTracking()
   })
 

@@ -1,6 +1,13 @@
+import { haversineMeters } from '@/utils/geo'
+
+const MIN_SEND_INTERVAL_MS = 2000
+const STATIONARY_HEARTBEAT_MS = 15000
+const MIN_DISPLACEMENT_METERS = 5
+
 export function createGeolocationWatcher({ state, sendPosition }) {
   let watchId = null
   let lastSentAt = 0
+  let lastSentCoords = null
 
   function stop() {
     if (watchId !== null && navigator.geolocation) {
@@ -8,6 +15,14 @@ export function createGeolocationWatcher({ state, sendPosition }) {
       watchId = null
     }
     lastSentAt = 0
+    lastSentCoords = null
+  }
+
+  function shouldTransmit(lat, lng, nowMs) {
+    const elapsed = nowMs - lastSentAt
+    if (elapsed < MIN_SEND_INTERVAL_MS) return false
+    if (!lastSentCoords || elapsed >= STATIONARY_HEARTBEAT_MS) return true
+    return haversineMeters(lastSentCoords.lat, lastSentCoords.lng, lat, lng) >= MIN_DISPLACEMENT_METERS
   }
 
   function start(travelId) {
@@ -20,19 +35,19 @@ export function createGeolocationWatcher({ state, sendPosition }) {
       (position) => {
         if (!state.tracking || state.role !== 'driver' || state.travelId !== travelId) return
         const nowMs = Date.now()
+        const lat = position.coords.latitude
+        const lng = position.coords.longitude
         const recordedAt = new Date(nowMs).toISOString()
-        state.latitude = position.coords.latitude
-        state.longitude = position.coords.longitude
+        state.latitude = lat
+        state.longitude = lng
         state.updatedAt = recordedAt
         state.stale = false
-        // Evita disparo excessivo (< 2s) que o servidor recusaria por position_rate_limited.
-        if (nowMs - lastSentAt >= 2000) {
-          const sent = sendPosition({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            recorded_at: recordedAt,
-          })
-          if (sent) lastSentAt = nowMs
+        if (shouldTransmit(lat, lng, nowMs)) {
+          const sent = sendPosition({ latitude: lat, longitude: lng, recorded_at: recordedAt })
+          if (sent) {
+            lastSentAt = nowMs
+            lastSentCoords = { lat, lng }
+          }
         }
       },
       () => {

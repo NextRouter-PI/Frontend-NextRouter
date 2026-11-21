@@ -5,6 +5,9 @@ import {
   handleTravelWsMessage,
 } from './travelSocketHandlers'
 
+const BASE_RECONNECT_MS = 2000
+const MAX_RECONNECT_MS = 30000
+
 function wsUrlFor(travelId) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   return `${protocol}//${window.location.host}/ws/travels/${encodeURIComponent(travelId)}/location/`
@@ -14,7 +17,20 @@ export function createTravelSocketClient({ state, http, stopTracking }) {
   let socket = null
   let socketAbort = null
   let reconnectTimer = null
+  let onlineListener = null
+  let reconnectAttempt = 0
   let readController = null
+
+  function clearReconnectWait() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
+    if (onlineListener) {
+      window.removeEventListener('online', onlineListener)
+      onlineListener = null
+    }
+  }
 
   async function fetchInitialLocation(travelId) {
     readController?.abort()
@@ -31,10 +47,7 @@ export function createTravelSocketClient({ state, http, stopTracking }) {
   }
 
   function clearSocket() {
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer)
-      reconnectTimer = null
-    }
+    clearReconnectWait()
     socketAbort?.abort()
     socketAbort = null
     if (socket) {
@@ -50,11 +63,23 @@ export function createTravelSocketClient({ state, http, stopTracking }) {
   }
 
   function scheduleReconnect() {
-    if (!state.tracking || state.closed || !state.travelId || reconnectTimer) return
+    if (!state.tracking || state.closed || !state.travelId || reconnectTimer || onlineListener) return
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      onlineListener = () => {
+        clearReconnectWait()
+        reconnectAttempt = 0
+        if (state.tracking && !state.closed && state.travelId) openSocket(state.travelId)
+      }
+      window.addEventListener('online', onlineListener, { once: true })
+      return
+    }
+    const backoff = Math.min(MAX_RECONNECT_MS, BASE_RECONNECT_MS * 2 ** Math.min(reconnectAttempt, 4))
+    const delayMs = backoff + Math.round(Math.random() * 600)
+    reconnectAttempt += 1
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null
       if (state.tracking && !state.closed && state.travelId) openSocket(state.travelId)
-    }, 3000)
+    }, delayMs)
   }
 
   function openSocket(travelId) {
@@ -67,6 +92,7 @@ export function createTravelSocketClient({ state, http, stopTracking }) {
 
     ws.addEventListener('open', () => {
       if (socket !== ws) return
+      reconnectAttempt = 0
       state.connected = true
       state.error = null
     }, { signal: ac.signal })

@@ -1,7 +1,9 @@
 import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
+import { usePageVisibility } from '@/composables/usePageVisibility'
 import { nomeGrupo, nomeServico, categoriaDia } from '@/features/company/utils/operationLookups'
 
 export function useDatedOperationCoordinator({ store, scope, onToast }) {
+  const { isActive } = usePageVisibility()
   const busy = shallowRef(false)
   const filtroGrupoId = shallowRef('')
   const filtroData = shallowRef('')
@@ -49,11 +51,11 @@ export function useDatedOperationCoordinator({ store, scope, onToast }) {
     store.viagensDia.some((t) => t.planning_status === 'preparing'),
   )
 
-  watch(hasActiveJobs, (active) => {
+  watch([hasActiveJobs, isActive], ([active, visible]) => {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
-    if (active) {
+    if (active && visible) {
       pollTimer = setInterval(() => {
-        if (scope.current() && !busy.value && !store.dayLoading) consultarOperacao()
+        if (scope.current() && isActive.value && !busy.value && !store.dayLoading) consultarOperacao()
       }, 2000)
     }
   })
