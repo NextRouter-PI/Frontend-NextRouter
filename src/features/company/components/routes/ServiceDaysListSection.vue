@@ -1,14 +1,7 @@
 <script setup>
+import { computed } from 'vue'
 import { useRotasStore } from '@/stores/useRotasStore'
-import {
-  jobDoSnapshot,
-  nomeGrupo,
-  nomeServico,
-  participacoesListaDaViagem,
-  resumoRespostasDia,
-  snapshotDaViagem,
-  viagensDoDia,
-} from '@/features/company/utils/operationLookups'
+import { buildOperationIndexes } from '@/features/company/utils/operationIndexes'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import ServiceDayCard from './ServiceDayCard.vue'
 import TravelOperationCard from './TravelOperationCard.vue'
@@ -34,6 +27,7 @@ const emit = defineEmits([
 ])
 
 const store = useRotasStore()
+const idx = computed(() => buildOperationIndexes(store))
 </script>
 
 <template>
@@ -51,27 +45,27 @@ const store = useRotasStore()
         v-for="(day, index) in days"
         :key="day.id"
         :day="day"
-        :group-name="nomeGrupo(store.grupos, day.route_group)"
-        :resumo="resumoRespostasDia(store.elegibilidadesDia, day.id)"
-        :travels-count="viagensDoDia(store.viagensDia, day.id).length"
+        :group-name="idx.getGroupName(day.route_group)"
+        :resumo="idx.getResumo(day.id)"
+        :travels-count="idx.getTravels(day.id).length"
         :busy="busy"
         :default-expanded="index === 0 && statusFilter === 'em_andamento'"
         @close-window="emit('close-window', $event)"
         @revise="emit('revise', $event)"
         @cancel="emit('cancel-day', $event)"
       >
-        <p v-if="!viagensDoDia(store.viagensDia, day.id).length" class="sub-meta">
+        <p v-if="!idx.getTravels(day.id).length" class="sub-meta">
           Nenhuma viagem gerada para este atendimento.
         </p>
         <TravelOperationCard
-          v-for="travel in viagensDoDia(store.viagensDia, day.id)"
+          v-for="travel in idx.getTravels(day.id)"
           :key="travel.id"
           :travel="travel"
-          :service-name="nomeServico(store.servicos, travel.service)"
+          :service-name="idx.getServiceName(travel.service)"
           :day-window="day.window"
-          :participants-count="participacoesListaDaViagem(store.participacoesViagem, travel.id).length"
-          :snapshot="snapshotDaViagem(store.snapshotsViagem, travel)"
-          :job="jobDoSnapshot(store.snapshotsViagem, store.jobsCalculo, travel)"
+          :participants-count="idx.getParticipantsCount(travel.id)"
+          :snapshot="idx.getSnapshot(travel)"
+          :job="idx.getJob(travel)"
           :veiculos-ativos="veiculosAtivos"
           :motoristas-ativos="motoristasAtivos"
           :busy="busy"

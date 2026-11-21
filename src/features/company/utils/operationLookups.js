@@ -23,8 +23,7 @@ export function categoriaDia(viagensDia, day) {
   return 'em_andamento'
 }
 
-export function resumoRespostasDia(elegibilidadesDia, dayId) {
-  const list = elegibilidadesDia.filter((e) => e.day === dayId)
+export function summarizeEligibilities(list) {
   let semResposta = 0
   let negativas = 0
   let comIda = 0
@@ -44,6 +43,10 @@ export function resumoRespostasDia(elegibilidadesDia, dayId) {
     }
   }
   return { total: list.length, semResposta, negativas, comIda, comRetorno }
+}
+
+export function resumoRespostasDia(elegibilidadesDia, dayId) {
+  return summarizeEligibilities(elegibilidadesDia.filter((e) => e.day === dayId))
 }
 
 export function participacoesListaDaViagem(participacoesViagem, travelId) {

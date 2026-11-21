@@ -3,6 +3,7 @@ import { computed, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { ROUTE_PATHS, SERVICE_DIRECTIONS } from '@/constants'
 import { useRotasStore } from '@/stores/useRotasStore'
+import { useDebounce } from '@/composables/useDebounce'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -11,10 +12,11 @@ import StatusBanner from '@/components/ui/StatusBanner.vue'
 const store = useRotasStore()
 const router = useRouter()
 const busca = shallowRef('')
+const buscaDebounced = useDebounce(busca, 150)
 
 const gruposFiltrados = computed(() => {
   const lista = store.grupos || []
-  const termo = busca.value.trim().toLowerCase()
+  const termo = buscaDebounced.value.trim().toLowerCase()
   if (!termo) return lista
   return lista.filter(
     (g) => g.name.toLowerCase().includes(termo) || g.destinationName.toLowerCase().includes(termo),

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
 import { useTransporteStore } from '@/stores/useTransporteStore'
 import { useAccountScope } from '@/composables/useAccountScope'
+import { useDebounce } from '@/composables/useDebounce'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseTabs from '@/components/ui/BaseTabs.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
@@ -25,6 +26,7 @@ const router = useRouter()
 
 const tabTransition = shallowRef('tab-slide-left')
 const busca = shallowRef('')
+const buscaDebounced = useDebounce(busca, 150)
 const filtroAtivo = shallowRef('Todas')
 const menuAberto = shallowRef(null)
 
@@ -58,7 +60,7 @@ onMounted(async () => {
 
 const veiculosFiltrados = computed(() => {
   const lista = store.veiculos || []
-  const termo = busca.value.toLowerCase()
+  const termo = buscaDebounced.value.toLowerCase()
   const statusParaFiltro = filtroAtivo.value === 'Ativas' ? 'Ativo' : filtroAtivo.value
   return lista.filter((v) => {
     const matchBusca = v.placa.toLowerCase().includes(termo) || v.modelo.toLowerCase().includes(termo)

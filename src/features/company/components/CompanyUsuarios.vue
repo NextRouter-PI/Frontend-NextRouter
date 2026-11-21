@@ -2,6 +2,7 @@
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useCompanyModerationStatus } from '@/features/company/composables/useCompanyModerationStatus'
 import { useMemberships } from '@/features/memberships/composables/useMemberships'
+import { useDebounce } from '@/composables/useDebounce'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
@@ -13,6 +14,7 @@ import '@/styles/memberships.scss'
 
 const status = ref('pending')
 const nameFilter = ref('')
+const nameFilterDebounced = useDebounce(nameFilter, 150)
 const busyRef = ref(false)
 const listRef = useTemplateRef('membershipList')
 
@@ -103,7 +105,7 @@ watch(busy, (val) => {
               key="list"
               ref="membershipList"
               :records="records"
-              :name-filter="nameFilter"
+              :name-filter="nameFilterDebounced"
               :page="page"
               :total-pages="totalPages"
               :busy="busy"

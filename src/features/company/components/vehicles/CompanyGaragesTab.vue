@@ -1,5 +1,5 @@
 <script setup>
-import { shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { useTransporteStore } from '@/stores/useTransporteStore'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -9,9 +9,16 @@ import GarageFormCard from '@/features/company/components/vehicles/GarageFormCar
 const store = useTransporteStore()
 const editingPoint = shallowRef(null)
 
-function veiculosDaGaragem(garageId) {
-  return (store.veiculos || []).filter((v) => v.garagePointId === garageId)
-}
+const vehiclePlatesByGarageId = computed(() => {
+  const map = new Map()
+  for (const v of store.veiculos || []) {
+    if (!v.garagePointId) continue
+    const list = map.get(v.garagePointId)
+    if (list) list.push(v.placa)
+    else map.set(v.garagePointId, [v.placa])
+  }
+  return map
+})
 </script>
 
 <template>
@@ -49,8 +56,8 @@ function veiculosDaGaragem(garageId) {
             </div>
             <div class="detail-item">
               <BaseIcon name="mdi-bus-multiple" />
-              <span v-if="veiculosDaGaragem(ponto.id).length">
-                Veículos vinculados: {{ veiculosDaGaragem(ponto.id).map((v) => v.placa).join(', ') }}
+              <span v-if="vehiclePlatesByGarageId.get(ponto.id)?.length">
+                Veículos vinculados: {{ vehiclePlatesByGarageId.get(ponto.id).join(', ') }}
               </span>
               <span v-else>Nenhum veículo vinculado</span>
             </div>
