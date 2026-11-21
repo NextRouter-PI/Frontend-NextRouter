@@ -1,29 +1,13 @@
 import { nextTick, onMounted, onUnmounted } from 'vue'
 import L from 'leaflet'
 import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER, ensureLeafletIcons } from '@/utils/leafletTiles'
-
-function escapeHtml(text) {
-  return String(text ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
+import { buildPassengerTooltipHtml, escapeHtml } from '@/utils/leafletMarkers'
 
 function formatPassengerAddress(item) {
   const streetLine = [item.street, item.number].filter(Boolean).join(', ')
   const extra = [item.complement, item.neighborhood].filter(Boolean).join(' · ')
   const cityLine = [item.city, item.state].filter(Boolean).join('/')
   return [streetLine, extra, cityLine].filter(Boolean).join(' — ') || 'Endereço não informado'
-}
-
-function passengerTooltipHtml(item) {
-  const safeName = escapeHtml(item.passenger_name || 'Passageiro')
-  const avatar = item.profile_picture_url
-    ? `<img src="${escapeHtml(item.profile_picture_url)}" alt="${safeName}" class="pmap-tip-avatar" />`
-    : `<span class="pmap-tip-fallback">${escapeHtml((item.passenger_name || 'P').trim().charAt(0).toUpperCase())}</span>`
-  return `<div class="pmap-tip">${avatar}<span class="pmap-tip-name">${safeName}</span></div>`
 }
 
 export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoords, onTogglePassenger }) {
@@ -50,68 +34,40 @@ export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoo
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
       bounds.push([lat, lng])
 
-      const tooltipHtml = passengerTooltipHtml(item)
+      const tooltipHtml = buildPassengerTooltipHtml(item)
+      const marker = L.marker([lat, lng], {
+        draggable: Boolean(item.selected),
+        icon: createPinIcon({
+          variant: item.selected ? 'primary' : 'muted',
+          icon: item.selected ? 'mdi-account-check' : 'mdi-account-outline',
+          avatarUrl: item.profile_picture_url || '',
+          avatarAlt: item.passenger_name || 'Passageiro',
+          size: item.selected ? 'md' : 'sm',
+        }),
+      })
+        .bindTooltip(tooltipHtml, {
+          direction: 'top',
+          offset: [0, item.selected ? -14 : -10],
+          opacity: 0.98,
+          className: 'passenger-map-tooltip',
+        })
+        .bindPopup(
+          `<strong>${escapeHtml(item.passenger_name)}</strong>${item.selected ? ' (selecionado)' : ''}<br>${escapeHtml(formatPassengerAddress(item))}<br><small>${item.selected ? 'Arraste o pino para ajustar o ponto exato.' : 'Clique para incluir na rota.'}</small>`,
+        )
+        .addTo(markersLayer)
 
       if (item.selected) {
-        const marker = L.marker([lat, lng], {
-          draggable: true,
-          icon: createPinIcon({
-            icon: 'mdi-account-check',
-            avatarUrl: item.profile_picture_url || '',
-            avatarAlt: item.passenger_name || 'Passageiro',
-          }),
-        })
-          .bindTooltip(tooltipHtml, {
-            direction: 'top',
-            offset: [0, -14],
-            opacity: 0.98,
-            className: 'passenger-map-tooltip',
-          })
-          .bindPopup(
-            `<strong>${escapeHtml(item.passenger_name)}</strong> (selecionado)<br>${escapeHtml(formatPassengerAddress(item))}<br><small>Arraste o pino para ajustar o ponto exato.</small>`,
-          )
-          .addTo(markersLayer)
-
         marker.on('dragend', () => {
           const pos = marker.getLatLng()
           item.latitude = Number(pos.lat.toFixed(6))
           item.longitude = Number(pos.lng.toFixed(6))
         })
       } else {
-        const marker = L.marker([lat, lng], {
-          icon: createPinIcon({
-            variant: 'muted',
-            icon: 'mdi-account-outline',
-            avatarUrl: item.profile_picture_url || '',
-            avatarAlt: item.passenger_name || 'Passageiro',
-            size: 'sm',
-          }),
-        })
-          .bindTooltip(tooltipHtml, {
-            direction: 'top',
-            offset: [0, -10],
-            opacity: 0.98,
-            className: 'passenger-map-tooltip',
-          })
-          .bindPopup(
-            `<strong>${escapeHtml(item.passenger_name)}</strong><br>${escapeHtml(formatPassengerAddress(item))}<br><small>Clique para incluir na rota.</small>`,
-          )
-          .addTo(markersLayer)
-
         marker.on('click', () => onTogglePassenger(item))
       }
     }
 
-    if (bounds.length) {
-      map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
-    }
-  }
-
-  function initMap() {
-    if (map || !mapContainer.value) return
-    map = L.map(mapContainer.value, { zoomControl: true, attributionControl: true }).setView(initialCenter(), 13)
-    cleanupTiles = attachThemedTileLayer(map)
-    renderMarkers()
+    if (bounds.length) map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
   }
 
   function getCenterCoords() {
@@ -127,9 +83,7 @@ export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoo
     if (!map) return
     const lat = Number(item.latitude)
     const lng = Number(item.longitude)
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      map.setView([lat, lng], 16)
-    }
+    if (Number.isFinite(lat) && Number.isFinite(lng)) map.setView([lat, lng], 16)
   }
 
   function invalidateSize() {
@@ -138,7 +92,10 @@ export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoo
 
   onMounted(async () => {
     await nextTick()
-    initMap()
+    if (map || !mapContainer.value) return
+    map = L.map(mapContainer.value, { zoomControl: true, attributionControl: true }).setView(initialCenter(), 13)
+    cleanupTiles = attachThemedTileLayer(map)
+    renderMarkers()
   })
 
   onUnmounted(() => {
@@ -151,11 +108,5 @@ export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoo
     }
   })
 
-  return {
-    formatAddress: formatPassengerAddress,
-    renderMarkers,
-    focusPassenger,
-    getCenterCoords,
-    invalidateSize,
-  }
+  return { formatAddress: formatPassengerAddress, renderMarkers, focusPassenger, getCenterCoords, invalidateSize }
 }

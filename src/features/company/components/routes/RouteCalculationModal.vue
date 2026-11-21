@@ -1,8 +1,6 @@
 <script setup>
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
-import L from 'leaflet'
-import { attachThemedTileLayer, createPinIcon, DEFAULT_MAP_CENTER } from '@/utils/leafletTiles'
-import { pointLatLng } from '@/features/transport/composables/useRouteSnapshotMap'
+import { computed, useTemplateRef } from 'vue'
+import { useRouteCalculationMap } from '@/features/company/composables/useRouteCalculationMap'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
 
@@ -20,13 +18,16 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'calculate', 'publish'])
 
-const mapEl = ref(null)
-let map = null
-let cleanupTiles = null
-let markersLayer = null
-let routeAnimLayer = null
-let animFrame = null
-let lastAnimatedSnapshotId = null
+const mapEl = useTemplateRef('mapEl')
+
+useRouteCalculationMap({
+  mapEl,
+  isOpen: () => props.open,
+  getSnapshot: () => props.snapshot,
+  getParticipants: () => props.participants,
+  getOriginPoint: () => props.originPoint,
+  getDestinationPoint: () => props.destinationPoint,
+})
 
 const isCalculating = computed(
   () => props.busy || props.job?.status === 'pending' || props.job?.status === 'running',
@@ -45,171 +46,6 @@ const durationLabel = computed(() => {
   const s = Number(props.snapshot?.duration_seconds)
   return Number.isFinite(s) && s > 0 ? `${Math.max(1, Math.round(s / 60))} min` : ''
 })
-
-function escapeHtml(text) {
-  return String(text ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
-function stopAnimation() {
-  if (animFrame) {
-    cancelAnimationFrame(animFrame)
-    animFrame = null
-  }
-}
-
-function animateDashedRoute(coordsLatLng) {
-  stopAnimation()
-  if (!map || !coordsLatLng.length) return
-  if (routeAnimLayer) routeAnimLayer.clearLayers()
-  else routeAnimLayer = L.layerGroup().addTo(map)
-
-  // Trilha de fundo sutil + linha tracejada animada percorrendo origem -> destino.
-  L.polyline(coordsLatLng, {
-    color: '#df801a',
-    weight: 4,
-    opacity: 0.2,
-  }).addTo(routeAnimLayer)
-
-  const animatedLine = L.polyline([coordsLatLng[0]], {
-    color: '#df801a',
-    weight: 5,
-    opacity: 0.95,
-    className: 'nr-route-animated-dash',
-  }).addTo(routeAnimLayer)
-
-  const total = coordsLatLng.length
-  const durationMs = Math.min(2200, Math.max(800, total * 12))
-  const startTime = performance.now()
-
-  function step(now) {
-    const progress = Math.min(1, (now - startTime) / durationMs)
-    const count = Math.max(1, Math.floor(progress * total))
-    animatedLine.setLatLngs(coordsLatLng.slice(0, count))
-    if (progress < 1) {
-      animFrame = requestAnimationFrame(step)
-    } else {
-      animatedLine.setLatLngs(coordsLatLng)
-      animFrame = null
-    }
-  }
-  animFrame = requestAnimationFrame(step)
-}
-
-function renderMapContents() {
-  if (!map) return
-  if (markersLayer) markersLayer.clearLayers()
-  else markersLayer = L.layerGroup().addTo(map)
-
-  const bounds = []
-
-  const origin = props.snapshot?.origin || props.originPoint
-  const originCoord = pointLatLng(origin)
-  if (originCoord) {
-    bounds.push(originCoord)
-    L.marker(originCoord, {
-      icon: createPinIcon({ variant: 'success', icon: 'mdi-flag-outline' }),
-    })
-      .bindTooltip(`Origem: ${escapeHtml(origin?.name || 'Garagem / Início')}`, { direction: 'top' })
-      .bindPopup(`<strong>Origem:</strong> ${escapeHtml(origin?.name || 'Início')}`)
-      .addTo(markersLayer)
-  }
-
-  for (const participant of props.participants) {
-    const coord = pointLatLng(participant.point_snapshot)
-    if (!coord) continue
-    bounds.push(coord)
-    const name = participant.name || `Passageiro #${participant.eligibility}`
-    L.marker(coord, {
-      icon: createPinIcon({
-        variant: 'primary',
-        icon: 'mdi-account',
-        avatarUrl: participant.profile_picture_url || '',
-        avatarAlt: name,
-      }),
-    })
-      .bindTooltip(escapeHtml(name), { direction: 'top', offset: [0, -10] })
-      .bindPopup(
-        `<strong>${escapeHtml(name)}</strong><br><small>${escapeHtml(participant.point_snapshot?.street || 'Ponto do passageiro')}</small>`,
-      )
-      .addTo(markersLayer)
-  }
-
-  const dest = props.snapshot?.destination || props.destinationPoint
-  const destCoord = pointLatLng(dest)
-  if (destCoord) {
-    bounds.push(destCoord)
-    L.marker(destCoord, {
-      icon: createPinIcon({ variant: 'danger', icon: 'mdi-flag-checkered' }),
-    })
-      .bindTooltip(`Destino: ${escapeHtml(dest?.name || 'Destino')}`, { direction: 'top' })
-      .bindPopup(`<strong>Destino:</strong> ${escapeHtml(dest?.name || 'Destino')}`)
-      .addTo(markersLayer)
-  }
-
-  const rawCoords = props.snapshot?.geometry?.coordinates
-  if (props.snapshot?.state === 'ready' && Array.isArray(rawCoords) && rawCoords.length >= 2) {
-    const latLngs = rawCoords.map(([lng, lat]) => [lat, lng])
-    for (const pt of latLngs) bounds.push(pt)
-    if (lastAnimatedSnapshotId !== props.snapshot.id) {
-      lastAnimatedSnapshotId = props.snapshot.id
-      animateDashedRoute(latLngs)
-    } else if (!routeAnimLayer || !routeAnimLayer.getLayers().length) {
-      animateDashedRoute(latLngs)
-    }
-  } else if (routeAnimLayer) {
-    stopAnimation()
-    routeAnimLayer.clearLayers()
-  }
-
-  if (bounds.length >= 2) {
-    map.fitBounds(L.latLngBounds(bounds), { padding: [36, 36], maxZoom: 15 })
-  } else if (bounds.length === 1) {
-    map.setView(bounds[0], 14)
-  }
-}
-
-function destroyMap() {
-  stopAnimation()
-  cleanupTiles?.()
-  cleanupTiles = null
-  if (map) {
-    map.remove()
-    map = null
-    markersLayer = null
-    routeAnimLayer = null
-  }
-  lastAnimatedSnapshotId = null
-}
-
-async function initMap() {
-  await nextTick()
-  if (!mapEl.value || map) return
-  map = L.map(mapEl.value, { zoomControl: true, attributionControl: true }).setView(DEFAULT_MAP_CENTER, 13)
-  cleanupTiles = attachThemedTileLayer(map)
-  renderMapContents()
-  setTimeout(() => map?.invalidateSize(), 120)
-}
-
-watch(
-  () => props.open,
-  (opened) => {
-    if (opened) initMap()
-    else destroyMap()
-  },
-)
-
-watch(
-  () => [props.snapshot?.id, props.snapshot?.state, props.participants.length, props.originPoint, props.destinationPoint],
-  () => {
-    if (props.open && map) renderMapContents()
-  },
-)
-
-onUnmounted(destroyMap)
 </script>
 
 <template>
