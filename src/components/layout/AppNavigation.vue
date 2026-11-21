@@ -18,20 +18,22 @@ function isActive(to) {
 
 <template>
   <aside v-if="!isMobile" class="app-sidebar">
-    <slot name="brand">
-      <RouterLink :to="ROUTE_PATHS.HOME" class="sidebar-logo" aria-label="NextRouter - Início">
-        <div class="sidebar-logo-content">
-          <img :src="Logo" alt="NextRouter" />
-          <span class="sidebar-brand-title">
-            NextRouter <small v-if="badge" class="sidebar-badge">{{ badge }}</small>
-          </span>
-        </div>
-      </RouterLink>
-    </slot>
+    <div class="sidebar-inner">
+      <slot name="brand">
+        <RouterLink :to="ROUTE_PATHS.HOME" class="sidebar-logo" aria-label="NextRouter - Início">
+          <div class="sidebar-logo-content">
+            <img :src="Logo" alt="NextRouter" />
+            <span class="sidebar-brand-title">
+              NextRouter <small v-if="badge" class="sidebar-badge">{{ badge }}</small>
+            </span>
+          </div>
+        </RouterLink>
+      </slot>
 
-    <nav class="sidebar-nav" aria-label="Navegação principal">
-      <slot :is-active="isActive" :is-mobile="false" />
-    </nav>
+      <nav class="sidebar-nav" aria-label="Navegação principal">
+        <slot :is-active="isActive" :is-mobile="false" />
+      </nav>
+    </div>
   </aside>
 
   <nav v-else class="app-bottom-nav" aria-label="Navegação principal">
@@ -48,14 +50,7 @@ function isActive(to) {
   height: 100vh;
   background: var(--chrome-bg);
   z-index: $z-sidebar;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0 0 $space-5;
-  gap: $space-6;
   transition: width $duration-slow $ease-fluid;
-  overflow: hidden;
-  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.22);
 
   &::after {
     content: '';
@@ -65,11 +60,12 @@ function isActive(to) {
     bottom: 0;
     width: 2px;
     background: var(--primary);
+    box-shadow: 4px 0 14px rgba(0, 0, 0, 0.22);
     pointer-events: none;
   }
 
   &:hover,
-  &:focus-within {
+  &:has(:focus-visible) {
     width: $sidebar-width-expanded;
 
     .sidebar-brand-title,
@@ -78,6 +74,17 @@ function isActive(to) {
       transform: translateX(0);
     }
   }
+}
+
+.sidebar-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 $space-5;
+  gap: $space-6;
+  overflow: hidden;
 }
 
 .sidebar-logo {

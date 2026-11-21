@@ -207,15 +207,6 @@
   box-shadow: var(--shadow), 0 8px 24px rgba(0, 0, 0, 0.22);
   padding: 0;
   animation: nr-popup-in 0.18s $ease-fluid;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 2px;
-    background: var(--primary);
-    pointer-events: none;
-  }
 }
 
 .leaflet-popup-content {

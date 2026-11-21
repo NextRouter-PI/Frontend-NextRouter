@@ -15,6 +15,9 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   scroll-behavior: smooth;
 }
 
@@ -24,6 +27,7 @@ body {
   text-rendering: optimizeLegibility;
   background: var(--bg);
   color: var(--text);
+  overscroll-behavior-y: contain;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
@@ -66,8 +70,28 @@ select {
   background: none;
 }
 
-button {
+a,
+button,
+input,
+select,
+textarea,
+summary,
+[role='button'],
+[role='tab'] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button,
+[role='button'],
+[role='tab'] {
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 :focus-visible {

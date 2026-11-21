@@ -301,11 +301,13 @@ onUnmounted(() => {
       </div>
     </Transition>
 
-    <Transition name="fade-slide">
-      <p v-if="combinedError" :id="`${fieldId}-error`" class="date-field-error" role="alert">
-        {{ combinedError }}
-      </p>
-    </Transition>
+    <div class="date-field-feedback">
+      <Transition name="fade-slide">
+        <p v-if="combinedError" :id="`${fieldId}-error`" class="date-field-error" role="alert">
+          {{ combinedError }}
+        </p>
+      </Transition>
+    </div>
   </div>
 </template>
 
@@ -315,7 +317,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  margin-bottom: $space-4;
+  margin-bottom: $space-2;
 
   &-label {
     display: block;
@@ -356,7 +358,8 @@ onUnmounted(() => {
       letter-spacing: 0.02em;
     }
 
-    &:focus {
+    &:focus,
+    &:focus-visible {
       outline: 2px solid var(--primary);
       outline-offset: -2px;
     }
@@ -383,10 +386,17 @@ onUnmounted(() => {
     gap: 2px;
   }
 
+  &-feedback {
+    min-height: 20px;
+    margin-top: $space-1;
+    display: flex;
+    align-items: flex-start;
+  }
+
   &-error {
     color: var(--danger);
     font-size: 0.78rem;
-    margin-top: $space-1;
+    line-height: 1.35;
   }
 }
 

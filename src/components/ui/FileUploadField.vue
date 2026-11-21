@@ -36,7 +36,7 @@ function handleFile(event) {
 </script>
 
 <template>
-  <div class="upload-field">
+  <div class="upload-field" :class="{ 'has-error': Boolean(error) }">
     <label v-if="label" class="upload-label">
       {{ label }} <span v-if="required" class="required">*</span>
     </label>
@@ -68,13 +68,17 @@ function handleFile(event) {
     />
 
     <small v-if="hint" class="file-hint">{{ hint }}</small>
-    <p v-if="error" class="field-error">{{ error }}</p>
+    <div class="upload-feedback">
+      <Transition name="fade-slide">
+        <p v-if="error" class="field-error" role="alert">{{ error }}</p>
+      </Transition>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .upload-field {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .upload-label {
@@ -156,6 +160,10 @@ function handleFile(event) {
   cursor: not-allowed;
 }
 
+.upload-field.has-error .file-display {
+  border-color: var(--danger);
+}
+
 .file-hint {
   display: block;
   font-size: 11px;
@@ -163,9 +171,14 @@ function handleFile(event) {
   margin-top: 6px;
 }
 
+.upload-feedback {
+  min-height: 18px;
+  margin-top: 4px;
+}
+
 .field-error {
   color: var(--danger);
-  font-size: 12px;
-  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 </style>

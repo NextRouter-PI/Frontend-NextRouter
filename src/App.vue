@@ -20,7 +20,9 @@ const showTopBar = computed(() => !route.meta?.hideChrome)
 const showNavigation = computed(() => state.logged && !route.meta?.hideChrome)
 const isCompany = computed(() => state.role === USER_ROLES.COMPANY)
 const navItems = computed(() => navigationItems(state.role))
-const isUserRoute = computed(() => route.path.startsWith(ROUTE_PATHS.USER))
+const isUserRoute = computed(
+  () => route.path === ROUTE_PATHS.USER || route.path.startsWith(`${ROUTE_PATHS.USER}/`),
+)
 const brandDestination = computed(() => (state.logged ? ROUTE_PATHS.HOME : ROUTE_PATHS.LOGIN))
 const avatarFailed = shallowRef(false)
 const userAvatarUrl = computed(() =>
@@ -147,7 +149,7 @@ onUnmounted(() => {
             <span class="nav-icon-wrap">
               <span class="mdi" :class="item.icon" aria-hidden="true"></span>
             </span>
-            <small class="nav-label">{{ item.title }}</small>
+            <small v-if="!mobileMode" class="nav-label">{{ item.title }}</small>
           </RouterLink>
         </template>
       </AppNavigation>
@@ -341,70 +343,65 @@ onUnmounted(() => {
   min-width: 0;
   position: relative;
   color: var(--chrome-muted);
-  @include flex-center(2px);
-  flex-direction: column;
+  @include flex-center;
   height: 100%;
-  transition: color $duration-normal $ease-fluid;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.28s $ease-fluid;
 
   .nav-icon-wrap {
-    width: 34px;
-    height: 34px;
+    width: 48px;
+    height: 48px;
     flex-shrink: 0;
     aspect-ratio: 1;
     border-radius: $radius-round;
+    border: 3px solid transparent;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    will-change: transform;
     transition:
-      transform 0.28s $ease-fluid,
-      background-color 0.25s $ease-fluid,
+      transform 0.42s cubic-bezier(0.34, 1.45, 0.64, 1),
+      background-color 0.3s $ease-fluid,
+      border-color 0.3s $ease-fluid,
       color 0.25s $ease-fluid,
-      width 0.25s $ease-fluid,
-      height 0.25s $ease-fluid;
+      box-shadow 0.32s $ease-fluid;
 
     .mdi {
-      font-size: 24px;
+      font-size: 28px;
       line-height: 1;
+      transition: transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1);
     }
-  }
-
-  .nav-label {
-    font-size: 10px;
-    font-weight: $font-semibold;
-    letter-spacing: 0.01em;
-    max-width: 100%;
-    @include truncate;
-    transition:
-      color $duration-normal $ease-fluid,
-      transform 0.25s $ease-fluid;
   }
 
   &:hover {
     color: var(--chrome-text);
+
+    &:not(.active) .nav-icon-wrap {
+      transform: translateY(-2px);
+    }
   }
 
   &:active .nav-icon-wrap {
-    transform: scale(0.92);
+    transform: scale(0.9);
   }
 
   &.active {
     color: var(--primary);
 
     .nav-icon-wrap {
-      width: 48px;
-      height: 48px;
-      min-width: 48px;
-      min-height: 48px;
       background: var(--primary);
       color: var(--color-on-primary);
-      border: 3px solid var(--chrome-bg);
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.32);
-      transform: translateY(-16px);
+      border-color: var(--chrome-bg);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+      transform: translateY(-16px) scale(1.1);
+
+      .mdi {
+        transform: scale(1.04);
+      }
     }
 
-    .nav-label {
-      color: var(--primary);
-      transform: translateY(-10px);
+    &:active .nav-icon-wrap {
+      transform: translateY(-13px) scale(1.02);
     }
   }
 }

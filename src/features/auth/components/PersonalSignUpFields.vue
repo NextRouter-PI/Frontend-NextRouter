@@ -114,9 +114,7 @@ const emit = defineEmits(['toggle-password'])
       autocomplete="new-password"
       placeholder="Mínimo 8 caracteres, não só números"
       :disabled="disabled"
-      :show-password="isPasswordVisible"
       :error="fieldErrors.password"
-      @update:show-password="emit('toggle-password')"
       @input="helpers.clearFieldError('password')"
       @blur="
         helpers.validateField(
@@ -135,9 +133,7 @@ const emit = defineEmits(['toggle-password'])
       autocomplete="new-password"
       placeholder="Digite a senha novamente"
       :disabled="disabled"
-      :show-password="isPasswordVisible"
       :error="fieldErrors.confirmPassword"
-      @update:show-password="emit('toggle-password')"
       @input="helpers.clearFieldError('confirmPassword')"
       @blur="
         helpers.validateField(

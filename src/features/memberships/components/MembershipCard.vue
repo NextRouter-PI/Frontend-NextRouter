@@ -70,15 +70,6 @@ const formattedPhone = computed(() =>
   overflow-wrap: anywhere;
   transition: outline-color 0.2s var(--ease-fluid), transform 0.2s var(--ease-fluid),
     box-shadow 0.2s var(--ease-fluid);
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 2px;
-    background: var(--primary);
-    pointer-events: none;
-  }
 }
 
 .membership-card:hover {

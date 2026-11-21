@@ -18,6 +18,10 @@ const form = reactive({
   email: '',
   senha: '',
 })
+const fieldErrors = reactive({
+  email: '',
+  senha: '',
+})
 
 function isPositiveIntString(value) {
   return typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))
@@ -26,6 +30,9 @@ function isPositiveIntString(value) {
 async function enviarLogin() {
   if (state.loading) return
   erro.value = ''
+  fieldErrors.email = !form.email.trim() ? 'E-mail é obrigatório' : ''
+  fieldErrors.senha = !form.senha.trim() ? 'Senha é obrigatória' : ''
+  if (fieldErrors.email || fieldErrors.senha) return
 
   const sucesso = await login(form.email, form.senha)
 
@@ -50,39 +57,69 @@ async function enviarLogin() {
     <div class="login-split">
       <section class="brand-panel">
         <div class="brand-block">
-          <span class="mdi mdi-map-marker-radius brand-pin brand-pin-mobile" aria-hidden="true"></span>
+          <svg
+            class="brand-pin brand-pin-mobile"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              class="brand-pin-ring"
+              d="M12 20c-4.42 0-8-1.34-8-3 0-1.08 1.54-2.03 3.85-2.56l.68 1.36C6.95 16.17 5.8 16.69 5.8 17c0 .77 2.55 1.7 6.2 1.7s6.2-.93 6.2-1.7c0-.31-1.15-.83-2.73-1.2l.68-1.36C18.46 14.97 20 15.92 20 17c0 1.66-3.58 3-8 3z"
+            />
+            <path
+              class="brand-pin-head"
+              d="M12 2C8.69 2 6 4.69 6 8c0 4.5 6 9.5 6 9.5s6-5 6-9.5c0-3.31-2.69-6-6-6zm0 8.2a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4z"
+            />
+          </svg>
           <p class="brand-welcome">Bem vindo ao</p>
           <h1 class="brand-name">
             <span class="brand-accent">NEXT</span><span class="brand-rest">ROUTER</span>
           </h1>
-          <span class="mdi mdi-map-marker-radius brand-pin brand-pin-desktop" aria-hidden="true"></span>
+          <svg
+            class="brand-pin brand-pin-desktop"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              class="brand-pin-ring"
+              d="M12 20c-4.42 0-8-1.34-8-3 0-1.08 1.54-2.03 3.85-2.56l.68 1.36C6.95 16.17 5.8 16.69 5.8 17c0 .77 2.55 1.7 6.2 1.7s6.2-.93 6.2-1.7c0-.31-1.15-.83-2.73-1.2l.68-1.36C18.46 14.97 20 15.92 20 17c0 1.66-3.58 3-8 3z"
+            />
+            <path
+              class="brand-pin-head"
+              d="M12 2C8.69 2 6 4.69 6 8c0 4.5 6 9.5 6 9.5s6-5 6-9.5c0-3.31-2.69-6-6-6zm0 8.2a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4z"
+            />
+          </svg>
         </div>
       </section>
 
       <section class="form-panel">
-        <form class="login-form" @submit.prevent="enviarLogin">
+        <form class="login-form" novalidate @submit.prevent="enviarLogin">
           <p class="login-hint">Entrar em sua conta:</p>
 
           <BaseInput
             v-model="form.email"
             type="email"
-            variant="underline"
-            placeholder="E-mail"
-            aria-label="E-mail"
+            variant="floating"
+            label="E-mail"
             autocomplete="email"
             required
+            :error="fieldErrors.email"
             :disabled="state.loading"
+            @input="fieldErrors.email = ''"
           />
 
           <BaseInput
             v-model="form.senha"
             type="password"
-            variant="underline"
-            placeholder="Senha"
-            aria-label="Senha"
+            variant="floating"
+            label="Senha"
             autocomplete="current-password"
             required
+            :error="fieldErrors.senha"
             :disabled="state.loading"
+            @input="fieldErrors.senha = ''"
           />
 
           <ErrorMessage :message="erro" />
@@ -149,9 +186,15 @@ async function enviarLogin() {
 }
 
 .brand-pin {
-  font-size: 62px;
-  line-height: 1;
+  width: 68px;
+  height: 68px;
   color: var(--primary);
+  overflow: visible;
+
+  &-head {
+    transform-origin: 12px 17px;
+    animation: pin-hop 1.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
 
   &-desktop {
     display: none;
@@ -164,9 +207,29 @@ async function enviarLogin() {
 
     &-desktop {
       display: block;
-      font-size: 76px;
+      width: 82px;
+      height: 82px;
       margin-top: $space-4;
     }
+  }
+}
+
+@keyframes pin-hop {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  18% {
+    transform: translateY(0.4px) scale(1.05, 0.94);
+  }
+  46% {
+    transform: translateY(-4.2px) scale(0.96, 1.05);
+  }
+  74% {
+    transform: translateY(0.3px) scale(1.04, 0.96);
+  }
+  88% {
+    transform: translateY(-1px) scale(0.99, 1.01);
   }
 }
 

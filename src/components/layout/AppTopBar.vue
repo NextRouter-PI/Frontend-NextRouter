@@ -52,7 +52,8 @@ defineProps({
   transition: padding-left $duration-slow $ease-fluid;
 
   &.has-sidebar-offset {
-    padding-left: calc(var(--sidebar-width) + 18px);
+    left: var(--sidebar-width);
+    padding-left: 18px;
   }
 }
 
