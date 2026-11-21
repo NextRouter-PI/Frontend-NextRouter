@@ -1,8 +1,6 @@
 @use 'variables' as *;
 @use 'mixins' as *;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&display=swap');
-
 *,
 *::before,
 *::after {
@@ -58,6 +56,28 @@ canvas,
 svg {
   display: block;
   max-width: 100%;
+}
+
+.base-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+  fill: currentColor;
+}
+
+.mdi-spin {
+  animation: mdi-spin 1s linear infinite;
+}
+
+@keyframes mdi-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 input,

@@ -1,5 +1,5 @@
 <script setup>
-import Logo from '@/assets/images/logo.png'
+import Logo from '@/assets/images/logo.webp'
 import { ROUTE_PATHS } from '@/constants'
 
 defineProps({
