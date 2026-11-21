@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
+import { useToast } from '@/composables/useToast'
 
 const props = defineProps({
   variant: {
@@ -9,13 +10,30 @@ const props = defineProps({
   },
   message: { type: String, default: '' },
   icon: { type: String, default: '' },
+  persistent: { type: Boolean, default: false },
 })
 
+const { showToast } = useToast()
 const ariaRole = computed(() => (props.variant === 'danger' ? 'alert' : 'status'))
+
+watch(
+  () => [props.message, props.variant, props.persistent],
+  ([msg, variant, persistent]) => {
+    if (!persistent && msg) {
+      showToast(msg, variant)
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
-  <div v-if="message || $slots.default" class="status-banner" :class="`variant-${variant}`" :role="ariaRole">
+  <div
+    v-if="persistent && (message || $slots.default)"
+    class="status-banner"
+    :class="`variant-${variant}`"
+    :role="ariaRole"
+  >
     <span v-if="icon" class="mdi status-banner-icon" :class="icon" aria-hidden="true"></span>
     <div class="status-banner-content">
       <slot>{{ message }}</slot>

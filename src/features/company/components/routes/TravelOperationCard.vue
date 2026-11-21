@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, shallowRef } from 'vue'
+import { computed, reactive, shallowRef } from 'vue'
 import { formatDateTimeBr } from '@/utils/formatters'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import RouteMapSnapshot from '@/features/transport/components/RouteMapSnapshot.vue'
@@ -7,6 +7,7 @@ import RouteMapSnapshot from '@/features/transport/components/RouteMapSnapshot.v
 const props = defineProps({
   travel: { type: Object, required: true },
   serviceName: { type: String, required: true },
+  dayWindow: { type: String, default: '' },
   participantsCount: { type: Number, default: 0 },
   snapshot: { type: Object, default: null },
   job: { type: Object, default: null },
@@ -15,7 +16,30 @@ const props = defineProps({
   busy: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['calculate', 'publish', 'cancel', 'assign-vehicle', 'invite-driver'])
+const emit = defineEmits(['open-calculate', 'publish', 'cancel', 'assign-vehicle', 'invite-driver'])
+
+const isJobRunning = computed(
+  () => props.job?.status === 'pending' || props.job?.status === 'running',
+)
+const canCalculate = computed(
+  () =>
+    !props.busy &&
+    props.participantsCount > 0 &&
+    !isJobRunning.value &&
+    (props.dayWindow === 'closed' || props.dayWindow === 'extension'),
+)
+const calculateBlockedTitle = computed(() => {
+  if (props.dayWindow === 'not_open' || props.dayWindow === 'normal') {
+    return 'Aguarde o fechamento da janela e a consolidação das respostas para calcular.'
+  }
+  if (props.participantsCount === 0) {
+    return 'É necessário ao menos 1 passageiro alocado para calcular a rota.'
+  }
+  if (isJobRunning.value) {
+    return 'Cálculo de rota em andamento no worker...'
+  }
+  return 'Abrir mapa com passageiros confirmados e calcular rota'
+})
 
 const mapaAberto = shallowRef(false)
 const veiculoSubstituto = shallowRef('')
@@ -64,8 +88,15 @@ function submitInvite() {
       </div>
 
       <div v-if="travel.status === 'scheduled'" class="inline-actions">
-        <BaseButton variant="outline" size="sm" :disabled="busy" @click="emit('calculate', travel)">
-          Solicitar cálculo
+        <BaseButton
+          variant="outline"
+          size="sm"
+          icon="mdi-map-marker-path"
+          :disabled="!canCalculate"
+          :title="calculateBlockedTitle"
+          @click="emit('open-calculate', travel)"
+        >
+          {{ isJobRunning ? 'Calculando...' : 'Calcular rota' }}
         </BaseButton>
         <BaseButton
           size="sm"

@@ -55,7 +55,11 @@ export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoo
       if (item.selected) {
         const marker = L.marker([lat, lng], {
           draggable: true,
-          icon: createPinIcon({ icon: 'mdi-account-check' }),
+          icon: createPinIcon({
+            icon: 'mdi-account-check',
+            avatarUrl: item.profile_picture_url || '',
+            avatarAlt: item.passenger_name || 'Passageiro',
+          }),
         })
           .bindTooltip(tooltipHtml, {
             direction: 'top',
@@ -74,12 +78,14 @@ export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoo
           item.longitude = Number(pos.lng.toFixed(6))
         })
       } else {
-        const circle = L.circleMarker([lat, lng], {
-          radius: 8,
-          color: '#df801a',
-          fillColor: '#f48a1d',
-          fillOpacity: 0.75,
-          weight: 2,
+        const marker = L.marker([lat, lng], {
+          icon: createPinIcon({
+            variant: 'muted',
+            icon: 'mdi-account-outline',
+            avatarUrl: item.profile_picture_url || '',
+            avatarAlt: item.passenger_name || 'Passageiro',
+            size: 'sm',
+          }),
         })
           .bindTooltip(tooltipHtml, {
             direction: 'top',
@@ -88,11 +94,11 @@ export function useRouteBuilderMap({ mapContainer, candidates, getDestinationCoo
             className: 'passenger-map-tooltip',
           })
           .bindPopup(
-            `<strong>${escapeHtml(item.passenger_name)}</strong><br>${escapeHtml(formatPassengerAddress(item))}<br><small>Clique na lista para incluir na rota.</small>`,
+            `<strong>${escapeHtml(item.passenger_name)}</strong><br>${escapeHtml(formatPassengerAddress(item))}<br><small>Clique para incluir na rota.</small>`,
           )
           .addTo(markersLayer)
 
-        circle.on('click', () => onTogglePassenger(item))
+        marker.on('click', () => onTogglePassenger(item))
       }
     }
 

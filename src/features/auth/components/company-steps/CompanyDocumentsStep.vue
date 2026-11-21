@@ -76,6 +76,7 @@ const emit = defineEmits(['file-error'])
     />
 
     <StatusBanner
+      persistent
       variant="info"
       icon="mdi-information-outline"
       message="Os documentos fazem parte da moderação cadastral da empresa. Não há prazo de análise garantido."

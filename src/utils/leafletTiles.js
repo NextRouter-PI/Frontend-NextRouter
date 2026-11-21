@@ -16,27 +16,44 @@ function escapeAttr(value) {
   return String(value ?? '').replace(/[^a-zA-Z0-9_-]/g, '')
 }
 
+function escapeHtmlAttr(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 export function createPinIcon({
   variant = 'primary',
   icon = 'mdi-map-marker',
   label = '',
+  avatarUrl = '',
+  avatarAlt = '',
   pulse = false,
   size = 'md',
 } = {}) {
   const safeVariant = escapeAttr(variant) || 'primary'
   const safeSize = size === 'sm' ? 'sm' : 'md'
   const safeIcon = escapeAttr(icon)
-  const inner = label
-    ? `<span class="nr-map-pin__label">${String(label)}</span>`
-    : `<span class="mdi ${safeIcon}" aria-hidden="true"></span>`
+  let inner
+  if (avatarUrl) {
+    const safeUrl = escapeHtmlAttr(avatarUrl)
+    const safeAlt = escapeHtmlAttr(avatarAlt || 'Passageiro')
+    inner = `<img src="${safeUrl}" alt="${safeAlt}" class="nr-map-pin__avatar" />`
+  } else if (label) {
+    inner = `<span class="nr-map-pin__label">${escapeHtmlAttr(label)}</span>`
+  } else {
+    inner = `<span class="mdi ${safeIcon}" aria-hidden="true"></span>`
+  }
 
-  const dim = safeSize === 'sm' ? [28, 36] : [34, 42]
-  const anchor = safeSize === 'sm' ? [14, 34] : [17, 40]
-  const popupAnchor = safeSize === 'sm' ? [0, -34] : [0, -40]
+  const dim = safeSize === 'sm' ? [28, 36] : [36, 44]
+  const anchor = safeSize === 'sm' ? [14, 34] : [18, 42]
+  const popupAnchor = safeSize === 'sm' ? [0, -34] : [0, -42]
 
   return L.divIcon({
     className: 'nr-pin-wrapper',
-    html: `<div class="nr-map-pin nr-map-pin--${safeVariant} nr-map-pin--${safeSize}${pulse ? ' nr-map-pin--pulse' : ''}"><span class="nr-map-pin__body">${inner}</span></div>`,
+    html: `<div class="nr-map-pin nr-map-pin--${safeVariant} nr-map-pin--${safeSize}${pulse ? ' nr-map-pin--pulse' : ''}${avatarUrl ? ' nr-map-pin--avatar' : ''}"><span class="nr-map-pin__body">${inner}</span></div>`,
     iconSize: dim,
     iconAnchor: anchor,
     popupAnchor,

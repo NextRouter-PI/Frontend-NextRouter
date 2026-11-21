@@ -1,15 +1,17 @@
 <script setup>
-import { computed, shallowRef } from 'vue'
+import { computed, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { SERVICE_DIRECTIONS } from '@/constants'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import BatchHorizonCard from './BatchHorizonCard.vue'
 import ChangeRequestsCard from './ChangeRequestsCard.vue'
 import ServiceDayCard from './ServiceDayCard.vue'
 import TravelOperationCard from './TravelOperationCard.vue'
+import RouteCalculationModal from './RouteCalculationModal.vue'
 
 const emit = defineEmits(['toast'])
 
@@ -82,9 +84,87 @@ function resumoRespostasDia(dayId) {
   return { total: list.length, semResposta, negativas, comIda, comRetorno }
 }
 
-function participacoesDaViagem(travelId) {
-  return store.participacoesViagem.filter((p) => p.travel === travelId).length
+function participacoesListaDaViagem(travelId) {
+  return store.participacoesViagem.filter(
+    (p) => p.travel === travelId && ['allocated', 'on_board'].includes(p.status),
+  )
 }
+
+function participacoesDaViagem(travelId) {
+  return participacoesListaDaViagem(travelId).length
+}
+
+function originPointForTravel(travel) {
+  if (!travel) return null
+  const service = (store.servicos || []).find((s) => s.id === travel.service)
+  const vehicle = (store.todosVeiculos || []).find((v) => v.id === (travel.vehicle || service?.vehicle))
+  const originId = service?.origin || vehicle?.garage_point
+  return originId ? (store.pontosOperacionais || []).find((p) => p.id === originId) || null : null
+}
+
+function destinationPointForTravel(travel) {
+  if (!travel) return null
+  const service = (store.servicos || []).find((s) => s.id === travel.service)
+  const group = (store.grupos || []).find((g) => g.id === service?.route_group)
+  const vehicle = (store.todosVeiculos || []).find((v) => v.id === (travel.vehicle || service?.vehicle))
+  const destId =
+    service?.destination ||
+    (service?.direction === SERVICE_DIRECTIONS.OUTBOUND ? group?.destination : vehicle?.garage_point)
+  return destId ? (store.pontosOperacionais || []).find((p) => p.id === destId) || null : null
+}
+
+// Modal de cálculo de rota
+const calcTravelId = shallowRef(null)
+const calcTravel = computed(() =>
+  calcTravelId.value ? store.viagensDia.find((t) => t.id === calcTravelId.value) || null : null,
+)
+const calcSnapshot = computed(() => (calcTravel.value ? snapshotDaViagem(calcTravel.value) : null))
+const calcJob = computed(() => (calcTravel.value ? jobDoSnapshot(calcTravel.value) : null))
+const calcParticipants = computed(() =>
+  calcTravel.value ? participacoesListaDaViagem(calcTravel.value.id) : [],
+)
+
+// Pop-up de confirmação de cancelamento irreversível
+const pendingCancel = ref(null)
+
+function confirmCancel(config) {
+  pendingCancel.value = config
+}
+
+async function executePendingCancel() {
+  const current = pendingCancel.value
+  if (!current) return
+  pendingCancel.value = null
+  await current.run()
+}
+
+// Polling automático enquanto houver jobs pendentes/em andamento (Item 10)
+let pollTimer = null
+const hasActiveJobs = computed(() =>
+  store.jobsCalculo.some((j) => j.status === 'pending' || j.status === 'running') ||
+  store.viagensDia.some((t) => t.planning_status === 'preparing'),
+)
+
+watch(hasActiveJobs, (active) => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+  if (active) {
+    pollTimer = setInterval(() => {
+      if (scope.current() && !busy.value && !store.dayLoading) {
+        consultarOperacao()
+      }
+    }, 2000)
+  }
+})
+
+onUnmounted(() => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+})
 
 function snapshotDaViagem(travel) {
   if (travel.current_snapshot) {
@@ -156,23 +236,54 @@ function handleCancelDate({ groupId, date, reason, onSuccess }) {
   if (!groupId || !date || !reason.trim()) {
     return notify('Informe grupo, data e motivo para cancelar a data.', 'error')
   }
-  return runAction(
-    () => store.cancelarDataGrupo(Number(groupId), { date, reason }, { signal: scope.signal }),
-    (r) => (r.partial ? 'Data cancelada parcialmente (viagens em andamento preservadas).' : 'Data cancelada.'),
-    'Erro ao cancelar data.',
-    onSuccess,
-  )
+  confirmCancel({
+    title: 'Cancelar data de atendimento',
+    message: `Deseja cancelar todos os atendimentos da data ${date} para o grupo selecionado?`,
+    warning:
+      'Esta ação não poderá ser revertida. Uma data cancelada fica preservada no histórico e não poderá ser recriada.',
+    confirmLabel: 'Sim, cancelar data',
+    run: () =>
+      runAction(
+        () => store.cancelarDataGrupo(Number(groupId), { date, reason }, { signal: scope.signal }),
+        (r) => (r.partial ? 'Data cancelada parcialmente (viagens em andamento preservadas).' : 'Data cancelada.'),
+        'Erro ao cancelar data.',
+        onSuccess,
+      ),
+  })
 }
 
 function handleCancelDay({ day, reason, onSuccess }) {
   if (!reason.trim()) return notify('Informe o motivo do cancelamento do atendimento.', 'error')
-  return runAction(
-    () => store.cancelarDiaAtendimento(day.id, reason.trim(), { signal: scope.signal }),
-    (r) =>
-      r.partial ? 'Atendimento cancelado parcialmente (viagens iniciadas preservadas).' : 'Atendimento cancelado.',
-    'Não foi possível cancelar o atendimento.',
-    onSuccess,
-  )
+  confirmCancel({
+    title: `Cancelar atendimento de ${day.date}`,
+    message: `Deseja cancelar o atendimento #${day.id} (${nomeGrupo(day.route_group)})?`,
+    warning:
+      'Esta ação não poderá ser revertida. O atendimento cancelado não poderá ser recriado para esta data.',
+    confirmLabel: 'Sim, cancelar atendimento',
+    run: () =>
+      runAction(
+        () => store.cancelarDiaAtendimento(day.id, reason.trim(), { signal: scope.signal }),
+        (r) =>
+          r.partial ? 'Atendimento cancelado parcialmente (viagens iniciadas preservadas).' : 'Atendimento cancelado.',
+        'Não foi possível cancelar o atendimento.',
+        onSuccess,
+      ),
+  })
+}
+
+function handleCancelTravel(travel) {
+  confirmCancel({
+    title: `Cancelar viagem #${travel.id}`,
+    message: `Deseja cancelar a viagem "${nomeServico(travel.service)}"?`,
+    warning: 'Esta ação não poderá ser revertida e todos os passageiros alocados serão notificados.',
+    confirmLabel: 'Sim, cancelar viagem',
+    run: () =>
+      runAction(
+        () => store.cancelarViagem(travel.id, { signal: scope.signal }),
+        'Viagem cancelada.',
+        'Não foi possível cancelar a viagem.',
+      ),
+  })
 }
 
 function handleInviteDriver({ travel, driverMembershipId, expiresAt, onSuccess }) {
@@ -262,13 +373,14 @@ function handleInviteDriver({ travel, driverMembershipId, expiresAt, onSuccess }
     />
 
     <ServiceDayCard
-      v-for="day in diasAtendimentoFiltrados"
+      v-for="(day, index) in diasAtendimentoFiltrados"
       :key="day.id"
       :day="day"
       :group-name="nomeGrupo(day.route_group)"
       :resumo="resumoRespostasDia(day.id)"
       :travels-count="viagensDoDia(day.id).length"
       :busy="busy"
+      :default-expanded="index === 0 && filtroStatusDia === 'em_andamento'"
       @close-window="
         runAction(
           () => store.fecharDiaAtendimento(day.id, { signal: scope.signal }),
@@ -291,19 +403,14 @@ function handleInviteDriver({ travel, driverMembershipId, expiresAt, onSuccess }
         :key="travel.id"
         :travel="travel"
         :service-name="nomeServico(travel.service)"
+        :day-window="day.window"
         :participants-count="participacoesDaViagem(travel.id)"
         :snapshot="snapshotDaViagem(travel)"
         :job="jobDoSnapshot(travel)"
         :veiculos-ativos="veiculosAtivos"
         :motoristas-ativos="motoristasAtivos"
         :busy="busy"
-        @calculate="
-          runAction(
-            () => store.calcularViagem(travel.id, travel.revision, { signal: scope.signal }),
-            'Cálculo de percurso enfileirado (202). O cálculo não publica a viagem automaticamente.',
-            'Não foi possível solicitar o cálculo.',
-          )
-        "
+        @open-calculate="calcTravelId = travel.id"
         @publish="
           runAction(
             () => store.publicarViagem(travel.id, travel.revision, { signal: scope.signal }),
@@ -311,13 +418,7 @@ function handleInviteDriver({ travel, driverMembershipId, expiresAt, onSuccess }
             'Não foi possível publicar a viagem.',
           )
         "
-        @cancel="
-          runAction(
-            () => store.cancelarViagem(travel.id, { signal: scope.signal }),
-            `Viagem #${travel.id} cancelada.`,
-            'Não foi possível cancelar a viagem.',
-          )
-        "
+        @cancel="handleCancelTravel(travel)"
         @assign-vehicle="({ travel: t, vehicleId, onSuccess }) =>
           runAction(
             () => store.designarVeiculoViagem(t.id, Number(vehicleId), { signal: scope.signal }),
@@ -328,6 +429,49 @@ function handleInviteDriver({ travel, driverMembershipId, expiresAt, onSuccess }
         @invite-driver="handleInviteDriver"
       />
     </ServiceDayCard>
+
+    <RouteCalculationModal
+      :open="Boolean(calcTravel)"
+      :travel="calcTravel"
+      :service-name="calcTravel ? nomeServico(calcTravel.service) : ''"
+      :origin-point="originPointForTravel(calcTravel)"
+      :destination-point="destinationPointForTravel(calcTravel)"
+      :participants="calcParticipants"
+      :snapshot="calcSnapshot"
+      :job="calcJob"
+      :busy="busy"
+      @close="calcTravelId = null"
+      @calculate="
+        (t) =>
+          runAction(
+            () => store.calcularViagem(t.id, t.revision, { signal: scope.signal }),
+            'Cálculo de percurso iniciado. O trajeto aparecerá no mapa automaticamente.',
+            'Não foi possível solicitar o cálculo.',
+          )
+      "
+      @publish="
+        (t) =>
+          runAction(
+            () => store.publicarViagem(t.id, t.revision, { signal: scope.signal }),
+            'Viagem publicada com sucesso.',
+            'Não foi possível publicar a viagem.',
+            () => {
+              calcTravelId = null
+            },
+          )
+      "
+    />
+
+    <ConfirmDialog
+      :open="Boolean(pendingCancel)"
+      :title="pendingCancel?.title || 'Confirmar cancelamento'"
+      :message="pendingCancel?.message || ''"
+      :warning="pendingCancel?.warning || ''"
+      :confirm-label="pendingCancel?.confirmLabel || 'Confirmar'"
+      :busy="busy"
+      @cancel="pendingCancel = null"
+      @confirm="executePendingCancel"
+    />
   </div>
 </template>
 

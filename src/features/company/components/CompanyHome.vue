@@ -92,6 +92,7 @@ onMounted(async () => {
 
     <StatusBanner
       v-if="companyData && !companyData.is_approved"
+      persistent
       :variant="companyData.registration_status === 'rejected' ? 'danger' : 'warning'"
       icon="mdi-clock-outline"
     >

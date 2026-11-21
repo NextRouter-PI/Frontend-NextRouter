@@ -5,11 +5,10 @@ import { state } from '@/stores/state'
 import { getPublicCompany } from '@/api/companies'
 import { useMemberships } from '@/features/memberships/composables/useMemberships'
 import { useInputFormat } from '@/composables/useInputFormat'
+import { useToast } from '@/composables/useToast'
 import { sessionError } from '@/stores/session'
 import { formatApiError } from '@/utils/apiErrors'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import ErrorMessage from '@/components/ui/ErrorMessage.vue'
-import BaseInput from '@/components/ui/BaseInput.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
 import MembershipCard from '@/features/memberships/components/MembershipCard.vue'
 import MembershipActionForm from '@/features/memberships/components/MembershipActionForm.vue'
@@ -29,12 +28,23 @@ const {
 } = useMemberships(scope)
 
 const { formatPhone } = useInputFormat()
+const { showToast } = useToast()
 const selectedCompany = ref(null)
 const selectedGroupId = ref('')
-const contactPhone = ref(formatPhone(state.user?.phone || ''))
+const profilePhoneFormatted = computed(() => formatPhone(state.user?.phone || ''))
 const selectionLoading = ref(false)
 const selectionError = ref('')
 const closingAction = ref('')
+
+watch(notice, (msg) => {
+  if (msg) showToast(msg, 'success')
+})
+watch(error, (msg) => {
+  if (msg) showToast(msg, 'error')
+})
+watch(selectionError, (msg) => {
+  if (msg) showToast(msg, 'error')
+})
 const selectedId = computed(() => {
   const value = route.query.company
   return typeof value === 'string' && /^[1-9]\d*$/.test(value) && Number.isSafeInteger(Number(value))
@@ -95,8 +105,6 @@ async function closeMembership(reason) {
           <RouterLink to="/empresas">Pesquisar empresas</RouterLink>
           <BaseButton type="button" variant="outline" :disabled="busy || loading" @click="refresh(1)">Atualizar vínculos</BaseButton>
         </div>
-        <p v-if="notice" class="membership-notice" role="status">{{ notice }}</p>
-        <div role="alert"><ErrorMessage :message="error" /></div>
         <LoadingSpinner v-if="busy" size="sm" inline text="Processando ação de vínculo..." />
         <SkeletonCard v-if="loading" :count="2" avatar />
         <section v-else-if="ready" class="membership-section" aria-label="Situação atual do vínculo">
@@ -125,7 +133,6 @@ async function closeMembership(reason) {
           <h2>Revisar solicitação</h2>
           <p v-if="!selectedId">Identificador de empresa inválido. Escolha uma empresa na busca.</p>
           <p v-else-if="selectionLoading" role="status">Consultando a empresa selecionada...</p>
-          <div role="alert"><ErrorMessage :message="selectionError" /></div>
           <template v-if="selectedCompany">
             <h3>{{ selectedCompany.trade_name }} · empresa nº {{ selectedCompany.id }}</h3>
             <div v-if="state.role === 'passenger' && selectedCompany.route_groups?.length" class="membership-filters">
@@ -139,15 +146,10 @@ async function closeMembership(reason) {
                 </select>
               </label>
             </div>
-            <BaseInput
-              v-model="contactPhone"
-              label="Telefone para contato"
-              placeholder="(00) 90000-0000"
-              maxlength="16"
-              :only-numbers="true"
-              :format="formatPhone"
-              :disabled="busy"
-            />
+            <p class="membership-phone-hint">
+              Telefone enviado do seu perfil:
+              <strong>{{ profilePhoneFormatted || 'não informado (você pode preencher em Meu Perfil)' }}</strong>
+            </p>
             <p>
               Enviar como {{ state.role === 'driver' ? 'motorista' : 'passageiro' }}.
               <template v-if="state.role === 'passenger' && selectedGroupId">
@@ -161,7 +163,7 @@ async function closeMembership(reason) {
               type="button"
               :disabled="!canRequest || selectionLoading"
               :loading="busy"
-              @click="request(selectedCompany.id, selectedGroupId ? Number(selectedGroupId) : null, contactPhone)"
+              @click="request(selectedCompany.id, selectedGroupId ? Number(selectedGroupId) : null, state.user?.phone || '')"
             >
               Enviar pedido de vínculo
             </BaseButton>

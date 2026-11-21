@@ -46,7 +46,7 @@ export function useRouteSnapshotMap({ mapContainer, getSnapshot, getStops }) {
 
     if (snapshot?.geometry?.type && Array.isArray(snapshot.geometry.coordinates)) {
       const geo = L.geoJSON(snapshot.geometry, {
-        style: { color: '#df801a', weight: 4, opacity: 0.9 },
+        style: { color: '#df801a', weight: 4, opacity: 0.9, className: 'nr-route-animated-dash' },
       }).addTo(routeLayer)
       const geoBounds = geo.getBounds()
       if (geoBounds.isValid()) {
@@ -73,16 +73,23 @@ export function useRouteSnapshotMap({ mapContainer, getSnapshot, getStops }) {
       fallbackCoords.push(coord)
       boundsPoints.push(coord)
       const handled = stop.state === 'handled' || stop.state === 'completed'
+      const firstPassenger = (stop.participants || []).find((p) => p.profile_picture_url || p.passenger_name)
+      const names = (stop.participants || []).map((p) => p.passenger_name).filter(Boolean).join(', ')
       L.marker(coord, {
         icon: createPinIcon({
           variant: handled ? 'success' : 'primary',
-          label: String(stop.position ?? ''),
-          size: 'sm',
+          label: firstPassenger?.profile_picture_url ? '' : String(stop.position ?? ''),
+          avatarUrl: firstPassenger?.profile_picture_url || '',
+          avatarAlt: firstPassenger?.passenger_name || `Parada #${stop.position}`,
+          size: firstPassenger?.profile_picture_url ? 'md' : 'sm',
         }),
       })
-        .bindTooltip(`#${stop.position}`, { direction: 'top', offset: [0, -6] })
+        .bindTooltip(names ? `#${stop.position} · ${names}` : `#${stop.position}`, {
+          direction: 'top',
+          offset: [0, -6],
+        })
         .bindPopup(
-          `<strong>Parada #${stop.position}:</strong> ${stop.point_snapshot?.name || 'Ponto'}<br><small>Estado: ${stop.state || 'pendente'}</small>`,
+          `<strong>Parada #${stop.position}:</strong> ${stop.point_snapshot?.name || 'Ponto'}${names ? `<br>${names}` : ''}<br><small>Estado: ${stop.state || 'pendente'}</small>`,
         )
         .addTo(routeLayer)
     }

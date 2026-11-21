@@ -14,6 +14,7 @@ import AttendanceSummaryAxes from '@/features/passenger/components/attendance/At
 import AttendanceResponseForms from '@/features/passenger/components/attendance/AttendanceResponseForms.vue'
 
 const editingAnswer = shallowRef(false)
+const cardExpanded = shallowRef(true)
 const { showToast } = useToast()
 
 const {
@@ -62,12 +63,17 @@ watch(
   () => selectedEligibility.value?.id,
   () => {
     editingAnswer.value = false
+    cardExpanded.value = !alreadyAnswered.value
   },
+  { immediate: true },
 )
 
 async function handleSendNormalAnswer() {
   const ok = await sendNormalAnswer()
-  if (ok) editingAnswer.value = false
+  if (ok) {
+    editingAnswer.value = false
+    cardExpanded.value = false
+  }
 }
 </script>
 
@@ -118,50 +124,68 @@ async function handleSendNormalAnswer() {
       <BaseCard :title="`Atendimento de ${formatDateChip(selectedEligibility.dayData.date)}`">
         <template #actions>
           <span class="window-tag">{{ windowLabel }}</span>
+          <BaseButton
+            variant="outline"
+            size="sm"
+            :icon="cardExpanded ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+            @click="cardExpanded = !cardExpanded"
+          >
+            {{ cardExpanded ? 'Recolher' : 'Ver / alterar' }}
+          </BaseButton>
         </template>
 
-        <p
-          v-if="selectedEligibility.dayData.opens_at && selectedEligibility.dayData.normal_deadline"
-          class="sub-info"
-        >
-          Janela de confirmação:
-          <strong>abre em {{ formatDateTimeBr(selectedEligibility.dayData.opens_at) }}</strong> ·
-          <strong>fecha em {{ formatDateTimeBr(selectedEligibility.dayData.normal_deadline) }}</strong>
-          <template v-if="selectedEligibility.dayData.extension_deadline">
-            · prorrogação até {{ formatDateTimeBr(selectedEligibility.dayData.extension_deadline) }}
-          </template>
-        </p>
+        <div v-if="!cardExpanded && alreadyAnswered" class="collapsed-summary">
+          <span class="mdi mdi-check-circle-outline" aria-hidden="true"></span>
+          <span>
+            Confirmado — Ida: <strong>{{ serviceLabel(selectedEligibility, selectedEligibility.response?.outbound_service) }}</strong>
+            · Retorno: <strong>{{ serviceLabel(selectedEligibility, selectedEligibility.response?.return_service) }}</strong>
+          </span>
+        </div>
 
-        <p v-if="selectedEligibility.dayData.window === WINDOW_STATES.NOT_OPEN" class="sub-info">
-          Esta janela ainda não abriu. Você poderá selecionar e confirmar ida e volta a partir de
-          <strong>{{ formatDateTimeBr(selectedEligibility.dayData.opens_at) }}</strong>.
-        </p>
+        <template v-else>
+          <p
+            v-if="selectedEligibility.dayData.opens_at && selectedEligibility.dayData.normal_deadline"
+            class="sub-info"
+          >
+            Janela de confirmação:
+            <strong>abre em {{ formatDateTimeBr(selectedEligibility.dayData.opens_at) }}</strong> ·
+            <strong>fecha em {{ formatDateTimeBr(selectedEligibility.dayData.normal_deadline) }}</strong>
+            <template v-if="selectedEligibility.dayData.extension_deadline">
+              · prorrogação até {{ formatDateTimeBr(selectedEligibility.dayData.extension_deadline) }}
+            </template>
+          </p>
 
-        <p v-if="selectedEligibility.point_snapshot?.name" class="sub-info">
-          Ponto operacional congelado: <strong>{{ selectedEligibility.point_snapshot.name }}</strong>
-          ({{ selectedEligibility.point_snapshot.city }}/{{ selectedEligibility.point_snapshot.state }})
-        </p>
+          <p v-if="selectedEligibility.dayData.window === WINDOW_STATES.NOT_OPEN" class="sub-info">
+            Esta janela ainda não abriu. Você poderá selecionar e confirmar ida e volta a partir de
+            <strong>{{ formatDateTimeBr(selectedEligibility.dayData.opens_at) }}</strong>.
+          </p>
 
-        <AttendanceSummaryAxes
-          :eligibility="selectedEligibility"
-          :busy="busy"
-          @withdraw-leg="withdrawLeg"
-        />
+          <p v-if="selectedEligibility.point_snapshot?.name" class="sub-info">
+            Ponto operacional congelado: <strong>{{ selectedEligibility.point_snapshot.name }}</strong>
+            ({{ selectedEligibility.point_snapshot.city }}/{{ selectedEligibility.point_snapshot.state }})
+          </p>
 
-        <AttendanceResponseForms
-          v-model:outbound-choice="outboundChoice"
-          v-model:return-choice="returnChoice"
-          v-model:change-leg="changeLeg"
-          v-model:proposed-service-id="proposedServiceId"
-          v-model:editing-answer="editingAnswer"
-          :eligibility="selectedEligibility"
-          :already-answered="alreadyAnswered"
-          :busy="busy"
-          :service-label="serviceLabel"
-          @submit-normal="handleSendNormalAnswer"
-          @submit-extension="sendExtensionRequest"
-          @cancel-request="cancelPendingRequest"
-        />
+          <AttendanceSummaryAxes
+            :eligibility="selectedEligibility"
+            :busy="busy"
+            @withdraw-leg="withdrawLeg"
+          />
+
+          <AttendanceResponseForms
+            v-model:outbound-choice="outboundChoice"
+            v-model:return-choice="returnChoice"
+            v-model:change-leg="changeLeg"
+            v-model:proposed-service-id="proposedServiceId"
+            v-model:editing-answer="editingAnswer"
+            :eligibility="selectedEligibility"
+            :already-answered="alreadyAnswered"
+            :busy="busy"
+            :service-label="serviceLabel"
+            @submit-normal="handleSendNormalAnswer"
+            @submit-extension="sendExtensionRequest"
+            @cancel-request="cancelPendingRequest"
+          />
+        </template>
       </BaseCard>
     </template>
   </div>
@@ -194,6 +218,23 @@ async function handleSendNormalAnswer() {
 
   strong {
     color: var(--text);
+  }
+}
+
+.collapsed-summary {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-3;
+  border-radius: $radius-md;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: $text-sm;
+  line-height: 1.45;
+
+  .mdi {
+    font-size: 1.15rem;
+    flex-shrink: 0;
   }
 }
 </style>
