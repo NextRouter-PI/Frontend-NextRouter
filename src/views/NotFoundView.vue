@@ -10,6 +10,14 @@ const primaryLabel = computed(() => (state.logged ? 'Voltar ao início' : 'Ir pa
 
 <template>
   <div class="status-page">
+    <RouterLink :to="primaryTarget" class="brand-mark" aria-label="NextRouter">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 20c-4.42 0-8-1.34-8-3 0-1.08 1.54-2.03 3.85-2.56l.68 1.36C6.95 16.17 5.8 16.69 5.8 17c0 .77 2.55 1.7 6.2 1.7s6.2-.93 6.2-1.7c0-.31-1.15-.83-2.73-1.2l.68-1.36C18.46 14.97 20 15.92 20 17c0 1.66-3.58 3-8 3z" />
+        <path d="M12 2C8.69 2 6 4.69 6 8c0 4.5 6 9.5 6 9.5s6-5 6-9.5c0-3.31-2.69-6-6-6zm0 8.2a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4z" />
+      </svg>
+      <span><span class="brand-accent">NEXT</span>ROUTER</span>
+    </RouterLink>
+
     <div class="status-card">
       <div class="icon-wrap">
         <BaseIcon name="mdi-map-marker-question-outline" />
@@ -36,12 +44,36 @@ const primaryLabel = computed(() => (state.logged ? 'Voltar ao início' : 'Ir pa
 <style lang="scss" scoped>
 .status-page {
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 20px;
   padding: 24px 16px;
   background: var(--bg);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: $font-extrabold;
+  letter-spacing: 0.06em;
+  color: var(--text);
+
+  svg {
+    width: 24px;
+    height: 24px;
+    color: var(--primary);
+  }
+}
+
+.brand-accent {
+  color: var(--primary);
 }
 
 .status-card {
