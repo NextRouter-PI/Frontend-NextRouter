@@ -5,7 +5,8 @@ import { randomBytes } from 'node:crypto'
 import { once } from 'node:events'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
-import { resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
@@ -46,7 +47,7 @@ async function main() {
   const frontendRevision = git(frontend, ['rev-parse', 'HEAD'])
   const backendRevision = git(backend, ['rev-parse', 'HEAD'])
   assert.equal(spawnSync('firefox', ['--version'], { stdio: 'ignore' }).status, 0, 'Exige Firefox já instalado.')
-  const root = await mkdtemp('/tmp/opencode/nr-vue-browser-')
+  const root = await mkdtemp(join(tmpdir(), 'nr-vue-browser-'))
   const children = []
   let transport
   let stage = 'build e fixture'
