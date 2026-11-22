@@ -100,6 +100,7 @@ function goBack() {
       v-model="codigo"
       :email="emailCodigo"
       :cooldown="cooldown"
+      :loading="enviandoCodigo"
       :disabled="enviandoCodigo || registerState.state.loading"
       @resend="enviarCodigo(page3Form.loginEmail)"
     />

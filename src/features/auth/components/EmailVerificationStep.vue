@@ -1,11 +1,13 @@
 <script setup>
 import CodeInput from '@/components/ui/CodeInput.vue'
+import ResendCodeButton from '@/components/ui/ResendCodeButton.vue'
 
 const code = defineModel({ type: Array, required: true })
 
 defineProps({
   email: { type: String, required: true },
   cooldown: { type: Number, default: 0 },
+  loading: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
 })
 
@@ -24,15 +26,12 @@ const emit = defineEmits(['resend'])
 
     <CodeInput v-model="code" :disabled="disabled" />
 
-    <p class="resend-row">
-      <template v-if="cooldown > 0">Reenviar código em {{ cooldown }}s</template>
-      <template v-else>
-        Não recebeu?
-        <button type="button" class="resend-btn" :disabled="disabled" @click="emit('resend')">
-          Enviar novo código
-        </button>
-      </template>
-    </p>
+    <ResendCodeButton
+      :cooldown="cooldown"
+      :loading="loading"
+      :disabled="disabled"
+      @resend="emit('resend')"
+    />
   </div>
 </template>
 
@@ -61,26 +60,6 @@ const emit = defineEmits(['resend'])
 
   strong {
     color: var(--text);
-  }
-}
-
-.resend-row {
-  color: var(--text-muted);
-  font-size: $text-sm;
-}
-
-.resend-btn {
-  color: var(--primary);
-  font-weight: $font-semibold;
-  padding: 0 $space-1;
-
-  &:hover:not(:disabled) {
-    text-decoration: underline;
-  }
-
-  &:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
   }
 }
 </style>

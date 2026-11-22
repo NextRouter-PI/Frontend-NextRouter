@@ -11,6 +11,7 @@ export function useEmailChange() {
   const code = ref(['', '', '', '', '', ''])
   const password = ref('')
   const busy = ref(false)
+  const resending = ref(false)
   const blocked = ref(false)
   const error = ref('')
   const cooldown = ref(0)
@@ -66,12 +67,16 @@ export function useEmailChange() {
       step.value = 2
       return
     }
+    const isResend = step.value === 2
+    if (isResend) resending.value = true
     return run((options) => requestEmailChange(target, options), () => {
       requestedEmail.value = target
       clearCode()
       step.value = 2
       startCooldown()
-    }, 'Não foi possível solicitar o código. Tente novamente mais tarde.')
+    }, 'Não foi possível solicitar o código. Tente novamente mais tarde.').finally(() => {
+      if (scope.current()) resending.value = false
+    })
   }
   function verify() {
     const value = code.value.join('')
@@ -112,5 +117,5 @@ export function useEmailChange() {
     newEmail.value = ''
     requestedEmail.value = ''
   })
-  return { step, newEmail, requestedEmail, code, password, busy, blocked, error, cooldown, request, verify, confirm, back }
+  return { step, newEmail, requestedEmail, code, password, busy, resending, blocked, error, cooldown, request, verify, confirm, back }
 }

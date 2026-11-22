@@ -6,6 +6,7 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import CodeInput from '@/components/ui/CodeInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import ResendCodeButton from '@/components/ui/ResendCodeButton.vue'
 
 const props = defineProps({
   accountEmail: { type: String, default: '' },
@@ -22,6 +23,7 @@ const {
   confirmarSenha,
   erro,
   ocupado,
+  reenviando,
   cooldown,
   solicitarCodigo,
   verificarCodigo,
@@ -69,16 +71,21 @@ watch(etapa, (value) => {
 
         <CodeInput v-model="codigo" :disabled="ocupado" />
 
-        <p v-if="cooldown > 0" class="resend-row">Reenviar código em {{ cooldown }}s</p>
-        <p v-else class="resend-row">
-          Não recebeu?
-          <button type="button" class="link-btn" :disabled="ocupado" @click="solicitarCodigo">
-            Enviar novo código
-          </button>
-        </p>
+        <ResendCodeButton
+          :cooldown="cooldown"
+          :loading="reenviando"
+          :disabled="ocupado"
+          @resend="solicitarCodigo"
+        />
 
-        <BaseButton type="submit" block size="lg" :loading="ocupado">
-          {{ ocupado ? 'Verificando...' : 'Confirmar' }}
+        <BaseButton
+          type="submit"
+          block
+          size="lg"
+          :loading="ocupado && !reenviando"
+          :disabled="reenviando"
+        >
+          {{ ocupado && !reenviando ? 'Verificando...' : 'Confirmar' }}
         </BaseButton>
 
         <BaseButton v-if="!accountEmail" variant="outline" block :disabled="ocupado" @click="voltarAoEmail">
@@ -169,23 +176,6 @@ watch(etapa, (value) => {
 
   strong {
     color: var(--text);
-  }
-}
-
-.resend-row {
-  font-size: $text-sm;
-  color: var(--text-muted);
-  text-align: center;
-}
-
-.link-btn {
-  color: var(--primary);
-  font-weight: $font-semibold;
-  font-size: $text-sm;
-  padding: 0 $space-1;
-
-  &:hover:not(:disabled) {
-    text-decoration: underline;
   }
 }
 

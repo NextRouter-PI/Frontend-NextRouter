@@ -13,6 +13,7 @@ export function usePasswordReset(options = {}) {
   const confirmarSenha = shallowRef('')
   const erro = shallowRef('')
   const ocupado = shallowRef(false)
+  const reenviando = shallowRef(false)
   const { cooldown, startCooldown, resetCooldown } = useCooldownTimer(60)
   const { requiredField, isEmail, isStrongPassword } = useValidator()
   const controller = new AbortController()
@@ -34,7 +35,9 @@ export function usePasswordReset(options = {}) {
       else erro.value = `Aguarde ${cooldown.value}s para reenviar o código.`
       return
     }
+    const isResend = etapa.value === 2
     ocupado.value = true
+    if (isResend) reenviando.value = true
     try {
       await api.post('/password-reset/request/', { email: target }, { signal })
       if (signal.aborted) return
@@ -51,7 +54,10 @@ export function usePasswordReset(options = {}) {
         )
       }
     } finally {
-      if (!signal.aborted) ocupado.value = false
+      if (!signal.aborted) {
+        ocupado.value = false
+        reenviando.value = false
+      }
     }
   }
 
@@ -144,7 +150,7 @@ export function usePasswordReset(options = {}) {
   })
 
   return {
-    etapa, email, emailCodigo, codigo, novaSenha, confirmarSenha, erro, ocupado, cooldown,
+    etapa, email, emailCodigo, codigo, novaSenha, confirmarSenha, erro, ocupado, reenviando, cooldown,
     solicitarCodigo, verificarCodigo, redefinirSenha, voltarAoEmail, voltarAoCodigo,
   }
 }

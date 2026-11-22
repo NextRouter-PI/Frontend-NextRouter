@@ -17,11 +17,14 @@ const emit = defineEmits(['click'])
     :type="type"
     :class="['base-btn', `variant-${variant}`, `size-${size}`, { block, loading }]"
     :disabled="disabled || loading"
+    :aria-busy="loading || undefined"
     @click="emit('click', $event)"
   >
-    <span v-if="loading" class="spinner" aria-hidden="true"></span>
-    <BaseIcon v-else-if="icon" :name="icon" />
-    <slot />
+    <Transition name="fade-scale" mode="out-in">
+      <span v-if="loading" key="spinner" class="spinner" aria-hidden="true"></span>
+      <BaseIcon v-else-if="icon" key="icon" :name="icon" />
+    </Transition>
+    <span class="btn-label"><slot /></span>
   </button>
 </template>
 
@@ -55,6 +58,18 @@ const emit = defineEmits(['click'])
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
+  }
+
+  &.loading {
+    opacity: 0.85;
+    cursor: progress;
+    animation: btn-loading-pulse 1.5s ease-in-out infinite;
+  }
+
+  .btn-label {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
   }
 
   &.size-sm {
@@ -135,6 +150,22 @@ const emit = defineEmits(['click'])
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes btn-loading-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .base-btn.loading {
+    animation: none;
   }
 }
 </style>
