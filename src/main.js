@@ -30,8 +30,8 @@ async function start() {
     }
     app.use(createPinia())
     app.use(router)
-    await router.isReady()
     app.mount('#app')
+    await router.isReady()
   } catch {
     document.querySelector('#app').textContent = 'Não foi possível iniciar com segurança. Feche as abas antigas, limpe os dados deste site e recarregue.'
   }

@@ -12,13 +12,16 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import AppTopBar from '@/components/layout/AppTopBar.vue'
 import AppNavigation from '@/components/layout/AppNavigation.vue'
 import ThemeButton from '@/components/ui/ThemeButton.vue'
-import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
+import LoadingScreen from '@/components/ui/LoadingScreen.vue'
 
 const { isMobile } = useDeviceLayout()
 const route = useRoute()
 const auth = useAuthStore()
 const { theme: toasterTheme } = useDocumentTheme()
-const { transitionName, isNavigating, isAuthSlide } = useRouteProgress({ isMobile })
+const { transitionName, isNavigating, isSlowNavigating, isRouterReady, isAuthSlide } =
+  useRouteProgress({ isMobile })
+
+const showBootLoader = computed(() => !isRouterReady.value || auth.checkingAuth)
 
 const showTopBar = computed(() => !route.meta?.hideChrome)
 const showNavigation = computed(() => auth.logged && !route.meta?.hideChrome)
@@ -44,13 +47,22 @@ watch(
 
 <template>
   <Transition name="fade-scale" mode="out-in">
-    <div v-if="!auth.checkingAuth" key="ready" class="app-layout">
+    <div v-if="!showBootLoader" key="ready" class="app-layout">
       <div
         v-if="isNavigating"
         class="route-progress-bar"
         role="progressbar"
         aria-label="Carregando página"
       ></div>
+
+      <Transition name="fade-scale">
+        <LoadingScreen
+          v-if="isSlowNavigating"
+          overlay
+          title="Carregando página..."
+          subtitle="Preparando os dados da próxima tela"
+        />
+      </Transition>
 
       <AppTopBar
         v-if="showTopBar"
@@ -120,9 +132,13 @@ watch(
       </main>
     </div>
 
-    <div v-else key="boot" class="app-boot-loader">
-      <LoadingSpinner size="lg" text="Carregando NextRouter..." />
-    </div>
+    <LoadingScreen
+      v-else
+      key="boot"
+      fullscreen
+      title="Carregando NextRouter..."
+      subtitle="Verificando sua sessão"
+    />
   </Transition>
 
   <Toaster
@@ -135,12 +151,6 @@ watch(
 </template>
 
 <style lang="scss" scoped>
-.app-boot-loader {
-  min-height: 100vh;
-  @include flex-center;
-  background: var(--bg);
-}
-
 .route-progress-bar {
   position: fixed;
   top: var(--safe-top);

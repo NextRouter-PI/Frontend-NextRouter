@@ -8,12 +8,14 @@ import PublicShell from '@/components/layout/PublicShell.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
+import LoadingScreen from '@/components/ui/LoadingScreen.vue'
 
 const router = useRouter()
 const route = useRoute()
 const { login } = useLoginState()
 
 const erro = shallowRef('')
+const redirecting = shallowRef(false)
 const form = reactive({
   email: '',
   senha: '',
@@ -28,7 +30,7 @@ function isPositiveIntString(value) {
 }
 
 async function enviarLogin() {
-  if (state.loading) return
+  if (state.loading || redirecting.value) return
   erro.value = ''
   fieldErrors.email = !form.email.trim() ? 'E-mail é obrigatório' : ''
   fieldErrors.senha = !form.senha.trim() ? 'Senha é obrigatória' : ''
@@ -37,6 +39,7 @@ async function enviarLogin() {
   const sucesso = await login(form.email, form.senha)
 
   if (sucesso) {
+    redirecting.value = true
     const { company, group } = route.query
     const validCompany = isPositiveIntString(company)
     const validGroup = isPositiveIntString(group)
@@ -106,7 +109,7 @@ async function enviarLogin() {
             autocomplete="email"
             required
             :error="fieldErrors.email"
-            :disabled="state.loading"
+            :disabled="state.loading || redirecting"
             @input="fieldErrors.email = ''"
           />
 
@@ -118,14 +121,20 @@ async function enviarLogin() {
             autocomplete="current-password"
             required
             :error="fieldErrors.senha"
-            :disabled="state.loading"
+            :disabled="state.loading || redirecting"
             @input="fieldErrors.senha = ''"
           />
 
           <ErrorMessage :message="erro" />
 
-          <BaseButton type="submit" block size="lg" :loading="state.loading" class="login-submit">
-            {{ state.loading ? 'Entrando...' : 'Entrar' }}
+          <BaseButton
+            type="submit"
+            block
+            size="lg"
+            :loading="state.loading || redirecting"
+            class="login-submit"
+          >
+            {{ redirecting ? 'Redirecionando...' : state.loading ? 'Entrando...' : 'Entrar' }}
           </BaseButton>
 
           <p class="forgot-row">
@@ -142,6 +151,15 @@ async function enviarLogin() {
         </form>
       </section>
     </div>
+
+    <Transition name="fade-scale">
+      <LoadingScreen
+        v-if="redirecting"
+        overlay
+        title="Entrando no NextRouter..."
+        subtitle="Redirecionando para seu painel"
+      />
+    </Transition>
   </PublicShell>
 </template>
 

@@ -6,18 +6,30 @@ export function useRouteProgress({ isMobile }) {
   const router = useRouter()
   const transitionName = shallowRef('page-fade')
   const isNavigating = shallowRef(false)
+  const isSlowNavigating = shallowRef(false)
+  const isRouterReady = shallowRef(false)
   let navDelayTimer = null
+  let slowNavTimer = null
 
   const isAuthSlide = computed(
     () => transitionName.value === 'slide-forward' || transitionName.value === 'slide-back',
   )
+
+  router.isReady().finally(() => {
+    isRouterReady.value = true
+  })
 
   function finishNavigation() {
     if (navDelayTimer) {
       clearTimeout(navDelayTimer)
       navDelayTimer = null
     }
+    if (slowNavTimer) {
+      clearTimeout(slowNavTimer)
+      slowNavTimer = null
+    }
     isNavigating.value = false
+    isSlowNavigating.value = false
   }
 
   const removeBeforeEach = router.beforeEach((to, from) => {
@@ -30,9 +42,13 @@ export function useRouteProgress({ isMobile }) {
     }
     if (to.path !== from.path) {
       if (navDelayTimer) clearTimeout(navDelayTimer)
+      if (slowNavTimer) clearTimeout(slowNavTimer)
       navDelayTimer = setTimeout(() => {
         isNavigating.value = true
-      }, 100)
+      }, 80)
+      slowNavTimer = setTimeout(() => {
+        isSlowNavigating.value = true
+      }, 360)
     }
   })
 
@@ -46,5 +62,5 @@ export function useRouteProgress({ isMobile }) {
     finishNavigation()
   })
 
-  return { transitionName, isNavigating, isAuthSlide }
+  return { transitionName, isNavigating, isSlowNavigating, isRouterReady, isAuthSlide }
 }
