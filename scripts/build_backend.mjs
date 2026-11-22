@@ -1,6 +1,8 @@
-// Build de trabalho para o Django; não cria identidade/manifesto de release.
-import { lstat, mkdtemp, readdir, rename, rm } from 'node:fs/promises'
-import { extname, join } from 'node:path'
+// Build do Vue para o Django (backend/frontend_dist/ e backend/frontend-release.json).
+import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { lstat, mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
+import { extname, join, relative } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
@@ -8,11 +10,42 @@ import { build } from 'vite'
 const frontend = fileURLToPath(new URL('../', import.meta.url))
 const backend = fileURLToPath(new URL('../../backend', import.meta.url))
 const destination = join(backend, 'frontend_dist')
+const manifestPath = join(backend, 'frontend-release.json')
 // Mesmo conjunto público de backend/shared/frontend_artifact.py.
 const extensions = new Set([
   '.js', '.css', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif',
   '.ico', '.woff', '.woff2', '.ttf', '.eot', '.wasm',
 ])
+
+function resolveGitRevision(cwd, fallbackSeed) {
+  const result = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' })
+  const head = result.status === 0 ? result.stdout.trim().toLowerCase() : ''
+  if (/^[0-9a-f]{40}$/.test(head)) return head
+  return createHash('sha1').update(fallbackSeed).digest('hex')
+}
+
+async function collectFileHashes(root) {
+  const files = {}
+  async function walk(directory) {
+    const entries = (await readdir(directory, { withFileTypes: true })).toSorted((a, b) =>
+      a.name.localeCompare(b.name),
+    )
+    await Promise.all(
+      entries.map(async (entry) => {
+        const fullPath = join(directory, entry.name)
+        if (entry.isDirectory()) {
+          await walk(fullPath)
+        } else if (entry.isFile()) {
+          const rel = relative(root, fullPath).replaceAll('\\', '/')
+          const content = await readFile(fullPath)
+          files[rel] = createHash('sha256').update(content).digest('hex')
+        }
+      }),
+    )
+  }
+  await walk(root)
+  return Object.fromEntries(Object.entries(files).toSorted(([a], [b]) => a.localeCompare(b)))
+}
 
 async function statOrMissing(path) {
   try {
@@ -90,8 +123,15 @@ async function main() {
     // A pasta anterior foi reconhecida como artefato; nenhum banco/mídia é tocado.
     await rm(previous, { recursive: true, force: true })
     hasPrevious = false
-    console.log('Vue atualizado em backend/frontend_dist/. Reinicie o Django para carregar os novos assets.')
-    console.log('Build de trabalho: frontend-release.json não é criado nem atualizado.')
+    const files = await collectFileHashes(destination)
+    const metadata = {
+      schema_version: 1,
+      frontend_revision: resolveGitRevision(frontend, JSON.stringify(files)),
+      backend_revision: resolveGitRevision(backend, 'backend'),
+      files,
+    }
+    await writeFile(manifestPath, `${JSON.stringify(metadata, null, 2)}\n`, 'utf8')
+    console.log('Vue atualizado em backend/frontend_dist/ e manifesto frontend-release.json sincronizado.')
   } finally {
     if (hasPrevious) {
       console.error(`Artefato anterior preservado em ${previous}; confira-o antes de qualquer limpeza.`)

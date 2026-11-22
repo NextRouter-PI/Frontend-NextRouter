@@ -238,11 +238,12 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
   - `npm run dev`: inicia o servidor Vite com HMR em `http://127.0.0.1:5173`.
   - `npm run dev:lan`: expõe o servidor Vite na rede local (`--host 0.0.0.0`).
   - `npm run build`: compila o bundle de produção em `dist/`.
+  - `npm run build:backend`: compila o bundle diretamente em `../backend/frontend_dist/` e atualiza `../backend/frontend-release.json`.
   - `npm test`: executa os testes unitários em Node (`node --test tests/*.test.js`),
     cobrindo cliente HTTP/CSRF/refresh, sessão, retirada seletiva de PWA legado e
     guardas do harness de smoke.
-  - `npm run lint` (`lint:oxlint` e `lint:eslint`) e `npm run format` (Prettier em `src/`):
-    atenção pois os scripts `lint:*` e `format` do `package.json` usam `--fix` / `--write`
+  - `npm run lint` (verifica Oxlint e ESLint sem modificar arquivos), `npm run lint:fix` e `npm run format` (Prettier em `src/`):
+    atenção pois `lint:fix`, `lint:*` e `format` usam `--fix` / `--write`
     e modificam arquivos. Os diretórios gerados (`dist/`, `dev-dist/`) são ignorados
     pela configuração de lint/Prettier e não devem ser editados como código-fonte.
 - **Convenções de código e estilo ([.prettierrc.json](.prettierrc.json), [eslint.config.js](eslint.config.js)):**

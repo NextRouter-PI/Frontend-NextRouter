@@ -22,7 +22,10 @@ e `Origin`.
 | Comando | Finalidade |
 |---|---|
 | `npm run build` | Compilar o frontend em `dist/`. |
+| `npm run build:backend` | Compilar o frontend diretamente em `../backend/frontend_dist/` e sincronizar `frontend-release.json`. |
 | `npm run dev:lan` | Disponibilizar o servidor Vite na rede local. |
+| `npm run lint` | Verificar código com Oxlint e ESLint (sem alterar arquivos). |
+| `npm run lint:fix` | Corrigir problemas automáticos com Oxlint e ESLint. |
 | `npm test` | Executar os testes automatizados em Node. |
 
 Use rede confiável e dados fictícios ao acessar via `dev:lan` (`http://<IPv4>:5173`);
