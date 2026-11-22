@@ -11,6 +11,15 @@ function knownWorker(value, origin) {
   return url.origin === origin && ['/sw.js', '/dev-sw.js'].includes(url.pathname)
 }
 
+export async function retireLegacyCaches({ cacheStorage = globalThis.caches } = {}) {
+  if (!cacheStorage) return
+  const legacyCaches = new Set(['api-cache', 'google-fonts-cache', 'gstatic-fonts-cache'])
+  try {
+    const names = await cacheStorage.keys()
+    await Promise.all(names.filter((name) => legacyCaches.has(name)).map((name) => cacheStorage.delete(name)))
+  } catch { /* CacheStorage pode estar indisponível em contextos restritos. */ }
+}
+
 export async function retireLegacyPwa({
   origin = globalThis.location.origin,
   serviceWorker = globalThis.navigator?.serviceWorker,

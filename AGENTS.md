@@ -167,12 +167,13 @@ Todos os caminhos de código e comandos abaixo são relativos à raiz do fronten
   - Mensagens em `BroadcastChannel` notificam apenas o tipo do evento (`changed` ou
     `refreshed`), nunca transportando tokens, CSRF ou dados do usuário.
 - **Artefato de build e PWA:**
-  - O PWA e o registro de service worker estão desativados. O pacote `vite-plugin-pwa`
-    permanece no `package.json` apenas para preservar o lockfile; não o ative no
-    `vite.config.js` nem copie `public/` no build (`publicDir: false`).
-  - Todo asset visual novo (imagens, ícones, fontes) deve ser importado pelo código
-    para que o Vite o emita com hash dentro de `/assets/`. Não referencie arquivos
-    soltos na raiz pública além de `/favicon.ico` e `/index.html`.
+  - O PWA está ativo via `vite-plugin-pwa` em `vite.config.js` (`registerType: 'autoUpdate'`,
+    manifesto `standalone`, atalhos de acesso rápido e ícones em `public/icons/`).
+  - O Service Worker nunca cacheia `/api/`, `/admin/`, `/ws/`, `/media/`, `/uploads/`,
+    `/downloads/` ou `/private-documents/` (`NetworkOnly` e `navigateFallbackDenylist`),
+    limitando o cache de runtime apenas a tiles públicos de mapa e ao shell estático.
+  - `public/` contém somente `favicon.ico` e `icons/icon-*.png` usados pelo PWA; os demais
+    assets visuais devem continuar sendo importados pelo código para emissão com hash em `/assets/`.
 - **WebSockets e localização (`src/composables/useTravelTracking.js`):**
   - A URL WebSocket deriva de `window.location.protocol` (`ws:`/`wss:`) e
     `window.location.host` (`/ws/travels/${travelId}/location/`), autenticada pelos

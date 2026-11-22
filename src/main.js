@@ -7,7 +7,7 @@ import App from '@/App.vue'
 import BaseIcon from '@/components/ui/BaseIcon.vue'
 import router from '@/router'
 import { http } from '@/api/client'
-import { retireLegacyCredentials, retireLegacyPwa } from './legacyPwa.js'
+import { retireLegacyCaches, retireLegacyCredentials } from './legacyPwa.js'
 
 const app = createApp(App)
 app.component('BaseIcon', BaseIcon)
@@ -24,10 +24,7 @@ async function start() {
       retireLegacyCredentials(window.localStorage)
       retireLegacyCredentials(window.sessionStorage)
     } catch { /* Nem o acesso ao storage é obrigatório para iniciar. */ }
-    if (await retireLegacyPwa()) {
-      window.location.reload()
-      return
-    }
+    await retireLegacyCaches()
     app.use(createPinia())
     app.use(router)
     app.mount('#app')

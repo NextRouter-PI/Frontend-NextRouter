@@ -16,6 +16,9 @@ const extensions = new Set([
   '.js', '.css', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif',
   '.ico', '.woff', '.woff2', '.ttf', '.eot', '.wasm',
 ])
+const iconExtensions = new Set(['.png', '.svg', '.ico', '.webp'])
+const rootFiles = new Set(['index.html', 'favicon.ico', 'manifest.webmanifest', 'sw.js', 'registerSW.js'])
+const workboxPattern = /^workbox-[0-9a-f]{8}\.js$/
 
 function resolveGitRevision(cwd, fallbackSeed) {
   const result = spawnSync('git', ['rev-parse', 'HEAD'], { cwd, encoding: 'utf8' })
@@ -71,17 +74,22 @@ async function assertArtifact(root, allowEmpty = false) {
     throw new Error(`Artefato deve ser um diretório real: ${root}`)
   }
   if (allowEmpty && (await readdir(root)).length === 0) return
-  async function visit(directory, insideAssets = false) {
+  async function visit(directory, scope = 'root') {
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name)
       if (entry.name.startsWith('.') || hasControlOrBackslash(entry.name)) {
         throw new Error(`Caminho não autorizado no artefato: ${path}`)
       }
-      if (entry.isDirectory() && (insideAssets || entry.name === 'assets')) {
-        await visit(path, true)
-      } else if (!entry.isFile() || !(insideAssets
-        ? extensions.has(extname(entry.name).toLowerCase())
-        : ['index.html', 'favicon.ico'].includes(entry.name))) {
+      if (entry.isDirectory() && (scope === 'assets' || (scope === 'root' && ['assets', 'icons'].includes(entry.name)))) {
+        await visit(path, scope === 'root' ? entry.name : scope)
+      } else if (
+        !entry.isFile() ||
+        !(scope === 'assets'
+          ? extensions.has(extname(entry.name).toLowerCase())
+          : scope === 'icons'
+            ? iconExtensions.has(extname(entry.name).toLowerCase())
+            : rootFiles.has(entry.name) || workboxPattern.test(entry.name))
+      ) {
         throw new Error(`Conteúdo não reconhecido como gerado; nada será substituído: ${path}`)
       }
     }
