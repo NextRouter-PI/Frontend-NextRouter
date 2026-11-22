@@ -1,153 +1,71 @@
-import { createRouter, createWebHistory } from "vue-router";
-import { state } from "@/stores/state.js";
-import { useLoginState } from "@/stores/useLoginState.js"
+import { createRouter, createWebHistory } from 'vue-router'
+import { ROUTE_NAMES, ROUTE_PATHS, STORAGE_KEYS, THEME_MODES, USER_ROLES } from '@/constants'
+import { useAuthStore } from '@/stores/useAuthStore.js'
+import { authenticatedRoutes } from './routes/authenticated'
+import { companyRoutes } from './routes/company'
+import { publicRoutes } from './routes/public'
+
+const COMPANY_DEFAULT_TAB_PATHS = {
+  [ROUTE_NAMES.TRANSPORT]: ROUTE_PATHS.TRANSPORT_FLEET,
+  [ROUTE_NAMES.LIST]: ROUTE_PATHS.LIST_GROUPS,
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   scrollBehavior() {
     return { top: 0 }
   },
-  routes: [
-    {
-      path: "/",
-      name: "home",
-      component: () => import("../views/HomeView.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/usuario",
-      name: "usuario",
-      component: () => import("../views/UserView.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/lista",
-      name: "lista",
-      component: () => import("../views/ListView.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/transporte",
-      name: "transporte",
-      component: () => import("../views/TransportView.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/cadastro-veiculo",
-      name: "cadastro-veiculo",
-      component: () => import("../components/pages/company/CadastrarVeiculo.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/veiculos/editar/:id",
-      name: "editar-veiculo",
-      component: () => import("../components/pages/company/EditarVeiculo.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/cadastro-rota",
-      name: "cadastro-rota",
-      component: () => import("../components/pages/company/CadastrarRota.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/rotas/editar/:id",
-      name: "editar-rota",
-      component: () => import("../components/pages/company/EditarRota.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/usuarios",
-      name: "usuarios",
-      component: () => import("../components/pages/company/CompanyUsuarios.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/usuarios/motorista/:id",
-      name: "usuario-motorista",
-      component: () => import("../components/pages/company/UsuarioDetalhe.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/usuarios/passageiro/:id",
-      name: "usuario-passageiro",
-      component: () => import("../components/pages/company/UsuarioDetalhe.vue"),
-      meta: { requiresAuth: true }
-    },
-    {
-      path: "/login",
-      name: "login",
-      component: () => import("../views/LoginView.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: "/signup",
-      name: "signup",
-      component: () => import("../views/SignUpView.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: "/signup/usuario",
-      name: "signup-usuario",
-      component: () => import("../components/forms/SignUpPassenger.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: "/signup/motorista",
-      name: "signup-motorista",
-      component: () => import("../components/forms/SignUpDriver.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: "/signup/empresa",
-      name: "signup-empresa",
-      component: () => import("../components/forms/SignUpCompany.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: "/signup/confirmacao",
-      name: "signup-confirmacao",
-      component: () => import("../views/ConfirmationView.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: "/forgot-password",
-      name: "forgot-password",
-      component: () => import("../views/ForgotPasswordView.vue"),
-      meta: { requiresAuth: false }
-    },
-    {
-      path: "/logout",
-      name: "logout",
-      component: () => import("../views/LogoutView.vue"),
-      meta: { requiresAuth: false }
+  routes: [...authenticatedRoutes, ...companyRoutes, ...publicRoutes],
+})
+
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+
+  const saved = localStorage.getItem(STORAGE_KEYS.THEME)
+  document.documentElement.className = saved === THEME_MODES.DARK ? THEME_MODES.DARK : ''
+
+  if (!auth.initialized && to.name !== ROUTE_NAMES.LOGOUT) {
+    await auth.checkAuth()
+  }
+
+  if (
+    auth.logged &&
+    to.meta.requiresAuth === false &&
+    !to.meta.allowAuthenticated &&
+    to.name !== ROUTE_NAMES.LOGOUT
+  ) {
+    return { name: ROUTE_NAMES.HOME }
+  }
+
+  if (to.meta.requiresAuth && !auth.logged) {
+    const query = {}
+    if (to.name === ROUTE_NAMES.MEMBERSHIPS) {
+      if (to.query.company) query.company = to.query.company
+      if (to.query.group) query.group = to.query.group
     }
-  ],
-});
-
-router.beforeEach(async (to, from) => {
-  const { checkAuth } = useLoginState()
-
-  if (to.meta.requiresAuth === false) {
-    document.documentElement.className = ""
-  } else {
-    const saved = localStorage.getItem("theme")
-    document.documentElement.className = saved === "dark" ? "dark" : ""
+    return { name: ROUTE_NAMES.LOGIN, query }
   }
 
-  if (!state.logged && to.meta.requiresAuth) {
-    await checkAuth();
+  if (to.meta.requiresRole && auth.logged && !to.meta.requiresRole.includes(auth.role)) {
+    return { name: ROUTE_NAMES.FORBIDDEN }
   }
 
-  if (state.logged && to.meta.requiresAuth === false && to.name !== 'logout' && to.name !== 'login') {
-    return { name: "home" };
+  if (auth.logged && auth.role === USER_ROLES.COMPANY && !to.params.tab) {
+    const defaultTabPath = COMPANY_DEFAULT_TAB_PATHS[to.name]
+    if (defaultTabPath) {
+      return { path: defaultTabPath, query: to.query, hash: to.hash, replace: true }
+    }
+    if (to.name === ROUTE_NAMES.EDIT_ROUTE) {
+      return {
+        path: `/routes/${to.params.id}/edit/settings`,
+        query: to.query,
+        hash: to.hash,
+        replace: true,
+      }
+    }
   }
 
-  if (to.meta.requiresAuth && !state.logged) {
-    return { name: "login" };
-  }
+  return true
+})
 
-  return true;
-});
-
-export default router;
+export default router

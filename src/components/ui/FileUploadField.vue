@@ -1,19 +1,19 @@
 <script setup>
-import { ref } from 'vue'
+import { useTemplateRef } from 'vue'
 
 const props = defineProps({
-  modelValue: { type: [File, Object, String], default: null },
   label: String,
   required: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   accept: { type: String, default: '.pdf,.jpg,.jpeg,.png' },
-  fileName: { type: String, default: '' },
   hint: String,
   error: String,
 })
 
-const emit = defineEmits(['update:modelValue', 'update:fileName', 'error'])
-const inputRef = ref(null)
+const modelValue = defineModel({ type: [File, Object, String], default: null })
+const fileName = defineModel('fileName', { type: String, default: '' })
+const emit = defineEmits(['error'])
+const inputRef = useTemplateRef('inputRef')
 
 const MAX_SIZE = 10 * 1024 * 1024
 
@@ -30,13 +30,13 @@ function handleFile(event) {
     return
   }
 
-  emit('update:modelValue', file)
-  emit('update:fileName', file.name)
+  modelValue.value = file
+  fileName.value = file.name
 }
 </script>
 
 <template>
-  <div class="upload-field">
+  <div class="upload-field" :class="{ 'has-error': Boolean(error) }">
     <label v-if="label" class="upload-label">
       {{ label }} <span v-if="required" class="required">*</span>
     </label>
@@ -46,15 +46,12 @@ function handleFile(event) {
         class="file-display"
         :class="{ 'has-file': modelValue && typeof modelValue === 'object' }"
       >
-        <span
-          class="mdi"
-          :class="modelValue && typeof modelValue === 'object' ? 'mdi-file-pdf' : 'mdi-file'"
-        ></span>
+        <BaseIcon :name="modelValue && typeof modelValue === 'object' ? 'mdi-file-pdf' : 'mdi-file'" />
         {{ modelValue && typeof modelValue === 'object' ? fileName : 'Nenhum arquivo selecionado' }}
       </div>
 
       <button type="button" class="btn-upload" :disabled="disabled" @click="openSelector">
-        <span class="mdi mdi-folder-open"></span> Selecionar
+        <BaseIcon name="mdi-folder-open" /> Selecionar
       </button>
     </div>
 
@@ -68,13 +65,17 @@ function handleFile(event) {
     />
 
     <small v-if="hint" class="file-hint">{{ hint }}</small>
-    <p v-if="error" class="field-error">{{ error }}</p>
+    <div class="upload-feedback">
+      <Transition name="fade-slide">
+        <p v-if="error" class="field-error" role="alert">{{ error }}</p>
+      </Transition>
+    </div>
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .upload-field {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .upload-label {
@@ -148,12 +149,16 @@ function handleFile(event) {
 .btn-upload:hover:not(:disabled) {
   background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(223, 128, 26, 0.3);
+  box-shadow: var(--shadow);
 }
 
 .btn-upload:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.upload-field.has-error .file-display {
+  border-color: var(--danger);
 }
 
 .file-hint {
@@ -163,9 +168,14 @@ function handleFile(event) {
   margin-top: 6px;
 }
 
+.upload-feedback {
+  min-height: 18px;
+  margin-top: 4px;
+}
+
 .field-error {
   color: var(--danger);
-  font-size: 12px;
-  margin-top: 4px;
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 </style>

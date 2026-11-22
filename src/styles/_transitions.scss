@@ -1,0 +1,154 @@
+@use 'variables' as *;
+
+.page-fade-enter-active {
+  transition:
+    opacity 0.22s $ease-fluid,
+    transform 0.22s $ease-fluid;
+  will-change: opacity, transform;
+}
+
+.page-fade-leave-active {
+  transition:
+    opacity 0.15s $ease-fluid,
+    transform 0.15s $ease-fluid;
+  will-change: opacity, transform;
+}
+
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.fade-slide-enter-active {
+  transition:
+    opacity 0.22s $ease-fluid,
+    transform 0.22s $ease-fluid;
+  will-change: opacity, transform;
+}
+
+.fade-slide-leave-active {
+  transition:
+    opacity 0.15s $ease-fluid,
+    transform 0.15s $ease-fluid;
+  will-change: opacity, transform;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.sheet-up-enter-active,
+.sheet-up-leave-active {
+  transition: opacity 0.26s $ease-fluid, transform 0.28s $ease-fluid;
+}
+
+.sheet-up-enter-from,
+.sheet-up-leave-to {
+  opacity: 0;
+  transform: translateY(24px);
+}
+
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: opacity 0.18s $ease-fluid, transform 0.18s $ease-fluid;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.list-stagger-enter-active,
+.list-stagger-leave-active {
+  transition: opacity 0.24s $ease-fluid, transform 0.24s $ease-fluid;
+}
+
+.list-stagger-move {
+  transition: transform 0.28s $ease-fluid;
+}
+
+.list-stagger-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.list-stagger-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+}
+
+.tab-slide-left-enter-active,
+.tab-slide-right-enter-active {
+  transition:
+    opacity 0.22s $ease-fluid,
+    transform 0.22s $ease-fluid;
+  will-change: opacity, transform;
+}
+
+.tab-slide-left-leave-active,
+.tab-slide-right-leave-active {
+  transition:
+    opacity 0.14s $ease-fluid,
+    transform 0.14s $ease-fluid;
+  will-change: opacity, transform;
+}
+
+.tab-slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(14px);
+}
+
+.tab-slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-14px);
+}
+
+.tab-slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-14px);
+}
+
+.tab-slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(14px);
+}
+
+.slide-forward-enter-active,
+.slide-forward-leave-active,
+.slide-back-enter-active,
+.slide-back-leave-active {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: var(--bg);
+  transition: transform 0.55s cubic-bezier(0.77, 0, 0.18, 1);
+}
+
+.slide-forward-enter-from {
+  transform: translateX(-100%);
+}
+.slide-forward-leave-to {
+  transform: translateX(100%);
+}
+
+.slide-back-enter-from {
+  transform: translateX(100%);
+}
+.slide-back-leave-to {
+  transform: translateX(-100%);
+}

@@ -1,195 +1,99 @@
 <script setup>
-import { RouterLink } from 'vue-router';
-import RoleSelector from "@/components/auth/RoleSelector.vue";
-import SignupIllustration from '@/components/ui/SignupIllustration.vue'
-import { useDeviceLayout } from '@/composables/useDeviceLayout'
-
-const { isMobile } = useDeviceLayout()
+import { RouterLink } from 'vue-router'
+import PublicShell from '@/components/layout/PublicShell.vue'
+import RoleSelector from '@/features/auth/components/RoleSelector.vue'
 </script>
 
 <template>
-  <div class="signup-view" :class="{ desktop: !isMobile }">
-    <aside v-if="!isMobile" class="side-design">
-      <div class="side-content">
-        <SignupIllustration/>
+  <PublicShell wide>
+    <section class="signup-choice">
+      <div class="choice-header">
+        <h1 class="choice-heading">Escolha sua forma de cadastro</h1>
+        <span class="choice-bar" aria-hidden="true"></span>
       </div>
-    </aside>
 
-    <main class="signup-main">
-      <div class="signup-container">
-        <div class="signup-header">
-          <h1>Comece sua jornada</h1>
-          <p class="subtitle">Escolha como deseja utilizar nossa plataforma</p>
-        </div>
+      <RoleSelector />
 
-        <RoleSelector />
-
-        <div class="signup-footer">
-          <p class="login-link">
-            Já possui uma conta?
-            <RouterLink to="/login" class="login-button">Fazer login</RouterLink>
-          </p>
-        </div>
+      <div class="signup-footer">
+        <p class="footer-row">
+          <RouterLink to="/companies" class="footer-link">Pesquisar empresas sem criar conta</RouterLink>
+        </p>
+        <p class="footer-row">
+          Já possui uma conta?
+          <RouterLink to="/login" class="footer-link">Fazer login</RouterLink>
+        </p>
       </div>
-    </main>
-  </div>
+    </section>
+  </PublicShell>
 </template>
 
-<style scoped>
-/* ============ BASE (mobile) ============ */
-.signup-view {
-  min-height: 100vh;
+<style lang="scss" scoped>
+.signup-choice {
+  padding: 20px 6px 12px;
+}
+
+.choice-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
-  position: relative;
+  margin-bottom: 34px;
 }
 
-.signup-main {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.signup-container {
-  width: 100%;
-  max-width: 500px;
-}
-
-.signup-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
-.signup-header h1 {
-  font-size: 2rem;
-  color: var(--text);
-  margin-bottom: 0.75rem;
+.choice-heading {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
   font-weight: 800;
+  color: var(--text);
+  text-align: center;
 }
 
-.subtitle {
-  font-size: 1rem;
-  color: var(--text-muted);
-  line-height: 1.5;
+.choice-bar {
+  display: none;
 }
 
 .signup-footer {
   text-align: center;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-primary);
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.login-link {
+.footer-row {
+  margin: 0;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
-.login-button {
+.footer-link {
   color: var(--primary);
   text-decoration: none;
   font-weight: 600;
-  margin-left: 0.25rem;
-  transition: color 0.2s ease;
 }
 
-.login-button:hover {
-  color: var(--primary-light);
-  text-decoration: underline;
+.footer-link:hover {
+  opacity: 0.85;
 }
 
-/* ============ DESKTOP ============ */
-.signup-view.desktop {
-  display: grid;
-  grid-template-columns: 1fr 1.1fr;
-  padding: 0;
-  align-items: stretch;
-  background: var(--bg);
-}
+@media (min-width: 768px) {
+  .signup-choice {
+    padding: 36px 8px 20px;
+  }
 
-.desktop .side-design {
-  order: 2;   /* painel vai para a direita */
-}
+  .choice-heading {
+    color: var(--primary);
+    font-size: 1.85rem;
+  }
 
-/* espelha os círculos decorativos */
-.desktop .side-design::before {
-  right: auto;
-  left: -140px;
-}
-.desktop .side-design::after {
-  left: auto;
-  right: -100px;
-}
-
-/* ---- Painel lateral ---- */
-.side-design {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 60px;
-  color: white;
-  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-  overflow: hidden;
-}
-
-/* círculos decorativos */
-.side-design::before,
-.side-design::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.side-design::before {
-  width: 420px;
-  height: 420px;
-  top: -140px;
-  right: -140px;
-}
-
-.side-design::after {
-  width: 300px;
-  height: 300px;
-  bottom: -100px;
-  left: -100px;
-}
-
-.side-content {
-  position: relative;
-  z-index: 1;
-  max-width: 560px;
-}
-
-.side-title {
-  margin: 20px 0 12px;
-  font-size: 2.2rem;
-  font-weight: 800;
-  line-height: 1.15;
-}
-
-.side-text {
-  font-size: 1.05rem;
-  line-height: 1.6;
-  opacity: 0.9;
-}
-
-/* ---- Área central com os botões de perfil ---- */
-.desktop .signup-main {
-  align-items: center;
-  padding: 3rem 4rem;
-}
-
-.desktop .signup-container {
-  max-width: 480px;
-}
-
-.desktop .signup-header h1 {
-  font-size: 2.2rem;
-  letter-spacing: -0.02em;
+  .choice-bar {
+    display: block;
+    width: 180px;
+    height: 2px;
+    margin-top: 10px;
+    border-radius: 999px;
+    background: var(--primary);
+  }
 }
 </style>

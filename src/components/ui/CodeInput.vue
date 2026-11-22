@@ -1,23 +1,39 @@
 <script setup>
+import { useId } from 'vue'
+
+const props = defineProps({ disabled: { type: Boolean, default: false } })
 const modelValue = defineModel({ type: Array, default: () => ['', '', '', '', '', ''] })
+const codeId = useId()
+const inputs = []
+
+function writeDigits(index, value) {
+  if (props.disabled) return
+  const digits = value.replace(/\D/g, '').slice(0, 6 - index)
+  const next = Array.from({ length: 6 }, (_, position) => modelValue.value[position] || '')
+  next[index] = ''
+  for (let offset = 0; offset < digits.length; offset++) next[index + offset] = digits[offset]
+  modelValue.value = next
+  if (digits) inputs[Math.min(index + digits.length, 5)]?.focus()
+  return next
+}
 
 function handleInput(index, event) {
-  const valor = event.target.value.replace(/\D/g, '')
-  if (valor.length > 1) {
-    modelValue.value[index] = valor[0]
-  } else {
-    modelValue.value[index] = valor
-  }
-
-  if (valor && index < 5) {
-    document.getElementById(`codigo-${index + 1}`)?.focus()
-  }
+  const next = writeDigits(index, event.target.value)
+  if (next) event.target.value = next[index]
 }
 
 function handleKeydown(index, event) {
+  if (props.disabled) return
   if (event.key === 'Backspace' && !modelValue.value[index] && index > 0) {
-    document.getElementById(`codigo-${index - 1}`)?.focus()
+    event.preventDefault()
+    inputs[index - 1]?.focus()
   }
+}
+
+function handlePaste(index, event) {
+  event.preventDefault()
+  const digits = (event.clipboardData?.getData('text') || '').replace(/\D/g, '')
+  if (digits) writeDigits(index, digits)
 }
 </script>
 
@@ -25,19 +41,25 @@ function handleKeydown(index, event) {
   <div class="codigo-inputs">
     <input
       v-for="(digit, index) in modelValue"
-      :id="`codigo-${index}`"
+      :id="`${codeId}-${index}`"
+      :ref="(element) => { inputs[index] = element }"
       :key="index"
-      v-model="modelValue[index]"
+      :value="digit"
       type="text"
-      maxlength="1"
+      maxlength="6"
+      inputmode="numeric"
+      :autocomplete="index === 0 ? 'one-time-code' : 'off'"
+      :aria-label="`Código de verificação, dígito ${index + 1}`"
+      :disabled="disabled"
       class="codigo-input"
       @input="handleInput(index, $event)"
       @keydown="handleKeydown(index, $event)"
+      @paste="handlePaste(index, $event)"
     />
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .codigo-inputs {
   display: flex;
   justify-content: center;

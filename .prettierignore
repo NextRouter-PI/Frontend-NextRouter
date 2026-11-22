@@ -1,0 +1,8 @@
+# Saídas geradas e dependências não são código-fonte.
+node_modules/
+dist/
+dist-ssr/
+dev-dist/
+coverage/
+.eslintcache
+package-lock.json

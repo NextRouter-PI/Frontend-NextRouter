@@ -1,0 +1,99 @@
+@use 'variables' as *;
+
+@mixin from($breakpoint) {
+  @media (min-width: $breakpoint) {
+    @content;
+  }
+}
+
+@mixin until($breakpoint) {
+  @media (max-width: $breakpoint) {
+    @content;
+  }
+}
+
+@mixin flex-center($gap: 0) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  @if $gap != 0 {
+    gap: $gap;
+  }
+}
+
+@mixin surface-card($padding: $space-5, $radius: $radius-lg) {
+  background: var(--color-surface);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+  border-radius: $radius;
+  padding: $padding;
+  box-shadow: var(--shadow);
+}
+
+@mixin focus-ring($offset: 2px) {
+  outline: 2px solid var(--primary);
+  outline-offset: $offset;
+}
+
+@mixin truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin status-banner($color-var, $bg-var) {
+  position: relative;
+  overflow: hidden;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  border: 1px solid var(--border);
+  background: $bg-var;
+  color: var(--text);
+  font-size: $text-md;
+}
+
+@mixin filter-chip {
+  padding: $space-2 $space-4;
+  border-radius: $radius-pill;
+  background: var(--color-surface);
+  color: var(--text);
+  outline: 1.5px solid var(--border);
+  outline-offset: -1.5px;
+  font-size: $text-sm;
+  font-weight: $font-semibold;
+  transition:
+    background-color 0.24s $ease-fluid,
+    color 0.22s $ease-fluid,
+    outline-color 0.24s $ease-fluid,
+    transform 0.18s $ease-fluid;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &.active {
+    background: var(--primary);
+    color: var(--color-on-primary);
+    outline-color: var(--primary);
+  }
+}
+
+@mixin section-container($bottom: 104px) {
+  width: 100%;
+  max-width: $container-md;
+  margin: 0 auto;
+  padding: $space-5 $space-4 $bottom;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+
+  @include from($bp-desktop + 1px) {
+    padding: $space-6 $space-6 $space-10;
+  }
+}
+
+@mixin tab-stage {
+  overflow-x: clip;
+  padding: 4px;
+  margin: -4px;
+}
