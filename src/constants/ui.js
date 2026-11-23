@@ -1,0 +1,6 @@
+export const MOBILE_BREAKPOINT_PX = 900
+export const REDIRECT_DELAY_MS = 2000
+export const TOAST_DEFAULT_DURATION_MS = 3500
+export const VERIFICATION_CODE_LENGTH = 6
+export const RESEND_COOLDOWN_SECONDS = 60
+export const DEFAULT_EMPTY_LABEL = 'Não informado'

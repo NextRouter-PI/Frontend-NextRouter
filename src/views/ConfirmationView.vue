@@ -1,15 +1,8 @@
 <script setup>
-import { useRoute, useRouter } from 'vue-router';
-import SignupConfirmation from "@/components/auth/SignupConfirmation.vue";
+import { useRouter } from 'vue-router';
+import SignupConfirmation from "@/features/auth/components/SignupConfirmation.vue";
 
-const route = useRoute();
 const router = useRouter();
-
-const email = route.query.email || 'seuemail@gmail.com';
-
-const goToLogin = () => {
-  router.push('/login');
-};
 
 const goBack = () => {
   router.push('/signup');
@@ -18,14 +11,14 @@ const goBack = () => {
 
 <template>
   <div class="confirmation-wrapper">
-    <button class="btn-back-top" @click="goBack" aria-label="Voltar">
-      <span class="mdi mdi-arrow-left"></span>
+    <button type="button" class="btn-back-top" @click="goBack" aria-label="Voltar">
+      <BaseIcon name="mdi-arrow-left" />
     </button>
-    <SignupConfirmation :email="email" @go-to-login="goToLogin" />
+    <SignupConfirmation @continue-signup="goBack" />
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .confirmation-wrapper {
   position: relative;
   min-height: 100vh;

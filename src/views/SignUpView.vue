@@ -1,83 +1,99 @@
 <script setup>
-import { RouterLink } from 'vue-router';
-import RoleSelector from "@/components/auth/RoleSelector.vue";
-
+import { RouterLink } from 'vue-router'
+import PublicShell from '@/components/layout/PublicShell.vue'
+import RoleSelector from '@/features/auth/components/RoleSelector.vue'
 </script>
 
 <template>
-  <div class="signup-view">
-    <div class="signup-container">
-      <div class="signup-header">
-        <h1>Comece sua jornada</h1>
-        <p class="subtitle">Escolha como deseja utilizar nossa plataforma</p>
+  <PublicShell wide>
+    <section class="signup-choice">
+      <div class="choice-header">
+        <h1 class="choice-heading">Escolha sua forma de cadastro</h1>
+        <span class="choice-bar" aria-hidden="true"></span>
       </div>
 
       <RoleSelector />
 
       <div class="signup-footer">
-        <p class="login-link">
+        <p class="footer-row">
+          <RouterLink to="/companies" class="footer-link">Pesquisar empresas sem criar conta</RouterLink>
+        </p>
+        <p class="footer-row">
           Já possui uma conta?
-          <RouterLink to="/login" class="login-button">Fazer login</RouterLink>
+          <RouterLink to="/login" class="footer-link">Fazer login</RouterLink>
         </p>
       </div>
-    </div>
-  </div>
+    </section>
+  </PublicShell>
 </template>
 
-<style scoped>
-.signup-view {
-  min-height: 100vh;
+<style lang="scss" scoped>
+.signup-choice {
+  padding: 20px 6px 12px;
+}
+
+.choice-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
-  position: relative;
+  margin-bottom: 34px;
 }
 
-.signup-container {
-  width: 100%;
-  max-width: 500px;
-}
-
-.signup-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
-.signup-header h1 {
-  font-size: 2rem;
-  color: var(--text);
-  margin-bottom: 0.75rem;
+.choice-heading {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1.2;
   font-weight: 800;
+  color: var(--text);
+  text-align: center;
 }
 
-.subtitle {
-  font-size: 1rem;
-  color: var(--text-muted);
-  line-height: 1.5;
+.choice-bar {
+  display: none;
 }
 
 .signup-footer {
   text-align: center;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-primary);
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.login-link {
+.footer-row {
+  margin: 0;
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
-.login-button {
+.footer-link {
   color: var(--primary);
   text-decoration: none;
   font-weight: 600;
-  margin-left: 0.25rem;
-  transition: color 0.2s ease;
 }
 
-.login-button:hover {
-  color: var(--primary-light);
-  text-decoration: underline;
+.footer-link:hover {
+  opacity: 0.85;
+}
+
+@media (min-width: 768px) {
+  .signup-choice {
+    padding: 36px 8px 20px;
+  }
+
+  .choice-heading {
+    color: var(--primary);
+    font-size: 1.85rem;
+  }
+
+  .choice-bar {
+    display: block;
+    width: 180px;
+    height: 2px;
+    margin-top: 10px;
+    border-radius: 999px;
+    background: var(--primary);
+  }
 }
 </style>

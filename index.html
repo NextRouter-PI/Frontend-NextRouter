@@ -2,14 +2,61 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/src/assets/images/logo.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#1c1c1e" />
+    <meta
+      name="description"
+      content="NextRouter — Gestão de transporte escolar e universitário com acompanhamento de rotas em tempo real."
+    />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Tarefas" />
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="NextRouter" />
     <title>NextRouter</title>
+    <style>
+      .nr-boot-splash {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        background: #fafafa;
+        color: #1c1917;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      }
+      html.dark .nr-boot-splash {
+        background: #111113;
+        color: #f3f3f5;
+      }
+      .nr-boot-ring {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 3.5px solid #e4e4e7;
+        border-top-color: #ec8314;
+        animation: nr-boot-spin 0.8s linear infinite;
+      }
+      html.dark .nr-boot-ring {
+        border-color: #2e2e32;
+        border-top-color: #ec8314;
+      }
+      .nr-boot-brand {
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        margin: 0;
+      }
+      .nr-boot-brand span {
+        color: #ec8314;
+      }
+      @keyframes nr-boot-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
     <script>
@@ -20,7 +67,12 @@
         }
       })();
     </script>
-    <div id="app"></div>
+    <div id="app">
+      <div class="nr-boot-splash" role="status" aria-label="Carregando NextRouter">
+        <div class="nr-boot-ring" aria-hidden="true"></div>
+        <p class="nr-boot-brand"><span>NEXT</span>ROUTER</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

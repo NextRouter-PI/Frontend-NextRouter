@@ -1,29 +1,33 @@
-import { ref, onMounted, onUnmounted } from "vue";
+import { readonly, shallowRef } from 'vue'
+import { MOBILE_BREAKPOINT_PX } from '@/constants'
+
+const mediaQuery =
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`)
+    : null
+
+const isMobile = shallowRef(
+  mediaQuery
+    ? mediaQuery.matches
+    : typeof window !== 'undefined'
+      ? window.innerWidth <= MOBILE_BREAKPOINT_PX
+      : false,
+)
+const isDesktop = shallowRef(!isMobile.value)
+
+function sync(matches) {
+  isMobile.value = matches
+  isDesktop.value = !matches
+}
+
+if (mediaQuery) {
+  const onChange = (event) => sync(event.matches)
+  mediaQuery.addEventListener('change', onChange)
+}
 
 export function useDeviceLayout() {
-  const MOBILE_BREAKPOINT = 900;
-
-  const isMobile = ref(window.innerWidth <= MOBILE_BREAKPOINT);
-  const isDesktop = ref(window.innerWidth > MOBILE_BREAKPOINT);
-
-  function handleResize() {
-    const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
-
-    isMobile.value = mobile;
-    isDesktop.value = !mobile;
-  }
-
-  onMounted(() => {
-    window.addEventListener("resize", handleResize);
-    handleResize();
-  });
-
-  onUnmounted(() => {
-    window.removeEventListener("resize", handleResize);
-  });
-
   return {
-    isMobile,
-    isDesktop,
-  };
+    isMobile: readonly(isMobile),
+    isDesktop: readonly(isDesktop),
+  }
 }

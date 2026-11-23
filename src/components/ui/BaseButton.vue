@@ -1,11 +1,12 @@
 <script setup>
 defineProps({
+  type: { type: String, default: 'button' },
   variant: { type: String, default: 'primary' },
   loading: { type: Boolean, default: false },
   disabled: { type: Boolean, default: false },
   block: { type: Boolean, default: false },
   icon: { type: String, default: '' },
-  size: { type: String, default: 'md' }
+  size: { type: String, default: 'md' },
 })
 
 const emit = defineEmits(['click'])
@@ -13,91 +14,158 @@ const emit = defineEmits(['click'])
 
 <template>
   <button
+    :type="type"
     :class="['base-btn', `variant-${variant}`, `size-${size}`, { block, loading }]"
     :disabled="disabled || loading"
-    @click="emit('click')"
+    :aria-busy="loading || undefined"
+    @click="emit('click', $event)"
   >
-    <span v-if="loading" class="spinner"></span>
-    <span v-else-if="icon" class="mdi" :class="icon"></span>
-    <slot />
+    <Transition name="fade-scale" mode="out-in">
+      <span v-if="loading" key="spinner" class="spinner" aria-hidden="true"></span>
+      <BaseIcon v-else-if="icon" key="icon" :name="icon" />
+    </Transition>
+    <span class="btn-label"><slot /></span>
   </button>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .base-btn {
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  gap: 8px;
+  gap: $space-2;
   border: none;
-  border-radius: 12px;
-  font-weight: 600;
+  outline: 1.5px solid transparent;
+  outline-offset: -1.5px;
+  border-radius: $radius-md;
+  font-weight: $font-semibold;
   cursor: pointer;
-  transition: all 0.2s ease;
-}
+  transition:
+    background-color $duration-normal $ease-fluid,
+    color $duration-normal $ease-fluid,
+    outline-color $duration-normal $ease-fluid,
+    transform $duration-fast $ease-fluid,
+    box-shadow $duration-normal $ease-fluid;
 
-.base-btn.block {
-  width: 100%;
-}
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
 
-.base-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+  &.block {
+    width: 100%;
+  }
 
-.size-sm { padding: 8px 16px; font-size: 13px; }
-.size-md { padding: 10px 20px; font-size: 14px; }
-.size-lg { padding: 14px 24px; font-size: 16px; }
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
 
-.variant-primary {
-  background: var(--primary);
-  color: white;
-}
-.variant-primary:hover:not(:disabled) {
-  background: var(--primary-hover);
-}
+  &.loading {
+    opacity: 0.85;
+    cursor: progress;
+    animation: btn-loading-pulse 1.5s ease-in-out infinite;
+  }
 
-.variant-secondary {
-  background: transparent;
-  color: var(--primary);
-  border: 2px solid var(--primary);
-}
-.variant-secondary:hover:not(:disabled) {
-  background: var(--primary);
-  color: white;
-}
+  .btn-label {
+    display: inline-flex;
+    align-items: center;
+    gap: $space-1;
+  }
 
-.variant-outline {
-  background: transparent;
-  color: var(--text);
-  border: 2px solid var(--border-primary);
-}
-.variant-outline:hover:not(:disabled) {
-  border-color: var(--primary);
-  background: rgba(223, 128, 26, 0.06);
-}
-.variant-outline.selected {
-  background: var(--superfice);
-  color: var(--text);
-  border-color: var(--primary);
-}
+  &.size-sm {
+    padding: $space-2 14px;
+    font-size: $text-sm;
+  }
 
-.variant-ghost {
-  background: transparent;
-  color: var(--text-muted);
-}
-.variant-ghost:hover:not(:disabled) {
-  background: var(--superfice);
+  &.size-md {
+    padding: 10px 18px;
+    font-size: $text-md;
+  }
+
+  &.size-lg {
+    padding: 13px 22px;
+    font-size: 0.98rem;
+  }
+
+  &.variant-primary {
+    background: var(--primary);
+    color: var(--color-on-primary);
+
+    &:hover:not(:disabled) {
+      background: var(--primary-hover);
+      box-shadow: var(--shadow-primary);
+    }
+  }
+
+  &.variant-secondary {
+    background: transparent;
+    color: var(--primary);
+    outline-color: var(--primary);
+
+    &:hover:not(:disabled) {
+      background: var(--primary);
+      color: var(--color-on-primary);
+    }
+  }
+
+  &.variant-outline {
+    background: transparent;
+    color: var(--text);
+    outline-color: var(--border);
+
+    &:hover:not(:disabled) {
+      outline-color: var(--primary);
+      color: var(--primary);
+      background: var(--color-primary-soft);
+    }
+
+    &.selected {
+      background: var(--color-primary-soft);
+      color: var(--primary);
+      outline-color: var(--primary);
+    }
+  }
+
+  &.variant-ghost {
+    background: transparent;
+    color: var(--text-muted);
+
+    &:hover:not(:disabled) {
+      background: var(--altbg);
+      color: var(--text);
+    }
+  }
 }
 
 .spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
-  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: $radius-round;
   animation: spin 0.6s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes btn-loading-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .base-btn.loading {
+    animation: none;
+  }
+}
 </style>

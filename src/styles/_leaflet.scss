@@ -1,0 +1,331 @@
+@use 'variables' as *;
+
+// Elementos injetados pelo Leaflet fora da árvore scoped dos componentes Vue.
+.passenger-map-tooltip {
+  padding: 6px 10px;
+  border-radius: $radius-md;
+  border: 1px solid var(--border-primary);
+  background: var(--color-surface);
+  color: var(--text);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.pmap-tip {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+
+  &-avatar,
+  &-fallback {
+    width: 28px;
+    height: 28px;
+    border-radius: $radius-round;
+    flex-shrink: 0;
+  }
+
+  &-avatar {
+    object-fit: cover;
+    border: 1.5px solid var(--primary);
+  }
+
+  &-fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: var(--color-on-primary);
+    font-size: 0.8rem;
+    font-weight: $font-bold;
+  }
+
+  &-name {
+    font-size: 0.84rem;
+    font-weight: $font-bold;
+    white-space: nowrap;
+  }
+}
+
+.nr-pin-wrapper {
+  background: transparent;
+  border: none;
+}
+
+.nr-map-pin {
+  position: relative;
+  width: 34px;
+  height: 42px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  --pin-bg: var(--primary);
+  --pin-glow: rgba(236, 131, 20, 0.38);
+  transition: transform $duration-fast $ease-fluid;
+
+  &:hover {
+    transform: translateY(-2px) scale(1.06);
+  }
+
+  &--success {
+    --pin-bg: var(--success);
+    --pin-glow: rgba(34, 197, 94, 0.38);
+  }
+
+  &--danger {
+    --pin-bg: var(--danger);
+    --pin-glow: rgba(239, 68, 68, 0.38);
+  }
+
+  &--muted {
+    --pin-bg: var(--text-muted);
+    --pin-glow: rgba(113, 113, 122, 0.35);
+  }
+
+  &--sm {
+    width: 28px;
+    height: 36px;
+
+    .nr-map-pin__body {
+      width: 26px;
+      height: 26px;
+      font-size: 0.85rem;
+    }
+  }
+
+  &--pulse::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    border-radius: $radius-round;
+    background: var(--pin-glow);
+    transform: translateX(-50%);
+    animation: nr-pin-pulse 1.8s ease-out infinite;
+    pointer-events: none;
+  }
+
+  &__body {
+    position: relative;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    background: var(--pin-bg);
+    color: var(--color-on-primary);
+    border: 2.5px solid var(--color-on-primary);
+    box-shadow: 0 4px 12px var(--pin-glow), 0 2px 6px rgba(0, 0, 0, 0.32);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+
+    .mdi,
+    .nr-map-pin__label {
+      transform: rotate(45deg);
+      line-height: 1;
+    }
+
+    .nr-map-pin__label {
+      font-size: 0.72rem;
+      font-weight: $font-extrabold;
+      letter-spacing: -0.02em;
+    }
+
+    .nr-map-pin__avatar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      transform: rotate(45deg);
+      display: block;
+    }
+  }
+
+  &--avatar .nr-map-pin__body {
+    overflow: hidden;
+    padding: 0;
+  }
+}
+
+.nr-route-animated-dash {
+  stroke-dasharray: 10 10;
+  animation: nr-route-dash-flow 0.9s linear infinite;
+}
+
+@keyframes nr-route-dash-flow {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes nr-pin-pulse {
+  0% {
+    transform: translateX(-50%) scale(0.85);
+    opacity: 0.85;
+  }
+  75% {
+    transform: translateX(-50%) scale(1.85);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) scale(1.85);
+    opacity: 0;
+  }
+}
+
+.map-tracking-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-round;
+  background: var(--primary);
+  color: var(--color-on-primary);
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  border: 2px solid var(--color-on-primary);
+}
+
+// Popups e tooltips do Leaflet integrados ao tema claro/escuro do NextRouter
+.leaflet-container {
+  font-family: $font-family-base;
+}
+
+.leaflet-popup-content-wrapper {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: $radius-lg;
+  box-shadow: var(--shadow), 0 8px 24px rgba(0, 0, 0, 0.22);
+  padding: 0;
+  animation: nr-popup-in 0.18s $ease-fluid;
+}
+
+.leaflet-popup-content {
+  margin: 11px 30px 11px 14px;
+  font-size: $text-sm;
+  line-height: 1.45;
+  color: var(--text);
+
+  strong {
+    color: var(--text);
+    font-weight: $font-bold;
+  }
+
+  small {
+    display: inline-block;
+    margin-top: 3px;
+    color: var(--text-muted);
+    font-size: $text-xs;
+  }
+}
+
+.leaflet-popup-tip {
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  top: 7px;
+  right: 7px;
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-round;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 22px;
+  text-align: center;
+  transition:
+    color $duration-fast $ease-fluid,
+    background-color $duration-fast $ease-fluid;
+
+  &:hover {
+    color: var(--primary);
+    background: var(--color-primary-soft);
+  }
+}
+
+.leaflet-tooltip {
+  background: var(--color-surface);
+  color: var(--text);
+  border: 1px solid var(--border-primary);
+  border-radius: $radius-md;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  font-family: $font-family-base;
+  font-size: $text-xs;
+  font-weight: $font-semibold;
+  padding: 4px 9px;
+
+  &.leaflet-tooltip-top::before {
+    border-top-color: var(--border-primary);
+  }
+  &.leaflet-tooltip-bottom::before {
+    border-bottom-color: var(--border-primary);
+  }
+  &.leaflet-tooltip-left::before {
+    border-left-color: var(--border-primary);
+  }
+  &.leaflet-tooltip-right::before {
+    border-right-color: var(--border-primary);
+  }
+}
+
+.leaflet-bar {
+  border: 1px solid var(--border) !important;
+  border-radius: $radius-md !important;
+  overflow: hidden;
+  box-shadow: var(--shadow) !important;
+
+  a,
+  a:hover {
+    background: var(--color-surface);
+    color: var(--text);
+    border-bottom-color: var(--border);
+    transition:
+      background-color $duration-fast $ease-fluid,
+      color $duration-fast $ease-fluid;
+  }
+
+  a:hover {
+    background: var(--color-primary-soft);
+    color: var(--primary);
+  }
+}
+
+@keyframes nr-popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.dark {
+  .leaflet-control-attribution,
+  .live-map-wrap .leaflet-control-attribution {
+    background: rgba(0, 0, 0, 0.45);
+    color: #ccc;
+
+    a {
+      color: #ddd;
+    }
+  }
+}
