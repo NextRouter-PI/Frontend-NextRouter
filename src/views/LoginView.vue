@@ -59,6 +59,22 @@ async function enviarLogin() {
   <PublicShell full-bleed>
     <div class="login-split">
       <section class="brand-panel">
+        <svg class="route-art" viewBox="0 0 600 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <pattern id="login-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M40 0H0V40" fill="none" stroke="currentColor" stroke-width="0.6" />
+            </pattern>
+          </defs>
+          <rect class="route-grid" width="600" height="700" fill="url(#login-grid)" />
+          <path class="route-street" d="M-20 520 C 120 500, 160 380, 300 360 S 470 220, 620 180" />
+          <path class="route-street" d="M80 -20 C 110 160, 60 300, 140 460 S 220 640, 200 720" />
+          <path class="route-line" d="M90 560 C 160 470, 210 420, 300 400 S 420 330, 470 250 S 520 150, 540 110" />
+          <circle class="route-stop" cx="90" cy="560" r="7" />
+          <circle class="route-stop" cx="300" cy="400" r="7" />
+          <circle class="route-stop route-stop--end" cx="540" cy="110" r="9" />
+          <circle class="route-pulse" cx="540" cy="110" r="9" />
+          <circle class="route-bus" r="6" />
+        </svg>
         <div class="brand-block">
           <svg
             class="brand-pin brand-pin-mobile"
@@ -79,6 +95,7 @@ async function enviarLogin() {
           <h1 class="brand-name">
             <span class="brand-accent">NEXT</span><span class="brand-rest">ROUTER</span>
           </h1>
+          <p class="brand-tagline">Transporte escolar e universitário com rotas, presença e GPS em tempo real.</p>
           <svg
             class="brand-pin brand-pin-desktop"
             viewBox="0 0 24 24"
@@ -184,11 +201,108 @@ async function enviarLogin() {
   flex-direction: column;
 
   @include from($bp-desktop + 1px) {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
     flex: 1;
-    background: var(--altbg);
-    border-right: 1px solid var(--border);
     padding: $space-10;
+    background:
+      radial-gradient(38rem 28rem at 80% 10%, rgba(236, 131, 20, 0.28), transparent 60%),
+      radial-gradient(30rem 24rem at 10% 100%, rgba(245, 154, 50, 0.16), transparent 65%),
+      var(--chrome-bg);
+    color: var(--chrome-text);
+
+    .brand-rest {
+      color: var(--chrome-text);
+    }
+
+    .brand-welcome,
+    .brand-tagline {
+      color: var(--chrome-muted);
+    }
   }
+}
+
+// Mapa ilustrado com uma rota animada: só no desktop, atrás da marca.
+.route-art {
+  display: none;
+
+  @include from($bp-desktop + 1px) {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    color: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.route-street {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 18;
+  stroke-linecap: round;
+}
+
+.route-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 10 10;
+  filter: drop-shadow(0 0 6px rgba(236, 131, 20, 0.7));
+  animation: route-dash 9s linear infinite;
+}
+
+.route-stop {
+  fill: var(--chrome-bg);
+  stroke: var(--primary-light);
+  stroke-width: 3;
+
+  &--end {
+    fill: var(--primary);
+  }
+}
+
+.route-pulse {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulse-ring 2.2s ease-out infinite;
+}
+
+.route-bus {
+  fill: #fff;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+  offset-path: path('M90 560 C 160 470, 210 420, 300 400 S 420 330, 470 250 S 520 150, 540 110');
+  animation: bus-drive 7s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@keyframes bus-drive {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  8%,
+  92% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+.brand-tagline {
+  max-width: 30ch;
+  margin-top: $space-3;
+  color: var(--text-muted);
+  font-size: $text-md;
+  line-height: 1.55;
+  animation: rise-in $duration-reveal $ease-fluid 0.2s both;
 }
 
 .brand-block {
@@ -259,12 +373,14 @@ async function enviarLogin() {
 }
 
 .brand-name {
+  animation: rise-in $duration-reveal $ease-fluid both;
   font-size: 2.1rem;
   font-weight: $font-extrabold;
   letter-spacing: 0.04em;
 
   @include from($bp-desktop + 1px) {
-    font-size: 2.6rem;
+    font-size: clamp(2.6rem, 1.6rem + 2.4vw, 3.6rem);
+    letter-spacing: 0.01em;
   }
 }
 
@@ -291,11 +407,13 @@ async function enviarLogin() {
   max-width: 380px;
   display: flex;
   flex-direction: column;
+  animation: rise-in $duration-reveal $ease-fluid 0.1s both;
 }
 
 .login-hint {
-  font-size: 1.05rem;
-  font-weight: $font-semibold;
+  font-size: 1.4rem;
+  font-weight: $font-extrabold;
+  letter-spacing: -0.02em;
   margin-bottom: $space-5;
   color: var(--text);
 }
@@ -342,11 +460,17 @@ async function enviarLogin() {
   outline-offset: -1.5px;
   color: var(--primary);
   font-weight: $font-semibold;
-  transition: background-color $duration-normal $ease-fluid, color $duration-normal $ease-fluid;
+  transition:
+    background-color $duration-normal $ease-fluid,
+    color $duration-normal $ease-fluid,
+    transform $duration-normal $ease-fluid,
+    box-shadow $duration-normal $ease-fluid;
 
   &:hover {
     background: var(--primary);
     color: var(--color-on-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-primary);
   }
 }
 
