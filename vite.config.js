@@ -18,6 +18,8 @@ function resolveVendorChunk(id) {
 
 const tauriDevHost = process.env.TAURI_DEV_HOST
 const isTauriEnv = Boolean(process.env.TAURI_ENV_PLATFORM)
+// Permite apontar o proxy para outra porta local quando a 8000 já estiver ocupada.
+const apiTarget = process.env.NEXTROUTER_API_TARGET || 'http://127.0.0.1:8000'
 
 export default defineConfig(({ command }) => ({
   base: '/',
@@ -146,12 +148,14 @@ export default defineConfig(({ command }) => ({
     hmr: tauriDevHost ? { protocol: 'ws', host: tauriDevHost, port: 5174 } : undefined,
     proxy: {
       // Preservar Host e Origin mantém os checks de CSRF e WebSocket no Django.
-      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: false },
-      '/ws': { target: 'http://127.0.0.1:8000', changeOrigin: false, ws: true },
-      '/media': { target: 'http://127.0.0.1:8000', changeOrigin: false },
+      '/api': { target: apiTarget, changeOrigin: false },
+      '/ws': { target: apiTarget, changeOrigin: false, ws: true },
+      '/media': { target: apiTarget, changeOrigin: false },
     },
   },
   preview: { host: '127.0.0.1', port: 4173, strictPort: true },
+  // O MapLibre 6 cria o worker por URL relativa ao módulo; o pré-bundle do Vite quebra esse caminho no dev.
+  optimizeDeps: { exclude: ['maplibre-gl'] },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
