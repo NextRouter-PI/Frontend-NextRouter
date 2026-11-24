@@ -11,6 +11,12 @@
   }
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 @keyframes float-soft {
   0%,
   100% {
@@ -39,7 +45,7 @@
 }
 
 .rise-in {
-  animation: rise-in $duration-reveal $ease-fluid both;
+  animation: rise-in $duration-reveal $ease-fluid backwards;
 }
 
 .page-fade-enter-active {

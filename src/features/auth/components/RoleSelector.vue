@@ -64,7 +64,7 @@ const roles = [
   box-shadow: var(--shadow);
   overflow: hidden;
   isolation: isolate;
-  animation: rise-in $duration-reveal $ease-fluid both;
+  animation: rise-in $duration-reveal $ease-fluid backwards;
   transition:
     transform $duration-slow $ease-fluid,
     box-shadow $duration-slow $ease-fluid,

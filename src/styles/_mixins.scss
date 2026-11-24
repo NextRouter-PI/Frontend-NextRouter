@@ -113,9 +113,10 @@
   flex-direction: column;
   gap: $space-4;
 
-  // Os blocos da página entram em cascata ao abrir a tela.
+  // Os blocos da página entram em cascata ao abrir a tela. Só opacidade: transform aqui
+  // viraria referência para filhos position: fixed (FAB, barras) durante a animação.
   > * {
-    animation: rise-in $duration-reveal $ease-fluid both;
+    animation: fade-in $duration-reveal $ease-fluid backwards;
   }
 
   @for $i from 2 through 8 {

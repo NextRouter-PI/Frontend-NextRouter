@@ -302,7 +302,7 @@ async function enviarLogin() {
   color: var(--text-muted);
   font-size: $text-md;
   line-height: 1.55;
-  animation: rise-in $duration-reveal $ease-fluid 0.2s both;
+  animation: rise-in $duration-reveal $ease-fluid 0.2s backwards;
 }
 
 .brand-block {
@@ -373,7 +373,7 @@ async function enviarLogin() {
 }
 
 .brand-name {
-  animation: rise-in $duration-reveal $ease-fluid both;
+  animation: rise-in $duration-reveal $ease-fluid backwards;
   font-size: 2.1rem;
   font-weight: $font-extrabold;
   letter-spacing: 0.04em;
@@ -407,7 +407,7 @@ async function enviarLogin() {
   max-width: 380px;
   display: flex;
   flex-direction: column;
-  animation: rise-in $duration-reveal $ease-fluid 0.1s both;
+  animation: rise-in $duration-reveal $ease-fluid 0.1s backwards;
 }
 
 .login-hint {
