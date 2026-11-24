@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, watch } from 'vue'
+import { DOMAIN_STATUS_LABELS } from '@/constants'
 import { useTransportState } from '@/stores/useTransportState'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
@@ -56,7 +57,7 @@ onMounted(() => {
           :disabled="state.busy"
           @click="loadDriverData(t.id)"
         >
-          Viagem #{{ t.id }} · {{ t.date }} ({{ t.direction === 'outbound' ? 'Ida' : 'Retorno' }}) · {{ t.status }}
+          Viagem #{{ t.id }} · {{ t.date }} ({{ t.direction === 'outbound' ? 'Ida' : 'Retorno' }}) · {{ DOMAIN_STATUS_LABELS[t.status] || t.status }}
         </button>
       </div>
 

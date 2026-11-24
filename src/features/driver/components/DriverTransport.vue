@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted } from 'vue'
-import { SERVICE_DIRECTIONS } from '@/constants'
+import { DOMAIN_STATUS_LABELS, SERVICE_DIRECTIONS } from '@/constants'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -99,7 +99,7 @@ onMounted(async () => {
             :disabled="state.busy"
             @click="loadDriverData(t.id)"
           >
-            #{{ t.id }} · {{ t.date }} ({{ t.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }}) · {{ t.status }}
+            #{{ t.id }} · {{ t.date }} ({{ t.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno' }}) · {{ DOMAIN_STATUS_LABELS[t.status] || t.status }}
           </button>
         </div>
 

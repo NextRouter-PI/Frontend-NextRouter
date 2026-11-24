@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { SERVICE_DIRECTIONS } from '@/constants'
+import { DOMAIN_STATUS_LABELS, SERVICE_DIRECTIONS } from '@/constants'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
@@ -17,11 +17,11 @@ const isInProgress = computed(() => props.transport.travelStatus === 'in_progres
 <template>
   <BaseCard
     :title="`Viagem #${transport.travel.id} · ${transport.travel.date} (${transport.travel.direction === SERVICE_DIRECTIONS.OUTBOUND ? 'Ida' : 'Retorno'})`"
-    :subtitle="`Revisão ${transport.revision} · Publicada: ${transport.publishedRevision ?? 'nenhuma'} · Planejamento: ${transport.planningStatus}`"
+    :subtitle="`Revisão ${transport.revision} · Publicada: ${transport.publishedRevision ?? 'nenhuma'} · Planejamento: ${DOMAIN_STATUS_LABELS[transport.planningStatus] || transport.planningStatus}`"
   >
     <template #actions>
       <span class="status-badge" :class="isInProgress ? 'active' : 'inactive'">
-        {{ transport.travelStatus }}
+        {{ DOMAIN_STATUS_LABELS[transport.travelStatus] || transport.travelStatus }}
       </span>
     </template>
 

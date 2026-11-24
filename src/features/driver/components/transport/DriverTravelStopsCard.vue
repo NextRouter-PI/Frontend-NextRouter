@@ -1,5 +1,5 @@
 <script setup>
-import { PARTICIPATION_STATUS_LABELS } from '@/constants'
+import { DOMAIN_STATUS_LABELS, PARTICIPATION_STATUS_LABELS } from '@/constants'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
@@ -29,7 +29,7 @@ const emit = defineEmits(['handle-stop', 'record-presence'])
               v-for="sp in stop.enrichedParticipants"
               :key="`${stop.id}-${sp.participation}-${sp.operation}`"
             >
-              {{ sp.name }} ({{ sp.operation === 'board' ? 'Embarque' : 'Desembarque' }} — {{ sp.status }}) ·
+              {{ sp.name }} ({{ sp.operation === 'board' ? 'Embarque' : 'Desembarque' }} — {{ DOMAIN_STATUS_LABELS[sp.status] || sp.status }}) ·
             </span>
           </p>
           <div v-if="isInProgress && stop.state === 'waiting'" class="action-row">
