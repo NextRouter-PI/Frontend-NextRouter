@@ -9,6 +9,7 @@ import CompanyResultCard from '@/features/directory/components/CompanyResultCard
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
+import PublicShell from '@/components/layout/PublicShell.vue'
 import '@/styles/memberships.scss'
 
 const router = useRouter()
@@ -54,13 +55,15 @@ function removeCityFilter() {
 </script>
 
 <template>
+  <!-- Visitante recebe a moldura pública (com rodapé); logado usa a moldura do app. -->
+  <component :is="auth.logged ? 'div' : PublicShell" v-bind="auth.logged ? {} : { wide: true }">
   <div class="directory-page" :class="{ authenticated: auth.logged }">
     <div class="directory-container">
       <div class="title-bar">
         <button type="button" class="back-btn" aria-label="Voltar" @click="goBack">
           <BaseIcon name="mdi-chevron-left" />
         </button>
-        <h1 class="page-title">Escolha de Empresa</h1>
+        <h1 class="page-title">Encontre sua <span>empresa</span></h1>
         <span class="title-spacer" aria-hidden="true"></span>
       </div>
 
@@ -92,7 +95,7 @@ function removeCityFilter() {
 
         <section v-else-if="searched && !error" key="results" aria-label="Resultados da busca">
           <div v-if="!results.length" class="empty-state" role="status">
-            <BaseIcon name="mdi-map-search-outline" class="empty-icon" />
+            <span class="empty-badge"><BaseIcon name="mdi-map-search-outline" class="empty-icon" /></span>
             <p class="empty-title">Nenhuma empresa encontrada para este grupo.</p>
             <p class="empty-hint">Verifique o nome do grupo de rota ou ajuste o filtro de estado e cidade.</p>
           </div>
@@ -109,10 +112,10 @@ function removeCityFilter() {
         </section>
 
         <div v-else-if="!searched" key="idle" class="empty-state">
-          <BaseIcon name="mdi-routes" class="empty-icon" />
+          <span class="empty-badge"><BaseIcon name="mdi-routes" class="empty-icon" /></span>
           <p class="empty-title">Procure pelo nome do grupo de rota</p>
           <p class="empty-hint">
-            Digite o nome do grupo de rota que você precisa ou filtre por estado e cidade na caixa de seleção ao lado.
+            Digite o nome do grupo de rota que você precisa ou filtre por estado e cidade no botão ao lado da busca.
           </p>
         </div>
       </Transition>
@@ -131,14 +134,17 @@ function removeCityFilter() {
       </nav>
     </div>
   </div>
+  </component>
 </template>
 
 <style lang="scss" scoped>
 .directory-page {
-  min-height: 100vh;
-  background: var(--bg);
   color: var(--text);
-  padding-bottom: 96px;
+
+  &.authenticated {
+    min-height: 100vh;
+    padding-bottom: 96px;
+  }
 }
 
 .directory-container {
@@ -173,10 +179,18 @@ function removeCityFilter() {
 
 .page-title {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--primary);
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
   text-align: center;
+
+  span {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }
 
 .title-spacer {
@@ -210,19 +224,41 @@ function removeCityFilter() {
 }
 
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin: 28px 0;
-  padding: 24px 16px;
-  border: 1px dashed var(--border);
-  border-radius: 12px;
+  padding: 40px 20px;
+  border: 1.5px dashed var(--border);
+  border-radius: $radius-xl;
   background: var(--color-surface);
   text-align: center;
 }
 
+.empty-badge {
+  @include flex-center;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin-bottom: $space-4;
+  border-radius: $radius-round;
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow-primary);
+  animation: float-soft 4s ease-in-out infinite;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid var(--primary);
+    animation: pulse-ring 2.4s ease-out infinite;
+  }
+}
+
 .empty-icon {
-  font-size: 42px;
-  color: var(--primary);
-  display: block;
-  margin-bottom: 8px;
+  font-size: 34px;
+  color: var(--color-on-primary);
 }
 
 .empty-title {
@@ -260,7 +296,7 @@ function removeCityFilter() {
   }
 
   .page-title {
-    font-size: 1.6rem;
+    font-size: 2rem;
   }
 }
 </style>
