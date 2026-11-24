@@ -2,7 +2,7 @@
 defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, default: '' },
-  accent: { type: Boolean, default: false },
+  accent: { type: Boolean, default: true },
 })
 </script>
 
@@ -30,8 +30,11 @@ defineProps({
 
   &-accent {
     width: 44px;
-    height: 2px;
-    background: var(--primary);
+    height: 3px;
+    border-radius: $radius-pill;
+    background: var(--gradient-brand);
+    transform-origin: left;
+    animation: accent-grow 0.7s $ease-fluid both;
   }
 
   &-row {
@@ -50,8 +53,9 @@ defineProps({
   }
 
   &-title {
-    font-size: $text-xl;
+    font-size: clamp(1.35rem, 1.1rem + 1vw, 1.75rem);
     font-weight: $font-extrabold;
+    letter-spacing: -0.02em;
     color: var(--text);
   }
 
@@ -66,6 +70,15 @@ defineProps({
     align-items: center;
     flex-wrap: wrap;
     gap: $space-2;
+  }
+}
+
+@keyframes accent-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }
 </style>

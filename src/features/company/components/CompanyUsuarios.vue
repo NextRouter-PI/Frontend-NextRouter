@@ -78,8 +78,8 @@ watch(busy, (val) => {
         </Transition>
 
         <template v-if="scope">
-          <div class="membership-filters">
-            <label>
+          <div class="membership-filters membership-panel">
+            <label class="membership-field">
               Estado do vínculo
               <select v-model="status" class="membership-select" :disabled="busy">
                 <option value="pending">Pedidos pendentes</option>
@@ -90,9 +90,9 @@ watch(busy, (val) => {
                 <option value="">Todos os estados</option>
               </select>
             </label>
+            <BaseInput v-model="nameFilter" class="membership-search" label="Buscar por nome nesta página" />
           </div>
-          <BaseInput v-model="nameFilter" label="Filtrar por nome somente nesta página" />
-          <p>Solicitantes são identificados pelo nome e perfil, sem consulta a CPF, endereço ou documentos.</p>
+          <p class="membership-hint">Solicitantes são identificados pelo nome e perfil, sem consulta a CPF, endereço ou documentos.</p>
           <Transition name="fade-slide">
             <p v-if="notice" class="membership-notice" role="status">{{ notice }}</p>
           </Transition>

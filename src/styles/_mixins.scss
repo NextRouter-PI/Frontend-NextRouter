@@ -28,6 +28,32 @@
   border-radius: $radius;
   padding: $padding;
   box-shadow: var(--shadow);
+  transition:
+    outline-color $duration-normal $ease-fluid,
+    box-shadow $duration-slow $ease-fluid,
+    background-color $duration-normal $ease-fluid;
+
+  @media (hover: hover) {
+    &:hover {
+      outline-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+      box-shadow: var(--shadow-hover);
+    }
+  }
+}
+
+// Card clicável: além do realce, sobe levemente no hover.
+@mixin lift-on-hover {
+  transition:
+    transform $duration-slow $ease-fluid,
+    box-shadow $duration-slow $ease-fluid,
+    outline-color $duration-normal $ease-fluid;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+    }
+  }
 }
 
 @mixin focus-ring($offset: 2px) {
@@ -86,6 +112,17 @@
   display: flex;
   flex-direction: column;
   gap: $space-4;
+
+  // Os blocos da página entram em cascata ao abrir a tela.
+  > * {
+    animation: rise-in $duration-reveal $ease-fluid both;
+  }
+
+  @for $i from 2 through 8 {
+    > :nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 60ms};
+    }
+  }
 
   @include from($bp-desktop + 1px) {
     padding: $space-6 $space-6 $space-10;

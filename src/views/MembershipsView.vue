@@ -7,6 +7,7 @@ import { useMembershipCompanyPreview } from '@/features/memberships/composables/
 import { useToast } from '@/composables/useToast'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import PageNavigation from '@/components/ui/PageNavigation.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import MembershipCard from '@/features/memberships/components/MembershipCard.vue'
 import MembershipActionForm from '@/features/memberships/components/MembershipActionForm.vue'
 import MembershipRequestPreviewCard from '@/features/memberships/components/MembershipRequestPreviewCard.vue'
@@ -66,14 +67,22 @@ async function closeMembership(reason) {
 <template>
   <div class="membership-workspace" :class="{ authenticated: auth.logged }">
     <div class="membership-content">
-      <h1 class="membership-heading">Meus vínculos</h1>
-      <p>Conta, vínculo empresarial, grupo de atendimento e viagem são etapas distintas.</p>
+      <PageHeader
+        title="Meus vínculos"
+        subtitle="Conta, vínculo empresarial, grupo de atendimento e viagem são etapas distintas."
+      >
+        <template v-if="scope" #actions>
+          <RouterLink class="membership-cta" to="/companies">
+            <BaseIcon name="mdi-magnify" /> Pesquisar empresas
+          </RouterLink>
+          <BaseButton type="button" variant="outline" size="sm" :disabled="busy || loading" @click="refresh(1)">Atualizar</BaseButton>
+        </template>
+      </PageHeader>
       <template v-if="scope">
-        <p>Conta autenticada · perfil de {{ auth.role === 'driver' ? 'motorista' : 'passageiro' }}.</p>
-        <div class="membership-actions">
-          <RouterLink to="/companies">Pesquisar empresas</RouterLink>
-          <BaseButton type="button" variant="outline" :disabled="busy || loading" @click="refresh(1)">Atualizar vínculos</BaseButton>
-        </div>
+        <p class="membership-role">
+          <BaseIcon :name="auth.role === 'driver' ? 'mdi-steering' : 'mdi-account'" />
+          Perfil de {{ auth.role === 'driver' ? 'motorista' : 'passageiro' }}
+        </p>
         <LoadingSpinner v-if="busy" size="sm" inline text="Processando ação de vínculo..." />
         <Transition name="fade-slide" mode="out-in">
           <SkeletonCard v-if="loading" key="loading" :count="2" avatar />
@@ -108,7 +117,7 @@ async function closeMembership(reason) {
               />
             </template>
           </MembershipCard>
-          <p v-else role="status">Você não tem pedido pendente nem vínculo ativo neste perfil.</p>
+          <p v-else role="status" class="membership-empty">Você não tem pedido pendente nem vínculo ativo neste perfil.</p>
           </section>
         </Transition>
 
@@ -129,8 +138,8 @@ async function closeMembership(reason) {
 
         <section v-if="ready" class="membership-section" aria-label="Histórico de vínculos">
           <h2>Pedidos e vínculos</h2>
-          <p>O histórico usa o identificador da empresa quando seu nome público não está disponível.</p>
-          <p v-if="!records.length">Nenhum pedido registrado neste perfil.</p>
+          <p class="membership-hint">O histórico usa o identificador da empresa quando seu nome público não está disponível.</p>
+          <p v-if="!records.length" class="membership-empty">Nenhum pedido registrado neste perfil.</p>
           <TransitionGroup name="list-stagger" tag="div" class="membership-list">
             <MembershipCard v-for="membership in records" :key="membership.id" :membership="membership" :title="companyName(membership)" />
           </TransitionGroup>

@@ -23,7 +23,8 @@ body {
   font-family: $font-family-base;
   line-height: 1.5;
   text-rendering: optimizeLegibility;
-  background: var(--bg);
+  background: var(--ambient), var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   overscroll-behavior-y: contain;
   transition: background-color 0.25s ease, color 0.25s ease;

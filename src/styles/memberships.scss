@@ -6,44 +6,179 @@
   @include section-container;
   color: var(--text);
 }
+
 .membership-content {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
 }
-.membership-heading { margin: 0 0 12px; color: var(--primary); }
-.membership-section { margin: 24px 0; }
+
+.membership-heading {
+  margin: 0 0 $space-3;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.membership-role {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: $space-2;
+  padding: 6px 12px;
+  border-radius: $radius-pill;
+  background: var(--color-primary-soft);
+  color: var(--primary);
+  font-size: $text-sm;
+  font-weight: $font-semibold;
+}
+
+.membership-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 14px;
+  border-radius: $radius-md;
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
+  font-size: $text-sm;
+  font-weight: $font-semibold;
+  transition:
+    transform $duration-normal $ease-fluid,
+    box-shadow $duration-normal $ease-fluid;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-primary);
+  }
+}
+
+.membership-section {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+  margin: $space-2 0;
+
+  > h2 {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    font-size: $text-lg;
+    letter-spacing: -0.01em;
+
+    &::before {
+      content: '';
+      width: 4px;
+      height: 1.1em;
+      border-radius: $radius-pill;
+      background: var(--gradient-brand);
+    }
+  }
+}
+
 .membership-panel {
-  background: var(--color-surface);
-  outline: 1px solid var(--border);
-  outline-offset: -1px;
-  border-radius: 14px;
-  padding: 20px;
-  margin: 16px 0;
-  box-shadow: var(--shadow);
+  @include surface-card($space-5, $radius-lg);
+
+  h2 {
+    font-size: $text-xl;
+    letter-spacing: -0.02em;
+    margin-bottom: $space-1;
+  }
+
+  p {
+    color: var(--text-muted);
+    font-size: $text-md;
+  }
 }
-.membership-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
-.membership-actions a, .membership-link { color: var(--text); text-decoration: none; }
-.membership-list { display: grid; gap: 14px; margin: 16px 0; }
+
+.membership-hint {
+  color: var(--text-muted);
+  font-size: $text-sm;
+  line-height: 1.5;
+}
+
+.membership-empty {
+  @include flex-center;
+  padding: $space-8 $space-4;
+  border: 1.5px dashed var(--border);
+  border-radius: $radius-lg;
+  color: var(--text-muted);
+  font-size: $text-md;
+  text-align: center;
+}
+
+.membership-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-3;
+}
+
+.membership-actions a,
+.membership-link {
+  color: var(--primary);
+  font-weight: $font-semibold;
+}
+
+.membership-list {
+  display: grid;
+  gap: 14px;
+}
+
 .membership-notice {
   position: relative;
   overflow: hidden;
-  padding: 12px 16px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--color-surface);
-}
-.membership-confirm { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 8px; }
-.membership-filters { display: flex; flex-wrap: wrap; gap: 16px; margin: 20px 0; }
-.membership-filters label { display: flex; flex-direction: column; gap: 6px; }
-.membership-select {
-  padding: 10px 12px;
-  outline: 1.5px solid var(--border);
-  outline-offset: -1.5px;
-  border-radius: 10px;
-  color: var(--text);
-  background: var(--color-surface);
-  transition: outline-color 0.2s var(--ease-fluid);
+  padding: $space-3 $space-4;
+  border: 1px solid var(--success);
+  border-radius: $radius-md;
+  background: var(--success-soft);
 }
 
-.membership-select:focus {
-  outline-color: var(--primary);
+.membership-confirm {
+  border-top: 1px solid var(--border);
+  margin-top: $space-4;
+  padding-top: $space-2;
+}
+
+.membership-filters {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  align-items: end;
+  gap: $space-4;
+
+  @include until($bp-sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.membership-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: $text-sm;
+  font-weight: $font-semibold;
+  color: var(--primary);
+}
+
+.membership-select {
+  padding: 11px 12px;
+  outline: 1.5px solid var(--border);
+  outline-offset: -1.5px;
+  border-radius: $radius-md;
+  color: var(--text);
+  background: var(--input-surface);
+  font-weight: $font-medium;
+  cursor: pointer;
+  transition:
+    outline-color $duration-normal $ease-fluid,
+    box-shadow $duration-normal $ease-fluid;
+
+  &:hover {
+    outline-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  }
+
+  &:focus {
+    outline-color: var(--primary);
+    box-shadow: var(--glow-primary);
+  }
 }
