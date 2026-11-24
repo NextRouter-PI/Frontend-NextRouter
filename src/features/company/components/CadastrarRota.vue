@@ -93,9 +93,9 @@ const salvar = async () => {
       <p v-if="erro" class="erro" role="alert">{{ erro }}</p>
 
       <button class="btn-salvar" type="submit" :disabled="salvando || carregando">
-        {{ salvando ? 'Salvando...' : 'CRIAR GRUPO E CONFIGURAR SERVIÇOS' }}
+        {{ salvando ? 'Salvando...' : 'Criar grupo e configurar serviços' }}
       </button>
-      <button class="btn-cancelar" type="button" :disabled="salvando" @click="$router.back()">CANCELAR</button>
+      <button class="btn-cancelar" type="button" :disabled="salvando" @click="$router.back()">Cancelar</button>
     </form>
   </div>
 </template>

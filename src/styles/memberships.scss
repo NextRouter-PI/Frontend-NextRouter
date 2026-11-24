@@ -143,7 +143,7 @@
 .membership-filters {
   display: grid;
   grid-template-columns: minmax(180px, 220px) 1fr;
-  align-items: end;
+  align-items: start;
   gap: $space-4;
 
   @include until($bp-sm) {

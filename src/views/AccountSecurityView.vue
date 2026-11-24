@@ -12,6 +12,7 @@ import EmailChangeForm from '@/features/profile/components/EmailChangeForm.vue'
 import AccountSessions from '@/features/profile/components/AccountSessions.vue'
 import AccountDeactivationCard from '@/features/profile/components/AccountDeactivationCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 
@@ -56,15 +57,20 @@ onMounted(refresh)
 
 <template>
   <div class="security-tab">
-    <h1>Segurança da conta</h1>
-    <p>Trocar senha, confirmar e-mail ou revogar todas as sessões exige entrar novamente. Nada será repetido automaticamente.</p>
-    <div class="account-actions">
-      <BaseButton type="button" variant="outline" :disabled="busy || loading" @click="refresh">Atualizar conta e reiniciar o fluxo aberto</BaseButton>
-    </div>
+    <PageHeader
+      title="Segurança da conta"
+      subtitle="Trocar senha, confirmar e-mail ou revogar todas as sessões exige entrar novamente. Nada será repetido automaticamente."
+    >
+      <template #actions>
+        <BaseButton type="button" variant="outline" size="sm" :disabled="busy || loading" @click="refresh">
+          <BaseIcon name="mdi-refresh" /> Recarregar
+        </BaseButton>
+      </template>
+    </PageHeader>
     <SkeletonCard v-if="loading" :count="1" :lines="4" />
     <div role="alert"><ErrorMessage :message="error" /></div>
     <template v-if="account && auth.logged && account.id === auth.user?.id">
-      <p>{{ account.email }}</p>
+      <p class="account-email"><BaseIcon name="mdi-email-fast-outline" /> {{ account.email }}</p>
       <div class="account-actions" aria-label="Operação de segurança">
         <BaseButton type="button" :variant="mode === 'password' ? 'primary' : 'outline'" :disabled="busy" @click="mode = 'password'">Senha</BaseButton>
         <BaseButton type="button" :variant="mode === 'email' ? 'primary' : 'outline'" :disabled="busy" @click="mode = 'email'">E-mail</BaseButton>
