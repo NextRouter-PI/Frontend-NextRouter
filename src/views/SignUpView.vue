@@ -8,7 +8,8 @@ import RoleSelector from '@/features/auth/components/RoleSelector.vue'
   <PublicShell wide>
     <section class="signup-choice">
       <div class="choice-header">
-        <h1 class="choice-heading">Escolha sua forma de cadastro</h1>
+        <p class="choice-eyebrow">Criar conta</p>
+        <h1 class="choice-heading">Como você vai usar o <span>NextRouter</span>?</h1>
         <span class="choice-bar" aria-hidden="true"></span>
       </div>
 
@@ -48,6 +49,22 @@ import RoleSelector from '@/features/auth/components/RoleSelector.vue'
   text-align: center;
 }
 
+.choice-heading span {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.choice-eyebrow {
+  margin-bottom: 6px;
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .choice-bar {
   display: none;
 }
@@ -83,17 +100,17 @@ import RoleSelector from '@/features/auth/components/RoleSelector.vue'
   }
 
   .choice-heading {
-    color: var(--primary);
-    font-size: 1.85rem;
+    font-size: 2.2rem;
+    letter-spacing: -0.02em;
   }
 
   .choice-bar {
     display: block;
-    width: 180px;
-    height: 2px;
-    margin-top: 10px;
+    width: 64px;
+    height: 3px;
+    margin-top: 14px;
     border-radius: 999px;
-    background: var(--primary);
+    background: var(--gradient-brand);
   }
 }
 </style>
