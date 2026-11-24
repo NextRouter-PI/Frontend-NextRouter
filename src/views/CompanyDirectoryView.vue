@@ -284,7 +284,7 @@ function removeCityFilter() {
 }
 
 .context-link {
-  color: var(--primary);
+  color: var(--primary-text);
   font-size: 0.9rem;
   font-weight: 600;
   text-decoration: none;

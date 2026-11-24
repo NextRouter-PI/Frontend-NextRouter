@@ -5,6 +5,8 @@
   --primary: #ec8314;
   --primary-hover: #d4710c;
   --primary-light: #f59a32;
+  // Laranja escurecido para texto e links sobre fundo claro (contraste AA).
+  --primary-text: #b35900;
   --color-on-primary: #ffffff;
   --color-primary-soft: rgba(236, 131, 20, 0.08);
   --color-primary-tint: rgba(236, 131, 20, 0.14);
@@ -62,6 +64,7 @@
 }
 
 .dark {
+  --primary-text: #f59a32;
   --bg: #111113;
   --altbg: #18181b;
   --color-surface: #1c1c1e;

@@ -156,7 +156,7 @@ async function enviarLogin() {
 
           <p class="forgot-row">
             Esqueceu a senha?
-            <RouterLink :to="ROUTE_PATHS.FORGOT_PASSWORD" class="forgot-link">Clique Aqui</RouterLink>
+            <RouterLink :to="ROUTE_PATHS.FORGOT_PASSWORD" class="forgot-link">Recuperar senha</RouterLink>
           </p>
 
           <div class="bottom-actions">
@@ -385,7 +385,11 @@ async function enviarLogin() {
 }
 
 .brand-accent {
-  color: var(--primary);
+  color: var(--primary-text);
+
+  @include from($bp-desktop + 1px) {
+    color: var(--primary);
+  }
 }
 
 .brand-rest {
@@ -431,7 +435,7 @@ async function enviarLogin() {
 
 .forgot-link,
 .discover-link {
-  color: var(--primary);
+  color: var(--primary-text);
   font-weight: $font-semibold;
 
   &:hover {
@@ -458,7 +462,7 @@ async function enviarLogin() {
   border-radius: $radius-md;
   outline: 1.5px solid var(--primary);
   outline-offset: -1.5px;
-  color: var(--primary);
+  color: var(--primary-text);
   font-weight: $font-semibold;
   transition:
     background-color $duration-normal $ease-fluid,

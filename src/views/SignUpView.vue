@@ -58,7 +58,7 @@ import RoleSelector from '@/features/auth/components/RoleSelector.vue'
 
 .choice-eyebrow {
   margin-bottom: 6px;
-  color: var(--primary);
+  color: var(--primary-text);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -85,7 +85,7 @@ import RoleSelector from '@/features/auth/components/RoleSelector.vue'
 }
 
 .footer-link {
-  color: var(--primary);
+  color: var(--primary-text);
   text-decoration: none;
   font-weight: 600;
 }
