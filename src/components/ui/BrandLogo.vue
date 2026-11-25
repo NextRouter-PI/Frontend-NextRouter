@@ -56,9 +56,9 @@ defineProps({
   transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.spin-hover:hover .brand-logo-wheel,
-:global(a:hover) > .spin-hover .brand-logo-wheel,
-:global(a:focus-visible) > .spin-hover .brand-logo-wheel {
+// A roda gira com o hover na logo ou no link que a contém. Antes era `:global(a:hover) > ...`,
+// que o Vue compila como `a:hover` puro: TODO link do site girava 360° no hover.
+.spin-hover:is(:hover, a:hover > *, a:focus-visible > *) .brand-logo-wheel {
   transform: rotate(360deg);
 }
 

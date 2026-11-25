@@ -30,6 +30,8 @@ const {
   pendingBoardingPassengers,
   onBoardPassengers,
   nextStopHud,
+  nextPendingStop,
+  approach,
   approachingPassenger,
   isSharing,
   mapsUrl,
@@ -50,10 +52,13 @@ onMounted(() => {
     <DriverNavigationMap3D
       :snapshot="driverTransport?.snapshot || null"
       :stops="driverTransport?.stops || []"
+      :approach="approach"
+      :next-stop="nextPendingStop"
       :is3d="is3dMode"
+      @toggle-3d="is3dMode = !is3dMode"
     />
 
-    <DriverGpsHud :hud="nextStopHud" :is3d="is3dMode" @toggle-3d="is3dMode = !is3dMode" />
+    <DriverGpsHud :hud="nextStopHud" />
 
     <DriverApproachingPrompt
       :approaching="approachingPassenger"
@@ -230,12 +235,12 @@ onMounted(() => {
 }
 
 .sheet-cta-outline {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 10px 14px;
-  border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 700;
   text-decoration: none;
@@ -289,8 +294,8 @@ onMounted(() => {
 }
 
 .quick-board-btn {
+  @include action-button;
   padding: 4px 10px;
-  border-radius: 999px;
   border: none;
   background: var(--primary);
   color: var(--color-on-primary);

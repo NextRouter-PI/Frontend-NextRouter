@@ -124,18 +124,17 @@ const emit = defineEmits(['confirm', 'cancel'])
 }
 
 .confirm-danger-btn {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 8px 16px;
-  border-radius: $radius-md;
   border: 1px solid var(--danger);
   background: var(--danger);
   color: var(--color-on-primary);
   font-size: $text-sm;
   font-weight: $font-semibold;
   cursor: pointer;
-  transition: opacity $duration-fast $ease-fluid;
 
   &:disabled {
     opacity: 0.6;

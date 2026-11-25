@@ -30,13 +30,14 @@
   --chrome-muted: #a1a1aa;
   --chrome-hover: rgba(255, 255, 255, 0.06);
   // Menu lateral e barra de baixo: acompanham o tema (branco no claro, preto no escuro).
-  --side-bg: #ffffff;
-  --side-text: #1c1c1e;
-  --side-muted: #5f5f68;
-  --side-faint: #9a9aa3;
-  --side-hover: #f4f4f6;
-  --side-line: #ececef;
-  --side-chip: #f1f1f3;
+  // Sidebar e pílulas do topo: sempre o cinza-escuro dos cartões do mapa (--chrome-bg), nos dois temas.
+  --side-bg: var(--chrome-bg);
+  --side-text: #f5f5f7;
+  --side-muted: #b0b0b8;
+  --side-faint: #7a7a83;
+  --side-hover: rgba(255, 255, 255, 0.07);
+  --side-line: rgba(255, 255, 255, 0.1);
+  --side-chip: rgba(255, 255, 255, 0.1);
   --chrome-line: linear-gradient(90deg, transparent, var(--primary) 20%, var(--primary-light) 50%, var(--primary) 80%, transparent);
 
   // Bordas
@@ -91,13 +92,14 @@
   --chrome-text: #f5f5f7;
   --chrome-muted: #a1a1aa;
 
-  --side-bg: #141416;
+  // Sidebar e pílulas do topo: sempre o cinza-escuro dos cartões do mapa (--chrome-bg), nos dois temas.
+  --side-bg: var(--chrome-bg);
   --side-text: #f5f5f7;
-  --side-muted: #a1a1aa;
-  --side-faint: #6b6b73;
-  --side-hover: #232326;
-  --side-line: #2a2a2e;
-  --side-chip: #2a2a2e;
+  --side-muted: #b0b0b8;
+  --side-faint: #7a7a83;
+  --side-hover: rgba(255, 255, 255, 0.07);
+  --side-line: rgba(255, 255, 255, 0.1);
+  --side-chip: rgba(255, 255, 255, 0.1);
 
   --border: #2e2e32;
   --color-primary-soft: rgba(236, 131, 20, 0.12);

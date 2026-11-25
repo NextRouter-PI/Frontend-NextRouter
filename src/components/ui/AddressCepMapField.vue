@@ -228,8 +228,8 @@ const { loadingCep, cepFeedback, isFullscreen, hasCoordinates, toggleFullscreen 
 }
 
 .btn-confirm-fullscreen {
+  @include action-button;
   padding: $space-3 $space-4;
-  border-radius: $radius-md;
   background: var(--primary);
   color: var(--color-on-primary);
   font-weight: $font-semibold;

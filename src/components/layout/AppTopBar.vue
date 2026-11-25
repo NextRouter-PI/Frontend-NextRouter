@@ -71,16 +71,16 @@ defineProps({
   gap: 10px;
 }
 
-// Logo e botões em "pílulas" de vidro, legíveis sobre foto ou fundo.
+// Logo e botões em "pílulas" cinza (mesma cor da sidebar), legíveis sobre foto, mapa ou fundo.
 .top-bar-logo,
 .top-bar-actions {
   padding: 4px;
   border-radius: $radius-pill;
-  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  background: color-mix(in srgb, var(--side-bg) 94%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
   -webkit-backdrop-filter: saturate(1.4) blur(12px);
   box-shadow: 0 6px 20px -10px rgba(0, 0, 0, 0.35);
-  outline: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  outline: 1px solid var(--side-line);
   outline-offset: -1px;
 }
 

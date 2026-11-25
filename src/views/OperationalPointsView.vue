@@ -201,7 +201,7 @@ onMounted(async () => {
     .point-icon {
       background: var(--gradient-brand);
       color: #fff;
-      transform: rotate(-8deg) scale(1.08);
+      transform: none;
     }
   }
 

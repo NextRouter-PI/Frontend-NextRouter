@@ -130,16 +130,15 @@ function handleFile(event) {
 }
 
 .btn-upload {
+  @include action-button;
   background: var(--primary);
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 6px;

@@ -306,12 +306,12 @@ onMounted(refresh)
 }
 
 .logout-action-btn {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 18px;
-  border-radius: 10px;
   border: 1px solid var(--danger, var(--danger));
   background: transparent;
   color: var(--danger, var(--danger));
@@ -319,7 +319,6 @@ onMounted(refresh)
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .logout-action-btn:hover:not(:disabled) {

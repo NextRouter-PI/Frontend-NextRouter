@@ -111,7 +111,7 @@ const { isMobile } = useDeviceLayout()
   transition: transform $duration-slow $ease-spring;
 
   &:hover {
-    transform: rotate(-8deg) scale(1.08);
+    transform: none;
   }
 
   @include from($bp-desktop + 1px) {

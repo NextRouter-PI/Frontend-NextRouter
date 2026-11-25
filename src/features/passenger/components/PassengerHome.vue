@@ -28,6 +28,7 @@ const {
   passengerPoint,
   etaSummary,
   timingInfo,
+  liveRoute,
   mapsUrl,
   updatedAtLabel,
   startLivePolling,
@@ -62,6 +63,7 @@ onMounted(() => {
       :snapshot="transportState.passenger?.snapshot || null"
       :stops="transportState.passenger?.stops || []"
       :target-point="passengerPoint"
+      :live-route="liveRoute"
     />
 
     <HomeMapSheet
@@ -227,12 +229,12 @@ onMounted(() => {
 }
 
 .sheet-cta {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 10px 14px;
-  border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 700;
   text-decoration: none;

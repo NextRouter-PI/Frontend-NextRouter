@@ -1,9 +1,14 @@
-import { computed, onUnmounted, watch } from 'vue'
+import { computed, onUnmounted, shallowRef, watch } from 'vue'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 import { useAdaptivePolling } from '@/composables/useAdaptivePolling'
 import { useToast } from '@/composables/useToast'
 import { estimateEtaMinutes, formatDistanceLabel, haversineMeters } from '@/utils/geo'
+import { readParticipationRoute } from '@/api/transport'
+
+// Refaz o caminho quando o status muda ou o motorista anda ~200 m (no máximo a cada 15 s).
+const ROUTE_REFRESH_METERS = 200
+const ROUTE_MIN_INTERVAL_MS = 15_000
 
 const PARTICIPATION_STATUS_LABELS = {
   allocated: 'Aguardando embarque',
@@ -131,6 +136,39 @@ export function usePassengerHomeLive({ scope }) {
   })
   const updatedAtLabel = computed(() => (tracking.updatedAt ? new Date(tracking.updatedAt).toLocaleTimeString('pt-BR') : ''))
 
+  // Caminho ao vivo: laranja do motorista até mim, preto de mim até o destino.
+  const liveRoute = shallowRef(null)
+  let routeFrom = null
+  let routeBusy = false
+
+  async function refreshLiveRoute() {
+    const participationId = transportState.passenger?.currentParticipation?.id
+    const status = participationStatus.value
+    const { latitude: lat, longitude: lng } = tracking
+    if (!participationId || !['allocated', 'on_board'].includes(status) || lat == null || lng == null) {
+      if (!['allocated', 'on_board'].includes(status)) liveRoute.value = null
+      return
+    }
+    const now = Date.now()
+    const same = routeFrom?.participationId === participationId && routeFrom.status === status
+    if (routeBusy || (same && now - routeFrom.at < ROUTE_MIN_INTERVAL_MS)) return
+    if (same && haversineMeters(lat, lng, routeFrom.lat, routeFrom.lng) < ROUTE_REFRESH_METERS) return
+    routeBusy = true
+    try {
+      const data = await readParticipationRoute(participationId)
+      routeFrom = { participationId, status, lat, lng, at: now }
+      const toMe = data?.to_me?.coordinates || null
+      const toDestination = data?.to_destination?.coordinates || null
+      liveRoute.value = toMe || toDestination ? { toMe, toDestination } : null
+    } catch {
+      // Sem viagem em andamento ou serviço de rotas fora: o mapa continua com o percurso planejado.
+    } finally {
+      routeBusy = false
+    }
+  }
+
+  watch(() => [participationStatus.value, tracking.latitude, tracking.longitude], refreshLiveRoute)
+
   const polling = useAdaptivePolling({
     getIntervalMs: () => (tracking.connected ? 25_000 : 5_000),
     canRun: () => scope.current() && !transportState.loading,
@@ -156,6 +194,7 @@ export function usePassengerHomeLive({ scope }) {
     passengerPoint,
     etaSummary,
     timingInfo,
+    liveRoute,
     mapsUrl,
     updatedAtLabel,
     startLivePolling,

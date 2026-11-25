@@ -53,6 +53,7 @@ export function buildDriverTransportState({ driver, travels, invitations, curren
 
   return {
     driverId: driver.id,
+    locationConsentAt: driver.location_consent_at || null,
     travels,
     invitations,
     travel: currentTravel,

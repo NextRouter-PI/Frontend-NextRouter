@@ -64,7 +64,7 @@ const emit = defineEmits(['dismiss', 'presence'])
   top: calc(var(--header-height) + 86px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 5;
+  z-index: 7; // acima do painel do celular (6): aviso de passageiro próximo não pode ficar escondido
   width: min(92vw, 420px);
   padding: 14px;
   border-radius: 18px;
@@ -135,13 +135,13 @@ const emit = defineEmits(['dismiss', 'presence'])
 }
 
 .approaching-confirm-btn {
+  @include action-button;
   flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 10px 14px;
-  border-radius: 12px;
   border: none;
   background: var(--success);
   color: #ffffff;
@@ -155,8 +155,8 @@ const emit = defineEmits(['dismiss', 'presence'])
 }
 
 .approaching-noshow-btn {
+  @include action-button;
   padding: 10px 14px;
-  border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.25);
   background: transparent;
   color: rgba(255, 255, 255, 0.85);

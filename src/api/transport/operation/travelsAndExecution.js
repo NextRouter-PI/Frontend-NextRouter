@@ -75,6 +75,18 @@ export async function readTravelLocation(travelId, { signal } = {}) {
   return data
 }
 
+// Caminho de rua da última posição enviada pelo motorista até a próxima parada pendente.
+export async function readTravelApproach(travelId, { signal } = {}) {
+  const { data } = await api.get(`/travels/${encodeURIComponent(travelId)}/approach/`, { signal })
+  return data
+}
+
+// Só para o próprio passageiro: traçado do motorista até ele e dele até o destino ([lng, lat]).
+export async function readParticipationRoute(participationId, { signal } = {}) {
+  const { data } = await api.get(`/travel-participations/${encodeURIComponent(participationId)}/route/`, { signal })
+  return data
+}
+
 export async function listTravelParticipations(params = {}, { signal } = {}) {
   const { data } = await api.get('/travel-participations/', { params, signal })
   return asList(data)
@@ -86,6 +98,11 @@ export async function recordParticipationPresence(participationId, { kind, opera
     { kind, operation_id },
     { signal },
   )
+  return data
+}
+
+export async function getRouteSnapshot(snapshotId, { signal } = {}) {
+  const { data } = await api.get(`/route-snapshots/${encodeURIComponent(snapshotId)}/`, { signal })
   return data
 }
 

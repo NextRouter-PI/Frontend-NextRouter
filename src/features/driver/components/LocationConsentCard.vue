@@ -107,6 +107,7 @@ onMounted(load)
 }
 
 .consent-revoke {
+  @include action-button;
   color: var(--danger);
   font-size: $text-sm;
   font-weight: $font-semibold;

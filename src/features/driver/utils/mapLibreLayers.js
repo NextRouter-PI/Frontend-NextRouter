@@ -4,7 +4,8 @@ import { renderIconSvg } from '@/utils/icons'
 import { escapeHtml } from '@/utils/leafletMarkers'
 
 export const MAPLIBRE_STYLE_URLS = {
-  light: 'https://tiles.openfreemap.org/styles/liberty',
+  // Positron: branco e limpo, sem prédios em 3D (o "3D" do app é só a câmera inclinada).
+  light: 'https://tiles.openfreemap.org/styles/positron',
   dark: 'https://tiles.openfreemap.org/styles/dark',
 }
 
@@ -62,6 +63,24 @@ export function ensureDriverRouteLayers(map) {
       source: 'nr-route-passed',
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': '#71717a', 'line-width': 6, 'line-opacity': 0.5 },
+    })
+  }
+  // Trechos depois da próxima casa: preto com borda clara (legível no tema claro e no escuro).
+  if (!map.getSource('nr-route-later')) {
+    map.addSource('nr-route-later', { type: 'geojson', data: makeLineFeature([]) })
+    map.addLayer({
+      id: 'nr-route-later-casing',
+      type: 'line',
+      source: 'nr-route-later',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#ffffff', 'line-width': 9, 'line-opacity': 0.55 },
+    })
+    map.addLayer({
+      id: 'nr-route-later-line',
+      type: 'line',
+      source: 'nr-route-later',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#18181b', 'line-width': 6, 'line-opacity': 0.9 },
     })
   }
   if (!map.getSource('nr-route-remaining')) {

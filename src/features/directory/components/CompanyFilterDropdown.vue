@@ -268,9 +268,9 @@ onBeforeUnmount(() => {
 
 .btn-clear,
 .btn-apply {
+  @include action-button;
   flex: 1;
   min-height: 40px;
-  border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;

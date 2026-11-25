@@ -9,16 +9,71 @@ defineProps({
   roleIcon: { type: String, default: '' },
 })
 
+import { computed, shallowRef } from 'vue'
+
 const expanded = defineModel('expanded', { type: Boolean, default: true })
+
+// Celular: o cartão ocupa a tela entre o topo e o menu de baixo; arrastar a alça para
+// baixo recolhe (mostra o mapa) e para cima abre. Clique/Enter na alça também alterna.
+const DRAG_THRESHOLD_PX = 70
+const dragY = shallowRef(0)
+const dragging = shallowRef(false)
+let startY = 0
+let moved = false
+
+function onPointerDown(event) {
+  if (event.button !== 0) return
+  startY = event.clientY
+  moved = false
+  dragging.value = true
+  event.currentTarget.setPointerCapture?.(event.pointerId)
+}
+
+function onPointerMove(event) {
+  if (!dragging.value) return
+  const dy = event.clientY - startY
+  if (Math.abs(dy) > 6) moved = true
+  // Aberto só desce; recolhido só sobe.
+  dragY.value = expanded.value ? Math.max(0, dy) : Math.min(0, dy)
+}
+
+function onPointerUp() {
+  if (!dragging.value) return
+  dragging.value = false
+  if (expanded.value && dragY.value > DRAG_THRESHOLD_PX) expanded.value = false
+  else if (!expanded.value && dragY.value < -DRAG_THRESHOLD_PX) expanded.value = true
+  dragY.value = 0
+}
+
+function onHandleClick() {
+  // Depois de um arraste o navegador ainda dispara click: não alterna de novo.
+  if (moved) {
+    moved = false
+    return
+  }
+  expanded.value = !expanded.value
+}
+
+const dragStyle = computed(() => (dragging.value && dragY.value ? { '--sheet-drag': `${dragY.value}px` } : null))
 </script>
 
 <template>
-  <section class="map-sheet" :class="{ collapsed: !expanded }" :aria-label="ariaLabel">
+  <section
+    class="map-sheet"
+    :class="{ collapsed: !expanded, dragging }"
+    :style="dragStyle"
+    :aria-label="ariaLabel"
+  >
     <button
       type="button"
       class="sheet-handle-btn"
       :aria-expanded="expanded"
-      @click="expanded = !expanded"
+      :aria-label="expanded ? 'Recolher painel e ver o mapa' : 'Abrir painel'"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+      @click="onHandleClick"
     >
       <span class="sheet-pill" aria-hidden="true"></span>
       <div class="sheet-summary-row">
@@ -202,6 +257,58 @@ const expanded = defineModel('expanded', { type: Boolean, default: true })
   font-size: 0.76rem;
   font-weight: 600;
   color: var(--primary);
+}
+
+// Celular: tela cheia acima do menu de baixo, encostado nele (sem espaço), por cima do
+// cartão da próxima parada e dos botões do mapa; recolhido deixa só a alça à mostra.
+@media (max-width: 900px) {
+  .map-sheet {
+    --sheet-peek: 60px; // altura da alça (pílula + linha da empresa)
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--header-height);
+    bottom: var(--bottom-nav-height);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    border-radius: 22px 22px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
+    animation: none;
+    transform: translateY(var(--sheet-drag, 0px));
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+
+    &.collapsed {
+      transform: translateY(calc(100% - var(--sheet-peek) + var(--sheet-drag, 0px)));
+    }
+
+    &.dragging {
+      transition: none;
+    }
+  }
+
+  .sheet-handle-btn {
+    flex-shrink: 0;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .sheet-body-collapse {
+    flex: 1;
+    min-height: 0;
+    // No celular o painel não encolhe a altura: só desce. O conteúdo fica sempre montado.
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .sheet-body-inner {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .chevron-icon.rotated {
+    transform: rotate(180deg);
+  }
 }
 
 @media (min-width: 901px) {

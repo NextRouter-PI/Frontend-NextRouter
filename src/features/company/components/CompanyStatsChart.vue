@@ -152,20 +152,17 @@ const chartOptions = computed(() => {
 }
 
 .btn-detalhes {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   padding: $space-3 $space-4;
-  border-radius: $radius-md;
   gap: $space-2;
   background: var(--gradient-brand);
   color: var(--color-on-primary);
   font-size: $text-sm;
   font-weight: $font-bold;
-  transition:
-    transform $duration-normal $ease-fluid,
-    box-shadow $duration-normal $ease-fluid;
 
   .mdi {
     transition: transform $duration-normal $ease-fluid;

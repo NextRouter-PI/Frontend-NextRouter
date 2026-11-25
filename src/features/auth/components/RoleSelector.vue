@@ -93,7 +93,7 @@ const roles = [
     }
 
     .role-icon-wrap {
-      transform: rotate(-8deg) scale(1.08);
+      transform: none;
     }
 
     .role-arrow {

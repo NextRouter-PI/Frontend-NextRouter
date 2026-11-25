@@ -373,7 +373,7 @@ onMounted(async () => {
     box-shadow: var(--shadow-hover);
 
     .stat-icon-wrap {
-      transform: rotate(-8deg) scale(1.08);
+      transform: none;
     }
   }
 }
@@ -557,7 +557,7 @@ onMounted(async () => {
     .quick-icon {
       background: var(--gradient-brand);
       color: #fff;
-      transform: rotate(-8deg) scale(1.08);
+      transform: none;
     }
 
     .quick-arrow {
