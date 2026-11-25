@@ -27,11 +27,43 @@ export const companyRoutes = [
     component: () => import('@/features/company/components/EditarRota.vue'),
     meta: COMPANY_META,
   },
+  // Mapa geral com todas as viagens em andamento.
+  {
+    path: ROUTE_PATHS.LIVE_OPERATIONS,
+    name: ROUTE_NAMES.LIVE_OPERATIONS,
+    component: () => import('@/views/LiveOperationsView.vue'),
+    meta: COMPANY_META,
+  },
   {
     path: ROUTE_PATHS.OPERATIONAL_POINTS,
     name: ROUTE_NAMES.OPERATIONAL_POINTS,
     component: () => import('@/views/OperationalPointsView.vue'),
     meta: COMPANY_META,
+  },
+  // Cadastro e edição de pontos (destino e garagem) em página própria.
+  {
+    path: ROUTE_PATHS.REGISTER_POINT,
+    name: ROUTE_NAMES.REGISTER_POINT,
+    component: () => import('@/views/PointFormView.vue'),
+    meta: { ...COMPANY_META, pointKind: 'destination' },
+  },
+  {
+    path: ROUTE_PATHS.EDIT_POINT,
+    name: ROUTE_NAMES.EDIT_POINT,
+    component: () => import('@/views/PointFormView.vue'),
+    meta: { ...COMPANY_META, pointKind: 'destination' },
+  },
+  {
+    path: ROUTE_PATHS.REGISTER_GARAGE,
+    name: ROUTE_NAMES.REGISTER_GARAGE,
+    component: () => import('@/views/PointFormView.vue'),
+    meta: { ...COMPANY_META, pointKind: 'garage' },
+  },
+  {
+    path: ROUTE_PATHS.EDIT_GARAGE,
+    name: ROUTE_NAMES.EDIT_GARAGE,
+    component: () => import('@/views/PointFormView.vue'),
+    meta: { ...COMPANY_META, pointKind: 'garage' },
   },
   {
     path: ROUTE_PATHS.USERS,

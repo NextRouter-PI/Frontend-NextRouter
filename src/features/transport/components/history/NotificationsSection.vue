@@ -49,7 +49,7 @@ function formatStatus(status) {
           <span class="notice-icon" aria-hidden="true"><BaseIcon name="mdi-bell-outline" /></span>
           <div class="notice-copy">
             <strong>{{ formatKind(n.kind) }}</strong>
-            <span class="notice-resource"> · {{ formatResource(n.resource_type) }}</span>
+            <span v-if="formatResource(n.resource_type) !== formatKind(n.kind)" class="notice-resource"> · {{ formatResource(n.resource_type) }}</span>
             <p class="meta-line">
               Estado: <strong>{{ formatStatus(n.payload?.status) }}</strong> · Criado em
               {{ formatDateTimeBr(n.created_at) }}

@@ -27,6 +27,7 @@ const {
   participationStatusLabel,
   passengerPoint,
   etaSummary,
+  timingInfo,
   mapsUrl,
   updatedAtLabel,
   startLivePolling,
@@ -98,6 +99,10 @@ onMounted(() => {
         <p v-if="participationStatusLabel" class="panel-meta">
           Seu embarque: <strong>{{ participationStatusLabel }}</strong>
         </p>
+        <p v-if="timingInfo?.delayMinutes > 0" class="panel-meta delay-note">
+          <BaseIcon name="mdi-clock-alert-outline" /> Atraso de cerca de {{ timingInfo.delayMinutes }} min, previsões já atualizadas
+        </p>
+        <p v-if="timingInfo?.arrival" class="panel-meta">Chegada prevista ao destino: <strong>{{ timingInfo.arrival }}</strong></p>
         <p v-if="tracking.latitude != null" class="panel-meta">
           {{ tracking.latitude.toFixed(6) }}, {{ tracking.longitude.toFixed(6) }}
           <span v-if="updatedAtLabel"> · {{ updatedAtLabel }}</span>
@@ -123,6 +128,10 @@ onMounted(() => {
           <p v-if="activeTravel" class="panel-meta">
             Próxima viagem #{{ activeTravel.id }} · {{ activeTravel.date }}
             ({{ activeTravel.direction === 'outbound' ? 'Ida' : 'Retorno' }})
+          </p>
+          <p v-if="activeTravel && timingInfo?.planned" class="panel-meta">
+            Embarque previsto às <strong>{{ timingInfo.planned }}</strong>
+            <template v-if="timingInfo.arrival"> · chegada às <strong>{{ timingInfo.arrival }}</strong></template>
           </p>
           <p v-else class="panel-meta">Vínculo ativo. Responda aos atendimentos abertos na aba Lista.</p>
           <div class="sheet-actions">
@@ -278,5 +287,13 @@ onMounted(() => {
     align-items: flex-end;
     padding: 24px;
   }
+}
+
+.delay-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #d97706;
+  font-weight: 600;
 }
 </style>

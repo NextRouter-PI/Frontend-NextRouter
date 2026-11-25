@@ -14,9 +14,13 @@ const scope = useAccountScope()
 
 const veiculo = ref({
   placa: '',
+  tipo: 'van',
+  marca: '',
   modelo: '',
   ano: '',
+  assentos: '',
   capacidade: '',
+  observacoes: '',
   garagePointId: '',
   cor: '',
   status: 'Ativo',

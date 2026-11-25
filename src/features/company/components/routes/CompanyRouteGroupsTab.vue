@@ -8,6 +8,7 @@ import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
+import ListToolbar from '@/components/ui/ListToolbar.vue'
 
 const store = useRotasStore()
 const router = useRouter()
@@ -26,15 +27,13 @@ const gruposFiltrados = computed(() => {
 
 <template>
   <div class="groups-tab">
-    <div class="search-container">
-      <BaseIcon name="mdi-magnify" class="search-icon" />
-      <input
-        v-model="busca"
-        type="text"
-        placeholder="Busque por grupo ou ponto de destino..."
-        aria-label="Buscar grupo ou ponto de destino"
-      />
-    </div>
+    <ListToolbar
+      v-model="busca"
+      placeholder="Busque por grupo ou ponto de destino..."
+      search-label="Buscar grupo ou ponto de destino"
+      action-label="Novo grupo"
+      :action-to="ROUTE_PATHS.REGISTER_ROUTE"
+    />
 
     <Transition name="fade-slide" mode="out-in">
       <EmptyState v-if="store.loading" key="loading" loading description="Carregando grupos e serviços habituais..." />
@@ -49,6 +48,7 @@ const gruposFiltrados = computed(() => {
 
       <div v-else key="list" class="groups-list">
       <BaseCard
+          interactive
         v-for="grupo in gruposFiltrados"
         :key="grupo.id"
         :title="`${grupo.name} · #${grupo.id}`"
@@ -122,15 +122,6 @@ const gruposFiltrados = computed(() => {
       </BaseCard>
       </div>
     </Transition>
-
-    <button
-      type="button"
-      class="fab-add"
-      aria-label="Cadastrar grupo"
-      @click="router.push(ROUTE_PATHS.REGISTER_ROUTE)"
-    >
-      <BaseIcon name="mdi-plus" />
-    </button>
   </div>
 </template>
 

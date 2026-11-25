@@ -74,8 +74,8 @@ const formattedPhone = computed(() =>
     box-shadow 0.2s var(--ease-fluid);
 }
 
-.membership-card:hover {
-  outline-color: var(--primary);
+.membership-card {
+  @include hover-card('.membership-avatar');
 }
 
 .membership-header {

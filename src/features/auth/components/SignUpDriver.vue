@@ -25,6 +25,10 @@ const {
   goBack,
   avancarParaRevisao,
   voltarPagina,
+  formStep,
+  voltarEtapa,
+  stepperCurrent,
+  stepLabels,
 } = usePersonalSignUpFlow({
   extraBusyRef: { get value() { return Boolean(cnhState?.enviandoDocumento.value) } },
   extraReviewItems: () => (cnhState?.cnh.name ? [{ label: 'CNH:', value: `✓ ${cnhState.cnh.name}` }] : []),
@@ -55,9 +59,11 @@ async function handleSubmit() {
 
 <template>
   <SignUpWizard
+    :stepper-steps="5"
+    :stepper-current="stepperCurrent"
+    :stepper-labels="stepLabels"
     title-prefix="Cadastro "
     title-highlight="Motorista"
-    show-divider
     :success="registerState.state.success"
     success-message="Seu perfil de motorista foi criado. O vínculo com uma empresa é solicitado separadamente."
     :errors="activeErrors"
@@ -66,8 +72,9 @@ async function handleSubmit() {
   >
     <PersonalSignUpFields
       v-if="currentPage === 1"
-      key="step-1"
+      :key="`step-1-${formStep}`"
       v-model:form="form"
+      :section="['personal', 'location', 'access'][formStep - 1]"
       :field-errors="fieldErrors"
       :disabled="registerState.state.loading"
       :days="days"
@@ -117,7 +124,9 @@ async function handleSubmit() {
         :back-disabled="enviandoDocumento || enviandoCodigo || registerState.state.loading"
         @next="avancarParaRevisao"
         @continue="avancarParaVerificacao"
+        :form-step="formStep"
         @back="voltarPagina"
+        @step-back="voltarEtapa"
       />
     </template>
   </SignUpWizard>

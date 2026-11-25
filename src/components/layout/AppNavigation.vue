@@ -1,7 +1,9 @@
 <script setup>
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import Logo from '@/assets/images/logo.webp'
-import { ROUTE_PATHS } from '@/constants'
+import BrandLogo from '@/components/ui/BrandLogo.vue'
+import { ROUTE_PATHS, USER_ROLES } from '@/constants'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 defineProps({
   isMobile: { type: Boolean, default: false },
@@ -9,6 +11,26 @@ defineProps({
 })
 
 const route = useRoute()
+const auth = useAuthStore()
+
+const ROLE_LABELS = {
+  [USER_ROLES.COMPANY]: 'Empresa',
+  [USER_ROLES.DRIVER]: 'Motorista',
+  [USER_ROLES.PASSENGER]: 'Passageiro',
+}
+
+const roleLabel = computed(() => ROLE_LABELS[auth.role] || 'Conta')
+const userName = computed(() => auth.user?.name || auth.user?.email || 'Minha conta')
+const userEmail = computed(() => auth.user?.email || '')
+const avatarUrl = computed(() => auth.user?.profile_picture_data?.url || '')
+const initials = computed(() =>
+  userName.value
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join(''),
+)
 
 function isActive(target) {
   const path = typeof target === 'string' ? target : target?.matchPrefix || target?.to || ''
@@ -20,20 +42,41 @@ function isActive(target) {
 <template>
   <aside v-if="!isMobile" class="app-sidebar">
     <div class="sidebar-inner">
-      <slot name="brand">
-        <RouterLink :to="ROUTE_PATHS.HOME" class="sidebar-logo" aria-label="NextRouter - Início">
-          <div class="sidebar-logo-content">
-            <img :src="Logo" alt="NextRouter" />
-            <span class="sidebar-brand-title">
-              NextRouter <small v-if="badge" class="sidebar-badge">{{ badge }}</small>
-            </span>
-          </div>
-        </RouterLink>
-      </slot>
+      <RouterLink :to="ROUTE_PATHS.HOME" class="sidebar-brand" aria-label="NextRouter - Início">
+        <BrandLogo class="sidebar-brand-logo" />
+        <span class="sidebar-brand-text">
+          <strong>Next<span>Router</span></strong>
+          <small>{{ roleLabel }}</small>
+        </span>
+      </RouterLink>
 
+      <p class="sidebar-section">Navegação</p>
       <nav class="sidebar-nav" aria-label="Navegação principal">
         <slot :is-active="isActive" :is-mobile="false" />
       </nav>
+
+      <div class="sidebar-user">
+        <RouterLink
+          :to="ROUTE_PATHS.USER_PROFILE"
+          class="sidebar-user-card"
+          :class="{ active: isActive(ROUTE_PATHS.USER_PROFILE) || isActive(ROUTE_PATHS.USER_SECURITY) }"
+          title="Abrir minha conta"
+        >
+          <span class="sidebar-avatar">
+            <img v-if="avatarUrl" :src="avatarUrl" alt="" />
+            <template v-else>{{ initials }}</template>
+          </span>
+          <span class="sidebar-user-text">
+            <strong>{{ userName }}</strong>
+            <small>{{ userEmail }}</small>
+          </span>
+          <BaseIcon name="mdi-chevron-right" class="sidebar-user-arrow" />
+        </RouterLink>
+        <RouterLink :to="ROUTE_PATHS.LOGOUT" class="sidebar-logout">
+          <BaseIcon name="mdi-logout" />
+          <span>Sair da conta</span>
+        </RouterLink>
+      </div>
     </div>
   </aside>
 
@@ -43,100 +86,187 @@ function isActive(target) {
 </template>
 
 <style lang="scss" scoped>
+// Menu lateral: branco no tema claro, grafite no escuro, com laranja nos destaques. Sem brilhos.
 .app-sidebar {
   position: fixed;
   top: 0;
   left: 0;
   width: var(--sidebar-width);
   height: 100vh;
-  background: var(--chrome-bg);
+  background: var(--side-bg);
+  border-right: 1px solid var(--side-line);
+  transition: background-color $duration-normal $ease-fluid;
   z-index: $z-sidebar;
-  transition: width $duration-slow $ease-fluid;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: calc(var(--header-height) - 2px);
-    right: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--primary);
-    box-shadow: 4px 0 14px rgba(0, 0, 0, 0.22);
-    pointer-events: none;
-  }
-
-  &:hover,
-  &:has(:focus-visible) {
-    width: $sidebar-width-expanded;
-
-    .sidebar-brand-title,
-    :deep(.nav-label) {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
 }
 
 .sidebar-inner {
-  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 0 0 $space-5;
-  gap: $space-6;
-  overflow: hidden;
+  padding: $space-5 $space-3 $space-4;
+  overflow-y: auto;
 }
 
-.sidebar-logo {
-  width: 100%;
-  height: var(--header-height);
-  padding-top: var(--safe-top);
+.sidebar-brand {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
-  text-decoration: none;
+  gap: $space-3;
+  padding: $space-2 $space-2 $space-5;
+  margin-bottom: $space-2;
+  border-bottom: 1px solid var(--side-line);
 
-  &-content {
-    display: flex;
-    align-items: center;
-    gap: $space-3;
-    padding: 0 13px;
-
-    img {
-      height: 36px;
-      width: auto;
-      max-width: none;
-      flex-shrink: 0;
-    }
+  .sidebar-brand-logo {
+    flex-shrink: 0;
+    width: 49px;
+    transition: transform $duration-slow $ease-spring;
   }
 }
 
-.sidebar-brand-title {
-  font-size: 17px;
-  font-weight: $font-bold;
-  color: var(--chrome-text);
-  opacity: 0;
-  transform: translateX(-8px);
-  transition:
-    opacity 0.25s $ease-fluid,
-    transform 0.25s $ease-fluid;
-  white-space: nowrap;
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+
+  strong {
+    font-size: 1.05rem;
+    font-weight: $font-extrabold;
+    color: var(--side-text);
+
+    span {
+      color: var(--primary);
+    }
+  }
+
+  small {
+    margin-top: 3px;
+    align-self: flex-start;
+    padding: 1px 8px;
+    border-radius: $radius-pill;
+    background: var(--side-chip);
+    color: var(--side-muted);
+    font-size: 0.68rem;
+    font-weight: $font-bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 }
 
-.sidebar-badge {
-  font-size: 10px;
-  font-weight: $font-semibold;
-  color: var(--primary);
-  margin-left: 2px;
+.sidebar-section {
+  margin: $space-4 $space-3 $space-2;
+  color: var(--side-faint);
+  font-size: 0.68rem;
+  font-weight: $font-bold;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .sidebar-nav {
-  width: 100%;
   display: flex;
   flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-user {
+  margin-top: auto;
+  padding-top: $space-4;
+  border-top: 1px solid var(--side-line);
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.sidebar-user-card {
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: $space-3;
+  padding: $space-2;
+  border-radius: $radius-md;
+  border: 1px solid var(--side-line);
+  transition:
+    background-color $duration-normal $ease-fluid,
+    border-color $duration-normal $ease-fluid;
+
+  &:hover,
+  &.active {
+    background: var(--side-hover);
+    border-color: var(--primary);
+  }
+
+  &:hover .sidebar-user-arrow {
+    transform: translateX(3px);
+    color: var(--primary);
+  }
+}
+
+.sidebar-user-arrow {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--side-faint);
+  font-size: 1.2rem;
+  transition:
+    transform $duration-normal $ease-fluid,
+    color $duration-normal $ease-fluid;
+}
+
+.sidebar-avatar {
+  @include flex-center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-round;
+  overflow: hidden;
+  background: var(--primary);
+  color: #fff;
+  font-weight: $font-bold;
+  font-size: $text-sm;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.sidebar-user-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  strong {
+    @include truncate;
+    color: var(--side-text);
+    font-size: $text-sm;
+  }
+
+  small {
+    @include truncate;
+    color: var(--side-muted);
+    font-size: $text-xs;
+  }
+}
+
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  padding: 10px;
+  border-radius: $radius-md;
+  border: 1px solid var(--side-line);
+  color: var(--side-muted);
+  font-size: $text-sm;
+  font-weight: $font-semibold;
+  transition:
+    background-color $duration-normal $ease-fluid,
+    border-color $duration-normal $ease-fluid,
+    color $duration-normal $ease-fluid;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #f87171;
+  }
 }
 
 .app-bottom-nav {
@@ -145,12 +275,23 @@ function isActive(target) {
   left: 0;
   right: 0;
   height: var(--bottom-nav-height);
-  background: var(--chrome-bg);
-  border-top: 2px solid var(--primary);
+  background: var(--side-bg);
   display: flex;
   align-items: center;
   padding: 0 calc(#{$space-1} + var(--safe-right)) var(--safe-bottom) calc(#{$space-1} + var(--safe-left));
   z-index: $z-bottom-nav;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+  border-top: 1px solid var(--side-line);
+  box-shadow: 0 -8px 24px -14px rgba(0, 0, 0, 0.25);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--chrome-line);
+    pointer-events: none;
+  }
 }
 </style>

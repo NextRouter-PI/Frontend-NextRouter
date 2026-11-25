@@ -90,8 +90,9 @@ function handleCropCancel() {
   border-radius: 50%;
   overflow: hidden;
   position: relative;
-  background: #c4c4c4;
-  border: 2px solid var(--primary);
+  background: rgba(28, 28, 30, 0.25);
+  border: 3px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.45);
   transition: filter 0.2s, transform 0.2s;
 }
 
@@ -116,8 +117,9 @@ function handleCropCancel() {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 2rem;
+  background: rgba(255, 255, 255, 0.16);
 }
 
 .file-input-hidden {

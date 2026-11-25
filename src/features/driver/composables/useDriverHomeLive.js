@@ -45,6 +45,11 @@ export function useDriverHomeLive({ scope }) {
       subtitle: names || `Parada #${nextPendingStop.value.position}`,
       distanceLabel: dist != null ? formatDistanceLabel(dist) : '',
       etaLabel: dist != null ? `${estimateEtaMinutes(dist)} min` : '',
+      // Horário esperado na parada (previsto na rota + atraso atual), calculado pelo servidor.
+      expectedLabel: nextPendingStop.value.expected_at
+        ? new Date(nextPendingStop.value.expected_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        : '',
+      delayMinutes: Math.round((nextPendingStop.value.delay_seconds || 0) / 60),
     }
   })
 

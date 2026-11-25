@@ -76,6 +76,23 @@ const emit = defineEmits(['click'])
     gap: $space-1;
   }
 
+  // Padrão de todos os botões: sobe 1px no hover, o ícone dá um girinho e o clique afunda.
+  :deep(.base-icon) {
+    transition: transform 0.45s $ease-spring;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+
+    :deep(.base-icon:not(.mdi-spin)) {
+      transform: rotate(-8deg) scale(1.1);
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
   &.size-sm {
     padding: $space-2 14px;
     font-size: $text-sm;

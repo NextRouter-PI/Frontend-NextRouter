@@ -1,9 +1,10 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, shallowRef } from 'vue'
 import { DOMAIN_STATUS_LABELS, SERVICE_DIRECTIONS } from '@/constants'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import StatTile from '@/components/ui/StatTile.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
@@ -14,6 +15,7 @@ import DriverInvitationsCard from '@/features/driver/components/transport/Driver
 import DriverTravelStopsCard from '@/features/driver/components/transport/DriverTravelStopsCard.vue'
 import DriverActiveTravelCard from '@/features/driver/components/transport/DriverActiveTravelCard.vue'
 import DriverRouteSnapshotCard from '@/features/driver/components/transport/DriverRouteSnapshotCard.vue'
+import LocationConsentCard from '@/features/driver/components/LocationConsentCard.vue'
 
 const {
   state,
@@ -29,9 +31,30 @@ const { state: tracking, startDriverTracking, stopTracking } = useTravelTracking
 
 const transport = computed(() => state.driver)
 const isInProgress = computed(() => transport.value?.travelStatus === 'in_progress')
+// Resumo da viagem atual para o topo da página.
+const resumo = computed(() => {
+  const t = transport.value
+  const rota = t?.rota || {}
+  return {
+    viagens: t?.travels?.length ?? null,
+    naRota: t?.passageirosNaRota ?? null,
+    embarcados: t?.passageirosEmbarcados ?? null,
+    paradas: t?.stops?.length ?? null,
+    rotaHint: rota.distanciaKm ? `${rota.distanciaKm} km · ${rota.duracaoMin ?? '—'} min` : 'Percurso ainda não calculado',
+  }
+})
 const pendingInvitations = computed(() =>
   (transport.value?.invitations || []).filter((inv) => inv.status === 'pending' && inv.is_current),
 )
+
+// Sem consentimento a viagem pode ser iniciada, mas a localização não é enviada.
+const consentAt = shallowRef(null)
+
+// Autorizou com a viagem já andando: começa a enviar; revogou: para na hora.
+function onConsentChange(value) {
+  if (!value) stopTracking()
+  else if (isInProgress.value && transport.value?.travelId) startDriverTracking(transport.value.travelId)
+}
 
 async function handleStartOrFinish() {
   const travel = transport.value?.travel
@@ -42,13 +65,13 @@ async function handleStartOrFinish() {
     if (ok) stopTracking()
   } else {
     const ok = await iniciarViagemDesignada(travel)
-    if (ok) startDriverTracking(travel.id)
+    if (ok && consentAt.value) startDriverTracking(travel.id)
   }
 }
 
 onMounted(async () => {
   await loadDriverData()
-  if (transport.value?.travelStatus === 'in_progress' && transport.value?.travelId) {
+  if (transport.value?.travelStatus === 'in_progress' && transport.value?.travelId && consentAt.value) {
     startDriverTracking(transport.value.travelId)
   }
 })
@@ -56,7 +79,7 @@ onMounted(async () => {
 
 <template>
   <div class="driver-transport-page">
-    <PageHeader title="Minhas Viagens e Execução" accent>
+    <PageHeader title="Minhas viagens" highlight="viagens" eyebrow="Motorista" icon="mdi-steering" subtitle="Inicie a viagem publicada, acompanhe as paradas e registre embarques.">
       <template #actions>
         <BaseButton
           variant="outline"
@@ -69,6 +92,22 @@ onMounted(async () => {
         </BaseButton>
       </template>
     </PageHeader>
+
+    <section class="stat-grid" aria-label="Resumo da viagem">
+      <StatTile icon="mdi-bus-clock" label="Viagens designadas" :value="resumo.viagens" :loading="state.loading && resumo.viagens === null" hint="Para você nos próximos dias" />
+      <StatTile icon="mdi-account-group" label="Passageiros na rota" :value="resumo.naRota" :loading="state.loading && resumo.naRota === null" tone="blue" />
+      <StatTile
+        icon="mdi-account-check-outline"
+        label="Embarcados"
+        :value="resumo.embarcados"
+        :total="resumo.naRota || null"
+        :loading="state.loading && resumo.embarcados === null"
+        tone="green"
+      />
+      <StatTile icon="mdi-map-marker-path" label="Paradas" :value="resumo.paradas" :loading="state.loading && resumo.paradas === null" tone="gray" :hint="resumo.rotaHint" />
+    </section>
+
+    <LocationConsentCard v-model="consentAt" @update:model-value="onConsentChange" />
 
     <StatusBanner variant="success" :message="state.notice" />
     <StatusBanner variant="danger" :message="state.error" />
@@ -150,6 +189,7 @@ onMounted(async () => {
 }
 
 .driver-transport-page {
+  --page-max: 1040px;
   @include section-container(120px);
 }
 

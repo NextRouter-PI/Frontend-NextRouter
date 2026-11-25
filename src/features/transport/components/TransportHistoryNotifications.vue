@@ -1,7 +1,8 @@
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useTransportHistory } from '@/features/transport/composables/useTransportHistory'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import StatTile from '@/components/ui/StatTile.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import LostItemsSection from './history/LostItemsSection.vue'
@@ -30,18 +31,49 @@ const {
 } = useTransportHistory()
 
 onMounted(refresh)
+
+const resumo = computed(() => {
+  const notas = ratings.value.map((r) => Number(r.score)).filter(Number.isFinite)
+  return {
+    viagens: finishedTravels.value.length,
+    itens: lostItems.value.length,
+    devolvidos: lostItems.value.filter((i) => i.status === 'returned').length,
+    avaliacoes: ratings.value.length,
+    media: notas.length ? (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1) : null,
+    naoLidos: notifications.value.filter((n) => !n.read_at).length,
+  }
+})
 </script>
 
 <template>
   <div class="history-panel">
+    <section class="stat-grid" aria-label="Resumo do histórico">
+      <StatTile icon="mdi-flag-checkered" label="Viagens finalizadas" :value="loading ? null : resumo.viagens" :loading="loading" />
+      <StatTile
+        icon="mdi-bag-personal-outline"
+        label="Itens perdidos"
+        :value="loading ? null : resumo.itens"
+        :loading="loading"
+        tone="blue"
+        :hint="`${resumo.devolvidos} devolvidos`"
+      />
+      <StatTile
+        icon="mdi-star-outline"
+        label="Avaliações"
+        :value="loading ? null : resumo.avaliacoes"
+        :loading="loading"
+        tone="green"
+        :hint="resumo.media ? `Média ${resumo.media} de 5` : 'Sem notas ainda'"
+      />
+      <StatTile icon="mdi-bell-ring-outline" label="Avisos não lidos" :value="loading ? null : resumo.naoLidos" :loading="loading" tone="gray" />
+    </section>
+
     <div class="history-header">
       <div>
-        <h2>Histórico de Viagens e Itens Perdidos</h2>
-        <p class="history-sub">
-          Visualize suas viagens finalizadas, registre itens perdidos e acompanhe avaliações e avisos.
-        </p>
+        <h2>Detalhes</h2>
+        <p class="history-sub">Viagens finalizadas, itens perdidos, avaliações e avisos.</p>
       </div>
-      <BaseButton variant="outline" size="sm" :disabled="loading || busy" @click="refresh">
+      <BaseButton variant="outline" size="sm" icon="mdi-refresh" :disabled="loading || busy" @click="refresh">
         Atualizar
       </BaseButton>
     </div>

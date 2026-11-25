@@ -1,6 +1,8 @@
 <script setup>
+import PageHeader from '@/components/ui/PageHeader.vue'
 import { computed, onMounted, watch } from 'vue'
 import { DOMAIN_STATUS_LABELS } from '@/constants'
+import { formatDateChip } from '@/utils/formatters'
 import { useTransportState } from '@/stores/useTransportState'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
@@ -38,12 +40,13 @@ onMounted(() => {
 
 <template>
   <div class="usuarios-list-container">
-    <div class="questionario-header-block">
-      <h2>Participantes e Paradas da Viagem Designada</h2>
-      <p class="header-sub">
-        Dados derivados das participações e paradas calculadas (`travel-participations/` e `route-stops/`), sem expor dados cadastrais privados dos passageiros.
-      </p>
-    </div>
+    <PageHeader
+      title="Participantes e paradas"
+      highlight="paradas"
+      eyebrow="Viagem designada"
+      icon="mdi-steering"
+      subtitle="Quem embarca em cada parada da sua viagem, sem expor dados cadastrais privados dos passageiros."
+    />
 
     <LoadingSpinner v-if="state.loading" />
 
@@ -57,14 +60,14 @@ onMounted(() => {
           :disabled="state.busy"
           @click="loadDriverData(t.id)"
         >
-          Viagem #{{ t.id }} · {{ t.date }} ({{ t.direction === 'outbound' ? 'Ida' : 'Retorno' }}) · {{ DOMAIN_STATUS_LABELS[t.status] || t.status }}
+          {{ t.direction === 'outbound' ? 'Ida' : 'Volta' }} · {{ formatDateChip(t.date) }} · Viagem #{{ t.id }} · {{ DOMAIN_STATUS_LABELS[t.status] || t.status }}
         </button>
       </div>
 
       <Transition name="fade-slide" mode="out-in">
         <div :key="transport.travelId || 'empty'" class="list-container">
           <h3 class="list-title">
-            Passageiros da Viagem ({{ transport.participations.length }})
+            Passageiros desta viagem ({{ transport.participations.length }})
           </h3>
 
           <div v-if="transport.participations.length">
@@ -117,6 +120,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .usuarios-list-container {
+  --page-max: 1040px;
   @include section-container(140px);
   display: block;
 }

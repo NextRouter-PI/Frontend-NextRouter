@@ -1,59 +1,66 @@
 <script setup>
+import BrandLogo from '@/components/ui/BrandLogo.vue'
+
+// Tela de carregamento única, no mesmo visual da cortina laranja entre páginas.
 defineProps({
   title: { type: String, default: 'Carregando NextRouter...' },
   subtitle: { type: String, default: '' },
   fullscreen: { type: Boolean, default: false },
   overlay: { type: Boolean, default: false },
 })
+
+const WORD = [...'NextRouter']
 </script>
 
 <template>
-  <div
-    :class="['loading-screen', { fullscreen, overlay }]"
-    role="status"
-    aria-live="polite"
-  >
-    <div class="loading-card">
-      <div class="brand-loader" aria-hidden="true">
-        <div class="spinner-ring"></div>
-        <svg class="brand-pin" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            class="brand-pin-ring"
-            d="M12 20c-4.42 0-8-1.34-8-3 0-1.08 1.54-2.03 3.85-2.56l.68 1.36C6.95 16.17 5.8 16.69 5.8 17c0 .77 2.55 1.7 6.2 1.7s6.2-.93 6.2-1.7c0-.31-1.15-.83-2.73-1.2l.68-1.36C18.46 14.97 20 15.92 20 17c0 1.66-3.58 3-8 3z"
-          />
-          <path
-            class="brand-pin-head"
-            d="M12 2C8.69 2 6 4.69 6 8c0 4.5 6 9.5 6 9.5s6-5 6-9.5c0-3.31-2.69-6-6-6zm0 8.2a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4z"
-          />
-        </svg>
-      </div>
+  <div :class="['loading-screen', { fullscreen, overlay }]" role="status" aria-live="polite">
+    <svg class="loading-route" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <path class="loading-route-line" d="M-40 760 C 220 760, 260 560, 470 600 S 760 820, 960 640 S 1220 300, 1480 340" />
+      <path class="loading-route-line loading-route-line--top" d="M-40 140 C 240 60, 420 260, 700 170 S 1180 40, 1480 120" />
+      <circle class="loading-route-stop" cx="470" cy="600" r="9" />
+      <circle class="loading-route-stop" cx="960" cy="640" r="9" />
+      <circle class="loading-route-stop" cx="700" cy="170" r="7" />
+    </svg>
 
-      <p class="loading-brand" aria-hidden="true">
-        <span class="brand-accent">NEXT</span><span class="brand-rest">ROUTER</span>
+    <div class="loading-center">
+      <BrandLogo class="loading-logo" spin="always" white />
+      <p class="loading-word" aria-hidden="true">
+        <span v-for="(letter, i) in WORD" :key="i" :class="{ 'is-accent': i >= 4 }" :style="{ '--i': i }">{{
+          letter
+        }}</span>
       </p>
+      <p class="loading-title">{{ title }}</p>
 
-      <div class="loading-copy">
-        <p class="loading-title">{{ title }}</p>
-        <p v-if="subtitle" class="loading-subtitle">{{ subtitle }}</p>
+      <!-- Estrada com a van indo e voltando: carregamento sem porcentagem (duração desconhecida). -->
+      <div class="loading-road" aria-hidden="true">
+        <span class="loading-road-lane"></span>
+        <span class="loading-road-fill">
+          <span class="loading-road-van"><BaseIcon name="mdi-bus-side" /></span>
+        </span>
       </div>
-
-      <div class="loading-dots" aria-hidden="true">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
+      <p v-if="subtitle" class="loading-subtitle">{{ subtitle }}</p>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+$orange: #e86d05;
+$graphite: #1c1c1f;
+
 .loading-screen {
-  @include flex-center;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-height: 260px;
   padding: $space-6;
-  background: var(--bg);
-  color: var(--text);
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255, 176, 92, 0.55) 0%, rgba(255, 176, 92, 0) 46%),
+    linear-gradient(180deg, #f2801a 0%, $orange 45%, #c45700 100%);
 
   &.fullscreen {
     min-height: 100vh;
@@ -66,149 +73,192 @@ defineProps({
     z-index: $z-modal;
     min-height: 100vh;
     min-height: 100dvh;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
   }
 }
 
-.loading-card {
+.loading-route {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+.loading-route-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 0.1 18;
+  animation: route-march 1.2s linear infinite;
+
+  &--top {
+    stroke: rgba(255, 255, 255, 0.18);
+    animation-direction: reverse;
+  }
+}
+
+.loading-route-stop {
+  fill: $orange;
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 4;
+}
+
+@keyframes route-march {
+  to {
+    stroke-dashoffset: -18.1;
+  }
+}
+
+.loading-center {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $space-4;
   text-align: center;
-  max-width: 320px;
+  animation: center-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
-.brand-loader {
-  position: relative;
-  width: 72px;
-  height: 72px;
-  @include flex-center;
+@keyframes center-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
 }
 
-.spinner-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: $radius-round;
-  border: 3px solid var(--border);
-  border-top-color: var(--primary);
-  border-right-color: var(--primary-light);
-  animation: nr-spin 0.9s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite;
+.loading-logo {
+  width: 150px;
+  filter: drop-shadow(0 10px 22px rgba(90, 35, 0, 0.25));
+
+  @include from($bp-desktop + 1px) {
+    width: 190px;
+  }
 }
 
-.brand-pin {
-  width: 34px;
-  height: 34px;
-  color: var(--primary);
-  overflow: visible;
-}
-
-.brand-pin-head {
-  transform-origin: 12px 17px;
-  animation: nr-pin-hop 1.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-}
-
-.loading-brand {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: $font-extrabold;
-  letter-spacing: 0.06em;
-}
-
-.brand-accent {
-  color: var(--primary);
-}
-
-.brand-rest {
-  color: var(--text);
-}
-
-.loading-copy {
+.loading-word {
   display: flex;
-  flex-direction: column;
-  gap: $space-1;
+  margin-top: 10px;
+  perspective: 600px;
+  font-size: clamp(2rem, 1.55rem + 1.5vw, 2.7rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+
+  span {
+    display: inline-block;
+    transform-origin: 50% 100%;
+    animation: letter-flip 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    animation-delay: calc(var(--i) * 40ms + 150ms);
+  }
+
+  .is-accent {
+    color: $graphite;
+  }
+}
+
+@keyframes letter-flip {
+  from {
+    opacity: 0;
+    transform: rotateX(-90deg) translateY(40%);
+  }
 }
 
 .loading-title {
-  margin: 0;
-  font-size: $text-base;
-  font-weight: $font-semibold;
-  color: var(--text);
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.loading-road {
+  position: relative;
+  width: 230px;
+  height: 14px;
+  margin-top: 34px;
+  border-radius: 999px;
+  background: $graphite;
+  box-shadow: 0 10px 24px -10px rgba(60, 20, 0, 0.6);
+
+  @include from($bp-desktop + 1px) {
+    width: 270px;
+  }
+}
+
+.loading-road-lane {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 6px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.55) 0 10px, transparent 10px 20px);
+  animation: lane 0.45s linear infinite;
+}
+
+@keyframes lane {
+  from {
+    background-position: 20px 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+.loading-road-fill {
+  position: absolute;
+  inset: 3px auto 3px 3px;
+  width: 12%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff7a00, #ffa33a);
+  animation: road-loop 2.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes road-loop {
+  0% {
+    width: 12%;
+  }
+  60% {
+    width: calc(100% - 6px);
+  }
+  100% {
+    width: 12%;
+  }
+}
+
+.loading-road-van {
+  position: absolute;
+  right: -16px;
+  bottom: 9px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 1.7rem;
+  filter: drop-shadow(0 3px 4px rgba(90, 35, 0, 0.35));
+  animation: van-bump 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes van-bump {
+  to {
+    translate: 0 -2px;
+  }
 }
 
 .loading-subtitle {
-  margin: 0;
-  font-size: $text-sm;
-  color: var(--text-muted);
-  line-height: 1.45;
-}
-
-.loading-dots {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-
-  span {
-    width: 6px;
-    height: 6px;
-    border-radius: $radius-round;
-    background: var(--primary);
-    opacity: 0.3;
-    animation: nr-dot-pulse 1.2s ease-in-out infinite;
-
-    &:nth-child(2) {
-      animation-delay: 0.18s;
-    }
-
-    &:nth-child(3) {
-      animation-delay: 0.36s;
-    }
-  }
-}
-
-@keyframes nr-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes nr-pin-hop {
-  0%,
-  100% {
-    transform: translateY(0) scale(1, 1);
-  }
-  45% {
-    transform: translateY(-3.5px) scale(0.96, 1.05);
-  }
-  75% {
-    transform: translateY(0.3px) scale(1.04, 0.96);
-  }
-}
-
-@keyframes nr-dot-pulse {
-  0%,
-  80%,
-  100% {
-    opacity: 0.25;
-    transform: scale(0.85);
-  }
-  40% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner-ring {
-    animation-duration: 1.8s;
-  }
-
-  .brand-pin-head,
-  .loading-dots span {
+  .loading-route-line,
+  .loading-road-lane,
+  .loading-road-fill,
+  .loading-road-van,
+  .loading-center,
+  .loading-word span {
     animation: none;
-    opacity: 0.7;
   }
 }
 </style>

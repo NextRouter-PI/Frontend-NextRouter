@@ -16,6 +16,10 @@ const {
   goBack,
   avancarParaRevisao,
   voltarPagina,
+  formStep,
+  voltarEtapa,
+  stepperCurrent,
+  stepLabels,
 } = usePersonalSignUpFlow()
 
 async function avancarParaVerificacao() {
@@ -33,9 +37,11 @@ async function handleSubmit() {
 
 <template>
   <SignUpWizard
+    :stepper-steps="5"
+    :stepper-current="stepperCurrent"
+    :stepper-labels="stepLabels"
     title-prefix="Cadastro "
     title-highlight="Passageiro"
-    show-divider
     :success="registerState.state.success"
     success-message="Sua conta foi criada. O vínculo com uma empresa é solicitado separadamente."
     :errors="activeErrors"
@@ -44,8 +50,9 @@ async function handleSubmit() {
   >
     <PersonalSignUpFields
       v-if="currentPage === 1"
-      key="step-1"
+      :key="`step-1-${formStep}`"
       v-model:form="form"
+      :section="['personal', 'location', 'access'][formStep - 1]"
       :field-errors="fieldErrors"
       :disabled="registerState.state.loading"
       :days="days"
@@ -82,7 +89,9 @@ async function handleSubmit() {
         :back-disabled="enviandoCodigo || registerState.state.loading"
         @next="avancarParaRevisao"
         @continue="avancarParaVerificacao"
+        :form-step="formStep"
         @back="voltarPagina"
+        @step-back="voltarEtapa"
       />
     </template>
   </SignUpWizard>

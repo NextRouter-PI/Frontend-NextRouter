@@ -18,6 +18,14 @@ defineProps({
 
 const emit = defineEmits(['submit', 'cancel'])
 
+const TIPOS = [
+  { value: 'van', label: 'Van' },
+  { value: 'microbus', label: 'Micro-ônibus' },
+  { value: 'bus', label: 'Ônibus' },
+  { value: 'car', label: 'Carro' },
+  { value: 'other', label: 'Outro' },
+]
+
 const featureInput = shallowRef('')
 
 function adicionarFeature() {
@@ -36,26 +44,45 @@ function removerFeature(feature) {
 <template>
   <BaseCard>
     <form class="vehicle-form" @submit.prevent="emit('submit')">
-      <div class="field">
-        <label>Placa<span>*</span></label>
-        <input v-model="vehicle.placa" placeholder="ABC1D23" maxlength="10" required :disabled="disabled" />
-      </div>
-
-      <div class="field">
-        <label>Modelo</label>
-        <input v-model="vehicle.modelo" placeholder="Mercedes Sprinter" :disabled="disabled" />
+      <div class="grid-2">
+        <div class="field">
+          <label>Placa<span>*</span></label>
+          <input v-model="vehicle.placa" placeholder="ABC1D23" maxlength="10" required :disabled="disabled" />
+        </div>
+        <div class="field">
+          <label>Tipo de veículo</label>
+          <select v-model="vehicle.tipo" :disabled="disabled">
+            <option v-for="tipo in TIPOS" :key="tipo.value" :value="tipo.value">{{ tipo.label }}</option>
+          </select>
+        </div>
       </div>
 
       <div class="grid-2">
+        <div class="field">
+          <label>Marca</label>
+          <input v-model="vehicle.marca" placeholder="Mercedes-Benz" maxlength="60" :disabled="disabled" />
+        </div>
+        <div class="field">
+          <label>Modelo</label>
+          <input v-model="vehicle.modelo" placeholder="Sprinter 416" :disabled="disabled" />
+        </div>
+      </div>
+
+      <div class="grid-3">
         <div class="field">
           <label>Ano</label>
           <input v-model="vehicle.ano" type="number" min="1950" max="2100" placeholder="2020" :disabled="disabled" />
         </div>
         <div class="field">
-          <label>Capacidade (lugares)<span>*</span></label>
+          <label>Assentos</label>
+          <input v-model="vehicle.assentos" type="number" min="1" placeholder="16" :disabled="disabled" />
+        </div>
+        <div class="field">
+          <label>Capacidade máx.<span>*</span></label>
           <input v-model="vehicle.capacidade" type="number" min="1" placeholder="15" required :disabled="disabled" />
         </div>
       </div>
+      <p class="field-hint">Assentos é quantos lugares o veículo tem; capacidade é o máximo de passageiros que a empresa aceita.</p>
 
       <div class="grid-2">
         <div class="field">
@@ -105,6 +132,17 @@ function removerFeature(feature) {
             </button>
           </span>
         </div>
+      </div>
+
+      <div class="field">
+        <label>Informações adicionais</label>
+        <textarea
+          v-model="vehicle.observacoes"
+          rows="3"
+          maxlength="1000"
+          placeholder="Ex.: acessível para cadeirante, revisão em março"
+          :disabled="disabled"
+        ></textarea>
       </div>
 
       <StatusBanner variant="danger" :message="error" />
@@ -210,5 +248,19 @@ function removerFeature(feature) {
   flex-direction: column;
   gap: $space-2;
   margin-top: $space-2;
+}
+
+.grid-3 {
+  display: grid;
+  gap: $space-3;
+
+  @include from($bp-md) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 </style>

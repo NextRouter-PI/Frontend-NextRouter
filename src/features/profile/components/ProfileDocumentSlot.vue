@@ -82,9 +82,8 @@ onScopeDispose(() => {
 </script>
 
 <template>
-  <section class="account-section">
-    <h2>{{ PROFILE_DOCUMENTS[field] }}</h2>
-    <p class="account-hint">PDF de até 10 MB. O upload e a associação são etapas distintas.</p>
+  <section class="doc-slot">
+    <h3>{{ PROFILE_DOCUMENTS[field] }}</h3>
 
     <Transition name="fade-slide">
       <p v-if="error" class="doc-error" role="alert">{{ error }}</p>
@@ -111,13 +110,13 @@ onScopeDispose(() => {
           </BaseButton>
           <BaseButton
             type="button"
-            variant="primary"
+            variant="outline"
             size="sm"
             icon="mdi-file-replace-outline"
             :disabled="!ready || busy || loading || Boolean(editing)"
             @click="context.startEdit(part)"
           >
-            Editar arquivo
+            {{ documentData ? 'Trocar arquivo' : 'Enviar arquivo' }}
           </BaseButton>
         </div>
       </div>

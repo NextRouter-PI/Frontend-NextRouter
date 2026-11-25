@@ -7,11 +7,13 @@ defineProps({
     default: 'md',
     validator: (v) => ['sm', 'md', 'lg'].includes(v),
   },
+  // Cartão de lista (veículo, grupo, garagem...): ganha o hover padrão do app.
+  interactive: { type: Boolean, default: false },
 })
 </script>
 
 <template>
-  <section class="base-card" :class="`pad-${padding}`">
+  <section v-reveal class="base-card" :class="[`pad-${padding}`, { 'is-interactive': interactive }]">
     <header v-if="title || subtitle || $slots.header" class="base-card-header">
       <slot name="header">
         <div class="base-card-heading">
@@ -44,6 +46,10 @@ defineProps({
     background-color $duration-normal $ease-fluid,
     outline-color $duration-normal $ease-fluid,
     box-shadow $duration-normal $ease-fluid;
+
+  &.is-interactive {
+    @include hover-card;
+  }
 
   &.pad-sm {
     padding: $space-3 $space-4;

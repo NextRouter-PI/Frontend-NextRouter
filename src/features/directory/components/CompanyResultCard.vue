@@ -82,6 +82,7 @@ function linkQuery(groupId = defaultGroupId.value) {
 
 <style lang="scss" scoped>
 .company-card {
+  @include hover-card('.company-media');
   display: flex;
   align-items: stretch;
   gap: 12px;

@@ -130,9 +130,12 @@ table {
 
 .main-content {
   min-height: 100vh;
+  // Permite que o banner das páginas use 100cqw = largura da área de conteúdo (sem a barra lateral).
+  container-type: inline-size;
 
+  // O header é transparente: o conteúdo começa no topo e cada página reserva o espaço dele.
   &.with-top-bar {
-    padding-top: var(--header-height);
+    padding-top: 0;
   }
 
   &.logged {
@@ -177,4 +180,47 @@ body,
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+// Padrão para campos nativos (input/select/textarea) que não usam o BaseInput.
+// :where() deixa a especificidade zero: só vale onde o componente não definiu o próprio estilo.
+:where(
+    input:not([type='checkbox'], [type='radio'], [type='file'], [type='range'], [type='color'], .base-field-input),
+    select,
+    textarea
+  ) {
+  min-height: 42px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  color: var(--text);
+  outline: 1.5px solid var(--border);
+  outline-offset: -1.5px;
+  font: inherit;
+  font-size: $text-md;
+  transition:
+    outline-color $duration-normal $ease-fluid,
+    box-shadow $duration-normal $ease-fluid;
+
+  &:hover:not(:disabled) {
+    outline-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+    box-shadow: 0 0 0 4px var(--color-primary-soft);
+  }
+
+  &:disabled {
+    background: var(--input-surface);
+    color: var(--text-muted);
+    cursor: not-allowed;
+  }
+}
+
+:where(input[type='checkbox'], input[type='radio']) {
+  accent-color: var(--primary);
 }

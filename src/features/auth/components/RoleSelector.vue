@@ -1,6 +1,8 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 
+defineProps({ stacked: { type: Boolean, default: false } })
+
 const roles = [
   {
     to: '/signup/passenger',
@@ -24,7 +26,7 @@ const roles = [
 </script>
 
 <template>
-  <div class="role-select">
+  <div class="role-select" :class="{ stacked }">
     <RouterLink
       v-for="(role, index) in roles"
       :key="role.title"
@@ -82,7 +84,7 @@ const roles = [
   }
 
   &:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     outline-color: var(--primary);
     box-shadow: var(--shadow-hover);
 
@@ -91,7 +93,7 @@ const roles = [
     }
 
     .role-icon-wrap {
-      transform: rotate(-6deg) scale(1.06);
+      transform: rotate(-8deg) scale(1.08);
     }
 
     .role-arrow {
@@ -179,6 +181,37 @@ const roles = [
   .role-arrow {
     margin-left: 0;
     margin-top: auto;
+  }
+}
+
+// Lista vertical (cadastro em meia tela): mantém o card deitado também no computador.
+@media (min-width: 768px) {
+  .role-select.stacked {
+    display: flex;
+    flex-direction: column;
+    gap: $space-4;
+    margin-bottom: $space-8;
+
+    .role-card {
+      flex-direction: row;
+      align-items: center;
+      min-height: 0;
+      padding: 18px 20px;
+    }
+
+    .role-icon-wrap {
+      width: 56px;
+      height: 56px;
+    }
+
+    .role-icon {
+      font-size: 1.8rem;
+    }
+
+    .role-arrow {
+      margin-left: auto;
+      margin-top: 0;
+    }
   }
 }
 </style>

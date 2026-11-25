@@ -44,6 +44,52 @@
   }
 }
 
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.6s $ease-fluid,
+    transform 0.7s $ease-fluid;
+
+  &.is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// Grade de cards de número (StatTile).
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: $space-3;
+
+  // No celular, dois por linha para a lista aparecer logo abaixo.
+  @media (max-width: $bp-sm) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: $space-2;
+  }
+
+  > * {
+    animation: rise-in $duration-reveal $ease-fluid backwards;
+  }
+
+  @for $i from 2 through 6 {
+    > :nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 70ms};
+    }
+  }
+}
+
+// Duas colunas no computador (gráfico + gráfico), uma no celular.
+.chart-grid {
+  display: grid;
+  gap: $space-4;
+
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .rise-in {
   animation: rise-in $duration-reveal $ease-fluid backwards;
 }

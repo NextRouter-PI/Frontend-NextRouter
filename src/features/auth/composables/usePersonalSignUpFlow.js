@@ -1,4 +1,4 @@
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, shallowRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { DEFAULT_EMPTY_LABEL, ROUTE_PATHS, VERIFICATION_CODE_LENGTH } from '@/constants'
 import { useRegisterState } from '@/features/auth/composables/useRegisterState'
@@ -10,6 +10,13 @@ export function usePersonalSignUpFlow({ extraBusyRef = null, extraReviewItems = 
   const registerState = useRegisterState()
   const emailVerification = useEmailVerification()
   const signUp = useSignUpPassengerDriverForm()
+
+  // Etapas do formulário: 1 dados pessoais, 2 localização, 3 acesso (e-mail e senha).
+  const formStep = shallowRef(1)
+  const STEP_LABELS = ['Seus dados', 'Localização', 'Acesso', 'Revisão', 'Confirmação']
+  const stepperCurrent = computed(() =>
+    signUp.currentPage.value === 1 ? formStep.value : signUp.currentPage.value + 2,
+  )
 
   const form = reactive({
     name: '',
@@ -63,8 +70,17 @@ export function usePersonalSignUpFlow({ extraBusyRef = null, extraReviewItems = 
   }
 
   function avancarParaRevisao() {
+    if (!signUp.validarEtapa(form, formStep.value)) return
+    if (formStep.value < 3) {
+      formStep.value += 1
+      return
+    }
     if (!signUp.validarFormulario(form)) return
     signUp.currentPage.value = 2
+  }
+
+  function voltarEtapa() {
+    if (formStep.value > 1) formStep.value -= 1
   }
 
   function voltarPagina() {
@@ -84,5 +100,9 @@ export function usePersonalSignUpFlow({ extraBusyRef = null, extraReviewItems = 
     goBack,
     avancarParaRevisao,
     voltarPagina,
+    formStep,
+    voltarEtapa,
+    stepperCurrent,
+    stepLabels: STEP_LABELS,
   }
 }

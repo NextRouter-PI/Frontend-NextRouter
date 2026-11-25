@@ -84,7 +84,7 @@ onMounted(() => {
 
 <template>
   <div class="route-editor-page">
-    <PageHeader :title="`Configurar Grupo #${id}`" accent>
+    <PageHeader :title="`Configurar grupo #${id}`" highlight="grupo" eyebrow="Painel da empresa" icon="mdi-map-outline">
       <template #actions>
         <BaseButton variant="outline" size="sm" icon="mdi-arrow-left" @click="router.push(ROUTE_PATHS.LIST_GROUPS)">
           Voltar para rotas

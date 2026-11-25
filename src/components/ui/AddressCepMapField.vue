@@ -19,6 +19,8 @@ const props = defineProps({
   formatCep: { type: Function, required: true },
   complementPlaceholder: { type: String, default: 'Bloco, condomínio, apto...' },
   mapLabel: { type: String, default: 'Localização do seu Endereço' },
+  // Sem mapa, as coordenadas ainda vêm do CEP (busca automática).
+  showMap: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['cep-input', 'cep-blur'])
@@ -76,6 +78,7 @@ const { loadingCep, cepFeedback, isFullscreen, hasCoordinates, toggleFullscreen 
     </div>
 
     <div
+      v-if="showMap"
       :class="['map-section', { fullscreen: isFullscreen }]"
       :role="isFullscreen ? 'dialog' : undefined"
       :aria-modal="isFullscreen ? 'true' : undefined"

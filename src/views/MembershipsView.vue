@@ -53,6 +53,17 @@ watch(openMembership, () => {
   closingAction.value = ''
 })
 
+// Jornada do titular: conta → pedido → aprovação. Grupo e viagens dependem da empresa.
+const journey = computed(() => {
+  const status = openMembership.value?.status
+  return [
+    { label: 'Conta criada', done: true, icon: 'mdi-account-check-outline' },
+    { label: 'Pedido enviado', done: Boolean(openMembership.value) || records.value.length > 0, icon: 'mdi-email-fast-outline' },
+    { label: 'Vínculo aprovado', done: status === 'active', icon: 'mdi-domain' },
+    { label: 'Grupo e viagens', done: false, icon: 'mdi-bus-clock', hint: 'Definidos pela empresa' },
+  ]
+})
+
 function companyName(membership) {
   return openCompany.value?.id === membership.company
     ? openCompany.value.trade_name
@@ -79,6 +90,19 @@ async function closeMembership(reason) {
         </template>
       </PageHeader>
       <template v-if="scope">
+        <ol class="journey" aria-label="Etapas até usar o transporte">
+          <li
+            v-for="(step, i) in journey"
+            :key="step.label"
+            class="journey-step"
+            :class="{ done: step.done, current: !step.done && (i === 0 || journey[i - 1].done) }"
+            :style="{ animationDelay: `${i * 90}ms` }"
+          >
+            <span class="journey-dot"><BaseIcon :name="step.done ? 'mdi-check' : step.icon" /></span>
+            <span class="journey-label">{{ step.label }}</span>
+            <small v-if="step.hint" class="journey-hint">{{ step.hint }}</small>
+          </li>
+        </ol>
         <p class="membership-role">
           <BaseIcon :name="auth.role === 'driver' ? 'mdi-steering' : 'mdi-account'" />
           Perfil de {{ auth.role === 'driver' ? 'motorista' : 'passageiro' }}

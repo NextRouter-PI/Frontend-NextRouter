@@ -1,4 +1,6 @@
 <script setup>
+import BaseButton from '@/components/ui/BaseButton.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import { ref, onMounted } from 'vue'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
@@ -59,16 +61,16 @@ const salvar = async () => {
 
 <template>
   <div class="content">
-    <div class="top-bar">
-      <button type="button" class="back-button" @click="$router.back()">
-        <BaseIcon name="mdi-arrow-left" />
-      </button>
-      <h1>Cadastrar Grupo de Atendimento</h1>
-    </div>
-
-    <p class="hint-lead">
-      Primeiro defina as configurações básicas do grupo (nome e ponto de destino). Em seguida, você poderá configurar a programação habitual (idas e retornos), políticas de confirmação e criar as rotas habituais (com passageiros no mapa) e compartilhadas.
-    </p>
+    <PageHeader
+      title="Cadastrar grupo de atendimento"
+      eyebrow="Painel da empresa"
+      icon="mdi-map-outline"
+      subtitle="Defina o nome e o ponto de destino. Depois você configura idas e retornos, políticas de confirmação e as rotas habituais."
+    >
+      <template #actions>
+        <BaseButton variant="outline" size="sm" icon="mdi-arrow-left" @click="$router.back()">Voltar</BaseButton>
+      </template>
+    </PageHeader>
 
     <div v-if="!carregando && !store.pontosDestino.length" class="empty-points">
       <p>Você ainda não possui pontos operacionais de destino cadastrados para vincular ao grupo.</p>
