@@ -84,7 +84,7 @@ const percent = computed(() =>
     }
 
     .stat-tile-icon {
-      transform: rotate(-8deg) scale(1.08);
+      transform: none;
     }
 
     .stat-tile-arrow {

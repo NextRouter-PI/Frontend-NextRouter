@@ -1,104 +1,102 @@
 <script setup>
 defineProps({
   hud: { type: Object, default: null },
-  is3d: { type: Boolean, default: true },
 })
-
-const emit = defineEmits(['toggle-3d'])
 </script>
 
 <template>
-  <div v-if="hud" class="gps-top-hud" role="status" aria-label="Próxima parada GPS">
-    <div class="gps-hud-icon">
+  <!-- Cartão compacto no canto, como o de manobra dos apps de motorista: deixa o mapa livre. -->
+  <div v-if="hud" class="gps-top-hud" role="status" aria-label="Próxima parada">
+    <div class="gps-hud-distance">
       <BaseIcon name="mdi-navigation-variant" />
+      <strong>{{ hud.distanceLabel || '—' }}</strong>
     </div>
     <div class="gps-hud-info">
       <strong class="gps-hud-title">{{ hud.title }}</strong>
-      <span class="gps-hud-sub">
-        {{ hud.subtitle }}
-        <template v-if="hud.distanceLabel"> · {{ hud.distanceLabel }}</template>
-        <template v-if="hud.etaLabel"> ({{ hud.etaLabel }})</template>
-        <template v-if="hud.expectedLabel"> · previsto {{ hud.expectedLabel }}</template>
-        <template v-if="hud.delayMinutes > 0"> · {{ hud.delayMinutes }} min de atraso</template>
+      <span class="gps-hud-sub">{{ hud.subtitle }}</span>
+      <span v-if="hud.etaLabel || hud.expectedLabel" class="gps-hud-time">
+        <template v-if="hud.etaLabel">{{ hud.etaLabel }}</template>
+        <template v-if="hud.expectedLabel"> · chega {{ hud.expectedLabel }}</template>
+        <em v-if="hud.delayMinutes > 0"> · +{{ hud.delayMinutes }} min</em>
       </span>
     </div>
-    <button
-      type="button"
-      class="gps-mode-toggle"
-      :aria-pressed="is3d"
-      @click="emit('toggle-3d')"
-    >
-      {{ is3d ? '3D' : '2D' }}
-    </button>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .gps-top-hud {
   position: fixed;
-  top: calc(var(--header-height) + 12px);
-  left: 50%;
-  transform: translateX(-50%);
+  top: calc(var(--header-height) + 16px);
+  left: 16px;
   z-index: 4;
-  width: min(92vw, 480px);
+  width: min(calc(100vw - 100px), 320px);
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  align-items: stretch;
+  overflow: hidden;
   border-radius: 16px;
-  background: rgba(18, 18, 22, 0.95);
+  background: rgba(18, 18, 22, 0.94);
   color: #ffffff;
-  border: 1.5px solid rgba(236, 131, 20, 0.55);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
 }
 
-.gps-hud-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: var(--primary);
-  color: #ffffff;
+.gps-hud-distance {
+  flex-shrink: 0;
+  min-width: 76px;
+  padding: 10px 8px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
-  flex-shrink: 0;
+  gap: 2px;
+  background: var(--primary);
+
+  .mdi {
+    font-size: 1.5rem;
+  }
+
+  strong {
+    font-size: 0.9rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
 }
 
 .gps-hud-info {
   flex: 1;
   min-width: 0;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
-.gps-hud-title {
-  font-size: 0.94rem;
-  font-weight: 700;
+.gps-hud-title,
+.gps-hud-sub {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.gps-hud-sub {
-  font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.76);
+.gps-hud-title {
+  font-size: 0.92rem;
+  font-weight: 700;
 }
 
-.gps-mode-toggle {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  font-size: 0.78rem;
-  font-weight: 800;
-  cursor: pointer;
+.gps-hud-sub,
+.gps-hud-time {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.74);
+}
 
-  &:hover {
-    border-color: var(--primary);
-    color: var(--primary);
+.gps-hud-time em {
+  font-style: normal;
+  color: #fbbf24;
+}
+
+// No computador o mapa fica atrás da sidebar fechada; o cartão começa depois dela.
+@media (min-width: 901px) {
+  .gps-top-hud {
+    left: calc(var(--sidebar-width) + 16px);
   }
 }
 </style>

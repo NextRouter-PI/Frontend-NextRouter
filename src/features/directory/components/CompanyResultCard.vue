@@ -179,17 +179,16 @@ function linkQuery(groupId = defaultGroupId.value) {
 }
 
 .card-action {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  border-radius: 999px;
   background: #ffffff;
   color: #1c1917;
   font-size: 0.84rem;
   font-weight: 700;
   text-decoration: none;
-  transition: opacity 0.2s ease;
 }
 
 .card-action:hover {

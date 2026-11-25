@@ -112,17 +112,16 @@ h1 {
 
 .btn-primary,
 .btn-outline {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 18px;
-  border-radius: 10px;
   font-size: 0.92rem;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
 .btn-primary {

@@ -104,32 +104,75 @@
   }
 }
 
-// Padrão de hover dos cartões clicáveis do app: sobe 3px, ganha sombra e contorno laranja,
-// e o ícone indicado dá um "girinho" (inclina e cresce um pouco). Use em todo cartão clicável.
+
+// Hover padrão de botões e cartões (o mesmo do botão de login): uma faixa de luz atravessa
+// o elemento da esquerda para a direita. Usa ::after; o elemento vira position: relative.
+@mixin light-sweep($color: rgba(255, 255, 255, 0.35)) {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(110deg, transparent 30%, #{$color} 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.7s $ease-fluid;
+  }
+
+  &:hover:not(:disabled)::after {
+    transform: translateX(120%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      display: none;
+    }
+  }
+}
+
+// Botão de ação padrão do app (igual ao "Entrar" do login): cantos arredondados (não pílula),
+// faixa de luz no hover, sobe 1px com sombra e afunda no clique.
+@mixin action-button {
+  @include light-sweep;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition:
+    transform $duration-fast $ease-fluid,
+    box-shadow $duration-normal $ease-fluid,
+    background-color $duration-normal $ease-fluid,
+    border-color $duration-normal $ease-fluid,
+    color $duration-normal $ease-fluid,
+    filter $duration-normal $ease-fluid;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+// Padrão de hover dos cartões clicáveis do app: sobe 3px, ganha sombra, contorno laranja
+// e a faixa de luz. $icon fica aceito por compatibilidade, mas o ícone não gira mais.
 @mixin hover-card($icon: null) {
+  @include light-sweep(rgba(236, 131, 20, 0.12));
   transition:
     transform $duration-slow $ease-fluid,
     box-shadow $duration-slow $ease-fluid,
     outline-color $duration-normal $ease-fluid,
     border-color $duration-normal $ease-fluid;
 
-  @if $icon {
-    #{$icon} {
-      transition: transform 0.45s $ease-spring;
-    }
-  }
-
   &:hover {
     transform: translateY(-3px);
     box-shadow: var(--shadow-hover);
     outline-color: var(--primary);
     border-color: var(--primary);
-
-    @if $icon {
-      #{$icon} {
-        transform: rotate(-8deg) scale(1.08);
-      }
-    }
   }
 
   &:active {

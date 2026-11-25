@@ -4,7 +4,7 @@ import { formatApiError } from '@/utils/apiErrors'
 import {
   listTravels,
   listTravelParticipations,
-  listRouteSnapshots,
+  getRouteSnapshot,
   listRouteStops,
   listDriverInvitations,
   startTravel,
@@ -47,14 +47,15 @@ export function createDriverTransportActions({ state, auth, nextSignal }) {
 
       if (currentTravel) {
         const snapshotId = currentTravel.published_snapshot || currentTravel.current_snapshot
-        const [partsRes, snapsRes, stopsRes] = await Promise.all([
+        // Só o percurso em uso (antes baixava todas as versões da viagem, cada uma com o traçado inteiro).
+        const [partsRes, snapRes, stopsRes] = await Promise.all([
           listTravelParticipations({ travel: currentTravel.id }, { signal }),
-          snapshotId ? listRouteSnapshots({ travel: currentTravel.id }, { signal }) : Promise.resolve([]),
+          snapshotId ? getRouteSnapshot(snapshotId, { signal }) : Promise.resolve(null),
           snapshotId ? listRouteStops({ snapshot: snapshotId }, { signal }) : Promise.resolve([]),
         ])
         if (signal.aborted || auth.user?.id !== ownerId) return
         participations = partsRes
-        snapshot = snapsRes.find((s) => s.id === snapshotId) || snapsRes[0] || null
+        snapshot = snapRes
         stops = stopsRes
       }
 

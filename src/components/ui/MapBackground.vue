@@ -10,17 +10,20 @@ const props = defineProps({
   snapshot: { type: Object, default: null },
   stops: { type: Array, default: () => [] },
   targetPoint: { type: Object, default: null },
+  // { toMe, toDestination }: traçados [lng, lat][] ao vivo; substituem o percurso planejado.
+  liveRoute: { type: Object, default: null },
 })
 
 const { state: tracking } = useTravelTracking()
 const mapContainer = useTemplateRef('mapContainer')
 
-useLiveBackgroundMap({
+const { following, recenter } = useLiveBackgroundMap({
   mapContainer,
   tracking,
   getSnapshot: () => props.snapshot,
   getStops: () => props.stops,
   getTargetPoint: () => props.targetPoint,
+  getLiveRoute: () => props.liveRoute,
   getSelfLabel: () => props.selfMarkerLabel,
   getTrackingLabel: () => props.trackingMarkerLabel,
   getTrackingIcon: () => props.trackingMarkerIcon,
@@ -29,6 +32,19 @@ useLiveBackgroundMap({
 
 <template>
   <div ref="mapContainer" class="map-background"></div>
+
+  <Transition name="recenter">
+    <button
+      v-if="!following"
+      type="button"
+      class="map-recenter"
+      aria-label="Recentralizar no motorista"
+      @click="recenter"
+    >
+      <BaseIcon name="mdi-crosshairs-gps" />
+      <span>Recentralizar</span>
+    </button>
+  </Transition>
 </template>
 
 <style lang="scss" scoped>
@@ -36,7 +52,42 @@ useLiveBackgroundMap({
   position: fixed;
   inset: 0;
   z-index: 0;
-  pointer-events: none;
+}
+
+.map-recenter {
+  @include action-button;
+  position: fixed;
+  top: calc(var(--header-height) + 16px);
+  right: 16px;
+  z-index: 4;
+  height: 48px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 800;
+
+  .mdi,
+  :deep(.base-icon) {
+    font-size: 1.3rem;
+  }
+}
+
+.recenter-enter-active,
+.recenter-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.recenter-enter-from,
+.recenter-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .map-background::after {

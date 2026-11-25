@@ -95,8 +95,61 @@ function isActive(target) {
   height: 100vh;
   background: var(--side-bg);
   border-right: 1px solid var(--side-line);
-  transition: background-color $duration-normal $ease-fluid;
+  overflow: hidden;
+  // Abre e fecha devagar, com desaceleração suave (sem quique).
+  --sidebar-ease: cubic-bezier(0.25, 1, 0.5, 1);
+  transition:
+    width 0.42s var(--sidebar-ease),
+    box-shadow 0.42s var(--sidebar-ease),
+    background-color $duration-normal $ease-fluid;
   z-index: $z-sidebar;
+
+  // Fechada mostra só ícones; abre por cima da página com o mouse ou com o teclado (Tab).
+  // :focus-visible e não :focus-within: depois de clicar num link o foco fica nele, e
+  // a sidebar continuaria aberta mesmo com o mouse fora.
+  &:hover,
+  &:has(:focus-visible) {
+    width: $sidebar-width-expanded;
+    box-shadow: 16px 0 40px -20px rgba(0, 0, 0, 0.45);
+  }
+
+  // Textos: aparecem deslizando um pouco da esquerda depois que a largura começa a abrir;
+  // ao fechar, somem rápido antes de serem cortados.
+  .sidebar-brand-text,
+  .sidebar-section,
+  .sidebar-user-text,
+  .sidebar-user-arrow,
+  .sidebar-logout span {
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  &:hover,
+  &:has(:focus-visible) {
+    .sidebar-brand-text,
+    .sidebar-section,
+    .sidebar-user-text,
+    .sidebar-user-arrow,
+    .sidebar-logout span {
+      opacity: 1;
+      transform: none;
+      transition:
+        opacity 0.3s ease 0.12s,
+        transform 0.36s var(--sidebar-ease) 0.12s;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &,
+    * {
+      transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
+    }
+  }
 }
 
 .sidebar-inner {
@@ -104,14 +157,17 @@ function isActive(target) {
   display: flex;
   flex-direction: column;
   padding: $space-5 $space-3 $space-4;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
 .sidebar-brand {
+  overflow: hidden;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: $space-3;
-  padding: $space-2 $space-2 $space-5;
+  padding: $space-2 $space-1 $space-5;
   margin-bottom: $space-2;
   border-bottom: 1px solid var(--side-line);
 
@@ -177,6 +233,7 @@ function isActive(target) {
 
 .sidebar-user-card {
   position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: $space-3;
@@ -247,11 +304,12 @@ function isActive(target) {
 }
 
 .sidebar-logout {
+  overflow: hidden;
+  white-space: nowrap;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: $space-2;
-  padding: 10px;
+  gap: $space-3;
+  padding: 10px 17px;
   border-radius: $radius-md;
   border: 1px solid var(--side-line);
   color: var(--side-muted);

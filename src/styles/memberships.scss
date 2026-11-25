@@ -34,18 +34,15 @@
 }
 
 .membership-cta {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   gap: $space-2;
   padding: $space-2 14px;
-  border-radius: $radius-md;
   background: var(--gradient-brand);
   color: var(--color-on-primary);
   font-size: $text-sm;
   font-weight: $font-semibold;
-  transition:
-    transform $duration-normal $ease-fluid,
-    box-shadow $duration-normal $ease-fluid;
 
   &:hover {
     transform: translateY(-1px);

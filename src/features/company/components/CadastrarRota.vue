@@ -197,26 +197,26 @@ const salvar = async () => {
 }
 
 .btn-salvar {
+  @include action-button;
   width: 100%;
   height: 48px;
   margin-top: 16px;
   background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: 12px;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .btn-cancelar {
+  @include action-button;
   width: 100%;
   height: 48px;
   margin-top: 12px;
   background: transparent;
   color: var(--primary);
   border: 2px solid var(--primary);
-  border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;

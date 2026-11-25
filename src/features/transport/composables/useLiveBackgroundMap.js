@@ -1,4 +1,4 @@
-import { nextTick, onMounted, onUnmounted, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import L from 'leaflet'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { usePageVisibility } from '@/composables/usePageVisibility'
@@ -14,6 +14,7 @@ import {
 
 export function useLiveBackgroundMap({
   mapContainer, tracking, getSnapshot, getStops, getTargetPoint, getSelfLabel, getTrackingLabel, getTrackingIcon,
+  getLiveRoute,
 }) {
   const auth = useAuthStore()
   const { isVisible } = usePageVisibility()
@@ -21,6 +22,41 @@ export function useLiveBackgroundMap({
   let passedLine = null, remainingLine = null, trailLine = null, cleanupTiles = null
   let stopAnim = null, lastRenderedPos = null, cachedSnapshotRef = null
   let trailCoords = [], cachedPlannedCoords = []
+  let liveLayer = null
+  // Câmera acompanha o motorista até o passageiro mexer no mapa; "Recentralizar" volta a acompanhar.
+  const following = shallowRef(true)
+
+  function release() {
+    following.value = false
+  }
+
+  function recenter() {
+    following.value = true
+    if (!map) return
+    if (lastRenderedPos) map.setView(lastRenderedPos, Math.max(map.getZoom(), 15), { animate: true })
+    else map.setView(initialCenter(), 15, { animate: true })
+  }
+
+  // Caminho ao vivo do motorista: laranja até o passageiro, preto (com borda clara) até o destino.
+  // Quando existe, esconde o percurso planejado e o rastro.
+  function renderLiveRoute() {
+    if (!map) return
+    if (liveLayer) { map.removeLayer(liveLayer); liveLayer = null }
+    const live = getLiveRoute?.()
+    if (!live) return
+    for (const layer of [routeLayer, passedLine, remainingLine, trailLine]) if (layer) map.removeLayer(layer)
+    routeLayer = passedLine = remainingLine = trailLine = null
+    const toLatLng = (coords) => (coords || []).map(([lng, lat]) => [lat, lng])
+    liveLayer = L.layerGroup().addTo(map)
+    if (live.toDestination?.length >= 2) {
+      L.polyline(toLatLng(live.toDestination), { color: '#ffffff', weight: 9, opacity: 0.6 }).addTo(liveLayer)
+      L.polyline(toLatLng(live.toDestination), { color: '#18181b', weight: 5, opacity: 0.9 }).addTo(liveLayer)
+    }
+    if (live.toMe?.length >= 2) {
+      L.polyline(toLatLng(live.toMe), { color: '#18181b', weight: 10, opacity: 0.6 }).addTo(liveLayer)
+      L.polyline(toLatLng(live.toMe), { color: '#ec8314', weight: 6, opacity: 0.98 }).addTo(liveLayer)
+    }
+  }
 
   function getPlannedCoords() {
     const snap = getSnapshot()
@@ -45,8 +81,13 @@ export function useLiveBackgroundMap({
     }
     const target = pointToLatLng(getTargetPoint())
     if (!target) return
+    // O ponto do passageiro aparece com a foto de perfil dele (ícone de pessoa se não tiver foto).
+    const avatarUrl = auth.user?.profile_picture_data?.url || ''
     targetMarker = L.marker(target, {
-      icon: createPinIcon({ variant: 'success', icon: 'mdi-map-marker-account', size: 'md' }),
+      icon: createPinIcon({
+        variant: 'success', icon: 'mdi-map-marker-account', size: 'md', avatarUrl, avatarAlt: getSelfLabel(),
+      }),
+      zIndexOffset: 500,
     })
       .addTo(map)
       .bindPopup(getTargetPoint()?.name || getSelfLabel())
@@ -76,14 +117,25 @@ export function useLiveBackgroundMap({
   watch(isVisible, (visible) => {
     if (!visible) { stopAnim?.(); stopAnim = null }
   })
-  watch(() => [getSnapshot()?.id, getStops()?.length], renderPlannedRoute)
+  watch(() => [getSnapshot()?.id, getStops()?.length], () => {
+    if (!getLiveRoute?.()) renderPlannedRoute()
+  })
+  watch(() => getLiveRoute?.(), (live) => {
+    if (live) renderLiveRoute()
+    else {
+      if (liveLayer && map) { map.removeLayer(liveLayer); liveLayer = null }
+      renderPlannedRoute()
+    }
+  })
   watch(() => [getTargetPoint()?.latitude, getTargetPoint()?.longitude], renderTargetMarker)
 
   watch(() => [tracking.latitude, tracking.longitude], ([lat, lng]) => {
     if (!map || lat == null || lng == null) return
     const nextPos = [lat, lng]
     const coords = getPlannedCoords()
-    if (coords.length >= 2) {
+    if (getLiveRoute?.()) {
+      // Caminho ao vivo já desenhado: só move o marcador do motorista.
+    } else if (coords.length >= 2) {
       const res = renderConsumedPolylineLayers({ map, coords, busPos: nextPos, passedLine, remainingLine })
       passedLine = res.passedLine
       remainingLine = res.remainingLine
@@ -109,7 +161,7 @@ export function useLiveBackgroundMap({
         onDone: () => { stopAnim = null; lastRenderedPos = nextPos },
       })
     }
-    if (isVisible.value) frameBackgroundViewport(map, nextPos, getTargetPoint())
+    if (isVisible.value && following.value) frameBackgroundViewport(map, nextPos, getTargetPoint())
   })
 
   watch(() => tracking.tracking, (isTracking) => {
@@ -124,10 +176,15 @@ export function useLiveBackgroundMap({
   onMounted(async () => {
     await nextTick()
     if (map || !mapContainer.value) return
+    // Mapa livre: arrastar, zoom com a roda, pinça e duplo clique.
     map = L.map(mapContainer.value, {
-      zoomControl: false, attributionControl: true, dragging: false, touchZoom: false,
-      doubleClickZoom: false, scrollWheelZoom: false, boxZoom: false, keyboard: false,
+      zoomControl: false, attributionControl: true, dragging: true, touchZoom: true,
+      doubleClickZoom: true, scrollWheelZoom: true, boxZoom: false, keyboard: true,
     }).setView(initialCenter(), 14)
+    map.on('dragstart', release)
+    mapContainer.value.addEventListener('wheel', release, { passive: true })
+    mapContainer.value.addEventListener('dblclick', release)
+    mapContainer.value.addEventListener('touchstart', (event) => { if (event.touches.length > 1) release() }, { passive: true })
     cleanupTiles = attachThemedTileLayer(map)
     renderTargetMarker()
     renderPlannedRoute()
@@ -138,6 +195,8 @@ export function useLiveBackgroundMap({
     cleanupTiles?.()
     cleanupTiles = null
     map?.remove()
-    map = routeLayer = passedLine = remainingLine = trailLine = trackingMarker = targetMarker = null
+    map = routeLayer = passedLine = remainingLine = trailLine = trackingMarker = targetMarker = liveLayer = null
   })
+
+  return { following, recenter }
 }

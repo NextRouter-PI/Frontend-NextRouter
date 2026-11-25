@@ -185,19 +185,16 @@ const {
 }
 
 .operation-add {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   gap: $space-2;
   height: 44px;
   padding: 0 $space-5;
-  border-radius: $radius-md;
   background: var(--gradient-brand);
   color: var(--color-on-primary);
   font-weight: $font-bold;
   box-shadow: var(--shadow-primary);
-  transition:
-    transform $duration-normal $ease-fluid,
-    box-shadow $duration-normal $ease-fluid;
 
   .mdi {
     font-size: 1.2rem;

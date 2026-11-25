@@ -138,19 +138,18 @@ async function handleDeactivate() {
 }
 
 .deactivate-submit-btn {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 18px;
-  border-radius: 10px;
   border: 1px solid var(--danger, var(--danger));
   background: var(--danger, var(--danger));
   color: var(--color-on-primary);
   font-size: 0.94rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s ease;
 
   &:disabled {
     opacity: 0.6;
@@ -159,12 +158,12 @@ async function handleDeactivate() {
 }
 
 .logout-action-btn {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 18px;
-  border-radius: 10px;
   border: 1px solid var(--danger, var(--danger));
   background: transparent;
   color: var(--danger, var(--danger));
@@ -172,7 +171,6 @@ async function handleDeactivate() {
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.2s ease, color 0.2s ease;
 
   &:hover:not(:disabled) {
     background: var(--danger, var(--danger));

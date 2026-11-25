@@ -118,17 +118,16 @@ defineProps({
 
 :deep(.sheet-cta),
 :deep(.sheet-cta-outline) {
+  @include action-button;
   flex: 1 1 130px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 10px 14px;
-  border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 700;
   text-decoration: none;
-  transition: background-color 0.2s var(--ease-fluid), transform 0.16s var(--ease-fluid);
 }
 
 :deep(.sheet-cta) {

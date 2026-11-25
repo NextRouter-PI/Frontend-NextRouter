@@ -25,6 +25,7 @@ const goBack = () => {
 }
 
 .btn-back-top {
+  @include action-button;
   position: absolute;
   top: 20px;
   left: 20px;
@@ -37,8 +38,6 @@ const goBack = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: 0.2s;
   z-index: 10;
 }
 

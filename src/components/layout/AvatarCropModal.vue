@@ -273,15 +273,12 @@ const {
 }
 
 .reset-crop-btn {
+  @include action-button;
   padding: 5px 10px;
-  border-radius: $radius-sm;
   font-size: $text-xs;
   font-weight: $font-semibold;
   color: var(--text-muted);
   background: var(--altbg);
-  transition:
-    color $duration-fast $ease-fluid,
-    background-color $duration-fast $ease-fluid;
 
   &:hover:not(:disabled) {
     color: var(--primary);

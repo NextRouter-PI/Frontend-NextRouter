@@ -71,17 +71,16 @@ const emit = defineEmits(['continueSignup'])
 }
 
 .btn-ok {
+  @include action-button;
   background-color: #f48a1d;
   color: white;
   border: none;
   width: 100%;
   max-width: 280px;
   padding: 15px;
-  border-radius: 10px;
   font-size: 18px;
   font-weight: bold;
   cursor: pointer;
-  transition: opacity 0.2s;
 }
 
 .btn-ok:hover {

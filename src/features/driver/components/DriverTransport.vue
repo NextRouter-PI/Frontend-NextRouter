@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, shallowRef } from 'vue'
-import { DOMAIN_STATUS_LABELS, SERVICE_DIRECTIONS } from '@/constants'
+import { useRouter } from 'vue-router'
+import { DOMAIN_STATUS_LABELS, ROUTE_PATHS, SERVICE_DIRECTIONS } from '@/constants'
 import { useTransportState } from '@/stores/useTransportState'
 import { useTravelTracking } from '@/features/transport/composables/useTravelTracking'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -28,6 +29,7 @@ const {
   responderConviteMotorista,
 } = useTransportState()
 const { state: tracking, startDriverTracking, stopTracking } = useTravelTracking()
+const router = useRouter()
 
 const transport = computed(() => state.driver)
 const isInProgress = computed(() => transport.value?.travelStatus === 'in_progress')
@@ -66,6 +68,8 @@ async function handleStartOrFinish() {
   } else {
     const ok = await iniciarViagemDesignada(travel)
     if (ok && consentAt.value) startDriverTracking(travel.id)
+    // Viagem iniciada: vai direto para a navegação 3D (a Home do motorista).
+    if (ok) router.push(ROUTE_PATHS.HOME)
   }
 }
 

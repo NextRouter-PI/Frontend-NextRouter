@@ -433,7 +433,7 @@ function removeCityFilter() {
 }
 
 .how-step:hover .how-icon {
-  transform: rotate(-8deg) scale(1.08);
+  transform: none;
 }
 
 .how-icon {

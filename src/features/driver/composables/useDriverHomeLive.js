@@ -4,13 +4,18 @@ import { useTravelTracking } from '@/features/transport/composables/useTravelTra
 import { useAdaptivePolling } from '@/composables/useAdaptivePolling'
 import { useToast } from '@/composables/useToast'
 import { estimateEtaMinutes, formatDistanceLabel, haversineMeters } from '@/utils/geo'
+import { readTravelApproach } from '@/api/transport'
+
+// Recalcula o caminho até a próxima parada quando ela muda ou o motorista se afasta de onde foi o último cálculo.
+const APPROACH_REFRESH_METERS = 200
+const APPROACH_MIN_INTERVAL_MS = 15_000
 
 /**
  * Coordena dados ao vivo, HUD da próxima parada, prompt de aproximação e polling da Home do motorista.
  */
 export function useDriverHomeLive({ scope }) {
   const { state: transportState, loadDriverData, registrarPresencaParticipante } = useTransportState()
-  const { state: tracking, startViewerTracking, stopTracking } = useTravelTracking()
+  const { state: tracking, startDriverTracking, startViewerTracking, stopTracking } = useTravelTracking()
   const { showToast } = useToast()
 
   const is3dMode = shallowRef(true)
@@ -24,9 +29,23 @@ export function useDriverHomeLive({ scope }) {
   const onBoardPassengers = computed(() =>
     (driverTransport.value?.participations || []).filter((p) => p.status === 'on_board'),
   )
-  const nextPendingStop = computed(() =>
-    (driverTransport.value?.stops || []).find((s) => s.state !== 'handled' && s.state !== 'completed') || null,
-  )
+  // Próxima parada a cumprir: não tratada e com alguém ainda para embarcar/desembarcar (a última sempre conta).
+  // Mesma regra do servidor, para o "embarcou" já levar a linha laranja para a casa seguinte.
+  const nextPendingStop = computed(() => {
+    const stops = driverTransport.value?.stops || []
+    const statusById = new Map((driverTransport.value?.participations || []).map((p) => [p.id, p.status]))
+    return (
+      stops.find((stop, index) => {
+        if (stop.handled_at || ['handled', 'completed', 'skipped'].includes(stop.state)) return false
+        const items = stop.participants || []
+        if (index === stops.length - 1 || !items.length) return true
+        return items.some((item) => {
+          const status = statusById.get(item.participation)
+          return (item.operation === 'board' && status === 'allocated') || (item.operation === 'drop' && status === 'on_board')
+        })
+      }) || null
+    )
+  })
 
   const nextStopDistanceMeters = computed(() => {
     const pt = nextPendingStop.value?.point_snapshot
@@ -76,7 +95,8 @@ export function useDriverHomeLive({ scope }) {
 
   async function quickPresence(participation, kind) {
     if (transportState.busy || !isTravelActive.value) return
-    const ok = await registrarPresencaParticipante(participation, kind)
+    // A ação espera o id; antes recebia o objeto inteiro e a requisição ia para ".../[object Object]/record/".
+    const ok = await registrarPresencaParticipante(participation.id, kind)
     if (ok) {
       showToast(
         kind === 'boarded'
@@ -84,15 +104,21 @@ export function useDriverHomeLive({ scope }) {
           : `Ausência de ${participation.name || 'passageiro'} registrada.`,
         'success',
       )
-      await loadDriverData(driverTransport.value?.travelId)
+    } else if (transportState.error) {
+      showToast(transportState.error, 'error')
     }
   }
 
+  // Viagem em andamento: com consentimento, este aparelho volta a enviar o GPS (ex.: depois de recarregar a
+  // página); sem consentimento, só acompanha a posição.
   watch(
-    () => [driverTransport.value?.travelId, driverTransport.value?.travelStatus],
-    ([travelId, status]) => {
-      if (travelId && status === 'in_progress' && !tracking.tracking) startViewerTracking(travelId)
+    () => [driverTransport.value?.travelId, driverTransport.value?.travelStatus, driverTransport.value?.locationConsentAt],
+    ([travelId, status, consentAt]) => {
+      if (!travelId || status !== 'in_progress') return
+      if (consentAt) startDriverTracking(travelId)
+      else if (!tracking.tracking) startViewerTracking(travelId)
     },
+    { immediate: true },
   )
 
   watch(
@@ -102,13 +128,48 @@ export function useDriverHomeLive({ scope }) {
     },
   )
 
+  // Trajeto de rua da posição atual por todas as paradas abertas até o fim: um trecho ([lng, lat][]) por parada.
+  const approach = shallowRef(null)
+  let approachFrom = null
+  let approachBusy = false
+
+  async function refreshApproach() {
+    const travelId = driverTransport.value?.travelId
+    const stopId = nextPendingStop.value?.id
+    const { latitude: lat, longitude: lng } = tracking
+    if (!isTravelActive.value || !travelId || !stopId || lat == null || lng == null) {
+      if (!isTravelActive.value) approach.value = null
+      return
+    }
+    const now = Date.now()
+    const sameStop = approachFrom?.stopId === stopId
+    if (approachBusy || (sameStop && now - approachFrom.at < APPROACH_MIN_INTERVAL_MS)) return
+    if (sameStop && haversineMeters(lat, lng, approachFrom.lat, approachFrom.lng) < APPROACH_REFRESH_METERS) return
+    approachBusy = true
+    try {
+      const data = await readTravelApproach(travelId)
+      approachFrom = { stopId, lat, lng, at: now }
+      const legs = (data?.legs || []).map((leg) => leg.geometry?.coordinates || []).filter((c) => c.length >= 2)
+      approach.value = legs.length ? legs : null
+    } catch {
+      // Sem posição no servidor ainda ou serviço de rotas fora: mantém o último caminho e tenta no próximo GPS.
+    } finally {
+      approachBusy = false
+    }
+  }
+
+  watch(() => [isTravelActive.value, nextPendingStop.value?.id, tracking.latitude, tracking.longitude], refreshApproach)
+
   const isSharing = computed(() => tracking.tracking && tracking.role === 'driver')
   const mapsUrl = computed(() => {
     if (tracking.latitude == null || tracking.longitude == null) return null
     return `https://www.google.com/maps?q=${tracking.latitude},${tracking.longitude}`
   })
   const updatedAtLabel = computed(() => (tracking.updatedAt ? new Date(tracking.updatedAt).toLocaleTimeString('pt-BR') : ''))
-  const routeStatusLabel = computed(() => (isSharing.value ? 'Rota em andamento' : 'Rota não iniciada'))
+  const routeStatusLabel = computed(() => {
+    if (!isTravelActive.value) return 'Rota não iniciada'
+    return isSharing.value ? 'Rota em andamento' : 'Em andamento · GPS desligado'
+  })
 
   const polling = useAdaptivePolling({
     getIntervalMs: () => (tracking.connected ? 25_000 : 6_000),
@@ -136,6 +197,8 @@ export function useDriverHomeLive({ scope }) {
     pendingBoardingPassengers,
     onBoardPassengers,
     nextStopHud,
+    nextPendingStop,
+    approach,
     approachingPassenger,
     isSharing,
     mapsUrl,

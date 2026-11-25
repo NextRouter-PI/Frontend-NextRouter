@@ -1,4 +1,4 @@
-import { nextTick, onMounted, onUnmounted, watch } from 'vue'
+import { nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import * as maplibregl from 'maplibre-gl'
 import { usePageVisibility } from '@/composables/usePageVisibility'
 import { splitPolylineAtPosition } from '@/utils/geo'
@@ -14,7 +14,7 @@ import {
 
 const onContextLost = (event) => event.preventDefault()
 
-export function useDriverMap3D({ mapEl, tracking, getSnapshot, getStops, is3d }) {
+export function useDriverMap3D({ mapEl, tracking, getSnapshot, getStops, is3d, getApproach, getNextStop }) {
   const { isVisible } = usePageVisibility()
   let map = null
   let busMarker = null
@@ -26,6 +26,25 @@ export function useDriverMap3D({ mapEl, tracking, getSnapshot, getStops, is3d })
   let cachedSnapshotRef = null
   let cachedPlannedCoords = []
   const stopMarkers = []
+  // Câmera segue o motorista; ao arrastar/girar o mapa para de seguir até "recentralizar".
+  const following = shallowRef(true)
+
+  function followCamera(lngLat, duration = 1500) {
+    map?.easeTo({
+      center: lngLat,
+      bearing: is3d() ? tracking.bearing || 0 : 0,
+      pitch: is3d() ? 62 : 0,
+      zoom: is3d() ? 17.1 : 15.2,
+      duration,
+      easing: (t) => t * (2 - t),
+    })
+  }
+
+  function recenter() {
+    following.value = true
+    const target = currentBusLngLat || initialCenterLngLat()
+    followCamera(target, 700)
+  }
 
   function plannedCoordsLngLat() {
     const snap = getSnapshot()
@@ -49,10 +68,31 @@ export function useDriverMap3D({ mapEl, tracking, getSnapshot, getStops, is3d })
   function updateRouteGeometry() {
     if (!map || !styleReady) return
     ensureDriverRouteLayers(map)
-    const { passed, remaining } = splitPolylineAtPosition(
-      plannedCoordsLngLat(), currentBusLngLat?.[1], currentBusLngLat?.[0], { isLngLat: true },
-    )
+    const legs = getApproach?.()
+    let passed
+    let remaining
+    let later = []
+    if (legs?.length) {
+      // Laranja: da posição do motorista até a próxima casa. Preto: as casas seguintes até o fim.
+      passed = []
+      remaining = splitPolylineAtPosition(legs[0], currentBusLngLat?.[1], currentBusLngLat?.[0], { isLngLat: true })
+        .remaining
+      later = legs.slice(1).flatMap((leg, index) => (index ? leg.slice(1) : leg))
+    } else {
+      // Sem trajeto ao vivo (GPS desligado ou serviço de rotas fora): usa o percurso planejado,
+      // laranja até a próxima parada e preto depois dela.
+      ;({ passed, remaining } = splitPolylineAtPosition(
+        plannedCoordsLngLat(), currentBusLngLat?.[1], currentBusLngLat?.[0], { isLngLat: true },
+      ))
+      const pt = getNextStop?.()?.point_snapshot
+      if (pt?.latitude != null && pt?.longitude != null && remaining.length >= 2) {
+        const split = splitPolylineAtPosition(remaining, Number(pt.latitude), Number(pt.longitude), { isLngLat: true })
+        remaining = split.passed
+        later = split.remaining
+      }
+    }
     map.getSource('nr-route-passed')?.setData(makeLineFeature(passed))
+    map.getSource('nr-route-later')?.setData(makeLineFeature(later))
     map.getSource('nr-route-remaining')?.setData(makeLineFeature(remaining))
   }
 
@@ -78,15 +118,8 @@ export function useDriverMap3D({ mapEl, tracking, getSnapshot, getStops, is3d })
     }
 
     updateRouteGeometry()
-    if (!isVisible.value) return
-    map.easeTo({
-      center: nextLngLat,
-      bearing: is3d() ? tracking.bearing || 0 : 0,
-      pitch: is3d() ? 62 : 0,
-      zoom: is3d() ? 17.1 : 15.2,
-      duration: 1500,
-      easing: (t) => t * (2 - t),
-    })
+    if (!isVisible.value || !following.value) return
+    followCamera(nextLngLat)
   }
 
   function initMap() {
@@ -105,11 +138,27 @@ export function useDriverMap3D({ mapEl, tracking, getSnapshot, getStops, is3d })
       map = null
       return
     }
+    // Só gestos do usuário (têm originalEvent) soltam a câmera; os easeTo do próprio app não.
+    const release = (event) => {
+      if (event.originalEvent) following.value = false
+    }
+    map.on('dragstart', release)
+    map.on('rotatestart', release)
+    map.on('pitchstart', release)
+    map.on('zoomstart', release)
     mapCanvas = map.getCanvas()
     mapCanvas?.addEventListener('webglcontextlost', onContextLost)
 
     map.on('style.load', () => {
       styleReady = true
+      // Tema claro: fundo branco puro (o Positron vem levemente acinzentado).
+      if (currentDocumentTheme() === 'light' && map.getLayer('background')) {
+        map.setPaintProperty('background', 'background-color', '#ffffff')
+      }
+      // Menos detalhe para dirigir: sem o contorno de cada prédio.
+      for (const layer of map.getStyle().layers || []) {
+        if (layer['source-layer'] === 'building') map.setLayoutProperty(layer.id, 'visibility', 'none')
+      }
       ensureDriverRouteLayers(map)
       updateRouteGeometry()
       renderStopMarkers()
@@ -129,8 +178,10 @@ export function useDriverMap3D({ mapEl, tracking, getSnapshot, getStops, is3d })
     if (!visible) { stopAnim?.(); stopAnim = null }
   })
   watch(() => [getSnapshot()?.id, getStops()?.length], () => { updateRouteGeometry(); renderStopMarkers() })
+  watch(() => [getApproach?.(), getNextStop?.()?.id], updateRouteGeometry)
   watch(is3d, (mode3d) => {
-    map?.easeTo({ pitch: mode3d ? 62 : 0, bearing: mode3d ? tracking.bearing || 0 : 0, zoom: mode3d ? 17.1 : 15, duration: 600 })
+    if (following.value && currentBusLngLat) return followCamera(currentBusLngLat, 600)
+    map?.easeTo({ pitch: mode3d ? 62 : 0, bearing: mode3d ? tracking.bearing || 0 : 0, duration: 600 })
   })
   watch(() => [tracking.latitude, tracking.longitude], ([lat, lng]) => {
     if (map && lat != null && lng != null) animateBusTo([lng, lat])
@@ -147,4 +198,6 @@ export function useDriverMap3D({ mapEl, tracking, getSnapshot, getStops, is3d })
     map?.remove()
     map = busMarker = mapCanvas = themeObserver = stopAnim = null
   })
+
+  return { following, recenter }
 }

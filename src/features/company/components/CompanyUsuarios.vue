@@ -167,19 +167,18 @@ watch([scope, busy], ([currentScope, isBusy]) => {
 
 <style lang="scss" scoped>
 .btn-profile-link {
+  @include action-button;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 10px 18px;
-  border-radius: 10px;
   border: 1px solid var(--primary);
   background: var(--gradient-primary);
   color: var(--color-on-primary);
   font-size: 0.92rem;
   font-weight: 600;
   text-decoration: none;
-  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   box-shadow: var(--shadow-primary);
 }
 

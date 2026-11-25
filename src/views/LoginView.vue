@@ -235,7 +235,7 @@ const { isMobile } = useDeviceLayout()
   transition: transform $duration-slow $ease-spring;
 
   &:hover {
-    transform: rotate(-8deg) scale(1.08);
+    transform: none;
   }
 
   @include from($bp-desktop + 1px) {
@@ -322,6 +322,7 @@ const { isMobile } = useDeviceLayout()
 }
 
 .btn-create {
+  @include action-button;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -331,15 +332,10 @@ const { isMobile } = useDeviceLayout()
   gap: $space-2;
   width: 100%;
   padding: $space-3 $space-4;
-  border-radius: $radius-md;
   outline: 1.5px solid var(--primary);
   outline-offset: -1.5px;
   color: var(--primary-text);
   font-weight: $font-semibold;
-  transition:
-    color 0.35s $ease-fluid,
-    transform $duration-normal $ease-fluid,
-    box-shadow $duration-slow $ease-fluid;
 
   // Preenchimento laranja que entra da esquerda.
   &::before {

@@ -242,8 +242,8 @@ onMounted(() => {
 }
 
 .btn-action {
+  @include action-button;
   padding: 6px 12px;
-  border-radius: 8px;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;

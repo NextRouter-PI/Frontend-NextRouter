@@ -191,7 +191,7 @@ watch(
   border-radius: $radius-round;
   overflow: hidden;
   @include flex-center;
-  color: var(--text);
+  color: var(--side-text);
   background: transparent;
   border: 2px solid transparent;
   transition:
@@ -242,12 +242,23 @@ watch(
 }
 
 // Itens do menu lateral (o resto do menu fica em AppNavigation.vue).
+.app-sidebar:hover .sidebar-nav-item .nav-label,
+.app-sidebar:has(:focus-visible) .sidebar-nav-item .nav-label {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.3s ease 0.12s,
+    transform 0.36s cubic-bezier(0.25, 1, 0.5, 1) 0.12s;
+}
+
 .sidebar-nav-item {
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 10px;
+  // 12px da sidebar + 11px aqui centram o ícone de 34px na coluna fechada de 80px.
+  padding: 8px 11px;
+  white-space: nowrap;
   border-radius: $radius-md;
   color: var(--side-muted);
   transition:
@@ -267,9 +278,16 @@ watch(
       transform $duration-normal $ease-fluid;
   }
 
+  // Some com a sidebar fechada; aparece quando ela abre (hover/foco em AppNavigation).
   .nav-label {
     font-size: $text-md;
     font-weight: $font-semibold;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
   }
 
   &:hover {

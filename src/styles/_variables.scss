@@ -36,8 +36,8 @@ $font-extrabold: 800;
 // Dimensões de layout
 $header-height: 58px;
 $bottom-nav-height: 60px;
-$sidebar-width: 248px;
-$sidebar-width-expanded: 224px;
+$sidebar-width: 80px; // fechada (só ícones); o conteúdo da página fica ao lado dela
+$sidebar-width-expanded: 248px; // aberta ao passar o mouse, por cima do conteúdo
 $container-sm: 520px;
 $container-md: 760px;
 $container-lg: 840px;
