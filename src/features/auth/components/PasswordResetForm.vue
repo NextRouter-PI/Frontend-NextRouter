@@ -7,6 +7,13 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import CodeInput from '@/components/ui/CodeInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import ResendCodeButton from '@/components/ui/ResendCodeButton.vue'
+import PasswordStrength from '@/components/ui/PasswordStrength.vue'
+
+const STEPS = [
+  { icon: 'mdi-email-outline', label: 'E-mail' },
+  { icon: 'mdi-shield-lock-outline', label: 'Código' },
+  { icon: 'mdi-lock-reset', label: 'Nova senha' },
+]
 
 const props = defineProps({
   accountEmail: { type: String, default: '' },
@@ -41,23 +48,37 @@ watch(etapa, (value) => {
 
 <template>
   <div class="reset-password-form">
+    <!-- As três etapas da recuperação, com a atual em destaque. -->
+    <ol v-if="etapa < 4" class="reset-steps" aria-label="Etapas da recuperação">
+      <li
+        v-for="(step, i) in STEPS"
+        :key="step.label"
+        :class="{ active: etapa === i + 1, done: etapa > i + 1 }"
+        :aria-current="etapa === i + 1 ? 'step' : undefined"
+      >
+        <span class="reset-step-dot"><BaseIcon :name="etapa > i + 1 ? 'mdi-check-bold' : step.icon" /></span>
+        <span class="reset-step-label">{{ step.label }}</span>
+      </li>
+    </ol>
+
     <Transition name="fade-slide" mode="out-in">
       <form v-if="etapa === 1" key="step-1" class="reset-step" @submit.prevent="solicitarCodigo">
-        <div class="step-intro">
-          <BaseIcon name="mdi-email-fast-outline" class="step-icon" />
-          <p>
-            Digite seu e-mail para enviarmos um código de verificação. A confirmação encerra as sessões anteriores.
-          </p>
-        </div>
+        <p class="step-desc">
+          Digite seu e-mail para enviarmos um <strong>código de verificação</strong>. A confirmação encerra as
+          sessões anteriores.
+        </p>
 
         <BaseInput
           v-model="email"
           label="E-mail"
           type="email"
           autocomplete="email"
+          placeholder="seu@email.com"
           required
           :disabled="ocupado || Boolean(accountEmail)"
-        />
+        >
+          <template #prefix><BaseIcon name="mdi-email-outline" /></template>
+        </BaseInput>
 
         <BaseButton type="submit" block size="lg" :loading="ocupado">
           {{ ocupado ? 'Enviando...' : 'Enviar código' }}
@@ -103,7 +124,10 @@ watch(etapa, (value) => {
           autocomplete="new-password"
           required
           :disabled="ocupado"
-        />
+        >
+          <template #prefix><BaseIcon name="mdi-lock-outline" /></template>
+        </BaseInput>
+        <PasswordStrength :password="novaSenha" />
 
         <BaseInput
           v-model="confirmarSenha"
@@ -112,7 +136,9 @@ watch(etapa, (value) => {
           autocomplete="new-password"
           required
           :disabled="ocupado"
-        />
+        >
+          <template #prefix><BaseIcon name="mdi-lock-reset" /></template>
+        </BaseInput>
 
         <BaseButton type="submit" block size="lg" :loading="ocupado">
           {{ ocupado ? 'Salvando...' : 'Confirmar nova senha' }}
@@ -148,24 +174,76 @@ watch(etapa, (value) => {
   gap: $space-3;
 }
 
-.step-intro {
+// Indicador das etapas: ícones ligados por um risco que enche de laranja.
+.reset-steps {
   display: flex;
-  align-items: flex-start;
-  gap: $space-3;
-  margin-bottom: $space-2;
+  margin: 0 0 $space-5;
+  padding: 0;
+  list-style: none;
 
-  p {
-    font-size: $text-md;
-    line-height: 1.5;
-    color: var(--text-muted);
+  li {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+
+    &:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 21px;
+      left: calc(50% + 28px);
+      right: calc(-50% + 28px);
+      height: 3px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--primary) 50%, var(--border) 50%) 100% 0 / 200% 100%;
+      transition: background-position 0.6s $ease-fluid;
+    }
+
+    &.done::after {
+      background-position: 0 0;
+    }
   }
 }
 
-.step-icon {
-  font-size: 2rem;
-  color: var(--primary);
-  flex-shrink: 0;
-  line-height: 1;
+.reset-step-dot {
+  @include flex-center;
+  width: 44px;
+  height: 44px;
+  border-radius: $radius-round;
+  border: 2px solid var(--border);
+  background: var(--color-surface);
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  transition:
+    background-color 0.35s $ease-fluid,
+    border-color 0.35s $ease-fluid,
+    color 0.35s $ease-fluid,
+    transform 0.45s $ease-spring;
+
+  .active & {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: scale(1.08);
+  }
+
+  .done & {
+    border-color: var(--primary);
+    background: var(--gradient-brand);
+    color: #fff;
+  }
+}
+
+.reset-step-label {
+  font-size: $text-xs;
+  font-weight: $font-semibold;
+  color: var(--text-muted);
+
+  .active &,
+  .done & {
+    color: var(--text);
+  }
 }
 
 .step-desc {

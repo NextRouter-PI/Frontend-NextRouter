@@ -88,7 +88,7 @@ const {
         :aria-invalid="error ? true : undefined"
         :aria-describedby="error ? `${fieldId}-error` : undefined"
         class="base-field-input"
-        :class="{ 'has-trailing': isPassword || Boolean($slots.suffix) }"
+        :class="{ 'has-trailing': isPassword || Boolean($slots.suffix), 'has-prefix': Boolean($slots.prefix) }"
         @focus="handleFocus"
         @input="handleInput"
         @blur="handleBlur"
@@ -208,8 +208,18 @@ const {
     align-items: center;
     color: var(--text-muted);
 
+    // Ícone dentro do campo, à esquerda; acende quando o campo está em foco.
     &.is-prefix {
-      margin-right: $space-2;
+      position: absolute;
+      left: 14px;
+      z-index: 1;
+      font-size: 1.15rem;
+      pointer-events: none;
+      transition: color $duration-normal $ease-fluid;
+
+      .is-focused & {
+        color: var(--primary);
+      }
     }
 
     &.is-suffix {
@@ -236,6 +246,10 @@ const {
     line-height: 1.35;
   }
 
+  .base-field-control .base-field-input.has-prefix {
+    padding-left: 42px;
+  }
+
   &.variant-outlined {
     .base-field-input {
       padding: 11px 14px;
@@ -248,6 +262,7 @@ const {
       &:focus-visible {
         outline: 2px solid var(--primary);
         outline-offset: -2px;
+        box-shadow: 0 0 0 4px var(--color-primary-soft);
       }
 
       &:disabled {

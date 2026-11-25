@@ -5,6 +5,10 @@
   --primary: #ec8314;
   --primary-hover: #d4710c;
   --primary-light: #f59a32;
+  // Laranja escurecido para texto e links sobre fundo claro (contraste AA).
+  --primary-text: #b35900;
+  // Laranja para títulos grandes: vivo, mas com contraste mínimo (3:1) sobre o fundo claro.
+  --primary-strong: #d06400;
   --color-on-primary: #ffffff;
   --color-primary-soft: rgba(236, 131, 20, 0.08);
   --color-primary-tint: rgba(236, 131, 20, 0.14);
@@ -25,6 +29,15 @@
   --chrome-text: #f5f5f7;
   --chrome-muted: #a1a1aa;
   --chrome-hover: rgba(255, 255, 255, 0.06);
+  // Menu lateral e barra de baixo: acompanham o tema (branco no claro, preto no escuro).
+  --side-bg: #ffffff;
+  --side-text: #1c1c1e;
+  --side-muted: #5f5f68;
+  --side-faint: #9a9aa3;
+  --side-hover: #f4f4f6;
+  --side-line: #ececef;
+  --side-chip: #f1f1f3;
+  --chrome-line: linear-gradient(90deg, transparent, var(--primary) 20%, var(--primary-light) 50%, var(--primary) 80%, transparent);
 
   // Bordas
   --border: #e4e4e7;
@@ -41,8 +54,13 @@
   // Gradientes e sombras
   --gradient-primary: linear-gradient(135deg, #ec8314, #f59a32);
   --gradient-primary-hover: linear-gradient(90deg, rgba(236, 131, 20, 0.16), transparent);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 14px rgba(0, 0, 0, 0.05);
-  --shadow-primary: 0 2px 8px rgba(0, 0, 0, 0.14);
+  --shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 6px 20px -8px rgba(28, 25, 23, 0.1);
+  --shadow-hover: 0 2px 4px rgba(28, 25, 23, 0.05), 0 18px 40px -16px rgba(28, 25, 23, 0.22);
+  --shadow-primary: 0 8px 22px -8px rgba(236, 131, 20, 0.6);
+  --glow-primary: 0 0 0 4px rgba(236, 131, 20, 0.14);
+  --gradient-brand: linear-gradient(120deg, #ec8314 0%, #f59a32 45%, #ffb347 100%);
+  --ambient: radial-gradient(60rem 30rem at 100% -10%, rgba(236, 131, 20, 0.09), transparent 60%),
+    radial-gradient(40rem 26rem at -10% 110%, rgba(245, 154, 50, 0.06), transparent 60%);
 
   // Layout e movimento (espelham variáveis SCSS para uso em calc/runtime e safe-areas mobile/Tauri)
   --safe-top: env(safe-area-inset-top, 0px);
@@ -57,6 +75,8 @@
 }
 
 .dark {
+  --primary-text: #f59a32;
+  --primary-strong: #f59a32;
   --bg: #111113;
   --altbg: #18181b;
   --color-surface: #1c1c1e;
@@ -71,11 +91,23 @@
   --chrome-text: #f5f5f7;
   --chrome-muted: #a1a1aa;
 
+  --side-bg: #141416;
+  --side-text: #f5f5f7;
+  --side-muted: #a1a1aa;
+  --side-faint: #6b6b73;
+  --side-hover: #232326;
+  --side-line: #2a2a2e;
+  --side-chip: #2a2a2e;
+
   --border: #2e2e32;
   --color-primary-soft: rgba(236, 131, 20, 0.12);
   --color-primary-tint: rgba(236, 131, 20, 0.18);
   --gradient-primary-hover: linear-gradient(90deg, rgba(236, 131, 20, 0.18), transparent);
 
-  --shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-primary: 0 2px 10px rgba(0, 0, 0, 0.38);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -10px rgba(0, 0, 0, 0.6);
+  --shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.45), 0 22px 44px -18px rgba(0, 0, 0, 0.8);
+  --shadow-primary: 0 8px 24px -8px rgba(236, 131, 20, 0.55);
+  --glow-primary: 0 0 0 4px rgba(236, 131, 20, 0.2);
+  --ambient: radial-gradient(60rem 30rem at 100% -10%, rgba(236, 131, 20, 0.12), transparent 60%),
+    radial-gradient(40rem 26rem at -10% 110%, rgba(245, 154, 50, 0.07), transparent 60%);
 }

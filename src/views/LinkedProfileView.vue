@@ -1,4 +1,5 @@
 <script setup>
+import PageHeader from '@/components/ui/PageHeader.vue'
 import { useTemplateRef } from 'vue'
 import { DEFAULT_EMPTY_LABEL, ROUTE_PATHS, USER_ROLES } from '@/constants'
 import { state } from '@/stores/state'
@@ -18,13 +19,19 @@ const { driver, profile, loading, error, hasCoordinates, avatarUrl, initials, re
 <template>
   <div class="account-workspace" :class="{ authenticated: state.logged }">
     <div class="account-content">
-      <div class="profile-topbar">
-        <h1>Perfil do titular vinculado</h1>
-        <RouterLink :to="ROUTE_PATHS.USERS" class="back-btn">
-          <BaseIcon name="mdi-arrow-left" />
-          <span>Voltar aos vínculos</span>
-        </RouterLink>
-      </div>
+      <PageHeader
+        title="Perfil do titular vinculado"
+        highlight="vinculado"
+        eyebrow="Usuários e vínculos"
+        icon="mdi-account-group"
+      >
+        <template #actions>
+          <RouterLink :to="ROUTE_PATHS.USERS" class="banner-back">
+            <BaseIcon name="mdi-arrow-left" />
+            <span>Voltar aos vínculos</span>
+          </RouterLink>
+        </template>
+      </PageHeader>
 
       <SkeletonCard v-if="loading" :count="2" avatar />
       <div role="alert"><ErrorMessage :message="error" /></div>
@@ -172,5 +179,25 @@ const { driver, profile, loading, error, hasCoordinates, avatarUrl, initials, re
   border-radius: $radius-md;
   border: 1px solid var(--border);
   z-index: $z-base;
+}
+
+.banner-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--color-surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background-color 0.22s ease, border-color 0.22s ease;
+
+  &:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+  }
 }
 </style>

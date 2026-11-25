@@ -19,6 +19,12 @@ export function navigationItems(role) {
     ...(isCompany
       ? [
           {
+            to: ROUTE_PATHS.LIVE_OPERATIONS,
+            matchPrefix: ROUTE_PATHS.LIVE_OPERATIONS,
+            title: 'Ao vivo',
+            icon: 'mdi-radar',
+          },
+          {
             to: ROUTE_PATHS.OPERATIONAL_POINTS,
             matchPrefix: ROUTE_PATHS.OPERATIONAL_POINTS,
             title: 'Pontos',

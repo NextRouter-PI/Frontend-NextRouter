@@ -32,6 +32,22 @@ export function usePassengerHomeLive({ scope }) {
   const participationStatus = computed(() => transportState.passenger?.currentParticipation?.status || '')
   const participationStatusLabel = computed(() => PARTICIPATION_STATUS_LABELS[participationStatus.value] || '')
   const passengerPoint = computed(() => transportState.passenger?.pointSnapshot || null)
+  // Previsão calculada pelo servidor: horário na parada dele, atraso e paradas antes dele.
+  const timing = computed(() => transportState.passenger?.currentParticipation?.timing || null)
+  const hhmm = (iso) => (iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '')
+  const timingInfo = computed(() => {
+    const t = timing.value
+    if (!t) return null
+    const minutes = t.expected_at ? Math.max(0, Math.round((new Date(t.expected_at) - Date.now()) / 60000)) : null
+    return {
+      pickup: hhmm(t.expected_at || t.planned_at),
+      planned: hhmm(t.planned_at),
+      arrival: hhmm(t.arrival_expected_at),
+      minutes,
+      stopsAhead: t.stops_ahead,
+      delayMinutes: Math.round((t.delay_seconds || 0) / 60),
+    }
+  })
 
   const distanceToPointMeters = computed(() => {
     if (
@@ -51,6 +67,12 @@ export function usePassengerHomeLive({ scope }) {
   })
 
   const etaSummary = computed(() => {
+    const info = timingInfo.value
+    if (info?.pickup && participationStatus.value === 'allocated') {
+      const ahead = info.stopsAhead ? ` · faltam ${info.stopsAhead} ${info.stopsAhead === 1 ? 'parada' : 'paradas'} antes de você` : ' · você é a próxima parada'
+      const inMin = info.minutes != null ? ` (em ~${info.minutes} min)` : ''
+      return `Chega ao seu ponto às ${info.pickup}${inMin}${ahead}`
+    }
     if (distanceToPointMeters.value == null || participationStatus.value !== 'allocated') return ''
     const dist = formatDistanceLabel(distanceToPointMeters.value)
     const mins = estimateEtaMinutes(distanceToPointMeters.value)
@@ -133,6 +155,7 @@ export function usePassengerHomeLive({ scope }) {
     participationStatusLabel,
     passengerPoint,
     etaSummary,
+    timingInfo,
     mapsUrl,
     updatedAtLabel,
     startLivePolling,

@@ -1,6 +1,6 @@
 import { computed, shallowRef } from 'vue'
 import { useValidator } from '@/composables/useValidation'
-import { isCPF, isEmail, isStrongPassword, passwordMatch, requiredField } from '@/utils/validators'
+import { isCEP, isCPF, isEmail, isPhone, isStrongPassword, passwordMatch, requiredField } from '@/utils/validators'
 
 const MONTHS = [
   { value: '01', label: 'Janeiro' },
@@ -75,8 +75,31 @@ export function useSignUpPassengerDriverForm() {
     ])
   }
 
+  // Valida só os campos da etapa atual do formulário dividido.
+  function validarEtapa(form, etapa) {
+    const regras = {
+      1: [
+        { fn: () => requiredField(form.name, 'Nome completo'), field: 'name' },
+        { fn: () => requiredField(form.day, 'Dia de nascimento'), field: 'day' },
+        { fn: () => requiredField(form.month, 'Mês de nascimento'), field: 'month' },
+        { fn: () => requiredField(form.year, 'Ano de nascimento'), field: 'year' },
+        { fn: () => birthdayError(form), field: 'day' },
+        { fn: () => requiredField(form.cpf, 'CPF') || isCPF(form.cpf), field: 'cpf' },
+        { fn: () => isPhone(form.phone), field: 'phone' },
+      ],
+      2: [{ fn: () => requiredField(form.cep, 'CEP') || isCEP(form.cep), field: 'cep' }],
+      3: [
+        { fn: () => requiredField(form.email, 'Email') || isEmail(form.email), field: 'email' },
+        { fn: () => requiredField(form.password, 'Senha') || isStrongPassword(form.password), field: 'password' },
+        { fn: () => passwordMatch(form.password, form.confirmPassword, 'Senhas'), field: 'confirmPassword' },
+      ],
+    }
+    return validateForm(regras[etapa] || [])
+  }
+
   return {
     currentPage,
+    validarEtapa,
     isPasswordVisible,
     showPassword,
     clearErrors,

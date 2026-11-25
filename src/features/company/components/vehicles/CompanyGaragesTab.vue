@@ -1,13 +1,25 @@
 <script setup>
 import { computed, shallowRef } from 'vue'
+import { ROUTE_PATHS } from '@/constants'
 import { useTransporteStore } from '@/stores/useTransporteStore'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
-import GarageFormCard from '@/features/company/components/vehicles/GarageFormCard.vue'
+import ListToolbar from '@/components/ui/ListToolbar.vue'
 
 const store = useTransporteStore()
-const editingPoint = shallowRef(null)
+const busca = shallowRef('')
+
+// Busca por nome, rua, bairro ou cidade.
+const garagensFiltradas = computed(() => {
+  const termo = busca.value.trim().toLowerCase()
+  if (!termo) return store.garagens
+  return store.garagens.filter((p) =>
+    [p.name, p.street, p.neighborhood, p.city].some((v) => String(v || '').toLowerCase().includes(termo)),
+  )
+})
+
+const editPath = (id) => ROUTE_PATHS.EDIT_GARAGE.replace(':id', id)
 
 const vehiclePlatesByGarageId = computed(() => {
   const map = new Map()
@@ -23,10 +35,12 @@ const vehiclePlatesByGarageId = computed(() => {
 
 <template>
   <div class="garages-tab">
-    <GarageFormCard
-      :editing-point="editingPoint"
-      @saved="editingPoint = null"
-      @cancel-edit="editingPoint = null"
+    <ListToolbar
+      v-model="busca"
+      placeholder="Busque por nome, bairro ou cidade..."
+      search-label="Buscar garagem"
+      action-label="Adicionar garagem"
+      :action-to="ROUTE_PATHS.REGISTER_GARAGE"
     />
 
     <Transition name="fade-slide" mode="out-in">
@@ -35,18 +49,25 @@ const vehiclePlatesByGarageId = computed(() => {
         v-else-if="!store.garagens.length"
         key="empty"
         icon="mdi-garage-outline"
-        description="Nenhuma garagem cadastrada ainda. Cadastre uma garagem acima para vinculá-la aos veículos da frota."
+        description="Nenhuma garagem cadastrada ainda. Use “Adicionar garagem” para vincular os veículos a ela."
+      />
+      <EmptyState
+        v-else-if="!garagensFiltradas.length"
+        key="no-match"
+        icon="mdi-magnify"
+        description="Nenhuma garagem encontrada para essa busca."
       />
 
       <div v-else key="list" class="garages-list">
         <BaseCard
-          v-for="ponto in store.garagens"
+          interactive
+          v-for="ponto in garagensFiltradas"
           :key="ponto.id"
-          :title="`${ponto.name} · #${ponto.id}`"
+          :title="ponto.name"
           :subtitle="`${ponto.street}, ${ponto.number}${ponto.complement ? ` (${ponto.complement})` : ''} — ${ponto.neighborhood}, ${ponto.city}/${ponto.state} · CEP ${ponto.cep}`"
         >
           <template #actions>
-            <BaseButton variant="outline" size="sm" @click="editingPoint = ponto">Editar</BaseButton>
+            <BaseButton variant="outline" size="sm" icon="mdi-pencil-outline" @click="$router.push(editPath(ponto.id))">Editar</BaseButton>
           </template>
 
           <div class="card-details">

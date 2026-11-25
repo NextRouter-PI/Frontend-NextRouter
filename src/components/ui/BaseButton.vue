@@ -47,6 +47,10 @@ const emit = defineEmits(['click'])
     transform $duration-fast $ease-fluid,
     box-shadow $duration-normal $ease-fluid;
 
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
   &:active:not(:disabled) {
     transform: scale(0.97);
   }
@@ -72,6 +76,23 @@ const emit = defineEmits(['click'])
     gap: $space-1;
   }
 
+  // Padrão de todos os botões: sobe 1px no hover, o ícone dá um girinho e o clique afunda.
+  :deep(.base-icon) {
+    transition: transform 0.45s $ease-spring;
+  }
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+
+    :deep(.base-icon:not(.mdi-spin)) {
+      transform: rotate(-8deg) scale(1.1);
+    }
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
   &.size-sm {
     padding: $space-2 14px;
     font-size: $text-sm;
@@ -88,12 +109,34 @@ const emit = defineEmits(['click'])
   }
 
   &.variant-primary {
-    background: var(--primary);
+    background: var(--gradient-brand);
+    background-size: 160% 100%;
+    background-position: 0% 0%;
     color: var(--color-on-primary);
 
+    // Faixa de brilho que atravessa o botão no hover.
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+      transform: translateX(-120%);
+      transition: transform 0.7s $ease-fluid;
+    }
+
     &:hover:not(:disabled) {
-      background: var(--primary-hover);
+      background-position: 100% 0%;
       box-shadow: var(--shadow-primary);
+      transform: translateY(-1px);
+
+      &::after {
+        transform: translateX(120%);
+      }
+    }
+
+    &:active:not(:disabled) {
+      transform: scale(0.97);
     }
   }
 
@@ -105,6 +148,7 @@ const emit = defineEmits(['click'])
     &:hover:not(:disabled) {
       background: var(--primary);
       color: var(--color-on-primary);
+      box-shadow: var(--shadow-primary);
     }
   }
 

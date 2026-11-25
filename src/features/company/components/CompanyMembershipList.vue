@@ -56,7 +56,7 @@ defineExpose({ resetDecision })
 
 <template>
   <section aria-label="Pedidos e vínculos da empresa">
-    <p v-if="!records.length" role="status">Nenhum registro neste estado.</p>
+    <p v-if="!records.length" role="status" class="membership-empty">Nenhum registro neste estado.</p>
     <p v-else-if="!filteredRecords.length" role="status">Nenhum nome corresponde ao filtro nesta página.</p>
     <TransitionGroup name="list-stagger" tag="div" class="membership-list">
       <MembershipCard

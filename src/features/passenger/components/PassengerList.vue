@@ -1,8 +1,9 @@
 <script setup>
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useTransportQuestionnaire } from '@/features/transport/composables/useTransportQuestionnaire'
 import { useToast } from '@/composables/useToast'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import StatTile from '@/components/ui/StatTile.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import PassengerRoutesCard from '@/features/transport/components/PassengerRoutesCard.vue'
@@ -30,6 +31,18 @@ const {
   withdrawLeg,
 } = useTransportQuestionnaire()
 
+// Resumo dos dias de atendimento: quantos estão abertos e quantos você já respondeu.
+const resumo = computed(() => {
+  const list = enrichedEligibilities.value
+  const abertos = list.filter((e) => ['normal', 'extension'].includes(e.dayData?.window))
+  return {
+    dias: list.length,
+    abertos: abertos.length,
+    respondidos: list.filter((e) => e.response?.answered_at).length,
+    pendentes: abertos.filter((e) => !e.response?.answered_at).length,
+  }
+})
+
 watch(notice, (msg) => {
   if (msg) showToast(msg, 'success')
 })
@@ -41,9 +54,11 @@ watch(error, (msg) => {
 <template>
   <div class="passenger-list-page">
     <PageHeader
-      title="Atendimentos e Respostas por Data"
-      subtitle="Intenção enviada, pedido na prorrogação, alocação e viagem publicada são estados distintos. Ida e retorno são independentes e usam somente seus serviços autorizados."
-      accent
+      title="Seus atendimentos"
+      highlight="atendimentos"
+      eyebrow="Passageiro"
+      icon="mdi-seat-passenger"
+      subtitle="Confirme ida e retorno de cada dia. Enviar a resposta não garante vaga: a empresa ainda aloca e publica a viagem."
     >
       <template #actions>
         <BaseButton
@@ -58,6 +73,27 @@ watch(error, (msg) => {
         </BaseButton>
       </template>
     </PageHeader>
+
+    <section class="stat-grid" aria-label="Resumo dos atendimentos">
+      <StatTile icon="mdi-calendar-clock" label="Dias de atendimento" :value="loading ? null : resumo.dias" :loading="loading" />
+      <StatTile icon="mdi-calendar-check-outline" label="Abertos para resposta" :value="loading ? null : resumo.abertos" :loading="loading" tone="blue" />
+      <StatTile
+        icon="mdi-check-circle-outline"
+        label="Respondidos"
+        :value="loading ? null : resumo.respondidos"
+        :total="loading ? null : resumo.dias || null"
+        :loading="loading"
+        tone="green"
+      />
+      <StatTile
+        icon="mdi-alert-circle-outline"
+        label="Faltam responder"
+        :value="loading ? null : resumo.pendentes"
+        :loading="loading"
+        tone="gray"
+        hint="Janelas abertas sem resposta"
+      />
+    </section>
 
     <PassengerRoutesCard />
 
@@ -111,6 +147,7 @@ watch(error, (msg) => {
 }
 
 .passenger-list-page {
+  --page-max: 1040px;
   @include section-container(120px);
 }
 </style>

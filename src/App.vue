@@ -13,6 +13,7 @@ import AppTopBar from '@/components/layout/AppTopBar.vue'
 import AppNavigation from '@/components/layout/AppNavigation.vue'
 import ThemeButton from '@/components/ui/ThemeButton.vue'
 import LoadingScreen from '@/components/ui/LoadingScreen.vue'
+import PageCurtain from '@/components/layout/PageCurtain.vue'
 
 const { isMobile } = useDeviceLayout()
 const route = useRoute()
@@ -23,8 +24,15 @@ const { transitionName, isNavigating, isSlowNavigating, isRouterReady, isAuthSli
 
 const showBootLoader = computed(() => !isRouterReady.value || auth.checkingAuth)
 
-const showTopBar = computed(() => !route.meta?.hideChrome)
-const showNavigation = computed(() => auth.logged && !route.meta?.hideChrome)
+const showTopBar = computed(
+  () =>
+    !route.meta?.hideChrome &&
+    !(route.meta?.hideTopBarDesktop && !isMobile.value) &&
+    !(route.meta?.hideTopBarPublic && !auth.logged),
+)
+// Telas só de visitante (login, cadastro) nunca mostram o menu, nem no instante logo após entrar.
+const guestOnlyRoute = computed(() => route.meta?.requiresAuth === false && !route.meta?.allowAuthenticated)
+const showNavigation = computed(() => auth.logged && !route.meta?.hideChrome && !guestOnlyRoute.value)
 const isCompany = computed(() => auth.role === USER_ROLES.COMPANY)
 const navItems = computed(() => navigationItems(auth.role))
 const isUserRoute = computed(
@@ -46,6 +54,7 @@ watch(
 </script>
 
 <template>
+  <PageCurtain />
   <Transition name="fade-scale" mode="out-in">
     <div v-if="!showBootLoader" key="ready" class="app-layout">
       <div
@@ -67,6 +76,7 @@ watch(
       <AppTopBar
         v-if="showTopBar"
         :brand-to="brandDestination"
+        :logo-spin="auth.logged ? 'hover' : 'always'"
         :offset-for-sidebar="showNavigation && !isMobile"
       >
         <template #actions>
@@ -181,8 +191,8 @@ watch(
   border-radius: $radius-round;
   overflow: hidden;
   @include flex-center;
-  color: var(--chrome-text);
-  background: var(--chrome-hover);
+  color: var(--text);
+  background: transparent;
   border: 2px solid transparent;
   transition:
     background-color $duration-normal $ease-fluid,
@@ -231,67 +241,70 @@ watch(
   display: block;
 }
 
+// Itens do menu lateral (o resto do menu fica em AppNavigation.vue).
 .sidebar-nav-item {
   position: relative;
-  color: var(--chrome-muted);
   display: flex;
   align-items: center;
-  gap: 14px;
-  width: calc(100% - #{$space-4});
-  padding: 6px 10px;
-  border-radius: 12px;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: $radius-md;
+  color: var(--side-muted);
   transition:
     background-color $duration-normal $ease-fluid,
-    color $duration-normal $ease-fluid,
-    transform 0.18s $ease-fluid;
-
-  &:hover {
-    background: var(--chrome-hover);
-    color: var(--chrome-text);
-
-    .nav-icon-wrap {
-      color: var(--primary);
-      transform: scale(1.06);
-    }
-  }
-
-  &:active {
-    transform: scale(0.96);
-  }
+    color $duration-normal $ease-fluid;
 
   .nav-icon-wrap {
-    width: 42px;
-    height: 42px;
-    min-width: 42px;
-    min-height: 42px;
-    flex-shrink: 0;
-    aspect-ratio: 1;
-    border-radius: $radius-round;
     @include flex-center;
-    font-size: 22px;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: $radius-md;
+    font-size: 1.2rem;
     transition:
-      background-color 0.25s $ease-fluid,
-      color 0.25s $ease-fluid,
-      transform 0.25s $ease-fluid;
+      background-color $duration-normal $ease-fluid,
+      color $duration-normal $ease-fluid,
+      transform $duration-normal $ease-fluid;
   }
 
   .nav-label {
     font-size: $text-md;
     font-weight: $font-semibold;
-    opacity: 0;
-    transform: translateX(-8px);
-    transition:
-      opacity $duration-normal $ease-fluid,
-      transform $duration-normal $ease-fluid;
-    white-space: nowrap;
+  }
+
+  &:hover {
+    background: var(--side-hover);
+    color: var(--side-text);
+
+    .nav-icon-wrap {
+      color: var(--primary);
+      transform: translateX(2px);
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 
   &.active {
-    color: var(--chrome-text);
+    background: var(--side-hover);
+    color: var(--side-text);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -12px;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--primary);
+    }
 
     .nav-icon-wrap {
-      color: var(--color-on-primary);
       background: var(--primary);
+      color: #fff;
+      transform: none;
     }
   }
 }
@@ -300,7 +313,7 @@ watch(
   flex: 1 1 0;
   min-width: 0;
   position: relative;
-  color: var(--chrome-muted);
+  color: var(--side-muted);
   @include flex-center;
   height: 100%;
   -webkit-tap-highlight-color: transparent;
@@ -332,7 +345,7 @@ watch(
   }
 
   &:hover {
-    color: var(--chrome-text);
+    color: var(--side-text);
 
     &:not(.active) .nav-icon-wrap {
       transform: translateY(-2px);
@@ -347,10 +360,10 @@ watch(
     color: var(--primary);
 
     .nav-icon-wrap {
-      background: var(--primary);
+      background: var(--gradient-brand);
       color: var(--color-on-primary);
-      border-color: var(--chrome-bg);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+      border-color: var(--side-bg);
+      box-shadow: var(--shadow-primary);
       transform: translateY(-16px) scale(1.1);
 
       .mdi {

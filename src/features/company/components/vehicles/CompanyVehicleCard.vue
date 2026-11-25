@@ -7,10 +7,12 @@ defineProps({
 })
 
 const emit = defineEmits(['toggle-menu', 'edit', 'toggle-status'])
+
+const TIPO_LABELS = { van: 'Van', microbus: 'Micro-ônibus', bus: 'Ônibus', car: 'Carro', other: 'Outro' }
 </script>
 
 <template>
-  <BaseCard :title="veiculo.placa" :subtitle="veiculo.modelo || 'Modelo não informado'">
+  <BaseCard interactive :title="veiculo.placa" :subtitle="[TIPO_LABELS[veiculo.tipo], [veiculo.marca, veiculo.modelo].filter(Boolean).join(' ')].filter(Boolean).join(' · ') || 'Modelo não informado'">
     <template #actions>
       <div class="menu-container">
         <button
@@ -38,7 +40,7 @@ const emit = defineEmits(['toggle-menu', 'edit', 'toggle-status'])
     <div class="card-details">
       <div class="detail-item">
         <BaseIcon name="mdi-seat-passenger" />
-        <span>{{ veiculo.capacidade }} Lugares</span>
+        <span>{{ veiculo.capacidade }} passageiros<template v-if="veiculo.assentos"> · {{ veiculo.assentos }} assentos</template><template v-if="veiculo.ano"> · {{ veiculo.ano }}</template></span>
       </div>
       <div v-if="veiculo.ano" class="detail-item">
         <BaseIcon name="mdi-calendar-outline" />

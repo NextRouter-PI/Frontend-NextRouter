@@ -46,11 +46,12 @@ function formatStatus(status) {
         :class="{ unread: !n.read_at }"
       >
         <div class="card-row">
-          <div>
-            <strong>Aviso #{{ n.id }} · {{ formatKind(n.kind) }}</strong>
-            <span> ({{ formatResource(n.resource_type) }} #{{ n.resource_id }})</span>
+          <span class="notice-icon" aria-hidden="true"><BaseIcon name="mdi-bell-outline" /></span>
+          <div class="notice-copy">
+            <strong>{{ formatKind(n.kind) }}</strong>
+            <span v-if="formatResource(n.resource_type) !== formatKind(n.kind)" class="notice-resource"> · {{ formatResource(n.resource_type) }}</span>
             <p class="meta-line">
-              Estado informado: <strong>{{ formatStatus(n.payload?.status) }}</strong> · Criado em
+              Estado: <strong>{{ formatStatus(n.payload?.status) }}</strong> · Criado em
               {{ formatDateTimeBr(n.created_at) }}
               <span v-if="n.read_at"> · Lido em {{ formatDateTimeBr(n.read_at) }}</span>
             </p>
@@ -100,5 +101,27 @@ function formatStatus(status) {
   strong {
     color: var(--text);
   }
+}
+
+.notice-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: $radius-md;
+  background: var(--color-primary-soft);
+  color: var(--primary);
+  font-size: 1.15rem;
+}
+
+.notice-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice-resource {
+  color: var(--text-muted);
 }
 </style>

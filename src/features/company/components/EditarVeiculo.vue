@@ -20,9 +20,13 @@ const salvando = shallowRef(false)
 
 const veiculo = ref({
   placa: '',
+  tipo: 'van',
+  marca: '',
   modelo: '',
   ano: '',
+  assentos: '',
   capacidade: '',
+  observacoes: '',
   garagePointId: '',
   cor: '',
   status: 'Ativo',
@@ -37,7 +41,11 @@ onMounted(async () => {
   if (encontrado) {
     veiculo.value = {
       placa: encontrado.placa,
+      tipo: encontrado.tipo,
+      marca: encontrado.marca,
       modelo: encontrado.modelo,
+      assentos: encontrado.assentos,
+      observacoes: encontrado.observacoes,
       ano: encontrado.ano,
       capacidade: encontrado.capacidade,
       garagePointId: encontrado.garagePointId ?? '',

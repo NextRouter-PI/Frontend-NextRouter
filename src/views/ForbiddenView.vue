@@ -144,4 +144,6 @@ h1 {
 .btn-outline:hover {
   background: var(--altbg);
 }
+
+@include status-page-skin;
 </style>

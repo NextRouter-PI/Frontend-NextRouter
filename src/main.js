@@ -5,12 +5,14 @@ import '@/styles/main.scss'
 
 import App from '@/App.vue'
 import BaseIcon from '@/components/ui/BaseIcon.vue'
+import { revealDirective } from '@/composables/revealDirective'
 import router from '@/router'
 import { http } from '@/api/client'
 import { retireLegacyCaches, retireLegacyCredentials } from './legacyPwa.js'
 
 const app = createApp(App)
 app.component('BaseIcon', BaseIcon)
+app.directive('reveal', revealDirective)
 
 // Uma troca de conta em outra aba descarta também os dados privados das telas antigas.
 http.events.addEventListener('external-changed', () => window.location.reload())

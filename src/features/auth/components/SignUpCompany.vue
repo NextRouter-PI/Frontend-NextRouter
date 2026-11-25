@@ -31,8 +31,9 @@ watch(
   },
 )
 
+// Revisão e código de e-mail formam a última etapa visível ("Confirmação").
 const stepperCurrent = computed(() =>
-  currentPage.value <= 2 ? currentPage.value : currentPage.value <= 4 ? 3 : 4,
+  Math.min(currentPage.value, 4),
 )
 const reviewSections = computed(() => buildCompanyReviewSections({ page1Form, page3Form, files }))
 const activeErrors = computed(() => [erroCodigo.value, errorMessage.value, registerState.state.error])
@@ -46,8 +47,9 @@ function goBack() {
   <SignUpWizard
     title-prefix="Cadastro de "
     title-highlight="Empresa"
-    :stepper-steps="3"
+    :stepper-steps="4"
     :stepper-current="stepperCurrent"
+    :stepper-labels="['Empresa', 'Documentos', 'Responsável', 'Confirmação']"
     :success="registerState.state.success"
     success-title="Conta empresarial criada!"
     success-message="O cadastro da empresa aguarda moderação. Criar a conta não significa aprovação nem cria vínculos."

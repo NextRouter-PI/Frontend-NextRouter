@@ -18,6 +18,8 @@ const emit = defineEmits(['toggle-3d'])
         {{ hud.subtitle }}
         <template v-if="hud.distanceLabel"> · {{ hud.distanceLabel }}</template>
         <template v-if="hud.etaLabel"> ({{ hud.etaLabel }})</template>
+        <template v-if="hud.expectedLabel"> · previsto {{ hud.expectedLabel }}</template>
+        <template v-if="hud.delayMinutes > 0"> · {{ hud.delayMinutes }} min de atraso</template>
       </span>
     </div>
     <button

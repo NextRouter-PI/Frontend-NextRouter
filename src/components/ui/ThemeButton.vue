@@ -39,15 +39,48 @@ function toggleTheme() {
   aspect-ratio: 1;
   border-radius: $radius-round;
   @include flex-center;
+  position: relative;
   background: transparent;
   color: var(--primary);
   transition:
     background-color $duration-normal $ease-fluid,
-    transform $duration-normal $ease-fluid;
+    color $duration-normal $ease-fluid,
+    box-shadow $duration-slow $ease-fluid,
+    transform $duration-slow $ease-spring;
 
-  &:hover {
-    background: var(--color-primary-tint);
-    transform: scale(1.06);
+  // Anel que se expande ao passar o mouse.
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid var(--primary);
+    opacity: 0;
+    transform: scale(0.6);
+    transition:
+      opacity $duration-normal $ease-fluid,
+      transform $duration-slow $ease-spring;
+  }
+
+  .mdi {
+    transition: transform 0.6s $ease-spring;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: var(--gradient-brand);
+    color: var(--color-on-primary);
+    box-shadow: var(--shadow-primary);
+    transform: scale(1.1);
+
+    &::after {
+      opacity: 0.45;
+      transform: scale(1.35);
+    }
+
+    .mdi {
+      transform: rotate(-25deg);
+    }
   }
 
   &:active {

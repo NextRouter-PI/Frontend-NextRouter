@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { useRotasStore } from '@/stores/useRotasStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useDatedOperationCoordinator } from '@/features/company/composables/useDatedOperationCoordinator'
@@ -20,6 +20,9 @@ import ServiceDaysListSection from './ServiceDaysListSection.vue'
 import RouteCalculationModal from './RouteCalculationModal.vue'
 
 const emit = defineEmits(['toast'])
+
+// Os formulários de lote/cancelamento ficam fechados: abrem pelo botão da barra de ações.
+const showBatch = shallowRef(false)
 
 const store = useRotasStore()
 const scope = useAccountScope()
@@ -71,12 +74,26 @@ const {
 
 <template>
   <div class="operation-tab">
-    <BatchHorizonCard
-      :grupos="store.grupos"
-      :busy="busy"
-      @generate-horizon="handleGenerateHorizon"
-      @cancel-date="handleCancelDate"
-    />
+    <div class="operation-actions">
+      <div class="operation-actions-copy">
+        <strong>Dias de atendimento</strong>
+        <span>{{ store.diasAtendimento.length }} dias carregados · filtre, revise e publique as viagens.</span>
+      </div>
+      <button type="button" class="operation-add" :class="{ open: showBatch }" @click="showBatch = !showBatch">
+        <BaseIcon :name="showBatch ? 'mdi-close' : 'mdi-plus'" />
+        {{ showBatch ? 'Fechar' : 'Aplicar atendimentos ou cancelar data' }}
+      </button>
+    </div>
+
+    <Transition name="fade-slide">
+      <BatchHorizonCard
+        v-if="showBatch"
+        :grupos="store.grupos"
+        :busy="busy"
+        @generate-horizon="handleGenerateHorizon"
+        @cancel-date="handleCancelDate"
+      />
+    </Transition>
 
     <OperationFiltersCard
       v-model:group-id="filtroGrupoId"
@@ -146,5 +163,60 @@ const {
   display: flex;
   flex-direction: column;
   gap: $space-4;
+}
+
+.operation-actions {
+  @include surface-card($space-4, $radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: $space-3;
+}
+
+.operation-actions-copy {
+  display: flex;
+  flex-direction: column;
+
+  span {
+    font-size: $text-sm;
+    color: var(--text-muted);
+  }
+}
+
+.operation-add {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  height: 44px;
+  padding: 0 $space-5;
+  border-radius: $radius-md;
+  background: var(--gradient-brand);
+  color: var(--color-on-primary);
+  font-weight: $font-bold;
+  box-shadow: var(--shadow-primary);
+  transition:
+    transform $duration-normal $ease-fluid,
+    box-shadow $duration-normal $ease-fluid;
+
+  .mdi {
+    font-size: 1.2rem;
+    transition: transform $duration-slow $ease-spring;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+
+    .mdi {
+      transform: rotate(90deg);
+    }
+  }
+
+  &.open {
+    background: var(--color-surface);
+    color: var(--text);
+    outline: 1.5px solid var(--border);
+    box-shadow: none;
+  }
 }
 </style>

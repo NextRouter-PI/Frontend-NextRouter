@@ -28,6 +28,32 @@
   border-radius: $radius;
   padding: $padding;
   box-shadow: var(--shadow);
+  transition:
+    outline-color $duration-normal $ease-fluid,
+    box-shadow $duration-slow $ease-fluid,
+    background-color $duration-normal $ease-fluid;
+
+  @media (hover: hover) {
+    &:hover {
+      outline-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+      box-shadow: var(--shadow-hover);
+    }
+  }
+}
+
+// Card clicável: além do realce, sobe levemente no hover.
+@mixin lift-on-hover {
+  transition:
+    transform $duration-slow $ease-fluid,
+    box-shadow $duration-slow $ease-fluid,
+    outline-color $duration-normal $ease-fluid;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+    }
+  }
 }
 
 @mixin focus-ring($offset: 2px) {
@@ -78,17 +104,66 @@
   }
 }
 
+// Padrão de hover dos cartões clicáveis do app: sobe 3px, ganha sombra e contorno laranja,
+// e o ícone indicado dá um "girinho" (inclina e cresce um pouco). Use em todo cartão clicável.
+@mixin hover-card($icon: null) {
+  transition:
+    transform $duration-slow $ease-fluid,
+    box-shadow $duration-slow $ease-fluid,
+    outline-color $duration-normal $ease-fluid,
+    border-color $duration-normal $ease-fluid;
+
+  @if $icon {
+    #{$icon} {
+      transition: transform 0.45s $ease-spring;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-hover);
+    outline-color: var(--primary);
+    border-color: var(--primary);
+
+    @if $icon {
+      #{$icon} {
+        transform: rotate(-8deg) scale(1.08);
+      }
+    }
+  }
+
+  &:active {
+    transform: translateY(-1px) scale(0.99);
+  }
+}
+
 @mixin section-container($bottom: 104px) {
   width: 100%;
-  max-width: $container-md;
+  // Páginas de painel podem alargar com --page-max (o banner acompanha).
+  max-width: var(--page-max, #{$container-md});
   margin: 0 auto;
-  padding: $space-5 $space-4 $bottom;
+  // --page-pad-top: o banner do PageHeader sobe esse tanto para encostar na barra superior.
+  --page-pad-top: #{$space-5};
+  padding: var(--page-pad-top) $space-4 $bottom;
   display: flex;
   flex-direction: column;
   gap: $space-4;
 
+  // Os blocos da página entram em cascata ao abrir a tela. Só opacidade: transform aqui
+  // viraria referência para filhos position: fixed (FAB, barras) durante a animação.
+  > * {
+    animation: fade-in $duration-reveal $ease-fluid backwards;
+  }
+
+  @for $i from 2 through 8 {
+    > :nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 60ms};
+    }
+  }
+
   @include from($bp-desktop + 1px) {
-    padding: $space-6 $space-6 $space-10;
+    --page-pad-top: #{$space-6};
+    padding: var(--page-pad-top) $space-6 $space-10;
   }
 }
 
@@ -96,4 +171,42 @@
   overflow-x: clip;
   padding: 4px;
   margin: -4px;
+}
+
+// Visual imersivo das telas 404/403: foto escurecida, card de vidro e código em degradê.
+@mixin status-page-skin {
+  .status-page {
+    position: relative;
+    isolation: isolate;
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--bg) 70%, transparent), var(--bg) 85%),
+      url('@/assets/images/login-van-manha-1120.webp') center 40% / cover,
+      var(--bg);
+  }
+
+  .status-card {
+    background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-hover);
+    animation: rise-in $duration-reveal $ease-fluid backwards;
+  }
+
+  .icon-wrap {
+    background: var(--gradient-brand);
+    color: #fff;
+    box-shadow: var(--shadow-primary);
+    animation: float-soft 4s ease-in-out infinite;
+  }
+
+  .status-code {
+    font-size: 4.5rem;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-weight: $font-extrabold;
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 }

@@ -36,7 +36,7 @@ $font-extrabold: 800;
 // Dimensões de layout
 $header-height: 58px;
 $bottom-nav-height: 60px;
-$sidebar-width: 78px;
+$sidebar-width: 248px;
 $sidebar-width-expanded: 224px;
 $container-sm: 520px;
 $container-md: 760px;
@@ -62,3 +62,5 @@ $ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
 $duration-fast: 0.16s;
 $duration-normal: 0.22s;
 $duration-slow: 0.3s;
+$ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+$duration-reveal: 0.55s;

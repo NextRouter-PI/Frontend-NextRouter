@@ -6,6 +6,8 @@ import { useTransporteStore } from '@/stores/useTransporteStore'
 import { useAccountScope } from '@/composables/useAccountScope'
 import { useDebounce } from '@/composables/useDebounce'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import StatTile from '@/components/ui/StatTile.vue'
+import ListToolbar from '@/components/ui/ListToolbar.vue'
 import BaseTabs from '@/components/ui/BaseTabs.vue'
 import StatusBanner from '@/components/ui/StatusBanner.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -29,6 +31,17 @@ const busca = shallowRef('')
 const buscaDebounced = useDebounce(busca, 150)
 const filtroAtivo = shallowRef('Todas')
 const menuAberto = shallowRef(null)
+const carregando = shallowRef(true)
+
+const resumo = computed(() => {
+  const lista = store.veiculos || []
+  return {
+    total: lista.length,
+    ativos: lista.filter((v) => v.status === 'Ativo').length,
+    manutencao: lista.filter((v) => v.status === 'Manutenção').length,
+    lugares: lista.reduce((acc, v) => acc + (Number(v.capacidade) || 0), 0),
+  }
+})
 
 const abaAtiva = computed(() => (route.params.tab === 'garages' ? 'garages' : 'fleet'))
 
@@ -56,6 +69,7 @@ watch(abaAtiva, (next, prev) => {
 
 onMounted(async () => {
   await store.fetchVeiculos({ signal: scope.signal })
+  carregando.value = false
 })
 
 const veiculosFiltrados = computed(() => {
@@ -81,7 +95,27 @@ async function alterarStatus(id) {
 
 <template>
   <div class="company-vehicles-page">
-    <PageHeader title="Frota e Garagens" accent />
+    <PageHeader
+      title="Frota e Garagens"
+      eyebrow="Painel da empresa"
+      icon="mdi-bus"
+      subtitle="Veículos, capacidade e garagens de onde a frota sai."
+    />
+
+    <section class="stat-grid" aria-label="Resumo da frota">
+      <StatTile icon="mdi-bus" label="Veículos" :value="resumo.total" :loading="carregando" hint="Cadastrados na frota" />
+      <StatTile
+        icon="mdi-check-circle-outline"
+        label="Ativos"
+        :value="resumo.ativos"
+        :total="resumo.total"
+        :loading="carregando"
+        tone="green"
+      />
+      <StatTile icon="mdi-wrench-outline" label="Em manutenção" :value="resumo.manutencao" :loading="carregando" tone="gray" />
+      <StatTile icon="mdi-seat-passenger" label="Lugares" :value="resumo.lugares" :loading="carregando" tone="blue" hint="Capacidade somada" />
+      <StatTile icon="mdi-garage" label="Garagens" :value="store.garagens.length" :loading="carregando" hint="Pontos de saída" />
+    </section>
 
     <BaseTabs
       :items="vehicleTabs"
@@ -91,10 +125,13 @@ async function alterarStatus(id) {
     <div class="tab-stage">
       <Transition :name="tabTransition" mode="out-in">
         <div v-if="abaAtiva === 'fleet'" key="fleet" class="tab-pane-stack">
-          <div class="search-container">
-            <BaseIcon name="mdi-magnify" class="search-icon" />
-            <input v-model="busca" type="text" placeholder="Busque por placa, modelo..." aria-label="Buscar veículo" />
-          </div>
+          <ListToolbar
+            v-model="busca"
+            placeholder="Busque por placa ou modelo..."
+            search-label="Buscar veículo"
+            action-label="Adicionar veículo"
+            :action-to="ROUTE_PATHS.REGISTER_VEHICLE"
+          />
 
           <div class="filter-chips">
             <button
@@ -130,15 +167,6 @@ async function alterarStatus(id) {
               />
             </TransitionGroup>
           </Transition>
-
-          <button
-            type="button"
-            class="fab-add"
-            aria-label="Cadastrar veículo"
-            @click="router.push(ROUTE_PATHS.REGISTER_VEHICLE)"
-          >
-            <BaseIcon name="mdi-plus" />
-          </button>
         </div>
 
         <CompanyGaragesTab v-else key="garages" />
@@ -149,6 +177,7 @@ async function alterarStatus(id) {
 
 <style lang="scss" scoped>
 .company-vehicles-page {
+  --page-max: 1040px;
   @include section-container(120px);
 }
 

@@ -7,6 +7,8 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import StatTile from '@/components/ui/StatTile.vue'
+import { useMembershipCounts } from '@/features/memberships/composables/useMembershipCounts'
 import CompanyMembershipList from '@/features/company/components/CompanyMembershipList.vue'
 import SkeletonCard from '@/components/ui/SkeletonCard.vue'
 import LoadingSpinner from '@/components/ui/LoadingSpinner.vue'
@@ -44,10 +46,16 @@ const {
 watch(busy, (val) => {
   busyRef.value = val
 }, { immediate: true, flush: 'sync' })
+
+// Números do topo: recarregam ao abrir e depois de cada aprovação/recusa (busy volta a false).
+const { counts, loading: countsLoading, loadCounts } = useMembershipCounts()
+watch([scope, busy], ([currentScope, isBusy]) => {
+  if (currentScope && !isBusy) loadCounts(currentScope)
+}, { immediate: true })
 </script>
 
 <template>
-  <div class="membership-workspace" :class="{ authenticated: auth.logged }">
+  <div class="membership-workspace" :class="{ authenticated: auth.logged }" style="--page-max: 1040px">
     <div class="membership-content">
       <PageHeader
         title="Usuários e vínculos"
@@ -67,6 +75,37 @@ watch(busy, (val) => {
         </template>
       </PageHeader>
       <template v-if="auth.role === 'company'">
+        <section v-if="scope" class="stat-grid" aria-label="Resumo dos vínculos">
+          <StatTile
+            icon="mdi-account-clock-outline"
+            label="Pendentes"
+            :value="counts.pending"
+            :loading="countsLoading && counts.pending === null"
+            hint="Aguardando sua decisão"
+          />
+          <StatTile
+            icon="mdi-account-check-outline"
+            label="Ativos"
+            :value="counts.active"
+            :loading="countsLoading && counts.active === null"
+            tone="green"
+            hint="Passageiros e motoristas"
+          />
+          <StatTile
+            icon="mdi-close-circle-outline"
+            label="Recusados"
+            :value="counts.rejected"
+            :loading="countsLoading && counts.rejected === null"
+            tone="gray"
+          />
+          <StatTile
+            icon="mdi-history"
+            label="Encerrados"
+            :value="counts.ended"
+            :loading="countsLoading && counts.ended === null"
+            tone="blue"
+          />
+        </section>
         <div role="alert"><ErrorMessage :message="companyError" /></div>
         <Transition name="fade-slide" mode="out-in">
           <SkeletonCard v-if="companyLoading" key="company-loading" :count="1" :lines="2" />
@@ -78,8 +117,8 @@ watch(busy, (val) => {
         </Transition>
 
         <template v-if="scope">
-          <div class="membership-filters">
-            <label>
+          <div class="membership-filters membership-panel">
+            <label class="membership-field">
               Estado do vínculo
               <select v-model="status" class="membership-select" :disabled="busy">
                 <option value="pending">Pedidos pendentes</option>
@@ -90,9 +129,9 @@ watch(busy, (val) => {
                 <option value="">Todos os estados</option>
               </select>
             </label>
+            <BaseInput v-model="nameFilter" class="membership-search" label="Buscar por nome nesta página" />
           </div>
-          <BaseInput v-model="nameFilter" label="Filtrar por nome somente nesta página" />
-          <p>Solicitantes são identificados pelo nome e perfil, sem consulta a CPF, endereço ou documentos.</p>
+          <p class="membership-hint">Solicitantes são identificados pelo nome e perfil, sem consulta a CPF, endereço ou documentos.</p>
           <Transition name="fade-slide">
             <p v-if="notice" class="membership-notice" role="status">{{ notice }}</p>
           </Transition>

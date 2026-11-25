@@ -1,5 +1,5 @@
 <script setup>
-import { computed, shallowRef } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import {
   JOB_STATUS_LABELS,
   PLANNING_STATUS_LABELS,
@@ -10,6 +10,7 @@ import { formatDateTimeBr } from '@/utils/formatters'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import RouteMapSnapshot from '@/features/transport/components/RouteMapSnapshot.vue'
 import TravelAssignmentControls from './TravelAssignmentControls.vue'
+import { listRouteStops } from '@/api/transport/operation/travelsAndExecution'
 
 const props = defineProps({
   travel: { type: Object, required: true },
@@ -49,6 +50,18 @@ const calculateBlockedTitle = computed(() => {
 })
 
 const mapaAberto = shallowRef(false)
+
+// Paradas com horário previsto (da rota) e esperado (com o atraso atual), ao abrir o mapa.
+const stops = shallowRef([])
+const hhmm = (iso) => (iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—')
+watch(mapaAberto, async (open) => {
+  if (!open || !props.snapshot) return
+  try {
+    stops.value = await listRouteStops({ snapshot: props.snapshot.id })
+  } catch {
+    stops.value = []
+  }
+})
 </script>
 
 <template>
@@ -117,6 +130,18 @@ const mapaAberto = shallowRef(false)
         title="Prévia do Traçado Calculado"
         height="240px"
       />
+      <ol v-if="mapaAberto && stops.length" class="stop-times" aria-label="Horários das paradas">
+        <li v-for="stop in stops" :key="stop.id" :class="{ done: stop.handled_at }">
+          <span class="stop-pos">{{ stop.position }}</span>
+          <span class="stop-name">{{ stop.point_snapshot?.name || `Parada ${stop.position}` }}</span>
+          <span class="stop-time">
+            {{ stop.handled_at ? `feito ${hhmm(stop.handled_at)}` : `previsto ${hhmm(stop.planned_at)}` }}
+            <strong v-if="!stop.handled_at && stop.delay_seconds > 59" class="stop-late">
+              → {{ hhmm(stop.expected_at) }}
+            </strong>
+          </span>
+        </li>
+      </ol>
     </div>
 
     <TravelAssignmentControls
@@ -189,5 +214,50 @@ const mapaAberto = shallowRef(false)
 
 .error-inline {
   color: var(--danger);
+}
+
+.stop-times {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: grid;
+    grid-template-columns: 26px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: var(--altbg);
+    font-size: 0.85rem;
+
+    &.done {
+      opacity: 0.65;
+    }
+  }
+}
+
+.stop-pos {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.stop-time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.stop-late {
+  color: #d97706;
 }
 </style>

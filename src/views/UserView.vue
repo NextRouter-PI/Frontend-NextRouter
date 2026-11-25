@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { ROUTE_NAMES, ROUTE_PATHS } from '@/constants'
 import { state } from '@/stores/state'
 import BaseTabs from '@/components/ui/BaseTabs.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import '@/styles/profile.scss'
 
 const route = useRoute()
@@ -32,6 +33,12 @@ watch(
 <template>
   <div class="account-workspace" :class="{ authenticated: state.logged }">
     <div class="account-content">
+      <PageHeader
+        title="Minha conta"
+        eyebrow="Perfil e segurança"
+        icon="mdi-account-outline"
+        subtitle="Seus dados, foto, documentos, senha e sessões em um só lugar."
+      />
       <BaseTabs class="account-tabs" :items="accountTabs" aria-label="Seções da conta" />
 
       <div class="account-tab-stage">

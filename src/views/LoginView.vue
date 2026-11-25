@@ -5,6 +5,13 @@ import { PERSONAL_ROLES, ROUTE_NAMES, ROUTE_PATHS } from '@/constants'
 import { useLoginState } from '@/stores/useLoginState'
 import { state } from '@/stores/state'
 import PublicShell from '@/components/layout/PublicShell.vue'
+import ThemeButton from '@/components/ui/ThemeButton.vue'
+import BrandLogo from '@/components/ui/BrandLogo.vue'
+import photoSmall from '@/assets/images/login-van-manha-640.webp'
+import photoLarge from '@/assets/images/login-van-manha-1120.webp'
+import AuthPhotoPanel from '@/components/layout/AuthPhotoPanel.vue'
+import { useDeviceLayout } from '@/composables/useDeviceLayout'
+import { requestCurtainCover } from '@/composables/pageCurtain'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ErrorMessage from '@/components/ui/ErrorMessage.vue'
@@ -16,6 +23,8 @@ const { login } = useLoginState()
 
 const erro = shallowRef('')
 const redirecting = shallowRef(false)
+// Com animações ativas, a cortina laranja cobre a tela; a tela de carregamento fica só sem animação.
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const form = reactive({
   email: '',
   senha: '',
@@ -47,59 +56,46 @@ async function enviarLogin() {
       validCompany && PERSONAL_ROLES.includes(state.role)
         ? { name: ROUTE_NAMES.MEMBERSHIPS, query: validGroup ? { company, group } : { company } }
         : { name: ROUTE_NAMES.HOME }
-    // Recarrega para descartar estado em memória de sessões anteriores.
+    // Onda subindo ao entrar na conta; depois recarrega para descartar estado de sessões anteriores.
+    await requestCurtainCover('up')
     window.location.replace(router.resolve(destination).href)
   } else {
     erro.value = state.error || 'E-mail ou senha inválidos.'
   }
 }
+const { isMobile } = useDeviceLayout()
 </script>
 
 <template>
   <PublicShell full-bleed>
     <div class="login-split">
-      <section class="brand-panel">
-        <div class="brand-block">
-          <svg
-            class="brand-pin brand-pin-mobile"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              class="brand-pin-ring"
-              d="M12 20c-4.42 0-8-1.34-8-3 0-1.08 1.54-2.03 3.85-2.56l.68 1.36C6.95 16.17 5.8 16.69 5.8 17c0 .77 2.55 1.7 6.2 1.7s6.2-.93 6.2-1.7c0-.31-1.15-.83-2.73-1.2l.68-1.36C18.46 14.97 20 15.92 20 17c0 1.66-3.58 3-8 3z"
-            />
-            <path
-              class="brand-pin-head"
-              d="M12 2C8.69 2 6 4.69 6 8c0 4.5 6 9.5 6 9.5s6-5 6-9.5c0-3.31-2.69-6-6-6zm0 8.2a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4z"
-            />
-          </svg>
-          <p class="brand-welcome">Bem vindo ao</p>
-          <h1 class="brand-name">
-            <span class="brand-accent">NEXT</span><span class="brand-rest">ROUTER</span>
-          </h1>
-          <svg
-            class="brand-pin brand-pin-desktop"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              class="brand-pin-ring"
-              d="M12 20c-4.42 0-8-1.34-8-3 0-1.08 1.54-2.03 3.85-2.56l.68 1.36C6.95 16.17 5.8 16.69 5.8 17c0 .77 2.55 1.7 6.2 1.7s6.2-.93 6.2-1.7c0-.31-1.15-.83-2.73-1.2l.68-1.36C18.46 14.97 20 15.92 20 17c0 1.66-3.58 3-8 3z"
-            />
-            <path
-              class="brand-pin-head"
-              d="M12 2C8.69 2 6 4.69 6 8c0 4.5 6 9.5 6 9.5s6-5 6-9.5c0-3.31-2.69-6-6-6zm0 8.2a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4z"
-            />
-          </svg>
-        </div>
-      </section>
+      <AuthPhotoPanel
+        class="login-photo"
+        :small="photoSmall"
+        :large="photoLarge"
+        position="center 62%"
+        :slides="[
+          { quote: 'Cada rota no horário certo.', highlight: 'horário certo', caption: 'Acompanhe o transporte escolar do embarque à chegada, em tempo real.' },
+          { quote: 'Saiba onde a van está agora.', highlight: 'agora', caption: 'Veja a localização da viagem e a previsão de chegada no seu ponto.' },
+          { quote: 'Confirme sua viagem em um toque.', highlight: 'um toque', caption: 'Diga se vai na ida e na volta e a empresa organiza as vagas.' },
+        ]"
+        :features="[
+          { icon: 'mdi-map-marker-path', text: 'Rotas em tempo real' },
+          { icon: 'mdi-check-circle-outline', text: 'Confirmação de embarque' },
+          { icon: 'mdi-bell-ring-outline', text: 'Avisos no celular' },
+        ]"
+      />
 
       <section class="form-panel">
+        <div v-if="!isMobile" class="login-theme"><ThemeButton /></div>
         <form class="login-form" novalidate @submit.prevent="enviarLogin">
-          <p class="login-hint">Entrar em sua conta:</p>
+          <header class="login-head">
+            <BrandLogo class="login-logo" spin="always" />
+            <h1 class="login-title">
+              Bem-vindo ao <span class="login-brand">NextRouter</span>
+            </h1>
+            <p class="login-hint">Entre na sua conta para continuar.</p>
+          </header>
 
           <BaseInput
             v-model="form.email"
@@ -139,7 +135,7 @@ async function enviarLogin() {
 
           <p class="forgot-row">
             Esqueceu a senha?
-            <RouterLink :to="ROUTE_PATHS.FORGOT_PASSWORD" class="forgot-link">Clique Aqui</RouterLink>
+            <RouterLink :to="ROUTE_PATHS.FORGOT_PASSWORD" class="forgot-link">Recuperar senha</RouterLink>
           </p>
 
           <div class="bottom-actions">
@@ -154,7 +150,7 @@ async function enviarLogin() {
 
     <Transition name="fade-scale">
       <LoadingScreen
-        v-if="redirecting"
+        v-if="redirecting && reducedMotion"
         overlay
         title="Entrando no NextRouter..."
         subtitle="Redirecionando para seu painel"
@@ -168,116 +164,35 @@ async function enviarLogin() {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   background: var(--bg);
   color: var(--text);
   padding: 28px 22px 36px;
 
   @include from($bp-desktop + 1px) {
     flex-direction: row;
+    // Sem barra superior no computador: a tela inteira é do login.
+    min-height: 100vh;
+    min-height: 100dvh;
     padding: 0;
   }
 }
 
-.brand-panel {
-  @include flex-center;
-  flex-direction: column;
+.login-photo {
+  margin: -28px -22px $space-6;
+  height: 300px;
 
+  // Vídeo maior no login: ocupa cerca de 60% da tela.
   @include from($bp-desktop + 1px) {
-    flex: 1;
-    background: var(--altbg);
-    border-right: 1px solid var(--border);
-    padding: $space-10;
+    flex-basis: 60%;
+    height: auto;
+    margin: 0;
   }
-}
-
-.brand-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin-bottom: $space-8;
-
-  @include from($bp-desktop + 1px) {
-    margin-bottom: 0;
-  }
-}
-
-.brand-pin {
-  width: 68px;
-  height: 68px;
-  color: var(--primary);
-  overflow: visible;
-
-  &-head {
-    transform-origin: 12px 17px;
-    animation: pin-hop 1.9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
-  }
-
-  &-desktop {
-    display: none;
-  }
-
-  @include from($bp-desktop + 1px) {
-    &-mobile {
-      display: none;
-    }
-
-    &-desktop {
-      display: block;
-      width: 82px;
-      height: 82px;
-      margin-top: $space-4;
-    }
-  }
-}
-
-@keyframes pin-hop {
-  0%,
-  100% {
-    transform: translateY(0) scale(1, 1);
-  }
-  18% {
-    transform: translateY(0.4px) scale(1.05, 0.94);
-  }
-  46% {
-    transform: translateY(-4.2px) scale(0.96, 1.05);
-  }
-  74% {
-    transform: translateY(0.3px) scale(1.04, 0.96);
-  }
-  88% {
-    transform: translateY(-1px) scale(0.99, 1.01);
-  }
-}
-
-.brand-welcome {
-  margin-top: $space-2;
-  color: var(--text-muted);
-  font-size: $text-base;
-  font-weight: $font-medium;
-}
-
-.brand-name {
-  font-size: 2.1rem;
-  font-weight: $font-extrabold;
-  letter-spacing: 0.04em;
-
-  @include from($bp-desktop + 1px) {
-    font-size: 2.6rem;
-  }
-}
-
-.brand-accent {
-  color: var(--primary);
-}
-
-.brand-rest {
-  color: var(--text);
 }
 
 .form-panel {
   @include flex-center;
+  position: relative;
   width: 100%;
 
   @include from($bp-desktop + 1px) {
@@ -291,17 +206,69 @@ async function enviarLogin() {
   max-width: 380px;
   display: flex;
   flex-direction: column;
+  animation: rise-in $duration-reveal $ease-fluid 0.1s backwards;
+}
+
+.login-theme {
+  position: absolute;
+  top: $space-5;
+  right: $space-6;
+}
+
+.login-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-2;
+  margin-bottom: $space-6;
+  text-align: center;
+}
+
+.login-logo {
+  // Rodinha girando devagar e sem parar nas telas de entrada.
+  --wheel-speed: 2.4s;
+  width: 118px;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: $space-1;
+  animation: rise-in $duration-reveal $ease-fluid backwards;
+  transition: transform $duration-slow $ease-spring;
+
+  &:hover {
+    transform: rotate(-8deg) scale(1.08);
+  }
+
+  @include from($bp-desktop + 1px) {
+    width: 150px;
+  }
+}
+
+.login-title {
+  font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.6rem);
+  font-weight: $font-extrabold;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  animation: rise-in $duration-reveal $ease-fluid 0.08s backwards;
+}
+
+.login-brand {
+  white-space: nowrap;
+  color: var(--primary);
 }
 
 .login-hint {
-  font-size: 1.05rem;
-  font-weight: $font-semibold;
-  margin-bottom: $space-5;
-  color: var(--text);
+  font-size: $text-md;
+  color: var(--text-muted);
 }
 
 .login-submit {
   margin-top: $space-3;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px -10px rgba(236, 131, 20, 0.7);
+  }
 }
 
 .forgot-row {
@@ -313,11 +280,34 @@ async function enviarLogin() {
 
 .forgot-link,
 .discover-link {
-  color: var(--primary);
+  position: relative;
+  color: var(--primary-text);
   font-weight: $font-semibold;
+  transition: color $duration-normal $ease-fluid;
 
-  &:hover {
-    text-decoration: underline;
+  // Sublinhado que cresce da esquerda para a direita.
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    border-radius: $radius-pill;
+    background: var(--gradient-brand);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.35s $ease-fluid;
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--primary-strong);
+
+    &::after {
+      transform: scaleX(1);
+      transform-origin: left;
+    }
   }
 }
 
@@ -332,21 +322,50 @@ async function enviarLogin() {
 }
 
 .btn-create {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   display: inline-flex;
   justify-content: center;
   align-items: center;
+  gap: $space-2;
   width: 100%;
   padding: $space-3 $space-4;
   border-radius: $radius-md;
   outline: 1.5px solid var(--primary);
   outline-offset: -1.5px;
-  color: var(--primary);
+  color: var(--primary-text);
   font-weight: $font-semibold;
-  transition: background-color $duration-normal $ease-fluid, color $duration-normal $ease-fluid;
+  transition:
+    color 0.35s $ease-fluid,
+    transform $duration-normal $ease-fluid,
+    box-shadow $duration-slow $ease-fluid;
 
-  &:hover {
-    background: var(--primary);
+  // Preenchimento laranja que entra da esquerda.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--gradient-brand);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s $ease-fluid;
+  }
+
+  &:hover,
+  &:focus-visible {
     color: var(--color-on-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-primary);
+
+    &::before {
+      transform: scaleX(1);
+    }
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 }
 

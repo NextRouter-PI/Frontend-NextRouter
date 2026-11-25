@@ -1,6 +1,7 @@
 import { computed, onUnmounted, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import { ROUTE_PATHS } from '@/constants'
+import { shouldPlayCurtain } from '@/composables/pageCurtain'
 
 export function useRouteProgress({ isMobile }) {
   const router = useRouter()
@@ -33,6 +34,11 @@ export function useRouteProgress({ isMobile }) {
   }
 
   const removeBeforeEach = router.beforeEach((to, from) => {
+    // A cortina já cobre a troca: sem deslize de página nem tela de "carregando" por baixo dela.
+    if (shouldPlayCurtain(to, from)) {
+      transitionName.value = 'page-fade'
+      return
+    }
     if (!isMobile.value && from.path === ROUTE_PATHS.LOGIN && to.path === ROUTE_PATHS.SIGNUP) {
       transitionName.value = 'slide-forward'
     } else if (!isMobile.value && from.path === ROUTE_PATHS.SIGNUP && to.path === ROUTE_PATHS.LOGIN) {

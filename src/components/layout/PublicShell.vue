@@ -38,12 +38,6 @@ const emit = defineEmits(['back'])
       <slot />
     </div>
 
-    <footer class="shell-footer">
-      <div class="footer-inner">
-        <BaseIcon name="mdi-instagram" class="footer-icon" />
-        <span>@routerifc</span>
-      </div>
-    </footer>
   </div>
 </template>
 
@@ -139,27 +133,5 @@ const emit = defineEmits(['back'])
   border-radius: $radius-pill;
   background: var(--primary);
   margin: 6px 0 $space-5;
-}
-
-.shell-footer {
-  margin-top: auto;
-  background: var(--chrome-bg);
-  border-top: 2px solid var(--primary);
-  color: var(--chrome-text);
-  padding: $space-4 22px 22px;
-}
-
-.footer-inner {
-  max-width: $container-xl;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: $space-2;
-  font-size: $text-md;
-  font-weight: $font-medium;
-}
-
-.footer-icon {
-  font-size: 1.15rem;
 }
 </style>
