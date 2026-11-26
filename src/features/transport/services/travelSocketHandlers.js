@@ -45,6 +45,9 @@ export function handleTravelWsMessage(state, rawData, stopTracking) {
       state.error = 'A viagem foi encerrada; o acompanhamento ao vivo terminou.'
       stopTracking({ keepNotice: true })
     } else if (data.type === 'error') {
+      // Envio cedo demais ou fora de ordem (ex.: duas abas do motorista abertas) não é problema dele:
+      // a próxima posição entra normalmente.
+      if (data.code === 'position_rate_limited' || data.code === 'out_of_order') return
       state.error = data.detail || 'Posição recusada pelo servidor.'
     }
   } catch {
