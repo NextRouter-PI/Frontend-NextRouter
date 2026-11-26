@@ -105,17 +105,18 @@ const style = {
   }
 }
 
-// Foto com um deslizar lateral lento, indo e voltando. Sem aproximar: a cena (e o veículo) fica
-// sempre inteira, um pouco afastada.
+// Foto com um deslizar lateral lento, indo e voltando. Sem aproximar e presa embaixo: quando sobra
+// imagem, o corte é sempre em cima (o chão e o veículo ficam inteiros).
 .photo-media {
   position: absolute;
-  inset: -3%;
-  background: var(--photo-small) var(--photo-position) / cover;
+  inset: -3% -3% 0;
+  transform-origin: center bottom;
+  background: var(--photo-small) center bottom / cover;
   animation: camera-drift 18s ease-in-out infinite alternate;
 
   @include from($bp-desktop + 1px) {
     background-image: var(--photo-large);
-    background-position: center;
+    background-position: center bottom;
   }
 }
 

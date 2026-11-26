@@ -223,7 +223,7 @@
     isolation: isolate;
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--bg) 70%, transparent), var(--bg) 85%),
-      url('@/assets/images/login-van-manha-1120.webp') center 40% / cover,
+      url('@/assets/images/login-van-manha-1120.webp') center bottom / cover,
       var(--bg);
   }
 

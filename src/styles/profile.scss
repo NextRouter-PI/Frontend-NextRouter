@@ -20,7 +20,7 @@
   background:
     radial-gradient(26rem 14rem at 100% 0%, rgba(255, 255, 255, 0.22), transparent 70%),
     linear-gradient(120deg, rgba(212, 113, 12, 0.96), rgba(236, 131, 20, 0.9) 50%, rgba(245, 154, 50, 0.82)),
-    url('@/assets/images/cadastro-campus-640.webp') center 60% / cover;
+    url('@/assets/images/cadastro-campus-640.webp') center bottom / cover;
   color: var(--color-on-primary);
   border-radius: 20px;
   padding: 26px 22px;

@@ -105,7 +105,8 @@ const photoStyle = { '--banner-small': `url(${panoramaSmall})`, '--banner-large'
   position: absolute;
   inset: 0;
   z-index: -2;
-  background: var(--banner-small) center 65% / cover;
+  background: var(--banner-small) center bottom / cover;
+  transform-origin: center bottom;
   animation: banner-zoom 16s ease-out both;
 
   @include from($bp-md) {

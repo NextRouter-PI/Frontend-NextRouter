@@ -109,7 +109,7 @@ function handlePhotoError(message) {
     height: 92px;
     background:
       linear-gradient(120deg, rgba(212, 113, 12, 0.94), rgba(236, 131, 20, 0.88) 55%, rgba(245, 154, 50, 0.8)),
-      url('@/assets/images/banner-panoramico-900.webp') center 60% / cover;
+      url('@/assets/images/banner-panoramico-900.webp') center bottom / cover;
   }
 }
 
