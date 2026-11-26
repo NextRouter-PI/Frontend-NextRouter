@@ -27,8 +27,34 @@ export const useTrackingStore = defineStore('tracking', () => {
   const auth = useAuthStore()
   const state = reactive(initialState())
 
-  const socketClient = createTravelSocketClient({ state, http, stopTracking })
+  const socketClient = createTravelSocketClient({
+    state,
+    http,
+    stopTracking,
+    onOpen: () => {
+      if (state.role === 'driver') geoWatcher.sendLatest()
+    },
+  })
   const geoWatcher = createGeolocationWatcher({ state, sendPosition: socketClient.sendPosition })
+
+  // Estabilidade do tempo real: ao voltar para a tela ou para a rede, reconecta e retoma o GPS na hora;
+  // e um vigia reabre a conexão se o motorista ficar 60 s sem nenhum retorno do servidor.
+  const SILENT_LIMIT_MS = 60_000
+  function resume() {
+    if (!state.tracking || state.closed) return
+    if (!socketClient.isOpen()) socketClient.reconnectNow()
+    if (state.role === 'driver') geoWatcher.restart()
+  }
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') resume()
+  }
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisibility)
+  if (typeof window !== 'undefined') window.addEventListener('online', resume)
+  const watchdog = setInterval(() => {
+    if (state.tracking && state.role === 'driver' && socketClient.isOpen() && socketClient.silentForMs() > SILENT_LIMIT_MS) {
+      socketClient.reconnectNow()
+    }
+  }, 20_000)
 
   function stopTracking({ keepNotice = false } = {}) {
     socketClient.abortReads()
@@ -91,6 +117,9 @@ export const useTrackingStore = defineStore('tracking', () => {
     import.meta.hot.dispose(() => {
       http.events.removeEventListener('refreshed', onRefreshed)
       http.events.removeEventListener('expired', onExpired)
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('online', resume)
+      clearInterval(watchdog)
       stopTracking()
     })
   }

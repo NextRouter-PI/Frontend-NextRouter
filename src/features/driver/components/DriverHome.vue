@@ -38,6 +38,10 @@ const {
   updatedAtLabel,
   routeStatusLabel,
   quickPresence,
+  canDropAll,
+  canFinish,
+  dropAll,
+  finishTrip,
   startLivePolling,
 } = useDriverHomeLive({ scope })
 
@@ -119,17 +123,55 @@ onMounted(() => {
                   <BaseIcon name="mdi-account-clock-outline" />
                   <span>{{ p.name || `Passageiro #${p.eligibility}` }}</span>
                 </span>
-                <button
-                  v-if="isTravelActive"
-                  type="button"
-                  class="quick-board-btn"
-                  :disabled="transportState.busy"
-                  @click="quickPresence(p, 'boarded')"
-                >
-                  Embarcou
-                </button>
+                <span v-if="isTravelActive" class="quick-actions">
+                  <button
+                    type="button"
+                    class="quick-absent-btn"
+                    :disabled="transportState.busy"
+                    @click="quickPresence(p, 'no_show')"
+                  >
+                    Ausente
+                  </button>
+                  <button
+                    type="button"
+                    class="quick-board-btn"
+                    :disabled="transportState.busy"
+                    @click="quickPresence(p, 'boarded')"
+                  >
+                    Embarcou
+                  </button>
+                </span>
               </li>
             </ul>
+          </div>
+          <div v-else-if="canDropAll || canFinish" class="trip-end-box">
+            <p class="panel-meta">
+              {{
+                canDropAll
+                  ? `Todos embarcaram (${onBoardPassengers.length} a bordo). Chegando ao destino, registre o desembarque.`
+                  : 'Todos desembarcaram. Pode finalizar a viagem.'
+              }}
+            </p>
+            <button
+              v-if="canDropAll"
+              type="button"
+              class="trip-end-btn"
+              :disabled="transportState.busy"
+              @click="dropAll"
+            >
+              <BaseIcon name="mdi-logout" />
+              Desembarcou todos
+            </button>
+            <button
+              v-else
+              type="button"
+              class="trip-end-btn trip-end-btn--finish"
+              :disabled="transportState.busy"
+              @click="finishTrip"
+            >
+              <BaseIcon name="mdi-flag-checkered" />
+              Finalizar viagem
+            </button>
           </div>
           <p v-else-if="onBoardPassengers.length" class="panel-meta">
             Todos os passageiros já embarcaram ({{ onBoardPassengers.length }} a bordo).
@@ -291,6 +333,58 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.quick-actions {
+  display: inline-flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.quick-absent-btn {
+  @include action-button;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: transparent;
+  color: var(--chrome-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.trip-end-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 6px 0 8px;
+}
+
+.trip-end-btn {
+  @include action-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: none;
+  background: var(--primary);
+  color: var(--color-on-primary);
+  font-size: 0.92rem;
+  font-weight: 800;
+
+  &--finish {
+    background: var(--success);
+    color: #ffffff;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }
 
 .quick-board-btn {

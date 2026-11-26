@@ -14,7 +14,8 @@ const APPROACH_MIN_INTERVAL_MS = 15_000
  * Coordena dados ao vivo, HUD da próxima parada, prompt de aproximação e polling da Home do motorista.
  */
 export function useDriverHomeLive({ scope }) {
-  const { state: transportState, loadDriverData, registrarPresencaParticipante } = useTransportState()
+  const { state: transportState, loadDriverData, registrarPresencaParticipante, desembarcarTodos, finalizarViagemDesignada } =
+    useTransportState()
   const { state: tracking, startDriverTracking, startViewerTracking, stopTracking } = useTravelTracking()
   const { showToast } = useToast()
 
@@ -160,6 +161,32 @@ export function useDriverHomeLive({ scope }) {
 
   watch(() => [isTravelActive.value, nextPendingStop.value?.id, tracking.latitude, tracking.longitude], refreshApproach)
 
+  // Fim do percurso: todos embarcados -> "Desembarcou todos"; ninguém pendente nem a bordo -> "Finalizar viagem".
+  const canDropAll = computed(
+    () => isTravelActive.value && !pendingBoardingPassengers.value.length && onBoardPassengers.value.length > 0,
+  )
+  const canFinish = computed(
+    () => isTravelActive.value && !pendingBoardingPassengers.value.length && !onBoardPassengers.value.length,
+  )
+
+  async function dropAll() {
+    if (transportState.busy || !canDropAll.value) return
+    const ok = await desembarcarTodos(driverTransport.value?.travel)
+    showToast(ok ? 'Desembarque de todos registrado.' : transportState.error || 'Não foi possível desembarcar.', ok ? 'success' : 'error')
+  }
+
+  async function finishTrip() {
+    if (transportState.busy || !canFinish.value) return
+    const ok = await finalizarViagemDesignada(driverTransport.value?.travel)
+    if (ok) {
+      stopTracking()
+      approach.value = null
+      showToast('Viagem finalizada. Bom trabalho!', 'success')
+    } else {
+      showToast(transportState.error || 'Não foi possível finalizar a viagem.', 'error')
+    }
+  }
+
   const isSharing = computed(() => tracking.tracking && tracking.role === 'driver')
   const mapsUrl = computed(() => {
     if (tracking.latitude == null || tracking.longitude == null) return null
@@ -205,6 +232,10 @@ export function useDriverHomeLive({ scope }) {
     updatedAtLabel,
     routeStatusLabel,
     quickPresence,
+    canDropAll,
+    canFinish,
+    dropAll,
+    finishTrip,
     startLivePolling,
   }
 }

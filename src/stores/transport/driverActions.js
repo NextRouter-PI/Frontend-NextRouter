@@ -9,6 +9,7 @@ import {
   listDriverInvitations,
   startTravel,
   finishTravel,
+  dropAllTravel,
   reportTravelUnavailability,
   recordParticipationPresence,
   handleRouteStop,
@@ -113,6 +114,10 @@ export function createDriverTransportActions({ state, auth, nextSignal }) {
     finalizarViagemDesignada(travel) {
       if (!travel) return false
       return runDriverMutation(() => finishTravel(travel.id), `Viagem #${travel.id} finalizada.`, travel.id)
+    },
+    desembarcarTodos(travel) {
+      if (!travel) return false
+      return runDriverMutation(() => dropAllTravel(travel.id), 'Desembarque de todos registrado.', travel.id)
     },
     informarIndisponibilidade(travel) {
       if (!travel) return false

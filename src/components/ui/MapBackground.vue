@@ -101,4 +101,13 @@ const { following, recenter } = useLiveBackgroundMap({
 .dark .map-background::after {
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.55) 100%);
 }
+
+// Celular: cartão da parada ocupa o topo; estes botões descem para a direita, logo acima do painel recolhido.
+@media (max-width: 900px) {
+  .map-recenter {
+    top: auto;
+    bottom: calc(var(--bottom-nav-height) + 72px);
+    right: 12px;
+  }
+}
 </style>

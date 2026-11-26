@@ -13,13 +13,14 @@ function wsUrlFor(travelId) {
   return `${protocol}//${window.location.host}/ws/travels/${encodeURIComponent(travelId)}/location/`
 }
 
-export function createTravelSocketClient({ state, http, stopTracking }) {
+export function createTravelSocketClient({ state, http, stopTracking, onOpen = () => {} }) {
   let socket = null
   let socketAbort = null
   let reconnectTimer = null
   let onlineListener = null
   let reconnectAttempt = 0
   let readController = null
+  let lastMessageAt = 0
 
   function clearReconnectWait() {
     if (reconnectTimer) {
@@ -93,12 +94,16 @@ export function createTravelSocketClient({ state, http, stopTracking }) {
     ws.addEventListener('open', () => {
       if (socket !== ws) return
       reconnectAttempt = 0
+      lastMessageAt = Date.now()
       state.connected = true
       state.error = null
+      onOpen()
     }, { signal: ac.signal })
 
     ws.addEventListener('message', (event) => {
-      if (socket === ws) handleTravelWsMessage(state, event.data, stopTracking)
+      if (socket !== ws) return
+      lastMessageAt = Date.now()
+      handleTravelWsMessage(state, event.data, stopTracking)
     }, { signal: ac.signal })
 
     ws.addEventListener('error', () => {
@@ -121,5 +126,22 @@ export function createTravelSocketClient({ state, http, stopTracking }) {
     return false
   }
 
-  return { fetchInitialLocation, openSocket, clearSocket, abortReads, sendPosition }
+  // Volta da tela bloqueada, troca de rede ou conexão "pendurada" (aberta sem tráfego): reconecta na hora,
+  // sem esperar o próximo intervalo de backoff.
+  function reconnectNow() {
+    if (!state.tracking || state.closed || !state.travelId) return
+    clearReconnectWait()
+    reconnectAttempt = 0
+    openSocket(state.travelId)
+  }
+
+  function isOpen() {
+    return Boolean(socket && socket.readyState === WebSocket.OPEN)
+  }
+
+  function silentForMs() {
+    return lastMessageAt ? Date.now() - lastMessageAt : 0
+  }
+
+  return { fetchInitialLocation, openSocket, clearSocket, abortReads, sendPosition, reconnectNow, isOpen, silentForMs }
 }

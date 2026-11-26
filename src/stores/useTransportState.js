@@ -8,6 +8,7 @@ export function useTransportState() {
     loadDriverData: store.loadDriverData,
     iniciarViagemDesignada: store.iniciarViagemDesignada,
     finalizarViagemDesignada: store.finalizarViagemDesignada,
+    desembarcarTodos: store.desembarcarTodos,
     informarIndisponibilidade: store.informarIndisponibilidade,
     registrarPresencaParticipante: store.registrarPresencaParticipante,
     tratarParadaPercurso: store.tratarParadaPercurso,

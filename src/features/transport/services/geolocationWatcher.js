@@ -10,6 +10,8 @@ export function createGeolocationWatcher({ state, sendPosition }) {
   let watchId = null
   let lastSentAt = 0
   let lastSentCoords = null
+  let lastFix = null
+  let currentTravelId = null
 
   function stop() {
     if (watchId !== null) {
@@ -29,6 +31,7 @@ export function createGeolocationWatcher({ state, sendPosition }) {
 
   function start(travelId) {
     stop()
+    currentTravelId = travelId
     if (!geo.isSupported()) {
       state.error = 'Geolocalização não é suportada neste navegador ou contexto HTTP.'
       return
@@ -40,6 +43,7 @@ export function createGeolocationWatcher({ state, sendPosition }) {
         const lat = position.coords.latitude
         const lng = position.coords.longitude
         const recordedAt = new Date(nowMs).toISOString()
+        lastFix = { lat, lng, at: nowMs }
         state.latitude = lat
         state.longitude = lng
         state.updatedAt = recordedAt
@@ -59,5 +63,20 @@ export function createGeolocationWatcher({ state, sendPosition }) {
     )
   }
 
-  return { start, stop }
+  // Depois de reconectar: manda a última posição (se recente) para o servidor não ficar com a antiga.
+  function sendLatest() {
+    if (!lastFix || Date.now() - lastFix.at > 20_000) return
+    const nowMs = Date.now()
+    if (sendPosition({ latitude: lastFix.lat, longitude: lastFix.lng, recorded_at: new Date(nowMs).toISOString() })) {
+      lastSentAt = nowMs
+      lastSentCoords = { lat: lastFix.lat, lng: lastFix.lng }
+    }
+  }
+
+  // Celulares podem congelar o watchPosition com a tela bloqueada; ao voltar, recomeça a leitura.
+  function restart() {
+    if (currentTravelId !== null && watchId !== null) start(currentTravelId)
+  }
+
+  return { start, stop, sendLatest, restart }
 }

@@ -179,4 +179,13 @@ const { following, recenter } = useDriverMap3D({
     opacity: 0;
   }
 }
+
+// Celular: cartão da parada ocupa o topo; estes botões descem para a direita, logo acima do painel recolhido.
+@media (max-width: 900px) {
+  .map-controls {
+    top: auto;
+    bottom: calc(var(--bottom-nav-height) + 72px);
+    right: 12px;
+  }
+}
 </style>

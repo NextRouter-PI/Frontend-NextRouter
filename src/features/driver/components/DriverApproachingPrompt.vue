@@ -164,4 +164,11 @@ const emit = defineEmits(['dismiss', 'presence'])
   font-weight: 600;
   cursor: pointer;
 }
+
+// Celular: abaixo do cartão da próxima parada, sem cobri-lo.
+@media (max-width: 900px) {
+  .approaching-prompt {
+    top: calc(var(--header-height) + 104px);
+  }
+}
 </style>

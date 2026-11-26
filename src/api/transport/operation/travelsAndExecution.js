@@ -38,6 +38,12 @@ export async function finishTravel(travelId, { signal } = {}) {
   return data
 }
 
+// Desembarca de uma vez todos que estão a bordo (fim do percurso).
+export async function dropAllTravel(travelId, { signal } = {}) {
+  const { data } = await api.post(`/travels/${encodeURIComponent(travelId)}/drop-all/`, {}, { signal })
+  return data
+}
+
 export async function cancelTravel(travelId, { signal } = {}) {
   const { data } = await api.post(`/travels/${encodeURIComponent(travelId)}/cancel/`, {}, { signal })
   return data

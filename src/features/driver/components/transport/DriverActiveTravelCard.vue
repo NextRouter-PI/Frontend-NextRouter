@@ -48,10 +48,10 @@ const isInProgress = computed(() => props.transport.travelStatus === 'in_progres
       <BaseButton
         v-if="transport.travelStatus === 'scheduled' || isInProgress"
         :icon="isInProgress ? 'mdi-flag-checkered' : 'mdi-arrow-right'"
-        :disabled="busy || (!isInProgress && !transport.publicationCurrent)"
+        :disabled="busy || (!isInProgress && transport.travel?.planning_status !== 'ready')"
         @click="emit('toggle-travel')"
       >
-        {{ isInProgress ? 'Finalizar Viagem' : `Iniciar Viagem Publicada (Revisão ${transport.revision})` }}
+        {{ isInProgress ? 'Finalizar Viagem' : 'Iniciar Viagem' }}
       </BaseButton>
 
       <BaseButton

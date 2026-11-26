@@ -93,6 +93,15 @@ defineProps({
   color: #fbbf24;
 }
 
+// Celular: largura toda (os botões do mapa ficam embaixo, sem disputar espaço com o cartão).
+@media (max-width: 900px) {
+  .gps-top-hud {
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+}
+
 // No computador o mapa fica atrás da sidebar fechada; o cartão começa depois dela.
 @media (min-width: 901px) {
   .gps-top-hud {
