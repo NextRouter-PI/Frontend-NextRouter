@@ -3,11 +3,15 @@ import { formatTimeBr as formatTime } from '@/utils/formatters'
 import { pointLabel } from '@/stores/transport/helpers'
 
 export function selectActiveDriverTravel(travels, selectedTravelId) {
+  // A API lista da data mais nova para a mais antiga; a próxima viagem é a agendada mais próxima.
+  const upcoming = travels
+    .filter((t) => t.status === 'scheduled')
+    .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || a.id - b.id)
   return (
     (selectedTravelId && travels.find((t) => t.id === Number(selectedTravelId))) ||
     travels.find((t) => t.status === 'in_progress') ||
-    travels.find((t) => t.status === 'scheduled' && t.publication_current) ||
-    travels.find((t) => t.status === 'scheduled') ||
+    upcoming.find((t) => t.publication_current) ||
+    upcoming[0] ||
     travels[0] ||
     null
   )

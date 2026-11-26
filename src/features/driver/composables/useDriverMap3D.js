@@ -1,5 +1,5 @@
 import { nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue'
-import * as maplibregl from 'maplibre-gl'
+import maplibregl from '@/utils/maplibre'
 import { usePageVisibility } from '@/composables/usePageVisibility'
 import { splitPolylineAtPosition } from '@/utils/geo'
 import { animateLngLatMarker } from '@/utils/mapAnimation'

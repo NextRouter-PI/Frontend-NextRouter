@@ -1,4 +1,4 @@
-import * as maplibregl from 'maplibre-gl'
+import maplibregl from '@/utils/maplibre'
 import { pointToLatLng } from '@/utils/geo'
 import { renderIconSvg } from '@/utils/icons'
 import { escapeHtml } from '@/utils/leafletMarkers'
