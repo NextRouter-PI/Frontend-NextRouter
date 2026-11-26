@@ -132,10 +132,12 @@ const emit = defineEmits(['click'])
     color: var(--text);
     outline-color: var(--border);
 
+    // Hover: fundo laranja e texto branco (bem visível, igual ao botão principal).
     &:hover:not(:disabled) {
       outline-color: var(--primary);
-      color: var(--primary);
-      background: var(--color-primary-soft);
+      color: #ffffff;
+      background: var(--primary);
+      box-shadow: var(--shadow-primary);
     }
 
     &.selected {

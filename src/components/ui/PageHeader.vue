@@ -77,25 +77,26 @@ const photoStyle = { '--banner-small': `url(${panoramaSmall})`, '--banner-large'
   margin: calc(-1 * var(--page-pad-top, #{$space-5})) 0 $space-2 calc(50% - 50cqw);
   // O header é transparente: o banner começa no topo da tela e desconta a altura dele.
   padding: calc(var(--header-height) + #{$space-6}) $space-4 72px;
-  color: var(--text);
-  background: var(--bg);
+  color: #ffffff;
+  background: var(--chrome-bg);
 
   @include from($bp-md) {
     padding: calc(var(--header-height) + 40px) $space-8 96px;
   }
 
-  // Clareia só o lado do texto; a foto ocupa toda a largura.
+  // Escurece o lado do texto com o cinza-escuro dos cartões (texto branco por cima); a foto ocupa a largura toda.
   &::after {
     content: '';
     position: absolute;
     inset: 0;
     z-index: -1;
     background:
-      linear-gradient(90deg, color-mix(in srgb, var(--bg) 92%, transparent) 0%, color-mix(in srgb, var(--bg) 70%, transparent) 30%, transparent 58%),
-      linear-gradient(180deg, color-mix(in srgb, var(--bg) 30%, transparent) 0%, transparent 35%);
+      linear-gradient(90deg, rgba(28, 28, 30, 0.92) 0%, rgba(28, 28, 30, 0.74) 34%, rgba(28, 28, 30, 0.18) 66%),
+      linear-gradient(180deg, rgba(28, 28, 30, 0.4) 0%, transparent 40%);
+    backdrop-filter: blur(2px);
 
     @include until($bp-md) {
-      background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 40%, transparent) 0%, color-mix(in srgb, var(--bg) 88%, transparent) 100%);
+      background: linear-gradient(180deg, rgba(28, 28, 30, 0.55) 0%, rgba(28, 28, 30, 0.9) 100%);
     }
   }
 }
@@ -149,9 +150,9 @@ const photoStyle = { '--banner-small': `url(${panoramaSmall})`, '--banner-large'
   gap: 6px;
   padding: 5px 12px;
   border-radius: $radius-pill;
-  background: var(--color-primary-soft);
-  border: 1px solid var(--color-primary-tint);
-  color: var(--primary-text);
+  background: rgba(236, 131, 20, 0.18);
+  border: 1px solid rgba(236, 131, 20, 0.45);
+  color: #fdba74;
   font-size: 0.7rem;
   font-weight: $font-bold;
   letter-spacing: 0.14em;
@@ -163,7 +164,7 @@ const photoStyle = { '--banner-small': `url(${panoramaSmall})`, '--banner-large'
   font-weight: $font-extrabold;
   line-height: 1.06;
   letter-spacing: -0.03em;
-  color: var(--text);
+  color: #ffffff;
 
   span {
     color: var(--primary);
@@ -171,7 +172,7 @@ const photoStyle = { '--banner-small': `url(${panoramaSmall})`, '--banner-large'
 }
 
 .banner-subtitle {
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.78);
   font-size: $text-md;
   line-height: 1.55;
 }
@@ -182,10 +183,20 @@ const photoStyle = { '--banner-small': `url(${panoramaSmall})`, '--banner-large'
   flex-wrap: wrap;
   gap: $space-2;
 
+  // Botões sobre o banner escuro: vidro escuro com texto branco; no hover, fundo laranja.
   :deep(.base-btn.variant-outline),
   :deep(.base-btn.variant-ghost) {
-    background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+    background: rgba(28, 28, 30, 0.55);
+    color: #ffffff;
+    outline-color: rgba(255, 255, 255, 0.35);
     backdrop-filter: blur(6px);
+  }
+
+  :deep(.base-btn.variant-outline:hover:not(:disabled)),
+  :deep(.base-btn.variant-ghost:hover:not(:disabled)) {
+    background: var(--primary);
+    color: #ffffff;
+    outline-color: var(--primary);
   }
 }
 

@@ -105,7 +105,8 @@ const style = {
   }
 }
 
-// Foto com zoom e deslocamento lentos, indo e voltando (efeito de câmera).
+// Foto com um deslizar lateral lento, indo e voltando. Sem aproximar: a cena (e o veículo) fica
+// sempre inteira, um pouco afastada.
 .photo-media {
   position: absolute;
   inset: -3%;
@@ -120,10 +121,10 @@ const style = {
 
 @keyframes camera-drift {
   from {
-    transform: scale(1.02) translate3d(0, 0, 0);
+    transform: scale(1.04) translate3d(1.5%, 0, 0);
   }
   to {
-    transform: scale(1.16) translate3d(-2.5%, -1.5%, 0);
+    transform: scale(1.04) translate3d(-1.5%, 0, 0);
   }
 }
 
